@@ -586,7 +586,7 @@ public class Repository {
 }
         """,
     )
-    fun `supports vararg operators`(psiFile: PsiFile) {
+    fun `supports filters built with Filters#and using varargs arguments`(psiFile: PsiFile) {
         val query = psiFile.getQueryAtMethod("Repository", "findReleasedBooks")
         val parsedQuery = JavaDriverDialect.parser.parse(query)
 
@@ -652,7 +652,9 @@ public class Repository {
 }
         """,
     )
-    fun `supports vararg operators with parameterised queries in variables`(psiFile: PsiFile) {
+    fun `supports filters built with Filters#and using varargs arguments passed as a variable`(
+        psiFile: PsiFile
+    ) {
         val query = psiFile.getQueryAtMethod("Repository", "findReleasedBooks")
         val parsedQuery = JavaDriverDialect.parser.parse(query)
 
@@ -661,6 +663,484 @@ public class Repository {
 
         val and = hasChildren.children[0]
         assertEquals(Name.AND, and.component<Named>()!!.name)
+        val andChildren = and.component<HasFilter<Unit?>>()!!
+
+        val firstEq = andChildren.children[0]
+        assertEquals(
+            "released",
+            (firstEq.component<HasFieldReference<Unit?>>()!!.reference as HasFieldReference.FromSchema).fieldName,
+        )
+        assertEquals(
+            BsonAnyOf(BsonNull, BsonBoolean),
+            (firstEq.component<HasValueReference<PsiElement>>()!!.reference as HasValueReference.Constant).type,
+        )
+        assertEquals(
+            true,
+            (firstEq.component<HasValueReference<PsiElement>>()!!.reference as HasValueReference.Constant).value
+        )
+
+        val secondEq = andChildren.children[1]
+        assertEquals(
+            "hidden",
+            (secondEq.component<HasFieldReference<Unit?>>()!!.reference as HasFieldReference.FromSchema).fieldName,
+        )
+        assertEquals(
+            BsonAnyOf(BsonNull, BsonBoolean),
+            (secondEq.component<HasValueReference<PsiElement>>()!!.reference as HasValueReference.Constant).type,
+        )
+        assertEquals(
+            false,
+            (secondEq.component<HasValueReference<PsiElement>>()!!.reference as HasValueReference.Constant).value
+        )
+    }
+
+    @ParsingTest(
+        fileName = "Repository.java",
+        value = """
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoClient;
+import org.bson.Document;
+import org.bson.conversions.Bson;
+import static com.mongodb.client.model.Filters.*;
+
+public class Repository {
+    private final MongoClient client;
+
+    public Repository(MongoClient client) {
+        this.client = client;
+    }
+    
+    private Bson getAnd() {
+        var released = eq("released", true);
+        var notHidden = eq("hidden", false);
+        return and(released, notHidden);
+    }
+
+    public FindIterable<Document> findReleasedBooks() {
+        return client.getDatabase("myDatabase")
+                .getCollection("myCollection")
+                .find(getAnd());
+    }
+}
+        """,
+    )
+    fun `supports filters built with Filters#and using varargs arguments returned from a method call`(
+        psiFile: PsiFile
+    ) {
+        val query = psiFile.getQueryAtMethod("Repository", "findReleasedBooks")
+        val parsedQuery = JavaDriverDialect.parser.parse(query)
+
+        val hasChildren =
+            parsedQuery.component<HasFilter<Unit?>>()!!
+
+        val and = hasChildren.children[0]
+        assertEquals(Name.AND, and.component<Named>()!!.name)
+        val andChildren = and.component<HasFilter<Unit?>>()!!
+
+        val firstEq = andChildren.children[0]
+        assertEquals(
+            "released",
+            (firstEq.component<HasFieldReference<Unit?>>()!!.reference as HasFieldReference.FromSchema).fieldName,
+        )
+        assertEquals(
+            BsonAnyOf(BsonNull, BsonBoolean),
+            (firstEq.component<HasValueReference<PsiElement>>()!!.reference as HasValueReference.Constant).type,
+        )
+        assertEquals(
+            true,
+            (firstEq.component<HasValueReference<PsiElement>>()!!.reference as HasValueReference.Constant).value
+        )
+
+        val secondEq = andChildren.children[1]
+        assertEquals(
+            "hidden",
+            (secondEq.component<HasFieldReference<Unit?>>()!!.reference as HasFieldReference.FromSchema).fieldName,
+        )
+        assertEquals(
+            BsonAnyOf(BsonNull, BsonBoolean),
+            (secondEq.component<HasValueReference<PsiElement>>()!!.reference as HasValueReference.Constant).type,
+        )
+        assertEquals(
+            false,
+            (secondEq.component<HasValueReference<PsiElement>>()!!.reference as HasValueReference.Constant).value
+        )
+    }
+
+    @ParsingTest(
+        fileName = "Repository.java",
+        value = """
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoClient;
+import org.bson.Document;
+import static com.mongodb.client.model.Filters.*;
+
+public class Repository {
+    private final MongoClient client;
+
+    public Repository(MongoClient client) {
+        this.client = client;
+    }
+
+    public FindIterable<Document> findReleasedBooks() {
+        return client.getDatabase("myDatabase")
+                .getCollection("myCollection")
+                .find(or(eq("released", true), eq("hidden", false)));
+    }
+}
+        """,
+    )
+    fun `supports filters built with Filters#or using varargs arguments`(psiFile: PsiFile) {
+        val query = psiFile.getQueryAtMethod("Repository", "findReleasedBooks")
+        val parsedQuery = JavaDriverDialect.parser.parse(query)
+
+        val hasFilter = parsedQuery.component<HasFilter<Unit?>>()!!
+
+        val and = hasFilter.children[0]
+        assertEquals(Name.OR, and.component<Named>()!!.name)
+        val andChildren = and.component<HasFilter<Unit?>>()!!
+
+        val firstEq = andChildren.children[0]
+        assertEquals(
+            "released",
+            (firstEq.component<HasFieldReference<Unit?>>()!!.reference as HasFieldReference.FromSchema).fieldName,
+        )
+        assertEquals(
+            BsonAnyOf(BsonNull, BsonBoolean),
+            (firstEq.component<HasValueReference<PsiElement>>()!!.reference as HasValueReference.Constant).type,
+        )
+        assertEquals(
+            true,
+            (firstEq.component<HasValueReference<PsiElement>>()!!.reference as HasValueReference.Constant).value
+        )
+
+        val secondEq = andChildren.children[1]
+        assertEquals(
+            "hidden",
+            (secondEq.component<HasFieldReference<Unit?>>()!!.reference as HasFieldReference.FromSchema).fieldName,
+        )
+        assertEquals(
+            BsonAnyOf(BsonNull, BsonBoolean),
+            (secondEq.component<HasValueReference<PsiElement>>()!!.reference as HasValueReference.Constant).type,
+        )
+        assertEquals(
+            false,
+            (secondEq.component<HasValueReference<PsiElement>>()!!.reference as HasValueReference.Constant).value
+        )
+    }
+
+    @ParsingTest(
+        fileName = "Repository.java",
+        value = """
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoClient;
+import org.bson.Document;
+import static com.mongodb.client.model.Filters.*;
+
+public class Repository {
+    private final MongoClient client;
+
+    public Repository(MongoClient client) {
+        this.client = client;
+    }
+
+    public FindIterable<Document> findReleasedBooks() {
+        var released = eq("released", true);
+        var notHidden = eq("hidden", false);
+        var query = or(released, notHidden);
+        
+        return client.getDatabase("myDatabase")
+                .getCollection("myCollection")
+                .find(query);
+    }
+}
+        """,
+    )
+    fun `supports filters built with Filters#or using varargs arguments passed as a variable`(
+        psiFile: PsiFile
+    ) {
+        val query = psiFile.getQueryAtMethod("Repository", "findReleasedBooks")
+        val parsedQuery = JavaDriverDialect.parser.parse(query)
+
+        val hasChildren =
+            parsedQuery.component<HasFilter<Unit?>>()!!
+
+        val and = hasChildren.children[0]
+        assertEquals(Name.OR, and.component<Named>()!!.name)
+        val andChildren = and.component<HasFilter<Unit?>>()!!
+
+        val firstEq = andChildren.children[0]
+        assertEquals(
+            "released",
+            (firstEq.component<HasFieldReference<Unit?>>()!!.reference as HasFieldReference.FromSchema).fieldName,
+        )
+        assertEquals(
+            BsonAnyOf(BsonNull, BsonBoolean),
+            (firstEq.component<HasValueReference<PsiElement>>()!!.reference as HasValueReference.Constant).type,
+        )
+        assertEquals(
+            true,
+            (firstEq.component<HasValueReference<PsiElement>>()!!.reference as HasValueReference.Constant).value
+        )
+
+        val secondEq = andChildren.children[1]
+        assertEquals(
+            "hidden",
+            (secondEq.component<HasFieldReference<Unit?>>()!!.reference as HasFieldReference.FromSchema).fieldName,
+        )
+        assertEquals(
+            BsonAnyOf(BsonNull, BsonBoolean),
+            (secondEq.component<HasValueReference<PsiElement>>()!!.reference as HasValueReference.Constant).type,
+        )
+        assertEquals(
+            false,
+            (secondEq.component<HasValueReference<PsiElement>>()!!.reference as HasValueReference.Constant).value
+        )
+    }
+
+    @ParsingTest(
+        fileName = "Repository.java",
+        value = """
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoClient;
+import org.bson.Document;
+import org.bson.conversions.Bson;
+import static com.mongodb.client.model.Filters.*;
+
+public class Repository {
+    private final MongoClient client;
+
+    public Repository(MongoClient client) {
+        this.client = client;
+    }
+    
+    private Bson getOr() {
+        var released = eq("released", true);
+        var notHidden = eq("hidden", false);
+        return or(released, notHidden);
+    }
+
+    public FindIterable<Document> findReleasedBooks() {
+        return client.getDatabase("myDatabase")
+                .getCollection("myCollection")
+                .find(getOr());
+    }
+}
+        """,
+    )
+    fun `supports filters built with Filters#or using varargs arguments returned from a method call`(
+        psiFile: PsiFile
+    ) {
+        val query = psiFile.getQueryAtMethod("Repository", "findReleasedBooks")
+        val parsedQuery = JavaDriverDialect.parser.parse(query)
+
+        val hasChildren =
+            parsedQuery.component<HasFilter<Unit?>>()!!
+
+        val and = hasChildren.children[0]
+        assertEquals(Name.OR, and.component<Named>()!!.name)
+        val andChildren = and.component<HasFilter<Unit?>>()!!
+
+        val firstEq = andChildren.children[0]
+        assertEquals(
+            "released",
+            (firstEq.component<HasFieldReference<Unit?>>()!!.reference as HasFieldReference.FromSchema).fieldName,
+        )
+        assertEquals(
+            BsonAnyOf(BsonNull, BsonBoolean),
+            (firstEq.component<HasValueReference<PsiElement>>()!!.reference as HasValueReference.Constant).type,
+        )
+        assertEquals(
+            true,
+            (firstEq.component<HasValueReference<PsiElement>>()!!.reference as HasValueReference.Constant).value
+        )
+
+        val secondEq = andChildren.children[1]
+        assertEquals(
+            "hidden",
+            (secondEq.component<HasFieldReference<Unit?>>()!!.reference as HasFieldReference.FromSchema).fieldName,
+        )
+        assertEquals(
+            BsonAnyOf(BsonNull, BsonBoolean),
+            (secondEq.component<HasValueReference<PsiElement>>()!!.reference as HasValueReference.Constant).type,
+        )
+        assertEquals(
+            false,
+            (secondEq.component<HasValueReference<PsiElement>>()!!.reference as HasValueReference.Constant).value
+        )
+    }
+
+    @ParsingTest(
+        fileName = "Repository.java",
+        value = """
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoClient;
+import org.bson.Document;
+import static com.mongodb.client.model.Filters.*;
+
+public class Repository {
+    private final MongoClient client;
+
+    public Repository(MongoClient client) {
+        this.client = client;
+    }
+
+    public FindIterable<Document> findReleasedBooks() {
+        return client.getDatabase("myDatabase")
+                .getCollection("myCollection")
+                .find(nor(eq("released", true), eq("hidden", false)));
+    }
+}
+        """,
+    )
+    fun `supports filters built with Filters#nor using varargs arguments`(psiFile: PsiFile) {
+        val query = psiFile.getQueryAtMethod("Repository", "findReleasedBooks")
+        val parsedQuery = JavaDriverDialect.parser.parse(query)
+
+        val hasFilter = parsedQuery.component<HasFilter<Unit?>>()!!
+
+        val and = hasFilter.children[0]
+        assertEquals(Name.NOR, and.component<Named>()!!.name)
+        val andChildren = and.component<HasFilter<Unit?>>()!!
+
+        val firstEq = andChildren.children[0]
+        assertEquals(
+            "released",
+            (firstEq.component<HasFieldReference<Unit?>>()!!.reference as HasFieldReference.FromSchema).fieldName,
+        )
+        assertEquals(
+            BsonAnyOf(BsonNull, BsonBoolean),
+            (firstEq.component<HasValueReference<PsiElement>>()!!.reference as HasValueReference.Constant).type,
+        )
+        assertEquals(
+            true,
+            (firstEq.component<HasValueReference<PsiElement>>()!!.reference as HasValueReference.Constant).value
+        )
+
+        val secondEq = andChildren.children[1]
+        assertEquals(
+            "hidden",
+            (secondEq.component<HasFieldReference<Unit?>>()!!.reference as HasFieldReference.FromSchema).fieldName,
+        )
+        assertEquals(
+            BsonAnyOf(BsonNull, BsonBoolean),
+            (secondEq.component<HasValueReference<PsiElement>>()!!.reference as HasValueReference.Constant).type,
+        )
+        assertEquals(
+            false,
+            (secondEq.component<HasValueReference<PsiElement>>()!!.reference as HasValueReference.Constant).value
+        )
+    }
+
+    @ParsingTest(
+        fileName = "Repository.java",
+        value = """
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoClient;
+import org.bson.Document;
+import static com.mongodb.client.model.Filters.*;
+
+public class Repository {
+    private final MongoClient client;
+
+    public Repository(MongoClient client) {
+        this.client = client;
+    }
+
+    public FindIterable<Document> findReleasedBooks() {
+        var released = eq("released", true);
+        var notHidden = eq("hidden", false);
+        var query = nor(released, notHidden);
+        
+        return client.getDatabase("myDatabase")
+                .getCollection("myCollection")
+                .find(query);
+    }
+}
+        """,
+    )
+    fun `supports filters built with Filters#nor using varargs arguments passed as a variable`(
+        psiFile: PsiFile
+    ) {
+        val query = psiFile.getQueryAtMethod("Repository", "findReleasedBooks")
+        val parsedQuery = JavaDriverDialect.parser.parse(query)
+
+        val hasChildren =
+            parsedQuery.component<HasFilter<Unit?>>()!!
+
+        val and = hasChildren.children[0]
+        assertEquals(Name.NOR, and.component<Named>()!!.name)
+        val andChildren = and.component<HasFilter<Unit?>>()!!
+
+        val firstEq = andChildren.children[0]
+        assertEquals(
+            "released",
+            (firstEq.component<HasFieldReference<Unit?>>()!!.reference as HasFieldReference.FromSchema).fieldName,
+        )
+        assertEquals(
+            BsonAnyOf(BsonNull, BsonBoolean),
+            (firstEq.component<HasValueReference<PsiElement>>()!!.reference as HasValueReference.Constant).type,
+        )
+        assertEquals(
+            true,
+            (firstEq.component<HasValueReference<PsiElement>>()!!.reference as HasValueReference.Constant).value
+        )
+
+        val secondEq = andChildren.children[1]
+        assertEquals(
+            "hidden",
+            (secondEq.component<HasFieldReference<Unit?>>()!!.reference as HasFieldReference.FromSchema).fieldName,
+        )
+        assertEquals(
+            BsonAnyOf(BsonNull, BsonBoolean),
+            (secondEq.component<HasValueReference<PsiElement>>()!!.reference as HasValueReference.Constant).type,
+        )
+        assertEquals(
+            false,
+            (secondEq.component<HasValueReference<PsiElement>>()!!.reference as HasValueReference.Constant).value
+        )
+    }
+
+    @ParsingTest(
+        fileName = "Repository.java",
+        value = """
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoClient;
+import org.bson.Document;
+import org.bson.conversions.Bson;
+import static com.mongodb.client.model.Filters.*;
+
+public class Repository {
+    private final MongoClient client;
+
+    public Repository(MongoClient client) {
+        this.client = client;
+    }
+    
+    private Bson getNor() {
+        var released = eq("released", true);
+        var notHidden = eq("hidden", false);
+        return nor(released, notHidden);
+    }
+
+    public FindIterable<Document> findReleasedBooks() {
+        return client.getDatabase("myDatabase")
+                .getCollection("myCollection")
+                .find(getNor());
+    }
+}
+        """,
+    )
+    fun `supports filters built with Filters#nor using varargs arguments returned from a method call`(
+        psiFile: PsiFile
+    ) {
+        val query = psiFile.getQueryAtMethod("Repository", "findReleasedBooks")
+        val parsedQuery = JavaDriverDialect.parser.parse(query)
+
+        val hasChildren =
+            parsedQuery.component<HasFilter<Unit?>>()!!
+
+        val and = hasChildren.children[0]
+        assertEquals(Name.NOR, and.component<Named>()!!.name)
         val andChildren = and.component<HasFilter<Unit?>>()!!
 
         val firstEq = andChildren.children[0]
