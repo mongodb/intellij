@@ -68,7 +68,7 @@ internal abstract class NewConnectionActivatedProbeTest(
                     event.properties[TelemetryProperty.IS_LOCALHOST] == isLocalhost &&
                     event.properties[TelemetryProperty.IS_ENTERPRISE] == isEnterprise &&
                     event.properties[TelemetryProperty.IS_GENUINE] == isGenuine &&
-                    event.properties[TelemetryProperty.VERSION] == version &&
+                    event.properties[TelemetryProperty.VERSION].toString().startsWith(version) &&
                     !event.properties.containsKey(TelemetryProperty.ATLAS_HOST)
             },
         )
@@ -83,7 +83,9 @@ internal class NewConnectionActivatedProbeTestForLocalEnvironment :
         isLocalhost = true,
         isEnterprise = false,
         isGenuine = true,
-        version = "7.0.15",
+        // not having an exact version here because then we'd have to keep it updated with every
+        // mongodb release
+        version = "7.0.",
     )
 
 @RequiresMongoDbCluster(
@@ -97,5 +99,7 @@ internal class NewConnectionActivatedProbeTestForAtlasCliEnvironment :
         isLocalhost = true,
         isEnterprise = true,
         isGenuine = true,
-        version = "7.0.15",
+        // not having an exact version here because then we'd have to keep it updated with every
+        // mongodb release
+        version = "7.0.",
     )
