@@ -31,6 +31,7 @@ private const val SORTS_FQN = "com.mongodb.client.model.Sorts"
 private const val FIELD_FQN = "com.mongodb.client.model.Field"
 private const val JAVA_LIST_FQN = "java.util.List"
 private const val JAVA_ARRAYS_FQN = "java.util.Arrays"
+private const val JAVA_COLLECTIONS_FQN = "java.util.Collections"
 
 private val PARSEABLE_AGGREGATION_STAGE_METHODS = listOf(
     "match",
@@ -219,7 +220,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
 
     private fun isInQuery(element: PsiElement): Boolean {
         val methodCall = element.parentOfType<PsiMethodCallExpression>(false) ?: return false
-        val containingClass = methodCall.resolveMethod()?.containingClass ?: return false
+        val containingClass = methodCall.fuzzyResolveMethod()?.containingClass ?: return false
 
         return containingClass.qualifiedName == FILTERS_FQN ||
             containingClass.qualifiedName == UPDATES_FQN
@@ -227,7 +228,15 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
 
     private fun isInAutoCompletableAggregation(element: PsiElement): Boolean {
         val methodCall = element.parentOfType<PsiMethodCallExpression>(false) ?: return false
-        val containingClass = methodCall.resolveMethod()?.containingClass ?: return false
+        val containingClass = methodCall.fuzzyResolveMethod()?.containingClass ?: return false
+
+        // A few method calls that accepts variable arguments also accepts an iterable as an
+        // argument, for example: Projections.include(List.of(<caret>))
+        // For such cases, we need to look at the parent of "methodCall".
+        if (methodCall.isParseableJavaIterable()) {
+            return isInAutoCompletableAggregation(methodCall)
+        }
+
         if (
             containingClass.qualifiedName == PROJECTIONS_FQN ||
             containingClass.qualifiedName == SORTS_FQN ||
@@ -1039,20 +1048,29 @@ fun PsiMethodCallExpression.getVarArgsOrIterableArgs(): List<PsiExpression> {
     }
 }
 
+fun PsiMethodCallExpression.isParseableJavaIterable(
+    method: PsiMethod? = fuzzyResolveMethod()
+): Boolean {
+    val isListOfCall = method?.name == "of" &&
+        method.containingClass?.qualifiedName == JAVA_LIST_FQN
+
+    val isArrayAsListCall = method?.name == "asList" &&
+        method.containingClass?.qualifiedName == JAVA_ARRAYS_FQN
+
+    val isCollectionsListCall = method?.name == "singletonList" &&
+        method.containingClass?.qualifiedName == JAVA_COLLECTIONS_FQN
+
+    return isListOfCall || isArrayAsListCall || isCollectionsListCall
+}
+
 /**
  * Helper method to resolve an expression that points to an iterable, to its actual
  * MethodCallExpression that was used to create iterable. Particularly it targets iterables created
  * using `List.of` and `Arrays.asList` methods.
  */
 fun PsiElement.resolveToIterableCallExpression(): PsiMethodCallExpression? {
-    return resolveToMethodCallExpression { _, method ->
-        val isListOfCall = method.name == "of" &&
-            method.containingClass?.qualifiedName == JAVA_LIST_FQN
-
-        val isArrayAsListCall = method.name == "asList" &&
-            method.containingClass?.qualifiedName == JAVA_ARRAYS_FQN
-
-        isListOfCall || isArrayAsListCall
+    return resolveToMethodCallExpression { callExpression, method ->
+        callExpression.isParseableJavaIterable(method)
     }
 }
 
