@@ -57,5 +57,6 @@ This data source is used for autocompletion and type checking.
 ### Removed
 
 ### Fixed
+* [INTELLIJ-157](https://jira.mongodb.org/browse/INTELLIJ-157): Unable to parse and hence inspect `Filters.and`, `Filters.or` and `Filters.nor`, in code that uses Java Driver, when argument for these method calls is a parseable Java Iterable. 
 
 ### Security
