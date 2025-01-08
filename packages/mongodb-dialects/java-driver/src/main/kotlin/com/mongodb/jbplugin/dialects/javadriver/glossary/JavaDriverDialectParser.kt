@@ -31,6 +31,7 @@ private const val SORTS_FQN = "com.mongodb.client.model.Sorts"
 private const val FIELD_FQN = "com.mongodb.client.model.Field"
 private const val JAVA_LIST_FQN = "java.util.List"
 private const val JAVA_ARRAYS_FQN = "java.util.Arrays"
+private const val JAVA_COLLECTIONS_FQN = "java.util.Collections"
 
 private val PARSEABLE_AGGREGATION_STAGE_METHODS = listOf(
     "match",
@@ -232,7 +233,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
         // A few method calls that accepts variable arguments also accepts an iterable as an
         // argument, for example: Projections.include(List.of(<caret>))
         // For such cases, we need to look at the parent of "methodCall".
-        if (methodCall.isJavaIterableCallExpression()) {
+        if (methodCall.isParseableJavaIterable()) {
             return isInAutoCompletableAggregation(methodCall)
         }
 
@@ -1047,7 +1048,7 @@ fun PsiMethodCallExpression.getVarArgsOrIterableArgs(): List<PsiExpression> {
     }
 }
 
-fun PsiMethodCallExpression.isJavaIterableCallExpression(
+fun PsiMethodCallExpression.isParseableJavaIterable(
     method: PsiMethod? = fuzzyResolveMethod()
 ): Boolean {
     val isListOfCall = method?.name == "of" &&
@@ -1056,7 +1057,10 @@ fun PsiMethodCallExpression.isJavaIterableCallExpression(
     val isArrayAsListCall = method?.name == "asList" &&
         method.containingClass?.qualifiedName == JAVA_ARRAYS_FQN
 
-    return isListOfCall || isArrayAsListCall
+    val isCollectionsListCall = method?.name == "singletonList" &&
+        method.containingClass?.qualifiedName == JAVA_COLLECTIONS_FQN
+
+    return isListOfCall || isArrayAsListCall || isCollectionsListCall
 }
 
 /**
@@ -1066,7 +1070,7 @@ fun PsiMethodCallExpression.isJavaIterableCallExpression(
  */
 fun PsiElement.resolveToIterableCallExpression(): PsiMethodCallExpression? {
     return resolveToMethodCallExpression { callExpression, method ->
-        callExpression.isJavaIterableCallExpression(method)
+        callExpression.isParseableJavaIterable(method)
     }
 }
 
