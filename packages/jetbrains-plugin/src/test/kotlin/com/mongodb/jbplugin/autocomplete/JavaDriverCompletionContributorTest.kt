@@ -378,13 +378,144 @@ public class Repository {
                 .aggregate(List.of(
                     Aggregates.project(
                         Projections.include("<caret>")
-                    )                
+                    )
                 ));
     }
 }
         """,
     )
     fun `should autocomplete fields from the current namespace in Projections#include of an Aggregates#project stage`(
+        fixture: CodeInsightTestFixture,
+    ) {
+        fixture.specifyDialect(JavaDriverDialect)
+
+        val (dataSource, readModelProvider) = fixture.setupConnection()
+        val namespace = Namespace("myDatabase", "myCollection")
+
+        `when`(
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
+        ).thenReturn(
+            GetCollectionSchema(
+                CollectionSchema(
+                    namespace,
+                    BsonObject(
+                        mapOf(
+                            "myField" to BsonString,
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        val elements = fixture.completeBasic()
+
+        assertTrue(
+            elements.containsElements {
+                it.lookupString == "myField"
+            },
+        )
+    }
+
+    @ParsingTest(
+        fileName = "Repository.java",
+        value = """
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Aggregates;
+import com.mongodb.client.model.Projections;import org.bson.Document;
+import org.bson.types.ObjectId;
+import java.util.List;
+import static com.mongodb.client.model.Filters.*;
+import static com.mongodb.client.model.Updates.*;
+
+public class Repository {
+    private final MongoClient client;
+
+    public Repository(MongoClient client) {
+        this.client = client;
+    }
+
+    public void exampleFind() {
+        client.getDatabase("myDatabase").getCollection("myCollection")
+                .aggregate(List.of(
+                    Aggregates.project(
+                        Projections.include(
+                            List.of("<caret>")
+                        )
+                    )
+                ));
+    }
+}
+        """,
+    )
+    fun `should autocomplete fields from the current namespace in Projections#include built with List#of of an Aggregates#project stage`(
+        fixture: CodeInsightTestFixture,
+    ) {
+        fixture.specifyDialect(JavaDriverDialect)
+
+        val (dataSource, readModelProvider) = fixture.setupConnection()
+        val namespace = Namespace("myDatabase", "myCollection")
+
+        `when`(
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
+        ).thenReturn(
+            GetCollectionSchema(
+                CollectionSchema(
+                    namespace,
+                    BsonObject(
+                        mapOf(
+                            "myField" to BsonString,
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        val elements = fixture.completeBasic()
+
+        assertTrue(
+            elements.containsElements {
+                it.lookupString == "myField"
+            },
+        )
+    }
+
+    @ParsingTest(
+        fileName = "Repository.java",
+        value = """
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Aggregates;
+import com.mongodb.client.model.Projections;
+import org.bson.Document;
+import org.bson.types.ObjectId;
+import java.util.Arrays;
+import static com.mongodb.client.model.Filters.*;
+import static com.mongodb.client.model.Updates.*;
+
+public class Repository {
+    private final MongoClient client;
+
+    public Repository(MongoClient client) {
+        this.client = client;
+    }
+
+    public void exampleFind() {
+        client.getDatabase("myDatabase").getCollection("myCollection")
+                .aggregate(List.of(
+                    Aggregates.project(
+                        Projections.include(
+                            Arrays.asList("<caret>")
+                        )
+                    )
+                ));
+    }
+}
+        """,
+    )
+    fun `should autocomplete fields from the current namespace in Projections#include built with Arrays#asList of an Aggregates#project stage`(
         fixture: CodeInsightTestFixture,
     ) {
         fixture.specifyDialect(JavaDriverDialect)
@@ -503,6 +634,137 @@ public class Repository {
         client.getDatabase("myDatabase").getCollection("myCollection")
                 .aggregate(List.of(
                     Aggregates.project(
+                        Projections.exclude(
+                            List.of("<caret>")
+                        )
+                    )
+                ));
+    }
+}
+        """,
+    )
+    fun `should autocomplete fields from the current namespace in Projections#exclude built with List#of of an Aggregates#project stage`(
+        fixture: CodeInsightTestFixture,
+    ) {
+        fixture.specifyDialect(JavaDriverDialect)
+
+        val (dataSource, readModelProvider) = fixture.setupConnection()
+        val namespace = Namespace("myDatabase", "myCollection")
+
+        `when`(
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
+        ).thenReturn(
+            GetCollectionSchema(
+                CollectionSchema(
+                    namespace,
+                    BsonObject(
+                        mapOf(
+                            "myField" to BsonString,
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        val elements = fixture.completeBasic()
+
+        assertTrue(
+            elements.containsElements {
+                it.lookupString == "myField"
+            },
+        )
+    }
+
+    @ParsingTest(
+        fileName = "Repository.java",
+        value = """
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Aggregates;
+import com.mongodb.client.model.Projections;
+import org.bson.Document;
+import org.bson.types.ObjectId;
+import java.util.Arrays;
+import static com.mongodb.client.model.Filters.*;
+import static com.mongodb.client.model.Updates.*;
+
+public class Repository {
+    private final MongoClient client;
+
+    public Repository(MongoClient client) {
+        this.client = client;
+    }
+
+    public void exampleFind() {
+        client.getDatabase("myDatabase").getCollection("myCollection")
+                .aggregate(List.of(
+                    Aggregates.project(
+                        Projections.exclude(
+                            Arrays.asList("<caret>")
+                        )
+                    )
+                ));
+    }
+}
+        """,
+    )
+    fun `should autocomplete fields from the current namespace in Projections#exclude built with Arrays#asList of an Aggregates#project stage`(
+        fixture: CodeInsightTestFixture,
+    ) {
+        fixture.specifyDialect(JavaDriverDialect)
+
+        val (dataSource, readModelProvider) = fixture.setupConnection()
+        val namespace = Namespace("myDatabase", "myCollection")
+
+        `when`(
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
+        ).thenReturn(
+            GetCollectionSchema(
+                CollectionSchema(
+                    namespace,
+                    BsonObject(
+                        mapOf(
+                            "myField" to BsonString,
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        val elements = fixture.completeBasic()
+
+        assertTrue(
+            elements.containsElements {
+                it.lookupString == "myField"
+            },
+        )
+    }
+
+    @ParsingTest(
+        fileName = "Repository.java",
+        value = """
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Aggregates;
+import com.mongodb.client.model.Projections;import org.bson.Document;
+import org.bson.types.ObjectId;
+import java.util.List;
+import static com.mongodb.client.model.Filters.*;
+import static com.mongodb.client.model.Updates.*;
+
+public class Repository {
+    private final MongoClient client;
+
+    public Repository(MongoClient client) {
+        this.client = client;
+    }
+
+    public void exampleFind() {
+        client.getDatabase("myDatabase").getCollection("myCollection")
+                .aggregate(List.of(
+                    Aggregates.project(
                         Projections.fields(
                             Projections.exclude("<caret>")
                         )
@@ -513,6 +775,140 @@ public class Repository {
         """,
     )
     fun `should autocomplete fields from the current namespace in Projections#fields of an Aggregates#project stage`(
+        fixture: CodeInsightTestFixture,
+    ) {
+        fixture.specifyDialect(JavaDriverDialect)
+
+        val (dataSource, readModelProvider) = fixture.setupConnection()
+        val namespace = Namespace("myDatabase", "myCollection")
+
+        `when`(
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
+        ).thenReturn(
+            GetCollectionSchema(
+                CollectionSchema(
+                    namespace,
+                    BsonObject(
+                        mapOf(
+                            "myField" to BsonString,
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        val elements = fixture.completeBasic()
+
+        assertTrue(
+            elements.containsElements {
+                it.lookupString == "myField"
+            },
+        )
+    }
+
+    @ParsingTest(
+        fileName = "Repository.java",
+        value = """
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Aggregates;
+import com.mongodb.client.model.Projections;import org.bson.Document;
+import org.bson.types.ObjectId;
+import java.util.List;
+import static com.mongodb.client.model.Filters.*;
+import static com.mongodb.client.model.Updates.*;
+
+public class Repository {
+    private final MongoClient client;
+
+    public Repository(MongoClient client) {
+        this.client = client;
+    }
+
+    public void exampleFind() {
+        client.getDatabase("myDatabase").getCollection("myCollection")
+                .aggregate(List.of(
+                    Aggregates.project(
+                        Projections.fields(
+                            List.of(
+                                Projections.exclude("<caret>")
+                            )
+                        )
+                    )                
+                ));
+    }
+}
+        """,
+    )
+    fun `should autocomplete fields from the current namespace in Projections#fields built with List#of of an Aggregates#project stage`(
+        fixture: CodeInsightTestFixture,
+    ) {
+        fixture.specifyDialect(JavaDriverDialect)
+
+        val (dataSource, readModelProvider) = fixture.setupConnection()
+        val namespace = Namespace("myDatabase", "myCollection")
+
+        `when`(
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
+        ).thenReturn(
+            GetCollectionSchema(
+                CollectionSchema(
+                    namespace,
+                    BsonObject(
+                        mapOf(
+                            "myField" to BsonString,
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        val elements = fixture.completeBasic()
+
+        assertTrue(
+            elements.containsElements {
+                it.lookupString == "myField"
+            },
+        )
+    }
+
+    @ParsingTest(
+        fileName = "Repository.java",
+        value = """
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Aggregates;
+import com.mongodb.client.model.Projections;import org.bson.Document;
+import org.bson.types.ObjectId;
+import java.util.Arrays;
+import static com.mongodb.client.model.Filters.*;
+import static com.mongodb.client.model.Updates.*;
+
+public class Repository {
+    private final MongoClient client;
+
+    public Repository(MongoClient client) {
+        this.client = client;
+    }
+
+    public void exampleFind() {
+        client.getDatabase("myDatabase").getCollection("myCollection")
+                .aggregate(List.of(
+                    Aggregates.project(
+                        Projections.fields(
+                            Arrays.asList(
+                                Projections.exclude("<caret>")
+                            )
+                        )
+                    )                
+                ));
+    }
+}
+        """,
+    )
+    fun `should autocomplete fields from the current namespace in Projections#fields built with Arrays#asList of an Aggregates#project stage`(
         fixture: CodeInsightTestFixture,
     ) {
         fixture.specifyDialect(JavaDriverDialect)
