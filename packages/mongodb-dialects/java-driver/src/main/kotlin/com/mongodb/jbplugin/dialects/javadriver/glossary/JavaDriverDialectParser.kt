@@ -289,8 +289,19 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
                     HasValueReference(valueReference)
                 ),
             )
-        } else if (method.isVarArgs || method.name == "not") {
-            // Filters.and, Filters.or... are varargs
+        } else if (method.name == "and" || method.name == "or" || method.name == "nor") {
+            return Node(
+                filter,
+                listOf(
+                    Named(Name.from(method.name)),
+                    HasFilter(
+                        filter.getVarArgsOrIterableArgs()
+                            .mapNotNull { resolveBsonBuilderCall(it, FILTERS_FQN) }
+                            .mapNotNull { parseFilterExpression(it) },
+                    ),
+                ),
+            )
+        } else if (method.name == "not") {
             return Node(
                 filter,
                 listOf(

@@ -148,6 +148,7 @@ import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 import static com.mongodb.client.model.Filters.*;
 
@@ -158,7 +159,8 @@ public class Repository {
         this.client = client;
     }
 
-    public FindIterable<Document> exampleFind() {
+    // and queries
+    public FindIterable<Document> inlineAndQuery() {
         return client.getDatabase("myDatabase")
                 .getCollection("myCollection")
                 .find(
@@ -167,10 +169,102 @@ public class Repository {
                     )
                 );
     }
+    
+    public FindIterable<Document> andQueryFromAVariableWithVariableFieldName() {
+        var fieldName = "nonExistingField";
+        var andQuery = and(
+            eq(<warning descr="Field \"nonExistingField\" does not exist in collection \"myDatabase.myCollection\"">fieldName</warning>, "123")
+        );
+        return client.getDatabase("myDatabase")
+                .getCollection("myCollection")
+                .find(andQuery);
+    }
+    
+    public FindIterable<Document> andQueryFromAMethodCallWithFieldNameFromMethodCall() {
+        return client.getDatabase("myDatabase")
+                .getCollection("myCollection")
+                .find(getAndQueryWithFieldNameFromMethodCall());
+    }
+    
+    private Bson getAndQueryWithFieldNameFromMethodCall() {
+        return and(
+            eq(<warning descr="Field \"nonExistingField\" does not exist in collection \"myDatabase.myCollection\"">getFieldName()</warning>, "123")
+        );
+    }
+    
+    private String getFieldName() {
+        return "nonExistingField";
+    }
+    
+    // or queries
+    public FindIterable<Document> inlineOrQuery() {
+        return client.getDatabase("myDatabase")
+                .getCollection("myCollection")
+                .find(
+                    or(
+                        eq(<warning descr="Field \"nonExistingField\" does not exist in collection \"myDatabase.myCollection\"">"nonExistingField"</warning>, "123")
+                    )
+                );
+    }
+    
+    public FindIterable<Document> orQueryFromAVariableWithVariableFieldName() {
+        var fieldName = "nonExistingField";
+        var orQuery = or(
+            eq(<warning descr="Field \"nonExistingField\" does not exist in collection \"myDatabase.myCollection\"">fieldName</warning>, "123")
+        );
+        return client.getDatabase("myDatabase")
+                .getCollection("myCollection")
+                .find(orQuery);
+    }
+    
+    public FindIterable<Document> orQueryFromAMethodCallWithFieldNameFromMethodCall() {
+        return client.getDatabase("myDatabase")
+                .getCollection("myCollection")
+                .find(getOrQueryWithFieldNameFromMethodCall());
+    }
+    
+    private Bson getOrQueryWithFieldNameFromMethodCall() {
+        return or(
+            eq(<warning descr="Field \"nonExistingField\" does not exist in collection \"myDatabase.myCollection\"">getFieldName()</warning>, "123")
+        );
+    }
+    
+    // nor queries
+    public FindIterable<Document> inlineNorQuery() {
+        return client.getDatabase("myDatabase")
+                .getCollection("myCollection")
+                .find(
+                    nor(
+                        eq(<warning descr="Field \"nonExistingField\" does not exist in collection \"myDatabase.myCollection\"">"nonExistingField"</warning>, "123")
+                    )
+                );
+    }
+    
+    public FindIterable<Document> norQueryFromAVariableWithVariableFieldName() {
+        var fieldName = "nonExistingField";
+        var norQuery = nor(
+            eq(<warning descr="Field \"nonExistingField\" does not exist in collection \"myDatabase.myCollection\"">fieldName</warning>, "123")
+        );
+        return client.getDatabase("myDatabase")
+                .getCollection("myCollection")
+                .find(norQuery);
+    }
+    
+    public FindIterable<Document> norQueryFromAMethodCallWithFieldNameFromMethodCall() {
+        return client.getDatabase("myDatabase")
+                .getCollection("myCollection")
+                .find(getNorQueryWithFieldNameFromMethodCall());
+    }
+    
+    private Bson getNorQueryWithFieldNameFromMethodCall() {
+        return nor(
+            eq(<warning descr="Field \"nonExistingField\" does not exist in collection \"myDatabase.myCollection\"">getFieldName()</warning>, "123")
+        );
+    }
 }
         """,
     )
-    fun `shows an inspection when a field, referenced in a nested $and query, does not exists in the current namespace`(
+    fun `shows an inspection when a field, referenced in different forms of a nested $and, $or and $nor query, does not exists in the current namespace`(
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
