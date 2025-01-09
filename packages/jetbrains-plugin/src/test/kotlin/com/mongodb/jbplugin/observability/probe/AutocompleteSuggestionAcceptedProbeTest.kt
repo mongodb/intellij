@@ -5,6 +5,7 @@ import com.mongodb.jbplugin.dialects.javadriver.glossary.JavaDriverDialect
 import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.mockLogMessage
 import com.mongodb.jbplugin.fixtures.withMockedService
+import com.mongodb.jbplugin.mql.components.HasSourceDialect
 import com.mongodb.jbplugin.mql.components.IsCommand.CommandType
 import com.mongodb.jbplugin.observability.TelemetryEvent
 import com.mongodb.jbplugin.observability.TelemetryService
@@ -45,7 +46,7 @@ class AutocompleteSuggestionAcceptedProbeTest {
 
             verify(telemetryService).sendEvent(
                 TelemetryEvent.AutocompleteGroupEvent(
-                    JavaDriverDialect,
+                    HasSourceDialect.DialectName.JAVA_DRIVER,
                     "database",
                     CommandType.UNKNOWN.canonical,
                     5
@@ -54,7 +55,7 @@ class AutocompleteSuggestionAcceptedProbeTest {
 
             verify(telemetryService).sendEvent(
                 TelemetryEvent.AutocompleteGroupEvent(
-                    JavaDriverDialect,
+                    HasSourceDialect.DialectName.JAVA_DRIVER,
                     "collection",
                     CommandType.UNKNOWN.canonical,
                     2
@@ -63,7 +64,7 @@ class AutocompleteSuggestionAcceptedProbeTest {
 
             verify(telemetryService).sendEvent(
                 TelemetryEvent.AutocompleteGroupEvent(
-                    JavaDriverDialect,
+                    HasSourceDialect.DialectName.JAVA_DRIVER,
                     "field",
                     CommandType.FIND_ONE.canonical,
                     10
@@ -72,7 +73,7 @@ class AutocompleteSuggestionAcceptedProbeTest {
 
             verify(telemetryService).sendEvent(
                 TelemetryEvent.AutocompleteGroupEvent(
-                    JavaDriverDialect,
+                    HasSourceDialect.DialectName.JAVA_DRIVER,
                     "field",
                     CommandType.AGGREGATE.canonical,
                     10
@@ -81,7 +82,7 @@ class AutocompleteSuggestionAcceptedProbeTest {
 
             verify(telemetryService).sendEvent(
                 TelemetryEvent.AutocompleteGroupEvent(
-                    JavaDriverDialect,
+                    HasSourceDialect.DialectName.JAVA_DRIVER,
                     "field",
                     CommandType.UPDATE_MANY.canonical,
                     10

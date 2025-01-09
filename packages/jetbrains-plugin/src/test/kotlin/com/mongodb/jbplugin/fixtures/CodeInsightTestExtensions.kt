@@ -46,9 +46,6 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import java.lang.reflect.Method
-import java.net.URI
-import java.net.URL
-import java.nio.file.Paths
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.io.path.Path
@@ -196,23 +193,6 @@ internal class CodeInsightTestExtension :
                 "Parameter of type ${parameterContext.parameter.type.canonicalName} is not supported."
             )
         }
-    }
-
-    private fun pathToClassJarFile(javaClass: Class<*>): String {
-        val classResource: URL =
-            javaClass.getResource(javaClass.getSimpleName() + ".class")
-                ?: throw RuntimeException("class resource is null")
-        val url: String = classResource.toString()
-        if (url.startsWith("jar:file:")) {
-            // extract 'file:......jarName.jar' part from the url string
-            val path = url.replace("^jar:(file:.*[.]jar)!/.*".toRegex(), "$1")
-            try {
-                return Paths.get(URI(path)).toString()
-            } catch (e: Exception) {
-                throw RuntimeException("Invalid Jar File URL String")
-            }
-        }
-        throw RuntimeException("Invalid Jar File URL String")
     }
 }
 
