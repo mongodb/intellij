@@ -6,6 +6,7 @@ data class HasSourceDialect(val name: DialectName) : Component {
     enum class DialectName {
         JAVA_DRIVER,
         SPRING_CRITERIA,
-        SPRING_QUERY
+        SPRING_QUERY,
+        UNKNOWN
     }
 }

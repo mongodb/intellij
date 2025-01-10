@@ -42,6 +42,9 @@ import com.mongodb.jbplugin.mql.parser.components.whenIsCommand
 import com.mongodb.jbplugin.mql.parser.first
 import com.mongodb.jbplugin.mql.parser.map
 import com.mongodb.jbplugin.mql.parser.parse
+import com.mongodb.jbplugin.observability.TelemetryEvent
+import com.mongodb.jbplugin.observability.TelemetryEvent.QueryRunEvent.Console
+import com.mongodb.jbplugin.observability.probe.QueryRunProbe
 import kotlinx.coroutines.CoroutineScope
 
 /**
@@ -78,11 +81,14 @@ internal object RunQueryCodeAction : MongoDbCodeAction {
                 if (shouldDelegateToIntelliJRunQuery(query)) {
                     delegateRunQueryToIntelliJ(query)
                 } else {
+                    emitRunQueryEvent(query, dataSource)
+
                     coroutineScope.launchChildBackground {
                         val outputQuery = MongoshDialect.formatter.formatQuery(
                             query,
                             explain = false
                         )
+
                         if (dataSource?.isConnected() == true) {
                             coroutineScope.launchChildOnUi {
                                 openDataGripConsole(query, dataSource, outputQuery.query)
@@ -100,6 +106,20 @@ internal object RunQueryCodeAction : MongoDbCodeAction {
             },
             GutterIconRenderer.Alignment.RIGHT,
             { CodeActionsMessages.message("code.action.run.query") }
+        )
+    }
+
+    private fun emitRunQueryEvent(
+        query: Node<PsiElement>,
+        dataSource: LocalDataSource?
+    ) {
+        val hasConsole = DatagripConsoleEditor.isThereAnEditorForDataSource(dataSource)
+
+        val probe by service<QueryRunProbe>()
+        probe.queryRunRequested(
+            query,
+            if (hasConsole) Console.EXISTING else Console.NEW,
+            TelemetryEvent.QueryRunEvent.TriggerLocation.GUTTER
         )
     }
 

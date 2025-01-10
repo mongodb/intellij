@@ -5,6 +5,8 @@ MongoDB plugin for IntelliJ IDEA.
 ## [Unreleased]
 
 ### Added
+* [INTELLIJ-178](https://jira.mongodb.org/browse/INTELLIJ-178) Telemetry when the Run Query button is clicked.
+  It can be disabled in the Plugin settings.
 * [INTELLIJ-153](https://jira.mongodb.org/browse/INTELLIJ-153) Add support for parsing, linting and
   autocompleting fields in Accumulators.topN and Accumulators.bottomN
 * [INTELLIJ-104](https://jira.mongodb.org/browse/INTELLIJ-104) Add support for Spring Criteria

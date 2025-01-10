@@ -7,7 +7,7 @@
 package com.mongodb.jbplugin.observability
 
 import com.google.common.base.Objects
-import com.mongodb.jbplugin.dialects.Dialect
+import com.mongodb.jbplugin.mql.components.HasSourceDialect
 import org.intellij.lang.annotations.Pattern
 import org.jetbrains.annotations.Nls
 
@@ -37,6 +37,8 @@ enum class TelemetryProperty(
     AUTOCOMPLETE_TYPE("ac_type"),
     AUTOCOMPLETE_COUNT("ac_count"),
     COMMAND("command"),
+    CONSOLE("console"),
+    TRIGGER_LOCATION("trigger_location"),
 }
 
 /**
@@ -168,7 +170,7 @@ sealed class TelemetryEvent(
      * @param count
      */
     class AutocompleteGroupEvent(
-        dialect: Dialect<*, *>,
+        dialect: HasSourceDialect.DialectName,
         autocompleteType: String,
         command: String,
         count: Int,
@@ -176,10 +178,34 @@ sealed class TelemetryEvent(
         name = "AutocompleteSelected",
         properties =
         mapOf(
-            TelemetryProperty.DIALECT to dialect.javaClass.simpleName,
+            TelemetryProperty.DIALECT to dialect.name.lowercase(),
             TelemetryProperty.AUTOCOMPLETE_TYPE to autocompleteType,
             TelemetryProperty.COMMAND to command,
             TelemetryProperty.AUTOCOMPLETE_COUNT to count,
         ),
     )
+
+    class QueryRunEvent(
+        dialect: HasSourceDialect.DialectName,
+        console: Console,
+        triggerLocation: TriggerLocation,
+    ) : TelemetryEvent(
+        name = "QueryRun",
+        properties =
+        mapOf(
+            TelemetryProperty.DIALECT to dialect.name.lowercase(),
+            TelemetryProperty.CONSOLE to console.name.lowercase(),
+            TelemetryProperty.TRIGGER_LOCATION to triggerLocation.name.lowercase(),
+        )
+    ) {
+        enum class Console {
+            NEW,
+            EXISTING
+        }
+
+        enum class TriggerLocation {
+            GUTTER,
+            CONTEXT_MENU
+        }
+    }
 }
