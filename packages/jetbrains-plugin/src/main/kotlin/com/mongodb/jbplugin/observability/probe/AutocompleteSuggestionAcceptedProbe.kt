@@ -135,7 +135,7 @@ class AutocompleteSuggestionAcceptedProbe(
             return HasSourceDialect.DialectName.SPRING_QUERY
         }
 
-        return HasSourceDialect.DialectName.JAVA_DRIVER
+        return HasSourceDialect.DialectName.UNKNOWN
     }
 
     /**
