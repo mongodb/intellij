@@ -5,6 +5,8 @@ MongoDB plugin for IntelliJ IDEA.
 ## [Unreleased]
 
 ### Added
+* [INTELLIJ-179](https://jira.mongodb.org/browse/INTELLIJ-179) Telemetry when Create Index intention is clicked.
+  It can be disabled in the Plugin settings.
 * [INTELLIJ-178](https://jira.mongodb.org/browse/INTELLIJ-178) Telemetry when the Run Query button is clicked.
   It can be disabled in the Plugin settings.
 * [INTELLIJ-153](https://jira.mongodb.org/browse/INTELLIJ-153) Add support for parsing, linting and

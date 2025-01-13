@@ -39,6 +39,14 @@ enum class TelemetryProperty(
     COMMAND("command"),
     CONSOLE("console"),
     TRIGGER_LOCATION("trigger_location"),
+    SIGNAL_TYPE("signal_type"),
+}
+
+enum class SignalType(
+    @Pattern("[a-z_]+")
+    val publicName: String
+) {
+    MISSING_INDEX("missing_index")
 }
 
 /**
@@ -208,4 +216,15 @@ sealed class TelemetryEvent(
             CONTEXT_MENU
         }
     }
+
+    class CreateIndexIntentionEvent(
+        dialect: HasSourceDialect.DialectName
+    ) : TelemetryEvent(
+        name = "CreateIndex",
+        properties =
+        mapOf(
+            TelemetryProperty.DIALECT to dialect.name.lowercase(),
+            TelemetryProperty.SIGNAL_TYPE to SignalType.MISSING_INDEX.publicName,
+        )
+    )
 }
