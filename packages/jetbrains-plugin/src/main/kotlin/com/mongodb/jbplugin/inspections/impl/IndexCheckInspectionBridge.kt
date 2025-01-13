@@ -21,12 +21,12 @@ import com.mongodb.jbplugin.linting.IndexCheckWarning
 import com.mongodb.jbplugin.linting.IndexCheckingLinter
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.mql.Node
+import com.mongodb.jbplugin.observability.probe.CreateIndexIntentionProbe
 import kotlinx.coroutines.CoroutineScope
 
 /**
  * @param coroutineScope
  */
-@Suppress("MISSING_KDOC_TOP_LEVEL")
 class IndexCheckInspectionBridge(coroutineScope: CoroutineScope) :
     AbstractMongoDbInspectionBridge(
         coroutineScope,
@@ -50,12 +50,7 @@ internal object IndexCheckLinterInspection : MongoDbInspection {
         }
 
         val readModelProvider by query.source.project.service<DataGripBasedReadModelProvider>()
-        val result =
-            IndexCheckingLinter.lintQuery(
-                dataSource,
-                readModelProvider,
-                query,
-            )
+        val result = IndexCheckingLinter.lintQuery(dataSource, readModelProvider, query)
 
         result.warnings.forEach {
             when (it) {
@@ -86,6 +81,9 @@ internal object IndexCheckLinterInspection : MongoDbInspection {
                 ),
                 localDataSource
             ) {
+                val createIndexClicked by query.source.project.service<CreateIndexIntentionProbe>()
+                createIndexClicked.intentionClicked(query)
+
                 MongoshDialect.formatter.indexCommandForQuery(query)
             }
         )
