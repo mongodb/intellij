@@ -46,7 +46,7 @@ class Repository {
 }
         """
     )
-    fun `should be able to parse an empty aggregation with a class type provided for target collection`(
+    fun `should be able to parse an empty aggregation using aggregate call with a class type provided for target collection`(
         psiFile: PsiFile
     ) {
         val query = psiFile.getQueryAtMethod("Repository", "allReleasedBooks")
@@ -94,7 +94,103 @@ class Repository {
 }
         """
     )
-    fun `should be able to parse an empty aggregation with a string type provided for target collection`(
+    fun `should be able to parse an empty aggregation using aggregate call with a string type provided for target collection`(
+        psiFile: PsiFile
+    ) {
+        val query = psiFile.getQueryAtMethod("Repository", "allReleasedBooks")
+        SpringCriteriaDialectParser.parse(query).assert(IsCommand.CommandType.AGGREGATE) {
+            component<HasSourceDialect> {
+                assertEquals(HasSourceDialect.DialectName.SPRING_CRITERIA, name)
+            }
+
+            collection<HasCollectionReference.OnlyCollection<PsiElement>> {
+                assertEquals("booksAsString", collection)
+            }
+
+            component<HasAggregation<PsiElement>> {
+                assertEquals(0, children.size)
+            }
+        }
+    }
+
+    @ParsingTest(
+        fileName = "Book.java",
+        """
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.util.List;
+
+@Document
+record Book() {}
+
+class Repository {
+    private final MongoTemplate template;
+    
+    public Repository(MongoTemplate template) {
+        this.template = template;
+    }
+    
+    public AggregationResults<Book> allReleasedBooks() {
+        return template.aggregateStream(
+            Aggregation.newAggregation(),
+            Book.class,
+            Book.class
+        );
+    }
+}
+        """
+    )
+    fun `should be able to parse an empty aggregation using aggregateStream call with a class type provided for target collection`(
+        psiFile: PsiFile
+    ) {
+        val query = psiFile.getQueryAtMethod("Repository", "allReleasedBooks")
+        SpringCriteriaDialectParser.parse(query).assert(IsCommand.CommandType.AGGREGATE) {
+            component<HasSourceDialect> {
+                assertEquals(HasSourceDialect.DialectName.SPRING_CRITERIA, name)
+            }
+
+            collection<HasCollectionReference.OnlyCollection<PsiElement>> {
+                assertEquals("book", collection)
+            }
+
+            component<HasAggregation<PsiElement>> {
+                assertEquals(0, children.size)
+            }
+        }
+    }
+
+    @ParsingTest(
+        fileName = "Book.java",
+        """
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.util.List;
+
+@Document
+record Book() {}
+
+class Repository {
+    private final MongoTemplate template;
+    
+    public Repository(MongoTemplate template) {
+        this.template = template;
+    }
+    
+    public AggregationResults<Book> allReleasedBooks() {
+        return template.aggregateStream(
+            Aggregation.newAggregation(),
+            "booksAsString",
+            Book.class
+        );
+    }
+}
+        """
+    )
+    fun `should be able to parse an empty aggregation using aggregateStream call with a string type provided for target collection`(
         psiFile: PsiFile
     ) {
         val query = psiFile.getQueryAtMethod("Repository", "allReleasedBooks")

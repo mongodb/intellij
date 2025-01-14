@@ -216,7 +216,7 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                     )
                 )
             )
-            "aggregate" -> {
+            "aggregate", "aggregateStream" -> {
                 val expressions = mongoOpCall.argumentList.expressions
                 val newAggregationCall = expressions.getOrNull(0)?.resolveToMethodCallExpression {
                         _,
