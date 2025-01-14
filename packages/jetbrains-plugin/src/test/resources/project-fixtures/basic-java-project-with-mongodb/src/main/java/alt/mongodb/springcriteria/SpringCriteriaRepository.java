@@ -1,6 +1,7 @@
 package alt.mongodb.springcriteria;
 
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.List;
@@ -26,6 +27,18 @@ public class SpringCriteriaRepository {
                 query(where( "tomatoes.viewer.rating").gte(rating)),
                 Movie.class
         );
+    }
+
+    private List<Movie> allMoviesWithRatingAtLeastAgg(int rating) {
+        return template.aggregate(
+            Aggregation.newAggregation(
+                Aggregation.match(
+                    where( "tomatoes.viewer.rating").gte(rating)
+                )
+            ),
+            Movie.class,
+            Movie.class
+        ).getMappedResults();
     }
 
     private void updateLanguageOfAllMoviesWithRatingAtLeast(int rating, String newLanguage) {

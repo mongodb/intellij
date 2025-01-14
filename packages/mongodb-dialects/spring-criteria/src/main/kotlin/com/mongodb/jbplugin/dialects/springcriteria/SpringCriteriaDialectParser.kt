@@ -6,8 +6,9 @@ import com.intellij.psi.util.findParentOfType
 import com.intellij.psi.util.parentOfType
 import com.mongodb.jbplugin.dialects.DialectParser
 import com.mongodb.jbplugin.dialects.javadriver.glossary.*
-import com.mongodb.jbplugin.dialects.springcriteria.QueryTargetCollectionExtractor.extractCollectionFromParameter
+import com.mongodb.jbplugin.dialects.springcriteria.QueryTargetCollectionExtractor.extractCollectionFromClassTypeParameter
 import com.mongodb.jbplugin.dialects.springcriteria.QueryTargetCollectionExtractor.extractCollectionFromQueryChain
+import com.mongodb.jbplugin.dialects.springcriteria.QueryTargetCollectionExtractor.extractCollectionFromStringTypeParameter
 import com.mongodb.jbplugin.dialects.springcriteria.QueryTargetCollectionExtractor.or
 import com.mongodb.jbplugin.mql.BsonAny
 import com.mongodb.jbplugin.mql.BsonArray
@@ -17,6 +18,10 @@ import com.mongodb.jbplugin.mql.toBsonType
 
 private const val CRITERIA_CLASS_FQN = "org.springframework.data.mongodb.core.query.Criteria"
 private const val DOCUMENT_FQN = "org.springframework.data.mongodb.core.mapping.Document"
+private const val AGGREGATE_FQN = "org.springframework.data.mongodb.core.aggregation.Aggregation"
+private val PARSEABLE_AGGREGATION_STAGE_METHODS = listOf(
+    "match"
+)
 
 object SpringCriteriaDialectParser : DialectParser<PsiElement> {
     override fun isCandidateForQuery(source: PsiElement) =
@@ -59,7 +64,7 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                         sourceDialect,
                         command,
                         inferredFromChain.or(
-                            extractCollectionFromParameter(
+                            extractCollectionFromClassTypeParameter(
                                 actualMethod.argumentList.expressions.getOrNull(1)
                             )
                         ),
@@ -86,7 +91,7 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                     sourceDialect,
                     command,
                     inferredFromChain.or(
-                        extractCollectionFromParameter(
+                        extractCollectionFromClassTypeParameter(
                             mongoOpCall.argumentList.expressions.getOrNull(1)
                         )
                     ),
@@ -107,11 +112,11 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                     sourceDialect,
                     command,
                     inferredFromChain.or(
-                        extractCollectionFromParameter(
+                        extractCollectionFromClassTypeParameter(
                             mongoOpCall.argumentList.expressions.getOrNull(1)
                         )
                     ).or(
-                        extractCollectionFromParameter(
+                        extractCollectionFromClassTypeParameter(
                             mongoOpCall.argumentList.expressions.getOrNull(2)
                         )
                     ),
@@ -131,7 +136,7 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                     sourceDialect,
                     command,
                     inferredFromChain.or(
-                        extractCollectionFromParameter(
+                        extractCollectionFromClassTypeParameter(
                             mongoOpCall.argumentList.expressions.getOrNull(1)
                         )
                     ),
@@ -144,7 +149,7 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                     sourceDialect,
                     command,
                     inferredFromChain.or(
-                        extractCollectionFromParameter(
+                        extractCollectionFromClassTypeParameter(
                             mongoOpCall.argumentList.expressions.getOrNull(1)
                         )
                     ),
@@ -160,7 +165,7 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                     sourceDialect,
                     command,
                     inferredFromChain.or(
-                        extractCollectionFromParameter(
+                        extractCollectionFromClassTypeParameter(
                             mongoOpCall.argumentList.expressions.getOrNull(1)
                         )
                     ),
@@ -172,7 +177,7 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                     sourceDialect,
                     command,
                     inferredFromChain.or(
-                        extractCollectionFromParameter(
+                        extractCollectionFromClassTypeParameter(
                             mongoOpCall.argumentList.expressions.getOrNull(1)
                         )
                     ),
@@ -184,7 +189,7 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                     sourceDialect,
                     command,
                     inferredFromChain.or(
-                        extractCollectionFromParameter(
+                        extractCollectionFromClassTypeParameter(
                             mongoOpCall.argumentList.expressions.getOrNull(1)
                         )
                     ),
@@ -200,7 +205,7 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                     sourceDialect,
                     command,
                     inferredFromChain.or(
-                        extractCollectionFromParameter(
+                        extractCollectionFromClassTypeParameter(
                             mongoOpCall.argumentList.expressions.getOrNull(1)
                         )
                     ),
@@ -210,13 +215,49 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                     )
                 )
             )
+            "aggregate" -> {
+                val expressions = mongoOpCall.argumentList.expressions
+                val newAggregationCall = expressions.getOrNull(0)?.resolveToMethodCallExpression {
+                        _,
+                        method
+                    ->
+                    method.name == "newAggregation"
+                }
+                val resolvedStageCallExpression =
+                    newAggregationCall?.getVarArgsOrIterableArgs()?.mapNotNull {
+                        it.resolveToMethodCallExpression { _, method ->
+                            method.containingClass?.qualifiedName == AGGREGATE_FQN &&
+                                PARSEABLE_AGGREGATION_STAGE_METHODS.contains(method.name)
+                        }
+                    } ?: emptyList()
+                val collectionExpression = expressions.getOrNull(1)
+                return Node(
+                    mongoOpCall,
+                    listOf(
+                        sourceDialect,
+                        command,
+                        // MongoTemplate.aggregate accepts both Class and a string for specifying the
+                        // collection where the aggregation will run so we need to account for both
+                        // method signatures while extracting the collection
+                        //
+                        // Note: It is uncommon to have the class type parameter referenced as a variable
+                        // which is why we don't attempt to resolve the parameter as ClassType
+                        extractCollectionFromClassTypeParameter(collectionExpression).or(
+                            extractCollectionFromStringTypeParameter(collectionExpression)
+                        ),
+                        HasAggregation(
+                            parseAggregationStagesFromCurrentCall(resolvedStageCallExpression)
+                        )
+                    )
+                )
+            }
             else -> Node(
                 mongoOpCall!!,
                 listOf(
                     sourceDialect,
                     command,
                     inferredFromChain.or(
-                        extractCollectionFromParameter(
+                        extractCollectionFromClassTypeParameter(
                             mongoOpCall.argumentList.expressions.getOrNull(1)
                         )
                     ),
@@ -278,6 +319,34 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                     Named(Name.EQ),
                     HasFieldReference(HasFieldReference.FromSchema(valueFilterExpression, "_id")),
                     psiExpressionToValueReference(valueFilterExpression as? PsiExpression)
+                )
+            )
+        )
+    }
+
+    private fun parseAggregationStagesFromCurrentCall(
+        stageCallExpressions: List<PsiMethodCallExpression>
+    ): List<Node<PsiElement>> {
+        return stageCallExpressions.mapNotNull { stageCall ->
+            val stageMethod = stageCall.fuzzyResolveMethod() ?: return@mapNotNull Node(
+                source = stageCall,
+                components = emptyList()
+            )
+
+            when (stageMethod.name) {
+                "match" -> parseMatchStageCall(stageCall)
+                else -> null
+            }
+        }
+    }
+
+    private fun parseMatchStageCall(matchStageCall: PsiMethodCallExpression): Node<PsiElement> {
+        return Node(
+            source = matchStageCall,
+            components = listOf(
+                Named(Name.MATCH),
+                HasFilter(
+                    parseFilterRecursively(matchStageCall.argumentList.expressions.getOrNull(0))
                 )
             )
         )

@@ -81,7 +81,7 @@ class Repository {
         val query = psiFile.getQueryAtMethod("Repository", "allReleasedBooks")
         val collection =
             (
-                QueryTargetCollectionExtractor.extractCollectionFromParameter(
+                QueryTargetCollectionExtractor.extractCollectionFromClassTypeParameter(
                     (query as? PsiMethodCallExpression)?.argumentList?.expressions?.getOrNull(1)
                 ).reference as HasCollectionReference.OnlyCollection
                 ).collection
