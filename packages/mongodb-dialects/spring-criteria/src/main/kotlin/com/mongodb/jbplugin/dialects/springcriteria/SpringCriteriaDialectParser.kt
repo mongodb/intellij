@@ -19,6 +19,7 @@ import com.mongodb.jbplugin.mql.toBsonType
 private const val CRITERIA_CLASS_FQN = "org.springframework.data.mongodb.core.query.Criteria"
 private const val DOCUMENT_FQN = "org.springframework.data.mongodb.core.mapping.Document"
 private const val AGGREGATE_FQN = "org.springframework.data.mongodb.core.aggregation.Aggregation"
+private const val MONGO_TEMPLATE_FQN = "org.springframework.data.mongodb.core.MongoTemplate"
 private val PARSEABLE_AGGREGATION_STAGE_METHODS = listOf(
     "match"
 )
@@ -274,8 +275,7 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
     }
 
     override fun isReferenceToCollection(source: PsiElement): Boolean {
-        val docAnnotation = source.parentOfType<PsiAnnotation>() ?: return false
-        return docAnnotation.hasQualifiedName(DOCUMENT_FQN)
+        return isInsideDocAnnotations(source) || isInsideOneOfAggregationFactoryMethod(source)
     }
 
     override fun isReferenceToField(source: PsiElement): Boolean {
@@ -303,6 +303,18 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
         }
 
         return isString && methodCall.isCriteriaExpression()
+    }
+
+    private fun isInsideDocAnnotations(source: PsiElement): Boolean {
+        val docAnnotation = source.parentOfType<PsiAnnotation>() ?: return false
+        return docAnnotation.hasQualifiedName(DOCUMENT_FQN)
+    }
+
+    private fun isInsideOneOfAggregationFactoryMethod(source: PsiElement): Boolean {
+        val maybeNewAggregationCall = source.parentOfType<PsiMethodCallExpression>() ?: return false
+        val methodCall = maybeNewAggregationCall.fuzzyResolveMethod() ?: return false
+        return methodCall.containingClass?.qualifiedName == MONGO_TEMPLATE_FQN &&
+            (methodCall.name == "aggregate" || methodCall.name == "aggregateStream")
     }
 
     private fun parseFindById(

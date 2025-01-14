@@ -59,7 +59,6 @@ record Book() {}
         )
     }
 
-    @Suppress("TOO_LONG_FUNCTION")
     @ParsingTest(
         fileName = "Repository.java",
         value = """
@@ -88,6 +87,279 @@ class Repository {
         """,
     )
     fun `should autocomplete fields from the current namespace`(
+        fixture: CodeInsightTestFixture,
+    ) {
+        val (dataSource, readModelProvider) = fixture.setupConnection()
+        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDialect(SpringCriteriaDialect)
+
+        val namespace = Namespace("myDatabase", "book")
+
+        `when`(
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
+        ).thenReturn(
+            GetCollectionSchema(
+                CollectionSchema(
+                    namespace,
+                    BsonObject(
+                        mapOf(
+                            "myField" to BsonString,
+                            "myField2" to BsonString,
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        fixture.type('"')
+        val elements = fixture.completeBasic()
+
+        assertTrue(
+            elements.containsElements {
+                it.lookupString == "myField"
+            },
+        )
+
+        assertTrue(
+            elements.containsElements {
+                it.lookupString == "myField2"
+            },
+        )
+    }
+
+    @ParsingTest(
+        fileName = "Repository.java",
+        value = """
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.query.Criteria;
+
+import java.util.List;
+
+import static org.springframework.data.mongodb.core.query.Criteria.where;
+
+@Document
+record Book() {}
+
+class Repository {
+    private final MongoTemplate template;
+    
+    public Repository(MongoTemplate template) {
+        this.template = template;
+    }
+    
+    public List<Book> allReleasedBooks() {
+        return template.aggregate(Aggregation.newAggregation(), <caret>
+    }
+}
+        """,
+    )
+    fun `should autocomplete collections from the current connection in an aggregate call`(
+        fixture: CodeInsightTestFixture,
+    ) {
+        val (dataSource, readModelProvider) = fixture.setupConnection()
+        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDialect(SpringCriteriaDialect)
+
+        `when`(
+            readModelProvider.slice(eq(dataSource), eq(ListCollections.Slice("myDatabase")))
+        ).thenReturn(
+            ListCollections(
+                listOf(
+                    ListCollections.Collection("myCollection", "collection"),
+                    ListCollections.Collection("anotherCollection", "collection"),
+                ),
+            ),
+        )
+
+        fixture.type('"')
+        val elements = fixture.completeBasic()
+
+        assertTrue(
+            elements.containsElements {
+                it.lookupString == "myCollection"
+            },
+        )
+
+        assertTrue(
+            elements.containsElements {
+                it.lookupString == "anotherCollection"
+            },
+        )
+    }
+
+    @ParsingTest(
+        fileName = "Repository.java",
+        value = """
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.query.Criteria;
+
+import java.util.List;
+
+import static org.springframework.data.mongodb.core.query.Criteria.where;
+
+@Document
+record Book() {}
+
+class Repository {
+    private final MongoTemplate template;
+    
+    public Repository(MongoTemplate template) {
+        this.template = template;
+    }
+    
+    public List<Book> allReleasedBooks() {
+        return template.aggregateStream(Aggregation.newAggregation(), <caret>
+    }
+}
+        """,
+    )
+    fun `should autocomplete collections from the current connection in an aggregateStream call`(
+        fixture: CodeInsightTestFixture,
+    ) {
+        val (dataSource, readModelProvider) = fixture.setupConnection()
+        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDialect(SpringCriteriaDialect)
+
+        `when`(
+            readModelProvider.slice(eq(dataSource), eq(ListCollections.Slice("myDatabase")))
+        ).thenReturn(
+            ListCollections(
+                listOf(
+                    ListCollections.Collection("myCollection", "collection"),
+                    ListCollections.Collection("anotherCollection", "collection"),
+                ),
+            ),
+        )
+
+        fixture.type('"')
+        val elements = fixture.completeBasic()
+
+        assertTrue(
+            elements.containsElements {
+                it.lookupString == "myCollection"
+            },
+        )
+
+        assertTrue(
+            elements.containsElements {
+                it.lookupString == "anotherCollection"
+            },
+        )
+    }
+
+    @ParsingTest(
+        fileName = "Repository.java",
+        value = """
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.query.Criteria;
+
+import java.util.List;
+
+import static org.springframework.data.mongodb.core.query.Criteria.where;
+
+@Document
+record Book() {}
+
+class Repository {
+    private final MongoTemplate template;
+    
+    public Repository(MongoTemplate template) {
+        this.template = template;
+    }
+    
+    public List<Book> allReleasedBooks() {
+        return template.aggregate(
+            Aggregation.newAggregation(
+                Aggregation.match(where(<caret>))
+            ),
+            Book.class,
+            Book.class
+        ).getMappedResults();
+    }
+}
+        """,
+    )
+    fun `should autocomplete fields from the current namespace in a Criteria inside an aggregate call`(
+        fixture: CodeInsightTestFixture,
+    ) {
+        val (dataSource, readModelProvider) = fixture.setupConnection()
+        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDialect(SpringCriteriaDialect)
+
+        val namespace = Namespace("myDatabase", "book")
+
+        `when`(
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
+        ).thenReturn(
+            GetCollectionSchema(
+                CollectionSchema(
+                    namespace,
+                    BsonObject(
+                        mapOf(
+                            "myField" to BsonString,
+                            "myField2" to BsonString,
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        fixture.type('"')
+        val elements = fixture.completeBasic()
+
+        assertTrue(
+            elements.containsElements {
+                it.lookupString == "myField"
+            },
+        )
+
+        assertTrue(
+            elements.containsElements {
+                it.lookupString == "myField2"
+            },
+        )
+    }
+
+    @ParsingTest(
+        fileName = "Repository.java",
+        value = """
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.query.Criteria;
+
+import java.util.List;
+
+import static org.springframework.data.mongodb.core.query.Criteria.where;
+
+@Document
+record Book() {}
+
+class Repository {
+    private final MongoTemplate template;
+    
+    public Repository(MongoTemplate template) {
+        this.template = template;
+    }
+    
+    public List<Book> allReleasedBooks() {
+        return template.aggregateStream(
+            Aggregation.newAggregation(
+                Aggregation.match(where(<caret>))
+            ),
+            Book.class,
+            Book.class
+        ).toList();
+    }
+}
+        """,
+    )
+    fun `should autocomplete fields from the current namespace in a Criteria inside an aggregateStream call`(
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
