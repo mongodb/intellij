@@ -27,6 +27,7 @@ class SpringCriteriaFieldCheckLinterInspectionTest {
         fileName = "Repository.java",
         value = """
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import static org.springframework.data.mongodb.core.query.Query.query;
@@ -50,6 +51,18 @@ class BookRepository {
             Book.class
         )</warning>;
     }
+    
+    public void allReleasedBooksAggregate() {
+        <warning descr="No connection available to run this check.">template.aggregate(
+            Aggregation.newAggregation(
+                Aggregation.match(
+                    where("released").is(true)
+                )
+            ),
+            Book.class,
+            Book.class
+        )</warning>;
+    }
 }
         """,
     )
@@ -65,6 +78,7 @@ class BookRepository {
         fileName = "Repository.java",
         value = """
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import static org.springframework.data.mongodb.core.query.Query.query;
@@ -84,6 +98,18 @@ class BookRepository {
         <warning descr="No database selected to run this check.">template.find(
                 query(where("released").is(true)),
                 Book.class
+        )</warning>;
+    }
+    
+    public void allReleasedBooksAggregate() {
+        <warning descr="No database selected to run this check.">template.aggregate(
+            Aggregation.newAggregation(
+                Aggregation.match(
+                    where("released").is(true)
+                )
+            ),
+            Book.class,
+            Book.class
         )</warning>;
     }
 }
@@ -141,6 +167,7 @@ class BookRepository {
         fileName = "Repository.java",
         value = """
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import static org.springframework.data.mongodb.core.query.Query.query;
@@ -160,6 +187,18 @@ class BookRepository {
         template.find(
                 query(where(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>).is(true)),
                 Book.class
+        );
+    }
+    
+    public void allReleasedBooksAggregate() {
+        template.aggregate(
+            Aggregation.newAggregation(
+                Aggregation.match(
+                    where(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>).is(true)
+                )
+            ),
+            Book.class,
+            Book.class
         );
     }
 }
@@ -222,6 +261,7 @@ class BookRepository {
         fileName = "Repository.java",
         value = """
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import static org.springframework.data.mongodb.core.query.Query.query;
@@ -241,6 +281,18 @@ class BookRepository {
         template.find(
                 query(where("released").is(<warning descr="A \"String\"(type of provided value) cannot be assigned to \"boolean\"(type of \"released\")">"true"</warning>)),
                 Book.class
+        );
+    }
+    
+    public void allReleasedBooksAggregate() {
+        template.aggregate(
+            Aggregation.newAggregation(
+                Aggregation.match(
+                    where("released").is(<warning descr="A \"String\"(type of provided value) cannot be assigned to \"boolean\"(type of \"released\")">"true"</warning>)
+                )
+            ),
+            Book.class,
+            Book.class
         );
     }
 }
@@ -306,6 +358,7 @@ class BookRepository {
         fileName = "Repository.java",
         value = """
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import static org.springframework.data.mongodb.core.query.Query.query;
@@ -325,6 +378,18 @@ class BookRepository {
         template.find(
                 query(where("released").is("true")),
                 Book.class
+        );
+    }
+    
+    public void allReleasedBooksAggregate() {
+        template.aggregate(
+            Aggregation.newAggregation(
+                Aggregation.match(
+                    where("released").is("true")
+                )
+            ),
+            Book.class,
+            Book.class
         );
     }
 }

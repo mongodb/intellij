@@ -35,6 +35,7 @@ import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
 import com.mongodb.assertions.Assertions.assertNotNull
 import com.mongodb.jbplugin.mql.Component
 import com.mongodb.jbplugin.mql.Node
+import com.mongodb.jbplugin.mql.components.HasAggregation
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasFieldReference
 import com.mongodb.jbplugin.mql.components.HasFilter
@@ -296,6 +297,35 @@ fun Node<PsiElement>.assert(
 
     assertEquals(command, cmd!!.type)
     this.assertions()
+}
+
+fun Node<PsiElement>.stageN(
+    n: Int,
+    name: Name? = null,
+    assertions: Node<PsiElement>.() -> Unit = {
+    }
+) {
+    val stages = component<HasAggregation<PsiElement>>()?.children ?: emptyList()
+    assertNotEquals(0, stages.size) {
+        "Expected HasAggregation to have at-least $n stages"
+    }
+
+    val stage = stages.getOrNull(n)
+    assertNotEquals(null, stage) {
+        "Expected a stage at index $n, found null"
+    }
+
+    if (name != null) {
+        val stageName = stage!!.component<Named>()
+        assertNotEquals(null, stageName) {
+            "Expected a stage with name $name but null found."
+        }
+        assertEquals(name, stageName!!.name) {
+            "Expected a stage with name $name but ${stageName.name} found."
+        }
+    }
+
+    stage!!.assertions()
 }
 
 fun Node<PsiElement>.filterN(

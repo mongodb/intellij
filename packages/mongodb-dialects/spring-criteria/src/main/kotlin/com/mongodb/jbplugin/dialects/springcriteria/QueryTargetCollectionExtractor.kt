@@ -3,6 +3,8 @@ package com.mongodb.jbplugin.dialects.springcriteria
 import com.intellij.psi.*
 import com.intellij.psi.util.PsiTypesUtil
 import com.mongodb.jbplugin.dialects.javadriver.glossary.fuzzyResolveMethod
+import com.mongodb.jbplugin.dialects.javadriver.glossary.meaningfulExpression
+import com.mongodb.jbplugin.dialects.javadriver.glossary.tryToResolveAsConstantString
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 
 object QueryTargetCollectionExtractor {
@@ -23,7 +25,7 @@ object QueryTargetCollectionExtractor {
             }
 
             if (currentMethod.name == "query") {
-                return extractCollectionFromParameter(
+                return extractCollectionFromClassTypeParameter(
                     currentMethodCall?.argumentList?.expressions?.getOrNull(0)
                 )
             }
@@ -35,7 +37,7 @@ object QueryTargetCollectionExtractor {
         return unknown
     }
 
-    fun extractCollectionFromParameter(sourceExpression: PsiExpression?): HasCollectionReference<PsiElement> {
+    fun extractCollectionFromClassTypeParameter(sourceExpression: PsiExpression?): HasCollectionReference<PsiElement> {
         if (sourceExpression == null) {
             return unknown
         }
@@ -45,6 +47,12 @@ object QueryTargetCollectionExtractor {
             PsiTypesUtil.getPsiClass(resolvedType.operand.type) ?: return unknown
         val resolvedCollection = ModelCollectionExtractor.fromPsiClass(resolvedClass)
         return resolvedCollection?.let {
+            HasCollectionReference(HasCollectionReference.OnlyCollection(sourceExpression, it))
+        } ?: unknown
+    }
+
+    fun extractCollectionFromStringTypeParameter(sourceExpression: PsiExpression?): HasCollectionReference<PsiElement> {
+        return sourceExpression?.meaningfulExpression()?.tryToResolveAsConstantString()?.let {
             HasCollectionReference(HasCollectionReference.OnlyCollection(sourceExpression, it))
         } ?: unknown
     }

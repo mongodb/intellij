@@ -5,6 +5,7 @@ MongoDB plugin for IntelliJ IDEA.
 ## [Unreleased]
 
 ### Added
+* [INTELLIJ-172](https://jira.mongodb.org/browse/INTELLIJ-172) Add support for parsing, inspecting and autocompleting in an aggregation written using Spring Data MongoDB (`MongoTemplate.aggregate`, `MongoTemplate.aggregateStream`) and a match stage written using `Aggregation.match`.
 * [INTELLIJ-179](https://jira.mongodb.org/browse/INTELLIJ-179) Telemetry when Create Index intention is clicked.
   It can be disabled in the Plugin settings.
 * [INTELLIJ-178](https://jira.mongodb.org/browse/INTELLIJ-178) Telemetry when the Run Query button is clicked.
