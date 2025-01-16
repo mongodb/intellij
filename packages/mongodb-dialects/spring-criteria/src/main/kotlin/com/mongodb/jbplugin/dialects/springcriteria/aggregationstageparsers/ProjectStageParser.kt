@@ -175,6 +175,23 @@ class ProjectStageParser : StageParser {
         return parseMethodCallWithStringVarArgsAndFields(methodCall, Name.INCLUDE)
     }
 
+    override fun isSuitableForFieldAutoComplete(
+        methodCall: PsiMethodCallExpression,
+        method: PsiMethod
+    ): Boolean {
+        val methodFqn = method.containingClass?.qualifiedName
+        // Autocomplete for Aggregation.project("<caret>")
+        return methodFqn == AGGREGATE_FQN &&
+            method.name == "project" ||
+            // Autocomplete for Aggregation.project().andInclude("<caret>")
+            methodFqn == PROJECTION_OPERATION_FQN &&
+            (method.name == "andInclude" || method.name == "andExclude") ||
+            // Autocomplete for Aggregation.project(Fields.fields("<caret>")) or,
+            // Aggregation.project(Fields.from(Fields.field("<caret>")))
+            methodFqn == FIELDS_FQN &&
+            (method.name == "fields" || method.name == "field")
+    }
+
     override fun canParse(stageCallMethod: PsiMethod): Boolean {
         val methodFqn = stageCallMethod.containingClass?.qualifiedName ?: return false
         // Project stage call might contain chained operations which might result

@@ -12,6 +12,7 @@ import com.mongodb.jbplugin.dialects.springcriteria.QueryTargetCollectionExtract
 import com.mongodb.jbplugin.dialects.springcriteria.QueryTargetCollectionExtractor.or
 import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.MatchStageParser
 import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.ProjectStageParser
+import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.StageParser
 import com.mongodb.jbplugin.mql.BsonAny
 import com.mongodb.jbplugin.mql.BsonArray
 import com.mongodb.jbplugin.mql.Node
@@ -26,6 +27,11 @@ const val PROJECTION_OPERATION_FQN = "org.springframework.data.mongodb.core.aggr
 const val FIELDS_FQN = "org.springframework.data.mongodb.core.aggregation.Fields"
 
 object SpringCriteriaDialectParser : DialectParser<PsiElement> {
+    private val aggregationStageParsers: List<StageParser> = listOf(
+        MatchStageParser(::parseFilterRecursively),
+        ProjectStageParser()
+    )
+
     override fun isCandidateForQuery(source: PsiElement) =
         inferCommandFromMethod((source as? PsiMethodCallExpression)?.fuzzyResolveMethod()).type !=
             IsCommand.CommandType.UNKNOWN
@@ -236,10 +242,7 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                         ),
                         HasAggregation(
                             children = AggregationStagesParser(
-                                stageParsers = listOf(
-                                    MatchStageParser(::parseFilterRecursively),
-                                    ProjectStageParser()
-                                )
+                                stageParsers = aggregationStageParsers
                             ).parse(mongoOpCall)
                         )
                     )
@@ -295,7 +298,11 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                 }
         }
 
-        return isString && methodCall.isCriteriaExpression()
+        return isString &&
+            (
+                methodCall.isCriteriaExpression() ||
+                    methodCall.isSuitableForFieldAutoCompleteInAggregation(aggregationStageParsers)
+                )
     }
 
     private fun isInsideDocAnnotations(source: PsiElement): Boolean {
@@ -600,6 +607,13 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
 fun PsiMethodCallExpression.isCriteriaExpression(): Boolean {
     val method = fuzzyResolveMethod() ?: return false
     return method.containingClass?.qualifiedName == CRITERIA_CLASS_FQN
+}
+
+fun PsiMethodCallExpression.isSuitableForFieldAutoCompleteInAggregation(
+    parsers: List<StageParser>
+): Boolean {
+    val method = fuzzyResolveMethod() ?: return false
+    return parsers.any { it.isSuitableForFieldAutoComplete(this, method) }
 }
 
 private fun PsiMethodCallExpression.findSpringMongoDbExpression(): PsiMethodCallExpression? {
