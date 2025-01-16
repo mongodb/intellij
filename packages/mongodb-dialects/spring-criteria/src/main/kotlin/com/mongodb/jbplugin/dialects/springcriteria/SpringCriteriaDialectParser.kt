@@ -21,6 +21,8 @@ private const val CRITERIA_CLASS_FQN = "org.springframework.data.mongodb.core.qu
 private const val DOCUMENT_FQN = "org.springframework.data.mongodb.core.mapping.Document"
 private const val MONGO_TEMPLATE_FQN = "org.springframework.data.mongodb.core.MongoTemplate"
 const val AGGREGATE_FQN = "org.springframework.data.mongodb.core.aggregation.Aggregation"
+const val PROJECTION_OPERATION_FQN = "org.springframework.data.mongodb.core.aggregation.ProjectionOperation"
+const val FIELDS_FQN = "org.springframework.data.mongodb.core.aggregation.Fields"
 
 object SpringCriteriaDialectParser : DialectParser<PsiElement> {
     override fun isCandidateForQuery(source: PsiElement) =
