@@ -1,14 +1,7 @@
-package com.mongodb.jbplugin.dialects.springcriteria.aggregationparser
+package com.mongodb.jbplugin.dialects.springcriteria
 
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
-import com.mongodb.jbplugin.dialects.springcriteria.IntegrationTest
-import com.mongodb.jbplugin.dialects.springcriteria.ParsingTest
-import com.mongodb.jbplugin.dialects.springcriteria.SpringCriteriaDialectParser
-import com.mongodb.jbplugin.dialects.springcriteria.assert
-import com.mongodb.jbplugin.dialects.springcriteria.collection
-import com.mongodb.jbplugin.dialects.springcriteria.component
-import com.mongodb.jbplugin.dialects.springcriteria.getQueryAtMethod
 import com.mongodb.jbplugin.mql.components.HasAggregation
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasSourceDialect
@@ -16,7 +9,7 @@ import com.mongodb.jbplugin.mql.components.IsCommand
 import org.junit.jupiter.api.Assertions.assertEquals
 
 @IntegrationTest
-class AggregationParserTest {
+class AggregationStagesParserTest {
     @ParsingTest(
         fileName = "Book.java",
         """

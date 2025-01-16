@@ -10,6 +10,7 @@ import com.mongodb.jbplugin.dialects.springcriteria.QueryTargetCollectionExtract
 import com.mongodb.jbplugin.dialects.springcriteria.QueryTargetCollectionExtractor.extractCollectionFromQueryChain
 import com.mongodb.jbplugin.dialects.springcriteria.QueryTargetCollectionExtractor.extractCollectionFromStringTypeParameter
 import com.mongodb.jbplugin.dialects.springcriteria.QueryTargetCollectionExtractor.or
+import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.MatchStageParser
 import com.mongodb.jbplugin.mql.BsonAny
 import com.mongodb.jbplugin.mql.BsonArray
 import com.mongodb.jbplugin.mql.Node
@@ -18,11 +19,8 @@ import com.mongodb.jbplugin.mql.toBsonType
 
 private const val CRITERIA_CLASS_FQN = "org.springframework.data.mongodb.core.query.Criteria"
 private const val DOCUMENT_FQN = "org.springframework.data.mongodb.core.mapping.Document"
-private const val AGGREGATE_FQN = "org.springframework.data.mongodb.core.aggregation.Aggregation"
 private const val MONGO_TEMPLATE_FQN = "org.springframework.data.mongodb.core.MongoTemplate"
-private val PARSEABLE_AGGREGATION_STAGE_METHODS = listOf(
-    "match"
-)
+const val AGGREGATE_FQN = "org.springframework.data.mongodb.core.aggregation.Aggregation"
 
 object SpringCriteriaDialectParser : DialectParser<PsiElement> {
     override fun isCandidateForQuery(source: PsiElement) =
@@ -218,19 +216,6 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
             )
             "aggregate", "aggregateStream" -> {
                 val expressions = mongoOpCall.argumentList.expressions
-                val newAggregationCall = expressions.getOrNull(0)?.resolveToMethodCallExpression {
-                        _,
-                        method
-                    ->
-                    method.name == "newAggregation"
-                }
-                val resolvedStageCallExpression =
-                    newAggregationCall?.getVarArgsOrIterableArgs()?.mapNotNull {
-                        it.resolveToMethodCallExpression { _, method ->
-                            method.containingClass?.qualifiedName == AGGREGATE_FQN &&
-                                PARSEABLE_AGGREGATION_STAGE_METHODS.contains(method.name)
-                        }
-                    } ?: emptyList()
                 val collectionExpression = expressions.getOrNull(1)
                 return Node(
                     mongoOpCall,
@@ -247,7 +232,9 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                             extractCollectionFromStringTypeParameter(collectionExpression)
                         ),
                         HasAggregation(
-                            parseAggregationStagesFromCurrentCall(resolvedStageCallExpression)
+                            children = AggregationStagesParser(
+                                matchStageParser = MatchStageParser(::parseFilterRecursively)
+                            ).parse(mongoOpCall)
                         )
                     )
                 )
@@ -271,7 +258,7 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
     }
 
     override fun isReferenceToDatabase(source: PsiElement): Boolean {
-        return false // databases are in property files and we don't support AC there yet
+        return false // databases are in property files, and we don't support AC there yet
     }
 
     override fun isReferenceToCollection(source: PsiElement): Boolean {
@@ -331,34 +318,6 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                     Named(Name.EQ),
                     HasFieldReference(HasFieldReference.FromSchema(valueFilterExpression, "_id")),
                     psiExpressionToValueReference(valueFilterExpression as? PsiExpression)
-                )
-            )
-        )
-    }
-
-    private fun parseAggregationStagesFromCurrentCall(
-        stageCallExpressions: List<PsiMethodCallExpression>
-    ): List<Node<PsiElement>> {
-        return stageCallExpressions.mapNotNull { stageCall ->
-            val stageMethod = stageCall.fuzzyResolveMethod() ?: return@mapNotNull Node(
-                source = stageCall,
-                components = emptyList()
-            )
-
-            when (stageMethod.name) {
-                "match" -> parseMatchStageCall(stageCall)
-                else -> null
-            }
-        }
-    }
-
-    private fun parseMatchStageCall(matchStageCall: PsiMethodCallExpression): Node<PsiElement> {
-        return Node(
-            source = matchStageCall,
-            components = listOf(
-                Named(Name.MATCH),
-                HasFilter(
-                    parseFilterRecursively(matchStageCall.argumentList.expressions.getOrNull(0))
                 )
             )
         )

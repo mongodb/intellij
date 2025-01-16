@@ -1,4 +1,4 @@
-package com.mongodb.jbplugin.dialects.springcriteria.aggregationparser
+package com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers
 
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
