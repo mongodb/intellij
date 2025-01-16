@@ -1,7 +1,7 @@
 package com.mongodb.jbplugin.observability.probe
 
 import com.intellij.codeInspection.ProblemsHolder
-import com.intellij.openapi.application.readAction
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.diagnostic.logger
@@ -16,10 +16,10 @@ import com.mongodb.jbplugin.observability.useLogMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.lang.ref.WeakReference
-import java.util.Collections
 import java.util.UUID
-import java.util.concurrent.CopyOnWriteArrayList
 
 private val inspectionTelemetry = Dispatchers.IO
 private val logger: Logger = logger<InspectionStatusChangedProbe>()
@@ -36,8 +36,10 @@ class InspectionStatusChangedProbe(
         }
     }
 
+    private val mutex: Mutex = Mutex()
+
     private val problemsByInspectionType: MutableMap<InspectionType, MutableList<UniqueInspection>> =
-        Collections.synchronizedMap(mutableMapOf())
+        mutableMapOf()
 
     fun inspectionChanged(inspectionType: InspectionType, query: Node<PsiElement>) {
         val dialect = query.component<HasSourceDialect>() ?: return
@@ -46,34 +48,34 @@ class InspectionStatusChangedProbe(
         cs.launch(inspectionTelemetry) {
             val elementsWithProblems = problemsByInspectionType(inspectionType)
 
-            // check if the element is already in the list
-            if (isElementRegistered(elementsWithProblems) { psiElement }) {
-                // do nothing, it's already registered
-                return@launch
+            mutex.withLock {
+                // check if the element is already in the list
+                if (isElementRegistered(elementsWithProblems) { psiElement }) {
+                    // do nothing, it's already registered
+                    return@launch
+                }
+
+                // it's a new error, send a telemetry event and store it
+                val inspection = UniqueInspection.new(query)
+                elementsWithProblems.add(inspection)
+
+                val telemetry by service<TelemetryService>()
+                val event = TelemetryEvent.InspectionStatusChangeEvent(
+                    dialect = dialect.name,
+                    inspectionType = inspectionType,
+                    inspectionStatus = TelemetryEvent.InspectionStatusChangeEvent.InspectionStatus.ACTIVE,
+                    null,
+                    null
+                )
+
+                telemetry.sendEvent(event)
+                logger.info(
+                    useLogMessage("New inspection triggered")
+                        .put("inspection_id", inspection.id.toString())
+                        .mergeTelemetryEventProperties(event)
+                        .build()
+                )
             }
-
-            // it's a new error, send a telemetry event and store it
-            val inspection = UniqueInspection.new(query)
-            elementsWithProblems.add(inspection)
-
-            val telemetry by service<TelemetryService>()
-            val event = TelemetryEvent.InspectionStatusChangeEvent(
-                dialect = dialect.name,
-                inspectionType = inspectionType,
-                inspectionStatus = TelemetryEvent.InspectionStatusChangeEvent.InspectionStatus.ACTIVE,
-                null,
-                null
-            )
-
-            telemetry.sendEvent(event)
-            logger.info(
-                useLogMessage("New inspection triggered")
-                    .put("inspection_id", inspection.id.toString())
-                    .mergeTelemetryEventProperties(event)
-                    .build()
-            )
-
-            problemsByInspectionType[inspectionType] = elementsWithProblems
         }
     }
 
@@ -85,33 +87,33 @@ class InspectionStatusChangedProbe(
         cs.launch(inspectionTelemetry) {
             val elementsWithProblems = problemsByInspectionType(inspectionType)
 
-            if (isElementRegistered(elementsWithProblems) { psiElement }) {
-                // do nothing, it's already registered
-                return@launch
+            mutex.withLock {
+                if (isElementRegistered(elementsWithProblems) { psiElement }) {
+                    // do nothing, it's already registered
+                    return@launch
+                }
+
+                // it's a new error, send a telemetry event and store it
+                val inspection = UniqueInspection.new(query)
+                elementsWithProblems.add(inspection)
+
+                val telemetry by service<TelemetryService>()
+                val event = TelemetryEvent.InspectionStatusChangeEvent(
+                    dialect = dialect.name,
+                    inspectionType = inspectionType,
+                    inspectionStatus = TelemetryEvent.InspectionStatusChangeEvent.InspectionStatus.ACTIVE,
+                    actualFieldType = actualType,
+                    expectedFieldType = expectedType,
+                )
+
+                telemetry.sendEvent(event)
+                logger.info(
+                    useLogMessage("New inspection triggered")
+                        .put("inspection_id", inspection.id.toString())
+                        .mergeTelemetryEventProperties(event)
+                        .build()
+                )
             }
-
-            // it's a new error, send a telemetry event and store it
-            val inspection = UniqueInspection.new(query)
-            elementsWithProblems.add(inspection)
-
-            val telemetry by service<TelemetryService>()
-            val event = TelemetryEvent.InspectionStatusChangeEvent(
-                dialect = dialect.name,
-                inspectionType = inspectionType,
-                inspectionStatus = TelemetryEvent.InspectionStatusChangeEvent.InspectionStatus.ACTIVE,
-                actualFieldType = actualType,
-                expectedFieldType = expectedType,
-            )
-
-            telemetry.sendEvent(event)
-            logger.info(
-                useLogMessage("New inspection triggered")
-                    .put("inspection_id", inspection.id.toString())
-                    .mergeTelemetryEventProperties(event)
-                    .build()
-            )
-
-            problemsByInspectionType[inspectionType] = elementsWithProblems
         }
     }
 
@@ -123,12 +125,15 @@ class InspectionStatusChangedProbe(
             // check all our registered problems
             // if at the end of the processing cycle it's empty
             // we will assume they are
-            for (loopResult in results) {
+            mutex.withLock {
                 for (elementWithProblem in elementsWithProblems) {
-                    if (isElementRegistered(elementsWithProblems, loopResult::getPsiElement)) {
+                    val findEquivalentProblem = results.find {
+                        isElementRegistered(elementsWithProblems, it::getPsiElement)
+                    }
+                    if (findEquivalentProblem != null) {
                         // the problem is still there, so don't do anything
                         // do nothing, it's already registered
-                        break
+                        continue
                     }
 
                     elementsWithProblems.remove(elementWithProblem)
@@ -156,24 +161,28 @@ class InspectionStatusChangedProbe(
         }
     }
 
-    private suspend fun isElementRegistered(
+    private fun isElementRegistered(
         elementsWithProblems: MutableList<UniqueInspection>,
         psiElement: () -> PsiElement
     ): Boolean = runCatching {
-        readAction<Boolean> {
+        ApplicationManager.getApplication().runReadAction<Boolean> {
             elementsWithProblems.find {
-                it.on.get()?.source == psiElement ||
-                    it.on.get()?.source?.isEquivalentTo(psiElement()) == true
+                val isStrictlyEqual = it.on.get()?.source == psiElement()
+                val isEquivalent = it.on.get()?.source?.isEquivalentTo(psiElement()) == true
+
+                isStrictlyEqual || isEquivalent
             } != null
         }
     }.getOrDefault(false)
 
-    private fun problemsByInspectionType(inspectionType: InspectionType): MutableList<UniqueInspection> {
-        val result = problemsByInspectionType.computeIfAbsent(inspectionType) {
-            CopyOnWriteArrayList()
-        }
+    private suspend fun problemsByInspectionType(inspectionType: InspectionType): MutableList<UniqueInspection> {
+        return mutex.withLock {
+            val result = problemsByInspectionType.computeIfAbsent(inspectionType) {
+                mutableListOf()
+            }
 
-        result.removeAll { it.on.get() == null }
-        return result
+            result.removeAll { it.on.get() == null }
+            result
+        }
     }
 }
