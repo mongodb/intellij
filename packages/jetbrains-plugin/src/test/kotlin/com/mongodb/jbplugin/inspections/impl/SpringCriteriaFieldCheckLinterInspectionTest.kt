@@ -190,11 +190,29 @@ class BookRepository {
         );
     }
     
+    String releasedFromMethodCall() {
+        return "released";
+    }
+    
     public void allReleasedBooksAggregate() {
+        String releasedAsVariable = "released";
         template.aggregate(
             Aggregation.newAggregation(
                 Aggregation.match(
                     where(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>).is(true)
+                ),
+                Aggregation.project(
+                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>,
+                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>,
+                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>
+                ).andInclude(
+                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>,
+                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>,
+                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>
+                ).andExclude(
+                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>,
+                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>,
+                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>
                 )
             ),
             Book.class,
