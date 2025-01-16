@@ -267,7 +267,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
                 return null // empty, do nothing
             }
 
-            val fieldReference = resolveFieldNameFromExpression(filter.argumentList.expressions[0])
+            val fieldReference = filter.argumentList.expressions[0].resolveFieldNameFromExpression()
             // if it's only 2 arguments it can be either:
             // - in(field, singleElement) -> valid because of varargs, becomes a single element array
             // - in(field, array) -> valid because of varargs
@@ -343,7 +343,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
                 return null
             }
             val fieldExpression = filter.argumentList.expressions[0]
-            val fieldReference = resolveFieldNameFromExpression(fieldExpression)
+            val fieldReference = fieldExpression.resolveFieldNameFromExpression()
             val valueReference = HasValueReference.Inferred(
                 source = fieldExpression,
                 value = true,
@@ -360,7 +360,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
             )
         } else if (method.parameters.size == 2) {
             // If it has two parameters, it's field/value.
-            val fieldReference = resolveFieldNameFromExpression(filter.argumentList.expressions[0])
+            val fieldReference = filter.argumentList.expressions[0].resolveFieldNameFromExpression()
             val valueReference = resolveValueFromExpression(filter.argumentList.expressions[1])
 
             return Node(
@@ -393,7 +393,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
             )
         } else if (method.parameters.size == 2) {
             // If it has two parameters, it's field/value.
-            val fieldReference = resolveFieldNameFromExpression(filter.argumentList.expressions[0])
+            val fieldReference = filter.argumentList.expressions[0].resolveFieldNameFromExpression()
             val valueReference = resolveValueFromExpression(filter.argumentList.expressions[1])
 
             return Node(
@@ -410,7 +410,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
             )
         } else if (method.parameters.size == 1) {
             // Updates.unset for example
-            val fieldReference = resolveFieldNameFromExpression(filter.argumentList.expressions[0])
+            val fieldReference = filter.argumentList.expressions[0].resolveFieldNameFromExpression()
 
             return Node(
                 filter,
@@ -613,7 +613,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
             "ascending",
             "descending" -> expression.getVarArgsOrIterableArgs()
                 .mapNotNull {
-                    val fieldReference = resolveFieldNameFromExpression(it)
+                    val fieldReference = it.resolveFieldNameFromExpression()
                     val methodName = Name.from(methodCall.name)
                     when (fieldReference) {
                         is FromSchema -> Node(
@@ -818,16 +818,6 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
             callMethod?.containingClass?.qualifiedName == AGGREGATES_FQN
     }
 
-    private fun resolveFieldNameFromExpression(expression: PsiExpression): HasFieldReference.FieldReference<out Any> {
-        val fieldNameAsString = expression.tryToResolveAsConstantString()
-        val fieldReference =
-            fieldNameAsString?.let {
-                FromSchema(expression, it)
-            } ?: HasFieldReference.Unknown
-
-        return fieldReference
-    }
-
     private fun resolveValueFromExpression(expression: PsiExpression): HasValueReference.ValueReference<PsiElement> {
         val (wasResolvedAtCompileTime, resolvedValue) = expression.tryToResolveAsConstant()
 
@@ -905,6 +895,16 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
             }
         )
     }
+}
+
+fun PsiExpression.resolveFieldNameFromExpression(): HasFieldReference.FieldReference<out Any> {
+    val fieldNameAsString = tryToResolveAsConstantString()
+    val fieldReference =
+        fieldNameAsString?.let {
+            FromSchema(this, it)
+        } ?: HasFieldReference.Unknown
+
+    return fieldReference
 }
 
 fun PsiExpressionList.inferFromSingleArrayArgument(start: Int = 0): HasValueReference.ValueReference<PsiElement> {

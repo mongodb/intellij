@@ -16,7 +16,7 @@ import com.mongodb.jbplugin.mql.components.IsCommand
 import org.junit.jupiter.api.Assertions.assertEquals
 
 @IntegrationTest
-class AggregationParserTest {
+class AggregationStagesParserTest {
     @ParsingTest(
         fileName = "Book.java",
         """
