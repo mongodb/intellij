@@ -40,6 +40,10 @@ enum class TelemetryProperty(
     CONSOLE("console"),
     TRIGGER_LOCATION("trigger_location"),
     SIGNAL_TYPE("signal_type"),
+    INSPECTION_TYPE("inspection_type"),
+    ERROR_FIELD_TYPE("error_field_type"),
+    ACTUAL_ERROR_TYPE("actual_field_type"),
+    ERROR_STATUS("error_status")
 }
 
 enum class SignalType(
@@ -227,4 +231,36 @@ sealed class TelemetryEvent(
             TelemetryProperty.SIGNAL_TYPE to SignalType.MISSING_INDEX.publicName,
         )
     )
+
+    class InspectionStatusChangeEvent(
+        dialect: HasSourceDialect.DialectName,
+        inspectionType: InspectionType,
+        inspectionStatus: InspectionStatus,
+        actualFieldType: String?,
+        expectedFieldType: String?,
+    ) : TelemetryEvent(
+        name = "Inspection",
+        properties =
+        mapOf(
+            TelemetryProperty.DIALECT to dialect.name.lowercase(),
+            TelemetryProperty.INSPECTION_TYPE to inspectionType.name.lowercase(),
+            TelemetryProperty.ERROR_STATUS to inspectionStatus.name.lowercase(),
+            TelemetryProperty.ERROR_FIELD_TYPE to (actualFieldType ?: "<none>"),
+            TelemetryProperty.ACTUAL_ERROR_TYPE to (expectedFieldType ?: "<none>"),
+        )
+    ) {
+        enum class InspectionType {
+            FIELD_DOES_NOT_EXIST,
+            TYPE_MISMATCH,
+            QUERY_NOT_COVERED_BY_INDEX,
+            NO_NAMESPACE_INFERRED,
+            COLLECTION_DOES_NOT_EXIST,
+            DATABASE_DOES_NOT_EXIST
+        }
+
+        enum class InspectionStatus {
+            ACTIVE,
+            RESOLVED
+        }
+    }
 }

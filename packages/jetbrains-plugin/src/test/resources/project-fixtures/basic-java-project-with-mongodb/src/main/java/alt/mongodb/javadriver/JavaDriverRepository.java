@@ -30,7 +30,7 @@ public class JavaDriverRepository {
             .first();
     }
 
-    public List<Document> findMoviesByYear(String year) {
+    public List<Document> findMoviesByYear(int year) {
         return client
             .getDatabase("sample_mflix")
             .getCollection("movies")

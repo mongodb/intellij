@@ -1,5 +1,6 @@
 package com.mongodb.jbplugin.inspections.impl
 
+import com.intellij.openapi.application.Application
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.mongodb.jbplugin.accessadapter.slice.GetCollectionSchema
 import com.mongodb.jbplugin.dialects.javadriver.glossary.JavaDriverDialect
@@ -12,9 +13,11 @@ import com.mongodb.jbplugin.mql.BsonObject
 import com.mongodb.jbplugin.mql.BsonString
 import com.mongodb.jbplugin.mql.CollectionSchema
 import com.mongodb.jbplugin.mql.Namespace
+import com.mongodb.jbplugin.observability.TelemetryService
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.verify
 
 @CodeInsightTest
 class JavaDriverFieldCheckLinterInspectionTest {
@@ -78,8 +81,11 @@ public class Repository {
         """,
     )
     fun `shows an inspection when the field does not exist in the current namespace`(
+        app: Application,
         fixture: CodeInsightTestFixture,
     ) {
+        val telemetryService = app.getService(TelemetryService::class.java)
+
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
@@ -93,6 +99,8 @@ public class Repository {
 
         fixture.enableInspections(FieldCheckInspectionBridge::class.java)
         fixture.testHighlighting()
+
+        verify(telemetryService).sendEvent(any())
     }
 
     @ParsingTest(

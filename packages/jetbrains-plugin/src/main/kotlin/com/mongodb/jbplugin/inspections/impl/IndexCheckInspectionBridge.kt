@@ -21,17 +21,24 @@ import com.mongodb.jbplugin.linting.IndexCheckWarning
 import com.mongodb.jbplugin.linting.IndexCheckingLinter
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.mql.Node
+import com.mongodb.jbplugin.observability.TelemetryEvent
 import com.mongodb.jbplugin.observability.probe.CreateIndexIntentionProbe
+import com.mongodb.jbplugin.observability.probe.InspectionStatusChangedProbe
 import kotlinx.coroutines.CoroutineScope
 
-/**
- * @param coroutineScope
- */
 class IndexCheckInspectionBridge(coroutineScope: CoroutineScope) :
     AbstractMongoDbInspectionBridge(
         coroutineScope,
         IndexCheckLinterInspection,
-    )
+    ) {
+    override fun emitFinishedInspectionTelemetryEvent(problemsHolder: ProblemsHolder) {
+        val probe by service<InspectionStatusChangedProbe>()
+        probe.finishedProcessingInspections(
+            TelemetryEvent.InspectionStatusChangeEvent.InspectionType.FIELD_DOES_NOT_EXIST,
+            problemsHolder,
+        )
+    }
+}
 
 /**
  * This inspection object calls the linting engine and transforms the result so they can be rendered in the IntelliJ
@@ -68,6 +75,12 @@ internal object IndexCheckLinterInspection : MongoDbInspection {
     ) {
         val problemDescription = InspectionsAndInlaysMessages.message(
             "inspection.index.checking.error.query.not.covered.by.index",
+        )
+
+        val probe by service<InspectionStatusChangedProbe>()
+        probe.inspectionChanged(
+            TelemetryEvent.InspectionStatusChangeEvent.InspectionType.QUERY_NOT_COVERED_BY_INDEX,
+            query
         )
 
         problems.registerProblem(
