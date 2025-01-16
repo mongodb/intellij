@@ -12,6 +12,7 @@ import com.mongodb.jbplugin.mql.components.HasSourceDialect
 import com.mongodb.jbplugin.observability.TelemetryEvent
 import com.mongodb.jbplugin.observability.TelemetryEvent.InspectionStatusChangeEvent.InspectionType
 import com.mongodb.jbplugin.observability.TelemetryService
+import com.mongodb.jbplugin.observability.probe.InspectionStatusChangedProbe.UniqueInspection
 import com.mongodb.jbplugin.observability.useLogMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -24,11 +25,13 @@ import java.util.UUID
 private val inspectionTelemetry = Dispatchers.IO
 private val logger: Logger = logger<InspectionStatusChangedProbe>()
 
+internal typealias ProblemsByInspectionType = MutableMap<InspectionType, MutableList<UniqueInspection>>
+
 @Service
 class InspectionStatusChangedProbe(
     private val cs: CoroutineScope
 ) {
-    private data class UniqueInspection(val id: UUID, val on: WeakReference<Node<PsiElement>>) {
+    internal data class UniqueInspection(val id: UUID, val on: WeakReference<Node<PsiElement>>) {
         companion object {
             fun new(query: Node<PsiElement>): UniqueInspection {
                 return UniqueInspection(UUID.randomUUID(), WeakReference(query))
@@ -37,9 +40,7 @@ class InspectionStatusChangedProbe(
     }
 
     private val mutex: Mutex = Mutex()
-
-    private val problemsByInspectionType: MutableMap<InspectionType, MutableList<UniqueInspection>> =
-        mutableMapOf()
+    private val problemsByInspectionType: ProblemsByInspectionType = mutableMapOf()
 
     fun inspectionChanged(inspectionType: InspectionType, query: Node<PsiElement>) {
         val dialect = query.component<HasSourceDialect>() ?: return
