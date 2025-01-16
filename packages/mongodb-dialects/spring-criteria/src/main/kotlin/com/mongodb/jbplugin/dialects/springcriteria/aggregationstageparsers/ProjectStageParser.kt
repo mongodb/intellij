@@ -143,7 +143,7 @@ class ProjectStageParser : StageParser {
     ): List<Node<PsiElement>> {
         val method = methodCall.fuzzyResolveMethod() ?: return emptyList()
         return if (method.isVarArgs) {
-            methodCall.argumentList.expressions.mapNotNull {
+            methodCall.argumentList.expressions.map {
                 createProjectedFieldNode(fieldExpression = it, projectionName = projectionName)
             }
         } else {
@@ -154,14 +154,14 @@ class ProjectStageParser : StageParser {
     }
 
     private fun parseAndIncludeCall(methodCall: PsiMethodCallExpression): List<Node<PsiElement>> {
-        // andInclude have two overloads, one which takes string varargs and another
+        // andInclude has two overloads, one which takes string varargs and another
         // which takes a Fields object
         return parseMethodCallWithStringVarArgsAndFields(methodCall, Name.INCLUDE)
     }
 
     private fun parseAndExcludeCall(methodCall: PsiMethodCallExpression): List<Node<PsiElement>> {
         // andExclude only accepts a varargs of strings as arguments
-        return methodCall.argumentList.expressions.mapNotNull {
+        return methodCall.argumentList.expressions.map {
             createProjectedFieldNode(fieldExpression = it, projectionName = Name.EXCLUDE)
         }
     }
@@ -181,15 +181,21 @@ class ProjectStageParser : StageParser {
     ): Boolean {
         val methodFqn = method.containingClass?.qualifiedName
         // Autocomplete for Aggregation.project("<caret>")
-        return methodFqn == AGGREGATE_FQN &&
-            method.name == "project" ||
+        return (
+            methodFqn == AGGREGATE_FQN &&
+                method.name == "project"
+            ) ||
             // Autocomplete for Aggregation.project().andInclude("<caret>")
-            methodFqn == PROJECTION_OPERATION_FQN &&
-            (method.name == "andInclude" || method.name == "andExclude") ||
+            (
+                methodFqn == PROJECTION_OPERATION_FQN &&
+                    (method.name == "andInclude" || method.name == "andExclude")
+                ) ||
             // Autocomplete for Aggregation.project(Fields.fields("<caret>")) or,
             // Aggregation.project(Fields.from(Fields.field("<caret>")))
-            methodFqn == FIELDS_FQN &&
-            (method.name == "fields" || method.name == "field")
+            (
+                methodFqn == FIELDS_FQN &&
+                    (method.name == "fields" || method.name == "field")
+                )
     }
 
     override fun canParse(stageCallMethod: PsiMethod): Boolean {
