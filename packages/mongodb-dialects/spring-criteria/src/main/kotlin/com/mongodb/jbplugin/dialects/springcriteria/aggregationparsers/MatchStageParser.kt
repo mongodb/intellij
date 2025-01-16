@@ -32,7 +32,7 @@ class MatchStageParser(private val parseFilters: (PsiElement) -> List<Node<PsiEl
 
     companion object {
         fun isMatchStageCall(method: PsiMethod): Boolean {
-            return method.containingClass?.qualifiedName != AGGREGATE_FQN && method.name == "match"
+            return method.containingClass?.qualifiedName == AGGREGATE_FQN && method.name == "match"
         }
     }
 }
