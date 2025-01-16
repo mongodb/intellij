@@ -5,8 +5,7 @@ import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiMethodCallExpression
 import com.mongodb.jbplugin.dialects.javadriver.glossary.fuzzyResolveMethod
 import com.mongodb.jbplugin.dialects.javadriver.glossary.resolveToMethodCallExpression
-import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.MatchStageParser
-import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.ProjectStageParser
+import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.StageParser
 import com.mongodb.jbplugin.mql.Node
 
 /**
@@ -18,12 +17,9 @@ import com.mongodb.jbplugin.mql.Node
  * The AggregationParser concerns itself only with parsing the aggregation related semantics and
  * leave the rest as a responsibility for the composing unit.
  */
-class AggregationStagesParser(private val matchStageParser: MatchStageParser) {
-    private val projectStageParser = ProjectStageParser()
-
+class AggregationStagesParser(private val stageParsers: List<StageParser>) {
     private fun isStageCall(stageCallMethod: PsiMethod): Boolean {
-        return matchStageParser.canParse(stageCallMethod) ||
-            projectStageParser.canParse(stageCallMethod)
+        return stageParsers.any { it.canParse(stageCallMethod) }
     }
 
     private fun parseAggregationStages(
@@ -41,16 +37,11 @@ class AggregationStagesParser(private val matchStageParser: MatchStageParser) {
                 components = emptyList()
             )
 
-            if (matchStageParser.canParse(stageCallMethod)) {
-                matchStageParser.parse(stageCall)
-            } else if (projectStageParser.canParse(stageCallMethod)) {
-                projectStageParser.parse(stageCall)
-            } else {
-                Node(
-                    source = stageCall,
-                    components = emptyList()
-                )
-            }
+            val parser = stageParsers.find { it.canParse(stageCallMethod) }
+            parser?.parse(stageCall) ?: Node(
+                source = stageCall,
+                components = emptyList()
+            )
         }
     }
 

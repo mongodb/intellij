@@ -11,6 +11,7 @@ import com.mongodb.jbplugin.dialects.springcriteria.QueryTargetCollectionExtract
 import com.mongodb.jbplugin.dialects.springcriteria.QueryTargetCollectionExtractor.extractCollectionFromStringTypeParameter
 import com.mongodb.jbplugin.dialects.springcriteria.QueryTargetCollectionExtractor.or
 import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.MatchStageParser
+import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.ProjectStageParser
 import com.mongodb.jbplugin.mql.BsonAny
 import com.mongodb.jbplugin.mql.BsonArray
 import com.mongodb.jbplugin.mql.Node
@@ -235,7 +236,10 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                         ),
                         HasAggregation(
                             children = AggregationStagesParser(
-                                matchStageParser = MatchStageParser(::parseFilterRecursively)
+                                stageParsers = listOf(
+                                    MatchStageParser(::parseFilterRecursively),
+                                    ProjectStageParser()
+                                )
                             ).parse(mongoOpCall)
                         )
                     )
