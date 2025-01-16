@@ -4,6 +4,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiMethodCallExpression
 import com.mongodb.jbplugin.dialects.springcriteria.AGGREGATE_FQN
+import com.mongodb.jbplugin.dialects.springcriteria.isCriteriaExpression
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.components.HasFilter
 import com.mongodb.jbplugin.mql.components.Name
@@ -22,6 +23,13 @@ class MatchStageParser(
             HasFilter(filters),
         )
     )
+
+    override fun isSuitableForFieldAutoComplete(
+        methodCall: PsiMethodCallExpression,
+        method: PsiMethod
+    ): Boolean {
+        return methodCall.isCriteriaExpression()
+    }
 
     override fun canParse(stageCallMethod: PsiMethod): Boolean {
         return stageCallMethod.containingClass?.qualifiedName == AGGREGATE_FQN &&

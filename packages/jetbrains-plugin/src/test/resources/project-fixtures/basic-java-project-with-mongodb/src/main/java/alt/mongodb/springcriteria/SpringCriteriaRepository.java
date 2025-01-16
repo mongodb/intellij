@@ -35,7 +35,7 @@ public class SpringCriteriaRepository {
         return template.aggregate(
             Aggregation.newAggregation(
                 Aggregation.match(where( "tomatoes.viewer.rating").gte(rating)),
-                Aggregation.project("asd").andInclude("asd").andExclude("qwe")
+                Aggregation.project("fieldA").andInclude("fieldB").andExclude("fieldC")
             ),
             Movie.class,
             Movie.class
