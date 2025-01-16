@@ -20,6 +20,7 @@ import kotlinx.coroutines.launch
 import java.lang.ref.WeakReference
 import java.util.Collections
 import java.util.UUID
+import java.util.concurrent.CopyOnWriteArrayList
 
 private val inspectionTelemetry = Dispatchers.IO
 private val logger: Logger = logger<InspectionStatusChangedProbe>()
@@ -47,7 +48,7 @@ class InspectionStatusChangedProbe(
             val elementsWithProblems = problemsByInspectionType(inspectionType)
 
             // check if the element is already in the list
-            if (isElementRegistered(elementsWithProblems, psiElement)) {
+            if (isElementRegistered(elementsWithProblems) { psiElement }) {
                 // do nothing, it's already registered
                 return@launch
             }
@@ -85,7 +86,7 @@ class InspectionStatusChangedProbe(
         cs.launch(inspectionTelemetry) {
             val elementsWithProblems = problemsByInspectionType(inspectionType)
 
-            if (isElementRegistered(elementsWithProblems, psiElement)) {
+            if (isElementRegistered(elementsWithProblems) { psiElement }) {
                 // do nothing, it's already registered
                 return@launch
             }
@@ -124,14 +125,14 @@ class InspectionStatusChangedProbe(
             // if at the end of the processing cycle it's empty
             // we will assume they are
             for (loopResult in results) {
-                for ((idx, elementWithProblem) in elementsWithProblems.withIndex()) {
-                    if (isElementRegistered(elementsWithProblems, loopResult.psiElement)) {
+                for (elementWithProblem in elementsWithProblems) {
+                    if (isElementRegistered(elementsWithProblems, loopResult::getPsiElement)) {
                         // the problem is still there, so don't do anything
                         // do nothing, it's already registered
                         break
                     }
 
-                    elementsWithProblems.removeAt(idx)
+                    elementsWithProblems.remove(elementWithProblem)
 
                     val dialect =
                         elementWithProblem.on.get()?.component<HasSourceDialect>() ?: continue
@@ -158,19 +159,19 @@ class InspectionStatusChangedProbe(
 
     private suspend fun isElementRegistered(
         elementsWithProblems: MutableList<UniqueInspection>,
-        psiElement: PsiElement
+        psiElement: () -> PsiElement
     ): Boolean = runCatching {
         readAction<Boolean> {
             elementsWithProblems.containsElements {
                 it.on.get()?.source == psiElement ||
-                    it.on.get()?.source?.isEquivalentTo(psiElement) == true
+                    it.on.get()?.source?.isEquivalentTo(psiElement()) == true
             }
         }
     }.getOrDefault(false)
 
     private fun problemsByInspectionType(inspectionType: InspectionType): MutableList<UniqueInspection> {
         val result = problemsByInspectionType.computeIfAbsent(inspectionType) {
-            Collections.synchronizedList(mutableListOf())
+            CopyOnWriteArrayList()
         }
 
         result.removeAll { it.on.get() == null }

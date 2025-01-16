@@ -48,7 +48,7 @@ public class JavaDriverRepository {
             .first();
     }
 
-    public List<Document> queryMoviesByYear(String year) {
+    public List<Document> queryMoviesByYear(int year) {
         return client
             .getDatabase("sample_mflix")
             .getCollection("movies")
