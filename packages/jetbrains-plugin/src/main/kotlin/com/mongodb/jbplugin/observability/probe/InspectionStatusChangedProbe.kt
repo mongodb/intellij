@@ -1,7 +1,6 @@
 package com.mongodb.jbplugin.observability.probe
 
 import com.intellij.codeInspection.ProblemsHolder
-import com.intellij.database.util.common.containsElements
 import com.intellij.openapi.application.readAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
@@ -162,10 +161,10 @@ class InspectionStatusChangedProbe(
         psiElement: () -> PsiElement
     ): Boolean = runCatching {
         readAction<Boolean> {
-            elementsWithProblems.containsElements {
+            elementsWithProblems.find {
                 it.on.get()?.source == psiElement ||
                     it.on.get()?.source?.isEquivalentTo(psiElement()) == true
-            }
+            } != null
         }
     }.getOrDefault(false)
 
