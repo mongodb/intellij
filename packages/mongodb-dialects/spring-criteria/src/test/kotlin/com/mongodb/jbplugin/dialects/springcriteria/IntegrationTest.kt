@@ -39,6 +39,7 @@ import com.mongodb.jbplugin.mql.components.HasAggregation
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasFieldReference
 import com.mongodb.jbplugin.mql.components.HasFilter
+import com.mongodb.jbplugin.mql.components.HasProjections
 import com.mongodb.jbplugin.mql.components.HasUpdates
 import com.mongodb.jbplugin.mql.components.HasValueReference
 import com.mongodb.jbplugin.mql.components.IsCommand
@@ -350,6 +351,30 @@ fun Node<PsiElement>.filterN(
     }
 
     filter.assertions()
+}
+
+fun Node<PsiElement>.projectionN(
+    n: Int,
+    name: Name? = null,
+    assertions: Node<PsiElement>.() -> Unit = {
+    }
+) {
+    val projections = component<HasProjections<PsiElement>>()
+    assertNotNull(projections)
+
+    val projection = projections!!.children[n]
+
+    if (name != null) {
+        val qname = projection.component<Named>()
+        assertNotEquals(null, qname) {
+            "Expected a named operation with name $name but null found."
+        }
+        assertEquals(name, qname?.name) {
+            "Expected a named operation with name $name but $qname found."
+        }
+    }
+
+    projection.assertions()
 }
 
 fun Node<PsiElement>.updateN(
