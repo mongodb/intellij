@@ -5,7 +5,7 @@ import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiMethodCallExpression
 import com.mongodb.jbplugin.dialects.javadriver.glossary.fuzzyResolveMethod
 import com.mongodb.jbplugin.dialects.javadriver.glossary.resolveToMethodCallExpression
-import com.mongodb.jbplugin.dialects.springcriteria.aggregationparsers.MatchStageParser
+import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.MatchStageParser
 import com.mongodb.jbplugin.mql.Node
 
 /**
@@ -19,7 +19,7 @@ import com.mongodb.jbplugin.mql.Node
  */
 class AggregationStagesParser(private val matchStageParser: MatchStageParser) {
     private fun isStageCall(stageCallMethod: PsiMethod): Boolean {
-        return MatchStageParser.isMatchStageCall(stageCallMethod)
+        return matchStageParser.canParse(stageCallMethod)
     }
 
     private fun parseAggregationStages(
@@ -37,7 +37,7 @@ class AggregationStagesParser(private val matchStageParser: MatchStageParser) {
                 components = emptyList()
             )
 
-            if (MatchStageParser.isMatchStageCall(stageCallMethod)) {
+            if (matchStageParser.canParse(stageCallMethod)) {
                 matchStageParser.parse(stageCall)
             } else {
                 Node(
