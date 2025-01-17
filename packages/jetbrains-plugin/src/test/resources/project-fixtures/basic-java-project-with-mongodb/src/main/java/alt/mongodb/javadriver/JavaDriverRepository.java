@@ -44,7 +44,7 @@ public class JavaDriverRepository {
             .getCollection("movies")
             .aggregate(List.of(Aggregates.match(
                 Filters.eq(id)
-            )))
+            ), Aggregates.unwind("year")))
             .first();
     }
 
@@ -74,7 +74,7 @@ public class JavaDriverRepository {
                         )
                     ),
                     Aggregates.unwind(
-                        "asd",
+                        "awards.wins",
                         new UnwindOptions()
                     )
                 )
