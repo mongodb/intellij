@@ -5,6 +5,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.diagnostic.logger
+import com.intellij.openapi.rd.util.launchChildNonUrgentBackground
 import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.mql.Node
@@ -15,14 +16,12 @@ import com.mongodb.jbplugin.observability.TelemetryService
 import com.mongodb.jbplugin.observability.probe.InspectionStatusChangedProbe.UniqueInspection
 import com.mongodb.jbplugin.observability.useLogMessage
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import java.lang.ref.WeakReference
-import java.util.UUID
+import java.util.*
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
-private val inspectionTelemetry = Dispatchers.IO
 private val logger: Logger = logger<InspectionStatusChangedProbe>()
 
 internal typealias ProblemsByInspectionType = MutableMap<InspectionType, MutableList<UniqueInspection>>
@@ -39,21 +38,21 @@ class InspectionStatusChangedProbe(
         }
     }
 
-    private val mutex: Mutex = Mutex()
-    private val problemsByInspectionType: ProblemsByInspectionType = mutableMapOf()
+    private val mutex: ReentrantLock = ReentrantLock()
+    private val problemsByInspectionType: ProblemsByInspectionType = ConcurrentHashMap()
 
     fun inspectionChanged(inspectionType: InspectionType, query: Node<PsiElement>) {
         val dialect = query.component<HasSourceDialect>() ?: return
         val psiElement = query.source
 
-        cs.launch(inspectionTelemetry) {
-            val elementsWithProblems = problemsByInspectionType(inspectionType)
-
+        cs.launchChildNonUrgentBackground {
             mutex.withLock {
+                val elementsWithProblems = problemsByInspectionType(inspectionType)
+
                 // check if the element is already in the list
                 if (isElementRegistered(elementsWithProblems) { psiElement }) {
                     // do nothing, it's already registered
-                    return@launch
+                    return@launchChildNonUrgentBackground
                 }
 
                 // it's a new error, send a telemetry event and store it
@@ -85,13 +84,13 @@ class InspectionStatusChangedProbe(
         val dialect = query.component<HasSourceDialect>() ?: return
         val psiElement = query.source
 
-        cs.launch(inspectionTelemetry) {
-            val elementsWithProblems = problemsByInspectionType(inspectionType)
-
+        cs.launchChildNonUrgentBackground {
             mutex.withLock {
+                val elementsWithProblems = problemsByInspectionType(inspectionType)
+
                 if (isElementRegistered(elementsWithProblems) { psiElement }) {
                     // do nothing, it's already registered
-                    return@launch
+                    return@launchChildNonUrgentBackground
                 }
 
                 // it's a new error, send a telemetry event and store it
@@ -119,14 +118,14 @@ class InspectionStatusChangedProbe(
     }
 
     fun finishedProcessingInspections(inspectionType: InspectionType, problemsHolder: ProblemsHolder) {
-        cs.launch(inspectionTelemetry) {
-            val elementsWithProblems = problemsByInspectionType(inspectionType)
-
+        cs.launchChildNonUrgentBackground {
             val results = problemsHolder.results
             // check all our registered problems
             // if at the end of the processing cycle it's empty
             // we will assume they are
             mutex.withLock {
+                val elementsWithProblems = problemsByInspectionType(inspectionType)
+
                 for (elementWithProblem in elementsWithProblems) {
                     val findEquivalentProblem = results.find {
                         isElementRegistered(elementsWithProblems, it::getPsiElement)
@@ -176,14 +175,12 @@ class InspectionStatusChangedProbe(
         }
     }.getOrDefault(false)
 
-    private suspend fun problemsByInspectionType(inspectionType: InspectionType): MutableList<UniqueInspection> {
-        return mutex.withLock {
-            val result = problemsByInspectionType.computeIfAbsent(inspectionType) {
-                mutableListOf()
-            }
-
-            result.removeAll { it.on.get() == null }
-            result
+    private fun problemsByInspectionType(inspectionType: InspectionType): MutableList<UniqueInspection> {
+        val result = problemsByInspectionType.computeIfAbsent(inspectionType) {
+            Collections.synchronizedList(LinkedList())
         }
+
+        result.removeAll { it.on.get() == null }
+        return result
     }
 }

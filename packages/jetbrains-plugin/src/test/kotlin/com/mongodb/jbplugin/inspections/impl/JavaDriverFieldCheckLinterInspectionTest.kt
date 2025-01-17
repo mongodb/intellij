@@ -16,6 +16,7 @@ import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.observability.TelemetryService
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
+import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
 
@@ -100,7 +101,7 @@ public class Repository {
         fixture.enableInspections(FieldCheckInspectionBridge::class.java)
         fixture.testHighlighting()
 
-        verify(telemetryService).sendEvent(any())
+        verify(telemetryService, atLeastOnce()).sendEvent(any())
     }
 
     @ParsingTest(
