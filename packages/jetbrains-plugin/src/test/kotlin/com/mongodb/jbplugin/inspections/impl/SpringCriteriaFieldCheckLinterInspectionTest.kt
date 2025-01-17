@@ -213,6 +213,9 @@ class BookRepository {
                     <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>,
                     <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>,
                     <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>
+                ),
+                Aggregation.unwind(
+                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>
                 )
             ),
             Book.class,

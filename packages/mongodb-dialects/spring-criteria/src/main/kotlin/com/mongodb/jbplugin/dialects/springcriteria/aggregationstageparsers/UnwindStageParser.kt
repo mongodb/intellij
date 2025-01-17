@@ -15,7 +15,7 @@ class UnwindStageParser : StageParser {
     override fun isSuitableForFieldAutoComplete(
         methodCall: PsiMethodCallExpression,
         method: PsiMethod
-    ) = true
+    ) = canParse(method)
 
     override fun canParse(stageCallMethod: PsiMethod): Boolean {
         val owningClassFqn = stageCallMethod.containingClass?.qualifiedName ?: return false
