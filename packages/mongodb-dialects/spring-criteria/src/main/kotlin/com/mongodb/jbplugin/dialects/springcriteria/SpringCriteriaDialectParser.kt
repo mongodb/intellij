@@ -13,23 +13,25 @@ import com.mongodb.jbplugin.dialects.springcriteria.QueryTargetCollectionExtract
 import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.MatchStageParser
 import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.ProjectStageParser
 import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.StageParser
+import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.UnwindStageParser
 import com.mongodb.jbplugin.mql.BsonAny
 import com.mongodb.jbplugin.mql.BsonArray
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.components.*
 import com.mongodb.jbplugin.mql.toBsonType
 
-private const val CRITERIA_CLASS_FQN = "org.springframework.data.mongodb.core.query.Criteria"
-private const val DOCUMENT_FQN = "org.springframework.data.mongodb.core.mapping.Document"
-private const val MONGO_TEMPLATE_FQN = "org.springframework.data.mongodb.core.MongoTemplate"
-const val AGGREGATE_FQN = "org.springframework.data.mongodb.core.aggregation.Aggregation"
-const val PROJECTION_OPERATION_FQN = "org.springframework.data.mongodb.core.aggregation.ProjectionOperation"
-const val FIELDS_FQN = "org.springframework.data.mongodb.core.aggregation.Fields"
+internal const val CRITERIA_CLASS_FQN = "org.springframework.data.mongodb.core.query.Criteria"
+internal const val DOCUMENT_FQN = "org.springframework.data.mongodb.core.mapping.Document"
+internal const val MONGO_TEMPLATE_FQN = "org.springframework.data.mongodb.core.MongoTemplate"
+internal const val AGGREGATE_FQN = "org.springframework.data.mongodb.core.aggregation.Aggregation"
+internal const val PROJECTION_OPERATION_FQN = "org.springframework.data.mongodb.core.aggregation.ProjectionOperation"
+internal const val FIELDS_FQN = "org.springframework.data.mongodb.core.aggregation.Fields"
 
 object SpringCriteriaDialectParser : DialectParser<PsiElement> {
     private val aggregationStageParsers: List<StageParser> = listOf(
         MatchStageParser(::parseFilterRecursively),
-        ProjectStageParser()
+        ProjectStageParser(),
+        UnwindStageParser()
     )
 
     override fun isCandidateForQuery(source: PsiElement) =
