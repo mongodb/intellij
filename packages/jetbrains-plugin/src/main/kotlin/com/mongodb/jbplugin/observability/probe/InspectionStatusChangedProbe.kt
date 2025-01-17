@@ -19,6 +19,7 @@ import kotlinx.coroutines.CoroutineScope
 import java.lang.ref.WeakReference
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
@@ -41,8 +42,19 @@ class InspectionStatusChangedProbe(
     private val mutex: ReentrantLock = ReentrantLock()
     private val problemsByInspectionType: ProblemsByInspectionType = ConcurrentHashMap()
 
-    fun inspectionChanged(inspectionType: InspectionType, query: Node<PsiElement>) {
-        val dialect = query.component<HasSourceDialect>() ?: return
+    /**
+     * We are using this function because we don't really care much about exceptions here. It's just
+     * telemetry, and we will just fail safely and wait for the next event to happen. This is better
+     * than raising an exception to the user.
+     */
+    private fun runSafe(fn: () -> Unit) {
+        runCatching {
+            fn()
+        }.getOrNull()
+    }
+
+    fun inspectionChanged(inspectionType: InspectionType, query: Node<PsiElement>) = runSafe {
+        val dialect = query.component<HasSourceDialect>() ?: return@runSafe
         val psiElement = query.source
 
         cs.launchChildNonUrgentBackground {
@@ -79,9 +91,9 @@ class InspectionStatusChangedProbe(
         }
     }
 
-    fun typeMismatchInspectionActive(query: Node<PsiElement>, actualType: String, expectedType: String) {
+    fun typeMismatchInspectionActive(query: Node<PsiElement>, actualType: String, expectedType: String) = runSafe {
         val inspectionType = InspectionType.TYPE_MISMATCH
-        val dialect = query.component<HasSourceDialect>() ?: return
+        val dialect = query.component<HasSourceDialect>() ?: return@runSafe
         val psiElement = query.source
 
         cs.launchChildNonUrgentBackground {
@@ -117,7 +129,7 @@ class InspectionStatusChangedProbe(
         }
     }
 
-    fun finishedProcessingInspections(inspectionType: InspectionType, problemsHolder: ProblemsHolder) {
+    fun finishedProcessingInspections(inspectionType: InspectionType, problemsHolder: ProblemsHolder) = runSafe {
         cs.launchChildNonUrgentBackground {
             val results = problemsHolder.results
             // check all our registered problems
@@ -177,7 +189,7 @@ class InspectionStatusChangedProbe(
 
     private fun problemsByInspectionType(inspectionType: InspectionType): MutableList<UniqueInspection> {
         val result = problemsByInspectionType.computeIfAbsent(inspectionType) {
-            Collections.synchronizedList(LinkedList())
+            CopyOnWriteArrayList()
         }
 
         result.removeAll { it.on.get() == null }
