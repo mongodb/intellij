@@ -30,12 +30,19 @@ abstract class AbstractMongoDbInspectionBridge(
     private val coroutineScope: CoroutineScope,
     private val inspection: MongoDbInspection,
 ) : AbstractBaseJavaLocalInspectionTool() {
+    protected abstract fun emitFinishedInspectionTelemetryEvent(problemsHolder: ProblemsHolder)
+
     override fun buildVisitor(
         holder: ProblemsHolder,
         isOnTheFly: Boolean,
         session: LocalInspectionToolSession,
     ): PsiElementVisitor =
         object : JavaElementVisitor() {
+            override fun visitJavaFile(file: PsiJavaFile) {
+                super.visitJavaFile(file)
+                emitFinishedInspectionTelemetryEvent(holder)
+            }
+
             override fun visitMethodCallExpression(expression: PsiMethodCallExpression) {
                 dispatchIfValidMongoDbQuery(expression)
             }
@@ -53,8 +60,10 @@ abstract class AbstractMongoDbInspectionBridge(
                     val dialect = expression.containingFile.dialect ?: return@runReadAction
 
                     val queryService by expression.project.service<CachedQueryService>()
-                    queryService.queryAt(expression)?.let { query ->
-                        fileInExpression.virtualFile?.let {
+                    val query = queryService.queryAt(expression)
+
+                    if (query != null) {
+                        if (fileInExpression.virtualFile != null) {
                             inspection.visitMongoDbQuery(
                                 coroutineScope,
                                 dataSource?.localDataSource,
@@ -62,13 +71,15 @@ abstract class AbstractMongoDbInspectionBridge(
                                 query,
                                 dialect.formatter,
                             )
-                        } ?: inspection.visitMongoDbQuery(
-                            coroutineScope,
-                            null,
-                            holder,
-                            query,
-                            dialect.formatter
-                        )
+                        } else {
+                            inspection.visitMongoDbQuery(
+                                coroutineScope,
+                                null,
+                                holder,
+                                query,
+                                dialect.formatter
+                            )
+                        }
                     }
                 }
             }

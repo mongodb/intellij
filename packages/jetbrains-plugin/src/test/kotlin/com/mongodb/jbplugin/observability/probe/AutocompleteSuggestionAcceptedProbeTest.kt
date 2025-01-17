@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.timeout
 import org.mockito.kotlin.verify
 
 @IntegrationTest
@@ -44,7 +45,7 @@ class AutocompleteSuggestionAcceptedProbeTest {
 
             probe.sendEvents()
 
-            verify(telemetryService).sendEvent(
+            verify(telemetryService, timeout(1000)).sendEvent(
                 TelemetryEvent.AutocompleteGroupEvent(
                     HasSourceDialect.DialectName.JAVA_DRIVER,
                     "database",
@@ -53,7 +54,7 @@ class AutocompleteSuggestionAcceptedProbeTest {
                 ),
             )
 
-            verify(telemetryService).sendEvent(
+            verify(telemetryService, timeout(1000)).sendEvent(
                 TelemetryEvent.AutocompleteGroupEvent(
                     HasSourceDialect.DialectName.JAVA_DRIVER,
                     "collection",
@@ -62,7 +63,7 @@ class AutocompleteSuggestionAcceptedProbeTest {
                 ),
             )
 
-            verify(telemetryService).sendEvent(
+            verify(telemetryService, timeout(1000)).sendEvent(
                 TelemetryEvent.AutocompleteGroupEvent(
                     HasSourceDialect.DialectName.JAVA_DRIVER,
                     "field",
@@ -71,7 +72,7 @@ class AutocompleteSuggestionAcceptedProbeTest {
                 ),
             )
 
-            verify(telemetryService).sendEvent(
+            verify(telemetryService, timeout(1000)).sendEvent(
                 TelemetryEvent.AutocompleteGroupEvent(
                     HasSourceDialect.DialectName.JAVA_DRIVER,
                     "field",
@@ -80,7 +81,7 @@ class AutocompleteSuggestionAcceptedProbeTest {
                 ),
             )
 
-            verify(telemetryService).sendEvent(
+            verify(telemetryService, timeout(1000)).sendEvent(
                 TelemetryEvent.AutocompleteGroupEvent(
                     HasSourceDialect.DialectName.JAVA_DRIVER,
                     "field",

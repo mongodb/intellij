@@ -11,6 +11,7 @@ import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.database.dataSource.localDataSource
 import com.intellij.database.psi.DbDataSource
 import com.intellij.database.psi.DbPsiFacade
+import com.intellij.openapi.application.Application
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.module.Module
@@ -37,6 +38,7 @@ import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
 import com.mongodb.jbplugin.dialects.Dialect
 import com.mongodb.jbplugin.editor.MongoDbVirtualFileDataSourceProvider
+import com.mongodb.jbplugin.observability.TelemetryService
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
 import org.intellij.lang.annotations.Language
@@ -135,6 +137,7 @@ internal class CodeInsightTestExtension :
         ).get(testFixtureKey) as CodeInsightTestFixture
         val dumbService = DumbService.getInstance(fixture.project)
 
+        ApplicationManager.getApplication().withMockedService(mock(TelemetryService::class.java))
         // Run only when the code has been analysed
         runBlocking {
             suspendCancellableCoroutine { callback ->
@@ -174,7 +177,8 @@ internal class CodeInsightTestExtension :
         parameterContext.parameter.type == Project::class.java ||
             parameterContext.parameter.type == CodeInsightTestFixture::class.java ||
             parameterContext.parameter.type == PsiFile::class.java ||
-            parameterContext.parameter.type == JavaPsiFacade::class.java
+            parameterContext.parameter.type == JavaPsiFacade::class.java ||
+            parameterContext.parameter.type == Application::class.java
 
     override fun resolveParameter(
         parameterContext: ParameterContext,
@@ -189,6 +193,7 @@ internal class CodeInsightTestExtension :
             CodeInsightTestFixture::class.java -> fixture
             PsiFile::class.java -> fixture.file
             JavaPsiFacade::class.java -> JavaPsiFacade.getInstance(fixture.project)
+            Application::class.java -> ApplicationManager.getApplication()
             else -> TODO(
                 "Parameter of type ${parameterContext.parameter.type.canonicalName} is not supported."
             )

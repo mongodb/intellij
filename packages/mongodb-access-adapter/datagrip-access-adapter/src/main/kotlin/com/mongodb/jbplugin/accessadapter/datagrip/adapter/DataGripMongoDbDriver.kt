@@ -12,6 +12,8 @@ import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.database.dataSource.connection.ConnectionRequestor
 import com.intellij.database.run.ConsoleRunConfiguration
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.mongodb.ConnectionString
 import com.mongodb.MongoClientSettings
@@ -43,6 +45,8 @@ private const val TIMEOUT = 5
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 private val mongosh = Dispatchers.IO.limitedParallelism(1)
+
+private val logger: Logger = logger<DataGripMongoDbDriver>()
 
 /**
  * The driver itself. Shouldn't be used directly, but through the
@@ -206,8 +210,16 @@ internal class DataGripMongoDbDriver(
 
             withTimeout(timeout) {
                 val listOfResults = mutableListOf<T>()
-                val resultSet = statement.executeQuery() ?: return@withTimeout emptyList()
+                val queryResult = runCatching { statement.executeQuery() }
+                if (queryResult.isFailure) {
+                    logger.error(
+                        "Can not query MongoDB: $queryString",
+                        queryResult.exceptionOrNull()
+                    )
+                    return@withTimeout emptyList()
+                }
 
+                val resultSet = queryResult.getOrNull() ?: return@withTimeout emptyList()
                 if (resultClass.java == Unit::class.java) {
                     listOfResults.add(Unit as T)
                     return@withTimeout listOfResults

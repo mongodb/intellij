@@ -1,6 +1,5 @@
 package com.mongodb.jbplugin.dialects.springquery
 
-import com.intellij.database.util.common.containsElements
 import com.intellij.lang.injection.InjectedLanguageManager
 import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiAnnotation
@@ -272,9 +271,9 @@ object SpringAtQueryDialectParser : DialectParser<PsiElement> {
     private fun findParentMethodWithQueryAnnotation(source: PsiElement): PsiMethod? {
         return source.findTopParentBy { method ->
             method as? PsiMethod ?: return@findTopParentBy false
-            method.annotations.containsElements {
+            method.annotations.find {
                 it.hasQualifiedName(QUERY_FQN)
-            }
+            } != null
         } as? PsiMethod
     }
 
