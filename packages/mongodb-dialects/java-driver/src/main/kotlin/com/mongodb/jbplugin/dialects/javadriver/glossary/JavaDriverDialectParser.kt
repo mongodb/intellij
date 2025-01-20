@@ -12,6 +12,7 @@ import com.mongodb.jbplugin.mql.BsonArray
 import com.mongodb.jbplugin.mql.BsonBoolean
 import com.mongodb.jbplugin.mql.BsonInt32
 import com.mongodb.jbplugin.mql.BsonType
+import com.mongodb.jbplugin.mql.Component
 import com.mongodb.jbplugin.mql.ComputedBsonType
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.components.*
@@ -59,6 +60,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
             source as? PsiMethodCallExpression
                 ?: return Node(source, listOf(sourceDialect, collectionReference))
         val command = methodCallToCommand(currentCall)
+        val additionalMetadata = processFindQueryAdditionalMetadata(currentCall)
 
         /**
          * We might come across a FIND_ONE command and in that case we need to be pointing to the
@@ -80,7 +82,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
                     hasFilters,
                     hasUpdates,
                     hasAggregation,
-                ),
+                ) + additionalMetadata,
             )
         } else {
             commandCallMethod?.let {
@@ -110,9 +112,13 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
                             sourceDialect,
                             collectionReference,
                             command
-                        )
+                        ) + additionalMetadata
                     )
-            } ?: return Node(source, listOf(sourceDialect, collectionReference))
+            }
+                ?: return Node(
+                    source,
+                    listOf(sourceDialect, collectionReference) + additionalMetadata
+                )
         }
     }
 
@@ -895,6 +901,45 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
             }
         )
     }
+
+    private fun processFindQueryAdditionalMetadata(methodCall: PsiMethodCallExpression?): List<Component> {
+        if (methodCall == null) {
+            return emptyList()
+        }
+
+        val method = methodCall.fuzzyResolveMethod()
+
+        if (method != null && isMethodPartOfTheCursorClass(method)) {
+            val allChildrenMethodExpressions = methodCall.findAllChildrenOfType(
+                PsiMethodCallExpression::class.java
+            ).filter {
+                // filter out ourselves
+                !it.isEquivalentTo(methodCall)
+            }
+
+            val allChildrenMetadata = allChildrenMethodExpressions.flatMap {
+                processFindQueryAdditionalMetadata(it)
+            }
+
+            val currentMetadata = when (method.name) {
+                "sort" -> {
+                    val sortArg =
+                        methodCall.argumentList.expressions.getOrNull(0) ?: return emptyList()
+                    val sortExpr = resolveBsonBuilderCall(sortArg, SORTS_FQN) ?: return emptyList()
+                    listOf(HasSorts(parseBsonBuilderCallsSimilarToProjections(sortExpr, SORTS_FQN)))
+                }
+                else -> emptyList()
+            }
+
+            return allChildrenMetadata + currentMetadata
+        }
+
+        return emptyList()
+    }
+
+    private fun isMethodPartOfTheCursorClass(method: PsiMethod?): Boolean =
+        method?.containingClass?.qualifiedName?.contains("FindIterable") == true ||
+            method?.containingClass?.qualifiedName?.contains("MongoIterable") == true
 }
 
 fun PsiExpression.resolveFieldNameFromExpression(): HasFieldReference.FieldReference<out Any> {
