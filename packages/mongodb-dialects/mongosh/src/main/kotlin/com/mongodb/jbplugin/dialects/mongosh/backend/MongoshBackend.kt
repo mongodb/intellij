@@ -188,6 +188,20 @@ class MongoshBackend(
         return this
     }
 
+    /**
+     * Emits a literal string value into the script.
+     *
+     * This function is <b>unsafe</b>, <b>it does not encode input values, so it's sensitive
+     * to code injection</b>. Only use this for well-known, literal constant values that we have
+     * control of.
+     *
+     * @see emitContextValue for dynamic values provided by the user.
+     */
+    fun emitStringLiteral(value: String): MongoshBackend {
+
+        return emitAsIs("\"$value\"", encode = false)
+    }
+
     private fun emitAsIs(string: String, encode: Boolean = true): MongoshBackend {
         val stringToOutput = if (encode) Encode.forJavaScript(string) else string
 

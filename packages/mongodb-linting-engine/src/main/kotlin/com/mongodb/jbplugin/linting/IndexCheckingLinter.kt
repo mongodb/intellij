@@ -8,7 +8,7 @@ import com.mongodb.jbplugin.accessadapter.ExplainPlan
 import com.mongodb.jbplugin.accessadapter.MongoDbReadModelProvider
 import com.mongodb.jbplugin.accessadapter.slice.ExplainQuery
 import com.mongodb.jbplugin.linting.IndexCheckWarning.QueryNotCoveredByIndex
-import com.mongodb.jbplugin.mql.Node
+import com.mongodb.jbplugin.mql.*
 
 /**
  * Marker type for the result of the linter.
@@ -49,8 +49,12 @@ object IndexCheckingLinter {
         dataSource: D,
         readModelProvider: MongoDbReadModelProvider<D>,
         query: Node<S>,
+        queryContext: QueryContext,
     ): IndexCheckResult<S> {
-        val explainPlanResult = readModelProvider.slice(dataSource, ExplainQuery.Slice(query))
+        val explainPlanResult = readModelProvider.slice(
+            dataSource,
+            ExplainQuery.Slice(query, queryContext)
+        )
         return when (explainPlanResult.explainPlan) {
             is ExplainPlan.CollectionScan ->
                 IndexCheckResult(

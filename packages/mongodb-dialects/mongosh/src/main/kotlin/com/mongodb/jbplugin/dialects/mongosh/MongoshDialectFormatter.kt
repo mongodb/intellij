@@ -8,7 +8,6 @@ import com.mongodb.jbplugin.mql.components.*
 import com.mongodb.jbplugin.mql.components.HasFieldReference.FromSchema
 import com.mongodb.jbplugin.mql.components.HasFieldReference.Inferred
 import com.mongodb.jbplugin.mql.components.HasFieldReference.Unknown
-import com.mongodb.jbplugin.mql.components.HasValueReference.Computed
 import com.mongodb.jbplugin.mql.parser.anyError
 import com.mongodb.jbplugin.mql.parser.components.aggregationStages
 import com.mongodb.jbplugin.mql.parser.components.allFiltersRecursively
@@ -26,12 +25,15 @@ import org.owasp.encoder.Encode
 object MongoshDialectFormatter : DialectFormatter {
     override fun <S> formatQuery(
         query: Node<S>,
-        explain: Boolean,
+        queryContext: QueryContext,
     ): OutputQuery {
         val isAggregate = isAggregate(query)
         val canEmitAggregate = canEmitAggregate(query)
 
-        val outputString = MongoshBackend(prettyPrint = explain).apply {
+        val outputString = MongoshBackend(
+            prettyPrint =
+            queryContext.explainPlan != QueryContext.ExplainPlanType.NONE
+        ).apply {
             if (isAggregate && !canEmitAggregate) {
                 emitComment("Only aggregates with a single match stage can be converted.")
                 return@apply
@@ -39,9 +41,15 @@ object MongoshDialectFormatter : DialectFormatter {
 
             emitDbAccess()
             emitCollectionReference(query.component<HasCollectionReference<S>>())
-            if (explain) {
+            if (queryContext.explainPlan != QueryContext.ExplainPlanType.NONE) {
                 emitFunctionName("explain")
-                emitFunctionCall()
+                emitFunctionCall(long = false, {
+                    // https://www.mongodb.com/docs/manual/reference/command/explain/#command-fields
+                    when (queryContext.explainPlan) {
+                        QueryContext.ExplainPlanType.FULL -> emitStringLiteral("executionStats")
+                        else -> emitStringLiteral("queryPlanner")
+                    }
+                })
                 emitPropertyAccess()
                 if (isAggregate) {
                     emitFunctionName("aggregate")

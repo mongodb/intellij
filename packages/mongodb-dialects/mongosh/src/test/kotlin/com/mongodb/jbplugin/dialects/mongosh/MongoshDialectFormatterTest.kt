@@ -6,6 +6,7 @@ import com.mongodb.jbplugin.mql.BsonInt32
 import com.mongodb.jbplugin.mql.BsonString
 import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.Node
+import com.mongodb.jbplugin.mql.QueryContext
 import com.mongodb.jbplugin.mql.components.*
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -117,7 +118,7 @@ class MongoshDialectFormatterTest {
     }
 
     @Test
-    fun `can format a query with an explain plan`() {
+    fun `can format a query with a safe explain plan using queryPlanner`() {
         assertGeneratedQuery(
             """
             var collection = ""
@@ -125,11 +126,49 @@ class MongoshDialectFormatterTest {
             
             db.getSiblingDB(database)
               .getCollection(collection)
-              .explain().find(
-                            {"myField": "myVal", }
+              .explain("queryPlanner").find(
+                                          {"myField": "myVal", }
               )
             """.trimIndent(),
-            explain = true
+            explain = QueryContext.ExplainPlanType.SAFE
+        ) {
+            Node(
+                Unit,
+                listOf(
+                    HasFilter(
+                        listOf(
+                            Node(
+                                Unit,
+                                listOf(
+                                    HasFieldReference(
+                                        HasFieldReference.FromSchema(Unit, "myField")
+                                    ),
+                                    HasValueReference(
+                                        HasValueReference.Constant(Unit, "myVal", BsonString)
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `can format a query with a full explain plan using executionStats`() {
+        assertGeneratedQuery(
+            """
+            var collection = ""
+            var database = ""
+            
+            db.getSiblingDB(database)
+              .getCollection(collection)
+              .explain("executionStats").find(
+                                            {"myField": "myVal", }
+              )
+            """.trimIndent(),
+            explain = QueryContext.ExplainPlanType.FULL
         ) {
             Node(
                 Unit,
@@ -162,8 +201,7 @@ class MongoshDialectFormatterTest {
             var database = ""
 
             db.getSiblingDB(database).getCollection(collection).aggregate([{"${"$"}match": {"myField": "myVal"}}])
-            """.trimIndent(),
-            explain = false
+            """.trimIndent()
         ) {
             Node(
                 Unit,
@@ -207,7 +245,7 @@ class MongoshDialectFormatterTest {
     }
 
     @Test
-    fun `can format an explain command for a valid aggregate query`() {
+    fun `can format a safe explain command for a valid aggregate query`() {
         assertGeneratedQuery(
             """
             var collection = ""
@@ -215,13 +253,71 @@ class MongoshDialectFormatterTest {
             
             db.getSiblingDB(database)
               .getCollection(collection)
-              .explain().aggregate(
-                                 [
-                                   {"${'$'}match": {"myField": "myVal"}}
-                                 ]
+              .explain("queryPlanner").aggregate(
+                                               [
+                                                 {"${'$'}match": {"myField": "myVal"}}
+                                               ]
               )
             """.trimIndent(),
-            explain = true
+            explain = QueryContext.ExplainPlanType.SAFE
+        ) {
+            Node(
+                Unit,
+                listOf(
+                    IsCommand(IsCommand.CommandType.AGGREGATE),
+                    HasAggregation(
+                        listOf(
+                            Node(
+                                Unit,
+                                listOf(
+                                    Named(Name.MATCH),
+                                    HasFilter(
+                                        listOf(
+                                            Node(
+                                                Unit,
+                                                listOf(
+                                                    HasFieldReference(
+                                                        HasFieldReference.FromSchema(
+                                                            Unit,
+                                                            "myField"
+                                                        )
+                                                    ),
+                                                    HasValueReference(
+                                                        HasValueReference.Constant(
+                                                            Unit,
+                                                            "myVal",
+                                                            BsonString
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `can format a full explain command for a valid aggregate query`() {
+        assertGeneratedQuery(
+            """
+            var collection = ""
+            var database = ""
+            
+            db.getSiblingDB(database)
+              .getCollection(collection)
+              .explain("executionStats").aggregate(
+                                                 [
+                                                   {"${'$'}match": {"myField": "myVal"}}
+                                                 ]
+              )
+            """.trimIndent(),
+            explain = QueryContext.ExplainPlanType.FULL
         ) {
             Node(
                 Unit,
@@ -474,10 +570,10 @@ class MongoshDialectFormatterTest {
 
 private fun assertGeneratedQuery(
     @Language("js") js: String,
-    explain: Boolean = false,
+    explain: QueryContext.ExplainPlanType = QueryContext.ExplainPlanType.NONE,
     script: () -> Node<Unit>
 ) {
-    val generated = MongoshDialectFormatter.formatQuery(script(), explain)
+    val generated = MongoshDialectFormatter.formatQuery(script(), QueryContext(emptyMap(), explain))
     assertEquals(js, generated.query)
 }
 
