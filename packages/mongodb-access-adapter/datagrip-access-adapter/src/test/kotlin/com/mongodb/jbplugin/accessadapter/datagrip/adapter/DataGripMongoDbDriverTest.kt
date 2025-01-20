@@ -271,7 +271,10 @@ class DataGripMongoDbDriverTest {
             Unit::class,
         )
 
-        val explainPlanResult = driver.explain(query, QueryContext.empty())
+        val explainPlanResult = driver.explain(
+            query,
+            QueryContext(emptyMap(), QueryContext.ExplainPlanType.SAFE)
+        )
         assertEquals(ExplainPlan.CollectionScan, explainPlanResult)
     }
 
