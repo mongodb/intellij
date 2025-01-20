@@ -198,7 +198,6 @@ class MongoshBackend(
      * @see emitContextValue for dynamic values provided by the user.
      */
     fun emitStringLiteral(value: String): MongoshBackend {
-
         return emitAsIs("\"$value\"", encode = false)
     }
 
