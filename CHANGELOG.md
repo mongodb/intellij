@@ -5,6 +5,8 @@ MongoDB plugin for IntelliJ IDEA.
 ## [Unreleased]
 
 ### Added
+* [INTELLIJ-187](https://jira.mongodb.org/browse/INTELLIJ-187) Use safe execution plans by default. Allow full execution
+  plans through a Plugin settings flag.
 * [INTELLIJ-180](https://jira.mongodb.org/browse/INTELLIJ-180) Telemetry when inspections are shown and resolved.
   It can be disabled in the Plugin settings.
 * [INTELLIJ-176](https://jira.mongodb.org/browse/INTELLIJ-176) Add support for parsing, inspecting and autocompleting in an unwind stage written using `Aggregation.unwind`.
