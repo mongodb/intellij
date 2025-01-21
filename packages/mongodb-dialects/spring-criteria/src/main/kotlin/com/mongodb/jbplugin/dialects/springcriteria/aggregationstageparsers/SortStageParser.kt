@@ -74,14 +74,16 @@ class SortStageParser : StageParser {
             parseDirectionArgumentAndFieldsToSortCriteria(
                 directionArgumentExpression = firstArgumentExpression,
                 fieldArgumentExpressions = methodCall.argumentList.expressions.drop(1),
+                // There is no parent chain just yet
                 directionForcedFromParentChain = null,
                 reverseCountForcedFromParentChain = 0
             )
         } else if (firstArgumentExpression.isSortObject()) {
             parseSortObjectArgument(
-                firstArgumentExpression.resolveToSortCreationCall()!!,
-                null,
-                0
+                sortCreationMethodCall = firstArgumentExpression.resolveToSortCreationCall()!!,
+                // There is no parent chain just yet
+                directionForcedFromParentChain = null,
+                reverseCountForcedFromParentChain = 0
             )
         } else {
             emptyList()
@@ -112,8 +114,13 @@ class SortStageParser : StageParser {
         directionForcedFromParentChain: Name?,
         reverseCountForcedFromParentChain: Int,
     ): List<Node<PsiElement>> {
+        // This method can be called recursively in which case the caller will be considered parsing
+        // a parent chain and the current call will become the child chain. Each child chain inherit
+        // the forcedDirection and reverseCount from the parent chain so that they can derive correct
+        // values for themselves
         var forcedDirection = directionForcedFromParentChain
         var reverseCount = reverseCountForcedFromParentChain
+
         return sortCreationMethodCall.gatherChainedCalls().flatMapIndexed { index, methodCall ->
             val method = methodCall.fuzzyResolveMethod()
 
@@ -122,9 +129,9 @@ class SortStageParser : StageParser {
             }
 
             if (method.name == "ascending" || method.name == "descending") {
-                // If we have ascending as the last chained call and there was no other forced
-                // direction from parent chain then the entire chain is forced to have the current
-                // order
+                // If we have ascending or descending as the last call in the chain and there was no
+                // other forced direction from parent chain then the entire chain is forced to have
+                // the current order from this call.
                 if (index == 0 && forcedDirection == null) {
                     forcedDirection = if (method.name == "ascending") {
                         Name.ASCENDING
