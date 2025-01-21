@@ -40,6 +40,7 @@ import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasFieldReference
 import com.mongodb.jbplugin.mql.components.HasFilter
 import com.mongodb.jbplugin.mql.components.HasProjections
+import com.mongodb.jbplugin.mql.components.HasSorts
 import com.mongodb.jbplugin.mql.components.HasUpdates
 import com.mongodb.jbplugin.mql.components.HasValueReference
 import com.mongodb.jbplugin.mql.components.IsCommand
@@ -319,10 +320,10 @@ fun Node<PsiElement>.stageN(
     if (name != null) {
         val stageName = stage!!.component<Named>()
         assertNotEquals(null, stageName) {
-            "Expected a stage with name $name but null found."
+            "Expected a stage with name $name but null found at index $n."
         }
         assertEquals(name, stageName!!.name) {
-            "Expected a stage with name $name but ${stageName.name} found."
+            "Expected a stage with name $name but ${stageName.name} found at index $n."
         }
     }
 
@@ -375,6 +376,31 @@ fun Node<PsiElement>.projectionN(
     }
 
     projection.assertions()
+}
+
+fun Node<PsiElement>.sortN(
+    n: Int,
+    name: Name? = null,
+    stageIndex: Int? = null,
+    assertions: Node<PsiElement>.() -> Unit = {
+    },
+) {
+    val sorts = component<HasSorts<PsiElement>>()
+    assertNotNull(sorts)
+
+    val sort = sorts!!.children[n]
+
+    if (name != null) {
+        val qname = sort.component<Named>()
+        assertNotEquals(null, qname) {
+            "StageIndex: $stageIndex, SortCriteriaIndex: $n :: Expected a named operation with name $name but null found."
+        }
+        assertEquals(name, qname?.name) {
+            "StageIndex: $stageIndex, SortCriteriaIndex: $n :: Expected a named operation with name $name but $qname found."
+        }
+    }
+
+    sort.assertions()
 }
 
 fun Node<PsiElement>.updateN(

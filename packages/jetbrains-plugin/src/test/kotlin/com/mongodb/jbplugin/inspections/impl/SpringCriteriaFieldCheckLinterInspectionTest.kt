@@ -166,10 +166,12 @@ class BookRepository {
     @ParsingTest(
         fileName = "Repository.java",
         value = """
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.List;
 import static org.springframework.data.mongodb.core.query.Query.query;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
@@ -216,6 +218,58 @@ class BookRepository {
                 ),
                 Aggregation.unwind(
                     <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>
+                ),
+                Aggregation.sort(
+                    Sort.Direction.ASC,
+                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>,
+                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>,
+                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>
+                ).and(
+                    Sort.Direction.ASC,
+                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>
+                ).and(
+                    Sort.Direction.ASC,
+                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>
+                ),
+                Aggregation.sort(
+                    Sort.by(
+                        <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>,
+                        <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>,
+                        <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>
+                    ).and(
+                        Sort.by(
+                            Sort.Direction.ASC,
+                            <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>,
+                            <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>,
+                            <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>
+                        ).reverse()
+                    ).and(
+                        Sort.by(
+                            Sort.Order.asc(
+                                <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>
+                            ),
+                            Sort.Order.desc(
+                                <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>
+                            ),
+                            Sort.Order.by(
+                                <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>
+                            )
+                        ).ascending()
+                    ).and(
+                        Sort.by(
+                            List.of(
+                                Sort.Order.asc(
+                                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>
+                                ),
+                                Sort.Order.desc(
+                                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>
+                                ),
+                                Sort.Order.by(
+                                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>
+                                )
+                            )
+                        ).descending()
+                    )
                 )
             ),
             Book.class,

@@ -12,6 +12,7 @@ import com.mongodb.jbplugin.dialects.springcriteria.QueryTargetCollectionExtract
 import com.mongodb.jbplugin.dialects.springcriteria.QueryTargetCollectionExtractor.or
 import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.MatchStageParser
 import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.ProjectStageParser
+import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.SortStageParser
 import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.StageParser
 import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.UnwindStageParser
 import com.mongodb.jbplugin.mql.BsonAny
@@ -31,7 +32,8 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
     private val aggregationStageParsers: List<StageParser> = listOf(
         MatchStageParser(::parseFilterRecursively),
         ProjectStageParser(),
-        UnwindStageParser()
+        UnwindStageParser(),
+        SortStageParser()
     )
 
     override fun isCandidateForQuery(source: PsiElement) =

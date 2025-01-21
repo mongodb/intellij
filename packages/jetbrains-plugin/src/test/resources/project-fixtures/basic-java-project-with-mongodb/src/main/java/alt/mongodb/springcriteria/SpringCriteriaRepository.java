@@ -1,5 +1,6 @@
 package alt.mongodb.springcriteria;
 
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.Fields;
@@ -35,7 +36,12 @@ public class SpringCriteriaRepository {
         return template.aggregate(
             Aggregation.newAggregation(
                 Aggregation.match(where( "tomatoes.viewer.rating").gte(rating)),
-                Aggregation.project("fieldA").andInclude("fieldB").andExclude("fieldC")
+                Aggregation.project("fieldA").andInclude("fieldB").andExclude("fieldC"),
+                Aggregation.sort(Sort.Direction.ASC, "asd"),
+                Aggregation.sort(Sort.by("rated", "qwe")),
+                Aggregation.sort(Sort.by(Sort.Direction.ASC, "rates")),
+                Aggregation.sort(Sort.by(Sort.Order.by("rated"), Sort.Order.by("ratedd"))),
+                Aggregation.sort(Sort.by(List.of(Sort.Order.by("rated"), Sort.Order.by("rateds"))))
             ),
             Movie.class,
             Movie.class
