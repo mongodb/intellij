@@ -225,7 +225,7 @@ class ProjectStageParser : StageParser {
 }
 
 /**
- * From a PsiMethodCallExpression, it attempts to travel upwards the chain(assuming there is one)
+ * From a PsiMethodCallExpression, it attempts to travel backwards the chain(assuming there is one)
  * while gathering other PsiMethodCallExpressions it comes across, until there is no further
  * PsiMethodCallExpression in the chain. For example, consider the following method call
  * ```
@@ -238,6 +238,9 @@ class ProjectStageParser : StageParser {
  *   Aggregation.project().andInclude("fieldA")
  *   Aggregation.project()
  * ]
+ *
+ * Note: The collected chain of method calls always starts from the method call all the way to the
+ * right of the chain and ends with the root method call.
  */
 fun PsiMethodCallExpression.gatherChainedCalls(): List<PsiMethodCallExpression> {
     val chain = mutableListOf<PsiMethodCallExpression>()
