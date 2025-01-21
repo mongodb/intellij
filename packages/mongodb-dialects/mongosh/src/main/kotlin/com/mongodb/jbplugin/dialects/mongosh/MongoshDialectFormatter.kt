@@ -6,8 +6,10 @@ import com.mongodb.jbplugin.dialects.mongosh.aggr.canEmitAggregate
 import com.mongodb.jbplugin.dialects.mongosh.aggr.emitAggregateBody
 import com.mongodb.jbplugin.dialects.mongosh.aggr.isAggregate
 import com.mongodb.jbplugin.dialects.mongosh.backend.MongoshBackend
+import com.mongodb.jbplugin.dialects.mongosh.query.canUpdateDocuments
 import com.mongodb.jbplugin.dialects.mongosh.query.emitCollectionReference
 import com.mongodb.jbplugin.dialects.mongosh.query.emitQueryFilter
+import com.mongodb.jbplugin.dialects.mongosh.query.emitQueryUpdate
 import com.mongodb.jbplugin.dialects.mongosh.query.emitSort
 import com.mongodb.jbplugin.dialects.mongosh.query.returnsACursor
 import com.mongodb.jbplugin.mql.*
@@ -52,13 +54,21 @@ object MongoshDialectFormatter : DialectFormatter {
             } else {
                 emitFunctionName(query.component<IsCommand>()?.type?.canonical ?: "find")
             }
-            emitFunctionCall(long = true, {
-                if (query.isAggregate()) {
-                    emitAggregateBody(query)
-                } else {
+            if (query.canUpdateDocuments()) {
+                emitFunctionCall(long = true, {
                     emitQueryFilter(query, firstCall = true)
-                }
-            })
+                }, {
+                    emitQueryUpdate(query)
+                })
+            } else {
+                emitFunctionCall(long = true, {
+                    if (query.isAggregate()) {
+                        emitAggregateBody(query)
+                    } else {
+                        emitQueryFilter(query, firstCall = true)
+                    }
+                })
+            }
 
             if (query.returnsACursor()) {
                 emitSort(query)

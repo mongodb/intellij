@@ -30,6 +30,21 @@ public class JavaDriverRepository {
             .first();
     }
 
+    public void updateMoviesByYear(int year) {
+        client
+            .getDatabase("sample_mflix")
+            .getCollection("movies")
+            .updateMany(
+                Filters.eq("year", year),
+                Updates.combine(
+                    Updates.inc(IMDB_VOTES, 1),
+                    Updates.inc(AWARDS_WINS, 1),
+                    Updates.set("other", 25),
+                    Updates.pull(IMDB_VOTES, Filters.eq("a", 1))
+                )
+            );
+    }
+
     public List<Document> findMoviesByYear(int year) {
         return client
             .getDatabase("sample_mflix")
