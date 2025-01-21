@@ -5,6 +5,8 @@ MongoDB plugin for IntelliJ IDEA.
 ## [Unreleased]
 
 ### Added
+* [INTELLIJ-188](https://jira.mongodb.org/browse/INTELLIJ-188) Support for generating sort in the query generator.
+* [INTELLIJ-186](https://jira.mongodb.org/browse/INTELLIJ-186) Support for parsing Sorts in the Java Driver.
 * [INTELLIJ-187](https://jira.mongodb.org/browse/INTELLIJ-187) Use safe execution plans by default. Allow full execution
   plans through a Plugin settings flag.
 * [INTELLIJ-180](https://jira.mongodb.org/browse/INTELLIJ-180) Telemetry when inspections are shown and resolved.
