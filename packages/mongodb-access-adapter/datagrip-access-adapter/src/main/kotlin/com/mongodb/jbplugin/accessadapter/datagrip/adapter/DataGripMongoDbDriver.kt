@@ -23,6 +23,7 @@ import com.mongodb.jbplugin.dialects.OutputQuery
 import com.mongodb.jbplugin.dialects.mongosh.MongoshDialect
 import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.Node
+import com.mongodb.jbplugin.mql.QueryContext
 import kotlinx.coroutines.*
 import org.bson.Document
 import org.bson.codecs.DecoderContext
@@ -88,9 +89,11 @@ internal class DataGripMongoDbDriver(
 
     override suspend fun connectionString(): ConnectionString = ConnectionString(dataSource.url!!)
 
-    override suspend fun <S> explain(query: Node<S>): ExplainPlan = withContext(Dispatchers.IO) {
+    override suspend fun <S> explain(query: Node<S>, queryContext: QueryContext): ExplainPlan = withContext(
+        Dispatchers.IO
+    ) {
         val queryScript = ApplicationManager.getApplication().runReadAction<OutputQuery> {
-            MongoshDialect.formatter.formatQuery(query, explain = true)
+            MongoshDialect.formatter.formatQuery(query, queryContext)
         }
 
         if (queryScript !is OutputQuery.CanBeRun) {

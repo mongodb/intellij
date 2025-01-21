@@ -35,6 +35,7 @@ import com.mongodb.jbplugin.i18n.CodeActionsMessages
 import com.mongodb.jbplugin.i18n.Icons
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.mql.Node
+import com.mongodb.jbplugin.mql.QueryContext
 import com.mongodb.jbplugin.mql.components.HasSourceDialect
 import com.mongodb.jbplugin.mql.components.IsCommand
 import com.mongodb.jbplugin.mql.parser.components.whenHasAnyCommand
@@ -86,7 +87,7 @@ internal object RunQueryCodeAction : MongoDbCodeAction {
                     coroutineScope.launchChildBackground {
                         val outputQuery = MongoshDialect.formatter.formatQuery(
                             query,
-                            explain = false
+                            QueryContext.empty()
                         )
 
                         if (dataSource?.isConnected() == true) {

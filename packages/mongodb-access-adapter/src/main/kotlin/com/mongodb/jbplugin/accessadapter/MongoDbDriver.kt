@@ -12,8 +12,8 @@ package com.mongodb.jbplugin.accessadapter
 import com.mongodb.ConnectionString
 import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.Node
+import com.mongodb.jbplugin.mql.QueryContext
 import org.bson.conversions.Bson
-import java.util.*
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -40,7 +40,7 @@ interface MongoDbDriver {
 
     suspend fun connectionString(): ConnectionString
 
-    suspend fun <S> explain(query: Node<S>): ExplainPlan
+    suspend fun <S> explain(query: Node<S>, queryContext: QueryContext): ExplainPlan
 
     suspend fun <T : Any> runCommand(
         database: String,

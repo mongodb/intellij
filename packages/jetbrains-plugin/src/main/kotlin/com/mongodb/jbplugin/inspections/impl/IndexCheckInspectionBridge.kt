@@ -21,9 +21,11 @@ import com.mongodb.jbplugin.linting.IndexCheckWarning
 import com.mongodb.jbplugin.linting.IndexCheckingLinter
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.mql.Node
+import com.mongodb.jbplugin.mql.QueryContext
 import com.mongodb.jbplugin.observability.TelemetryEvent
 import com.mongodb.jbplugin.observability.probe.CreateIndexIntentionProbe
 import com.mongodb.jbplugin.observability.probe.InspectionStatusChangedProbe
+import com.mongodb.jbplugin.settings.pluginSetting
 import kotlinx.coroutines.CoroutineScope
 
 class IndexCheckInspectionBridge(coroutineScope: CoroutineScope) :
@@ -52,12 +54,28 @@ internal object IndexCheckLinterInspection : MongoDbInspection {
         query: Node<PsiElement>,
         formatter: DialectFormatter,
     ) {
+        val isFullExplainPlanEnabled by pluginSetting { ::isFullExplainPlanEnabled }
+
         if (dataSource == null || !dataSource.isConnected()) {
             return
         }
 
+        val queryContext = QueryContext(
+            emptyMap(),
+            if (isFullExplainPlanEnabled) {
+                QueryContext.ExplainPlanType.FULL
+            } else {
+                QueryContext.ExplainPlanType.SAFE
+            }
+        )
+
         val readModelProvider by query.source.project.service<DataGripBasedReadModelProvider>()
-        val result = IndexCheckingLinter.lintQuery(dataSource, readModelProvider, query)
+        val result = IndexCheckingLinter.lintQuery(
+            dataSource,
+            readModelProvider,
+            query,
+            queryContext
+        )
 
         result.warnings.forEach {
             when (it) {

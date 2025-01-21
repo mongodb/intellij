@@ -11,6 +11,7 @@ import com.mongodb.jbplugin.accessadapter.toNs
 import com.mongodb.jbplugin.mql.BsonString
 import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.Node
+import com.mongodb.jbplugin.mql.QueryContext
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasFieldReference
 import com.mongodb.jbplugin.mql.components.HasFilter
@@ -270,7 +271,10 @@ class DataGripMongoDbDriverTest {
             Unit::class,
         )
 
-        val explainPlanResult = driver.explain(query)
+        val explainPlanResult = driver.explain(
+            query,
+            QueryContext(emptyMap(), QueryContext.ExplainPlanType.SAFE)
+        )
         assertEquals(ExplainPlan.CollectionScan, explainPlanResult)
     }
 
@@ -318,7 +322,10 @@ class DataGripMongoDbDriverTest {
             )
         )
 
-        val explainPlanResult = driver.explain(query)
+        val explainPlanResult = driver.explain(
+            query,
+            QueryContext(emptyMap(), QueryContext.ExplainPlanType.SAFE)
+        )
         assertEquals(ExplainPlan.IndexScan, explainPlanResult)
     }
 }

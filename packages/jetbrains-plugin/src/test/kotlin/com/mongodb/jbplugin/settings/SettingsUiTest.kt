@@ -26,6 +26,19 @@ class SettingsUiTest {
 
     @Test
     @RequiresProject("basic-java-project-with-mongodb")
+    fun `allows toggling the full explain plan`(remoteRobot: RemoteRobot) {
+        val telemetryBeforeTest = remoteRobot.useSetting<Boolean>("isFullExplainPlanEnabled")
+
+        val settings = remoteRobot.openSettings()
+        settings.enableFullExplainPlan.click()
+        settings.ok.click()
+
+        val telemetryAfterTest = remoteRobot.useSetting<Boolean>("isFullExplainPlanEnabled")
+        assertNotEquals(telemetryBeforeTest, telemetryAfterTest)
+    }
+
+    @Test
+    @RequiresProject("basic-java-project-with-mongodb")
     fun `allows opening the privacy policy in a browser`(remoteRobot: RemoteRobot) {
         remoteRobot.openBrowserSettings().run {
             useFakeBrowser()
@@ -43,5 +56,29 @@ class SettingsUiTest {
             }
 
         assertEquals("https://www.mongodb.com/legal/privacy/privacy-policy", lastBrowserUrl)
+    }
+
+    @Test
+    @RequiresProject("basic-java-project-with-mongodb")
+    fun `allows opening the analyze query performance page`(remoteRobot: RemoteRobot) {
+        remoteRobot.openBrowserSettings().run {
+            useFakeBrowser()
+        }
+
+        val settings = remoteRobot.openSettings()
+        settings.analyzeQueryPerformanceButton.click()
+        settings.ok.click()
+
+        val lastBrowserUrl =
+            remoteRobot.openBrowserSettings().run {
+                useSystemBrowser()
+                ok.click()
+                lastBrowserUrl()
+            }
+
+        assertEquals(
+            "https://www.mongodb.com/docs/manual/tutorial/evaluate-operation-performance/",
+            lastBrowserUrl
+        )
     }
 }

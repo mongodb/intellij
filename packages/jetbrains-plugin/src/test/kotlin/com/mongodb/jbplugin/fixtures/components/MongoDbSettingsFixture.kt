@@ -33,10 +33,22 @@ class MongoDbSettingsFixture(
         findAll<JCheckboxFixture>().find { it.text == "Enable telemetry" }
             ?: throw NoSuchElementException()
     }
+
+    val enableFullExplainPlan by lazy {
+        findAll<JCheckboxFixture>().find { it.text == "Enable full explain plan" }
+            ?: throw NoSuchElementException()
+    }
+
     val privacyPolicyButton by lazy {
         findAll<JButtonFixture>().find { it.text == "View Privacy Policy" }
             ?: throw NoSuchElementException()
     }
+
+    val analyzeQueryPerformanceButton by lazy {
+        findAll<JButtonFixture>().find { it.text == "Analyze Query Performance" }
+            ?: throw NoSuchElementException()
+    }
+
     val ok by lazy {
         remoteRobot.findAll<JButtonFixture>().find { it.text == "OK" }
             ?: throw NoSuchElementException()
