@@ -66,6 +66,10 @@ object MongoshDialectFormatter : DialectFormatter {
                     emitQueryBody(query, firstCall = true)
                 }
             })
+
+            if (returnsACursor(query)) {
+                emitSort(query)
+            }
         }.computeOutput()
 
         val ref = query.component<HasCollectionReference<S>>()?.reference
@@ -329,6 +333,12 @@ private fun <S> isAggregate(node: Node<S>): Boolean {
         .parse(node).orElse { false }
 }
 
+private fun <S> returnsACursor(node: Node<S>): Boolean {
+    return whenIsCommand<S>(IsCommand.CommandType.FIND_MANY)
+        .map { true }
+        .parse(node).orElse { false }
+}
+
 private fun <S> canEmitAggregate(node: Node<S>): Boolean {
     return aggregationStages<S>()
         .matches(count<Node<S>>().filter { it >= 1 }.matches().anyError())
@@ -343,6 +353,7 @@ private fun <S> MongoshBackend.resolveValueReference(
     fieldRef: HasFieldReference<S>?
 ) = when (val ref = valueRef.reference) {
     is HasValueReference.Constant -> registerConstant(ref.value)
+    is HasValueReference.Inferred -> registerConstant(ref.value)
     is HasValueReference.Runtime -> registerVariable(
         (fieldRef?.reference as? FromSchema)?.fieldName ?: "value",
         ref.type
@@ -381,4 +392,30 @@ private fun <S> MongoshBackend.emitCollectionReference(collRef: HasCollectionRef
     }
 
     return this
+}
+
+private fun <S> MongoshBackend.emitSort(query: Node<S>): MongoshBackend {
+    val sortComponent = query.component<HasSorts<S>>()
+    if (sortComponent == null) {
+        return this
+    }
+
+    fun generateSortKeyVal(node: Node<S>): MongoshBackend {
+        val fieldRef = node.component<HasFieldReference<S>>() ?: return this
+        val valueRef = node.component<HasValueReference<S>>() ?: return this
+
+        emitObjectKey(resolveFieldReference(fieldRef))
+        emitContextValue(resolveValueReference(valueRef, fieldRef))
+        return emitObjectValueEnd()
+    }
+
+    emitPropertyAccess()
+    emitFunctionName("sort")
+    return emitFunctionCall(long = false, {
+        emitObjectStart(long = false)
+        for (sortCriteria in sortComponent.children) {
+            generateSortKeyVal(sortCriteria)
+        }
+        emitObjectEnd(long = false)
+    })
 }

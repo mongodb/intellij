@@ -521,6 +521,38 @@ class MongoshDialectFormatterTest {
     }
 
     @Test
+    fun `can sort a find query when specified`() {
+        assertGeneratedQuery(
+            """
+            var collection = ""
+            var database = ""
+
+            db.getSiblingDB(database).getCollection(collection).find().sort({"a": 1, })
+            """.trimIndent()
+        ) {
+            Node(
+                Unit,
+                listOf(
+                    IsCommand(IsCommand.CommandType.FIND_MANY),
+                    HasSorts(
+                        listOf(
+                            Node(
+                                Unit,
+                                listOf(
+                                    HasFieldReference(HasFieldReference.FromSchema(Unit, "a")),
+                                    HasValueReference(
+                                        HasValueReference.Inferred(Unit, 1, BsonInt32)
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        }
+    }
+
+    @Test
     fun `generates an index suggestion for a query given its fields`() {
         assertGeneratedIndex(
             """

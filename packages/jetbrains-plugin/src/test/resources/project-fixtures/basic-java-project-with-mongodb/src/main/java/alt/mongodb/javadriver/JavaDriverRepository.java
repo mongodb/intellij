@@ -27,7 +27,6 @@ public class JavaDriverRepository {
             .getDatabase("sample_mflix")
             .getCollection("movies")
             .find(Filters.eq(id))
-            .sort(Sorts.ascending(IMDB_VOTES))
             .first();
     }
 
@@ -36,6 +35,8 @@ public class JavaDriverRepository {
             .getDatabase("sample_mflix")
             .getCollection("movies")
             .find(Filters.eq("year", year))
+//            .sort(Sorts.ascending(IMDB_VOTES))
+            .sort(Sorts.orderBy(Sorts.ascending(IMDB_VOTES), Sorts.descending("_id")))
             .into(new ArrayList<>());
     }
 

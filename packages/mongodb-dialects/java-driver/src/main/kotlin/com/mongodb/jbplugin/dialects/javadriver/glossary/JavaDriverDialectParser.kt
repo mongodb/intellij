@@ -60,7 +60,9 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
             source as? PsiMethodCallExpression
                 ?: return Node(source, listOf(sourceDialect, collectionReference))
         val command = methodCallToCommand(currentCall)
-        val additionalMetadata = processFindQueryAdditionalMetadata(currentCall)
+
+        val additionalMetadataMethods = collectAllMetadataMethods(currentCall)
+        val additionalMetadata = processFindQueryAdditionalMetadata(additionalMetadataMethods)
 
         /**
          * We might come across a FIND_ONE command and in that case we need to be pointing to the
@@ -902,39 +904,47 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
         )
     }
 
-    private fun processFindQueryAdditionalMetadata(methodCall: PsiMethodCallExpression?): List<Component> {
-        if (methodCall == null) {
-            return emptyList()
-        }
+    private fun collectAllMetadataMethods(methodCall: PsiMethodCallExpression?): List<PsiMethodCallExpression> {
+        val allParentMethodExpressions = methodCall?.collectTypeUntil(
+            PsiMethodCallExpression::class.java,
+            PsiReturnStatement::class.java
+        )?.filter {
+            // filter out ourselves
+            !it.isEquivalentTo(methodCall)
+        } ?: emptyList()
 
-        val method = methodCall.fuzzyResolveMethod()
+        val allChildrenMethodExpressions = methodCall?.findAllChildrenOfType(
+            PsiMethodCallExpression::class.java
+        )?.filter {
+            // filter out ourselves
+            !it.isEquivalentTo(methodCall)
+        } ?: emptyList()
 
-        if (method != null && isMethodPartOfTheCursorClass(method)) {
-            val allChildrenMethodExpressions = methodCall.findAllChildrenOfType(
-                PsiMethodCallExpression::class.java
-            ).filter {
-                // filter out ourselves
-                !it.isEquivalentTo(methodCall)
-            }
+        return allParentMethodExpressions + allChildrenMethodExpressions
+    }
 
-            val allChildrenMetadata = allChildrenMethodExpressions.flatMap {
-                processFindQueryAdditionalMetadata(it)
-            }
-
-            val currentMetadata = when (method.name) {
-                "sort" -> {
-                    val sortArg =
-                        methodCall.argumentList.expressions.getOrNull(0) ?: return emptyList()
-                    val sortExpr = resolveBsonBuilderCall(sortArg, SORTS_FQN) ?: return emptyList()
-                    listOf(HasSorts(parseBsonBuilderCallsSimilarToProjections(sortExpr, SORTS_FQN)))
+    private fun processFindQueryAdditionalMetadata(methodCalls: List<PsiMethodCallExpression>): List<Component> {
+        return methodCalls.flatMap { methodCall ->
+            val method = methodCall.fuzzyResolveMethod()
+            if (method != null && isMethodPartOfTheCursorClass(method)) {
+                val currentMetadata = when (method.name) {
+                    "sort" -> {
+                        val sortArg =
+                            methodCall.argumentList.expressions.getOrNull(0) ?: return emptyList()
+                        val sortExpr =
+                            resolveBsonBuilderCall(sortArg, SORTS_FQN) ?: return emptyList()
+                        listOf(
+                            HasSorts(parseBsonBuilderCallsSimilarToProjections(sortExpr, SORTS_FQN))
+                        )
+                    }
+                    else -> emptyList()
                 }
-                else -> emptyList()
+
+                return currentMetadata
+            } else {
+                emptyList()
             }
-
-            return allChildrenMetadata + currentMetadata
         }
-
-        return emptyList()
     }
 
     private fun isMethodPartOfTheCursorClass(method: PsiMethod?): Boolean =
