@@ -2184,4 +2184,37 @@ public final class Repository {
         val command = parsedQuery.component<IsCommand>()
         assertEquals(IsCommand.CommandType.FIND_ONE, command?.type)
     }
+
+    @ParsingTest(
+        fileName = "Repository.java",
+        value = """
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Sorts;import org.bson.types.ObjectId;
+import java.util.ArrayList;
+import static com.mongodb.client.model.Filters.*;
+
+public final class Repository {
+    private final MongoCollection<Document> collection;
+    
+    public Repository(MongoClient client) {
+        this.collection = client.getDatabase("simple").getCollection("books");
+    }
+    
+    public Document findBookById(ObjectId id) {
+        return this.collection.find(eq("_id", id)).sort(Sorts.ascending("myField")).first();
+    }
+}
+        """,
+    )
+    fun `correctly parses FindIterable#sort as a SORT component`(psiFile: PsiFile) {
+        val query = psiFile.getQueryAtMethod("Repository", "findBookById")
+        val parsedQuery = JavaDriverDialect.parser.parse(query)
+        val sorting = parsedQuery.component<HasSorts<PsiElement>>()!!
+        val sortByMyFieldName = sorting.children[0].component<HasFieldReference<PsiElement>>()!!.reference
+        val sortByMyFieldOrder = sorting.children[0].component<HasValueReference<PsiElement>>()!!.reference
+
+        assertEquals("myField", (sortByMyFieldName as HasFieldReference.FromSchema).fieldName)
+        assertEquals(1, (sortByMyFieldOrder as HasValueReference.Inferred).value)
+    }
 }

@@ -225,12 +225,11 @@ class MongoshBackend(
 }
 
 private fun serializePrimitive(value: Any?, isPlaceholder: Boolean): String = when (value) {
-    is Byte, Short, Int, Long, Float, Double -> Encode.forJavaScript(value.toString())
     is BigInteger -> "Decimal128(\"$value\")"
     is BigDecimal -> "Decimal128(\"$value\")"
+    is Byte, is Short, is Int, is Long, is Float, is Double, is Number -> value.toString()
     is Boolean -> value.toString()
     is ObjectId -> "ObjectId(\"${Encode.forJavaScript(value.toHexString())}\")"
-    is Number -> Encode.forJavaScript(value.toString())
     is String -> '"' + Encode.forJavaScript(value) + '"'
     is Date, is Instant, is LocalDate, is LocalDateTime -> if (isPlaceholder) {
         "ISODate(\"$MONGODB_FIRST_RELEASE\")"
