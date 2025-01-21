@@ -30,7 +30,12 @@ class SortStageParser : StageParser {
     override fun isSuitableForFieldAutoComplete(
         methodCall: PsiMethodCallExpression,
         method: PsiMethod
-    ): Boolean = canParse(method)
+    ): Boolean {
+        val isInStageCreationCall = canParse(method)
+        return isInStageCreationCall ||
+            method.isSortCreationMethod() ||
+            method.isOrderCreationMethod()
+    }
 
     override fun canParse(stageCallMethod: PsiMethod): Boolean {
         val methodFqn = stageCallMethod.containingClass?.qualifiedName ?: return false
@@ -318,15 +323,19 @@ fun PsiExpression.isParseableJavaIterable(): Boolean {
  */
 fun PsiExpression.resolveToSortCreationCall(): PsiMethodCallExpression? {
     return resolveToMethodCallExpression { _, method ->
-        method.containingClass?.qualifiedName == SORT_FQN &&
-            listOf(
-                "ascending",
-                "descending",
-                "reverse",
-                "and",
-                "by"
-            ).contains(method.name)
+        method.isSortCreationMethod()
     }
+}
+
+fun PsiMethod.isSortCreationMethod(): Boolean {
+    return containingClass?.qualifiedName == SORT_FQN &&
+        listOf(
+            "ascending",
+            "descending",
+            "reverse",
+            "and",
+            "by"
+        ).contains(name)
 }
 
 /**
@@ -360,13 +369,17 @@ fun PsiExpression.resolveToDirectionName(): Name {
  */
 fun PsiExpression.resolveToOrderCreationCall(): PsiMethodCallExpression? {
     return resolveToMethodCallExpression { _, method ->
-        method.containingClass?.qualifiedName == ORDER_FQN &&
-            listOf(
-                "asc",
-                "desc",
-                "by"
-            ).contains(method.name)
+        method.isOrderCreationMethod()
     }
+}
+
+fun PsiMethod.isOrderCreationMethod(): Boolean {
+    return containingClass?.qualifiedName == ORDER_FQN &&
+        listOf(
+            "asc",
+            "desc",
+            "by"
+        ).contains(name)
 }
 
 /**
