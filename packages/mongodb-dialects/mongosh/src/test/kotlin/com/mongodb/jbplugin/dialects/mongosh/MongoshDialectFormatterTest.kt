@@ -12,6 +12,7 @@ import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.MethodSource
 import org.junit.jupiter.params.provider.ValueSource
 
 class MongoshDialectFormatterTest {
@@ -534,6 +535,54 @@ class MongoshDialectFormatterTest {
                 Unit,
                 listOf(
                     IsCommand(IsCommand.CommandType.FIND_MANY),
+                    HasSorts(
+                        listOf(
+                            Node(
+                                Unit,
+                                listOf(
+                                    HasFieldReference(HasFieldReference.FromSchema(Unit, "a")),
+                                    HasValueReference(
+                                        HasValueReference.Inferred(Unit, 1, BsonInt32)
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        }
+    }
+
+    companion object {
+        @JvmStatic
+        fun queryCommandsThatDoNotReturnSortableCursors(): Array<IsCommand.CommandType> {
+            return arrayOf(
+                IsCommand.CommandType.COUNT_DOCUMENTS,
+                IsCommand.CommandType.DELETE_MANY,
+                IsCommand.CommandType.DELETE_ONE,
+                IsCommand.CommandType.DISTINCT,
+                IsCommand.CommandType.ESTIMATED_DOCUMENT_COUNT,
+                IsCommand.CommandType.FIND_ONE,
+                IsCommand.CommandType.FIND_ONE_AND_DELETE,
+            )
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("queryCommandsThatDoNotReturnSortableCursors")
+    fun `can not sort a query that does not return a cursor`(command: IsCommand.CommandType) {
+        assertGeneratedQuery(
+            """
+            var collection = ""
+            var database = ""
+
+            db.getSiblingDB(database).getCollection(collection).${command.canonical}()
+            """.trimIndent()
+        ) {
+            Node(
+                Unit,
+                listOf(
+                    IsCommand(command),
                     HasSorts(
                         listOf(
                             Node(
