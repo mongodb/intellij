@@ -4,6 +4,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiExpression
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiMethodCallExpression
+import com.mongodb.jbplugin.dialects.javadriver.glossary.collectTypeUntil
 import com.mongodb.jbplugin.dialects.javadriver.glossary.fuzzyResolveMethod
 import com.mongodb.jbplugin.dialects.javadriver.glossary.resolveToMethodCallExpression
 import com.mongodb.jbplugin.dialects.javadriver.glossary.tryToResolveAsConstant
@@ -30,7 +31,9 @@ class AddFieldsStageParser : StageParser {
         methodCall: PsiMethodCallExpression,
         method: PsiMethod
     ): Boolean {
-        TODO("Not yet implemented")
+        return methodCall.isAddFieldWithValueOfCall() ||
+            methodCall.isWithValueOfCall() ||
+            methodCall.isFieldCreationCallInsideAddFieldsChain()
     }
 
     override fun canParse(stageCallMethod: PsiMethod): Boolean {
@@ -286,12 +289,44 @@ class AddFieldsStageParser : StageParser {
     }
 }
 
+fun PsiMethodCallExpression.isAddFieldWithValueOfCall(): Boolean {
+    val method = fuzzyResolveMethod() ?: return false
+    return method.name == "addFieldWithValueOf" &&
+        method.containingClass?.qualifiedName == ADD_FIELDS_OPERATION_BUILDER_FQN
+}
+
+fun PsiMethodCallExpression.isWithValueOfCall(): Boolean {
+    val method = fuzzyResolveMethod() ?: return false
+    return method.name == "withValueOf" &&
+        method.containingClass?.qualifiedName == VALUE_APPENDER_FQN
+}
+
+/**
+ * Confirms if a `Field` object creation call was inside one of:
+ * 1. AddFieldsOperationBuilder.addFieldWithValueOf()
+ * 2. ValueAppender.withValueOf()
+ */
+fun PsiMethodCallExpression.isFieldCreationCallInsideAddFieldsChain(): Boolean {
+    val method = fuzzyResolveMethod() ?: return false
+    val allParents = method.collectTypeUntil(
+        PsiMethodCallExpression::class.java,
+        PsiMethod::class.java
+    )
+    return method.isFieldCreationMethod() &&
+        allParents.any {
+            isAddFieldWithValueOfCall() || isWithValueOfCall()
+        }
+}
+
 fun PsiMethodCallExpression.isAddFieldCall(): Boolean {
     val method = fuzzyResolveMethod() ?: return false
     return method.name == "addField" &&
         method.containingClass?.qualifiedName == ADD_FIELDS_OPERATION_BUILDER_FQN
 }
 
+/**
+ * Confirms if a PsiExpression represents a `Field` object
+ */
 fun PsiExpression.isFieldObject(): Boolean {
     return resolveToMethodCallExpression { _, method ->
         method.isFieldCreationMethod()
