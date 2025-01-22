@@ -184,6 +184,77 @@ class UpdateTest {
         }
     }
 
+    @Test
+    fun `combines the same type of operation`() {
+        assertGeneratedQuery(
+            """
+          db.getSiblingDB("myDb").getCollection("myColl").updateMany({}, {"${'$'}pullAll": {"myField": [1, 2, 3], }, "${'$'}set": {"field1": [1], "field2": "abc", }, })
+            """.trimIndent()
+        ) {
+            Node(
+                Unit,
+                listOf(
+                    HasCollectionReference(
+                        HasCollectionReference.Known(Unit, Unit, Namespace("myDb", "myColl"))
+                    ),
+                    IsCommand(IsCommand.CommandType.UPDATE_MANY),
+                    HasUpdates(
+                        listOf(
+                            Node(
+                                Unit,
+                                listOf(
+                                    Named(Name.PULL_ALL),
+                                    HasFieldReference(
+                                        HasFieldReference.FromSchema(Unit, "myField")
+                                    ),
+                                    HasValueReference(
+                                        HasValueReference.Constant(
+                                            Unit,
+                                            listOf(1, 2, 3),
+                                            BsonArray(BsonInt32)
+                                        )
+                                    )
+                                ),
+                            ),
+                            Node(
+                                Unit,
+                                listOf(
+                                    Named(Name.SET),
+                                    HasFieldReference(
+                                        HasFieldReference.FromSchema(Unit, "field1")
+                                    ),
+                                    HasValueReference(
+                                        HasValueReference.Constant(
+                                            Unit,
+                                            listOf(1),
+                                            BsonArray(BsonInt32)
+                                        )
+                                    )
+                                ),
+                            ),
+                            Node(
+                                Unit,
+                                listOf(
+                                    Named(Name.SET),
+                                    HasFieldReference(
+                                        HasFieldReference.FromSchema(Unit, "field2")
+                                    ),
+                                    HasValueReference(
+                                        HasValueReference.Constant(
+                                            Unit,
+                                            "abc",
+                                            BsonString,
+                                        )
+                                    )
+                                ),
+                            )
+                        )
+                    )
+                )
+            )
+        }
+    }
+
     companion object {
         @JvmStatic
         fun allSetterLikeOperators(): Array<Name> = arrayOf(
