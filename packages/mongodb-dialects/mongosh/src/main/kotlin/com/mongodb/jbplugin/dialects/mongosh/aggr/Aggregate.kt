@@ -1,21 +1,18 @@
 package com.mongodb.jbplugin.dialects.mongosh.aggr
 
 import com.mongodb.jbplugin.dialects.mongosh.backend.MongoshBackend
-import com.mongodb.jbplugin.dialects.mongosh.query.emitQueryFilter
+import com.mongodb.jbplugin.dialects.mongosh.query.resolveFieldReference
+import com.mongodb.jbplugin.dialects.mongosh.query.resolveValueReference
 import com.mongodb.jbplugin.mql.Node
+import com.mongodb.jbplugin.mql.QueryContext
 import com.mongodb.jbplugin.mql.components.HasAggregation
-import com.mongodb.jbplugin.mql.components.HasFilter
+import com.mongodb.jbplugin.mql.components.HasFieldReference
+import com.mongodb.jbplugin.mql.components.HasValueReference
 import com.mongodb.jbplugin.mql.components.IsCommand
 import com.mongodb.jbplugin.mql.components.Name
-import com.mongodb.jbplugin.mql.parser.anyError
-import com.mongodb.jbplugin.mql.parser.components.aggregationStages
-import com.mongodb.jbplugin.mql.parser.components.hasName
+import com.mongodb.jbplugin.mql.components.Named
 import com.mongodb.jbplugin.mql.parser.components.whenIsCommand
-import com.mongodb.jbplugin.mql.parser.count
-import com.mongodb.jbplugin.mql.parser.filter
 import com.mongodb.jbplugin.mql.parser.map
-import com.mongodb.jbplugin.mql.parser.matches
-import com.mongodb.jbplugin.mql.parser.nth
 import com.mongodb.jbplugin.mql.parser.parse
 
 fun <S> Node<S>.isAggregate(): Boolean {
@@ -24,33 +21,42 @@ fun <S> Node<S>.isAggregate(): Boolean {
         .parse(this).orElse { false }
 }
 
-fun <S> Node<S>.canEmitAggregate(): Boolean {
-    return aggregationStages<S>()
-        .matches(count<Node<S>>().filter { it >= 1 }.matches().anyError())
-        .nth(0)
-        .matches(hasName(Name.MATCH))
-        .map { true }
-        .parse(this).orElse { false }
-}
-
-fun <S> MongoshBackend.emitAggregateBody(node: Node<S>): MongoshBackend {
-    // here we can assume that we only have 1 single stage that is a match
-    val matchStage = node.component<HasAggregation<S>>()!!.children[0]
-    val filter = matchStage.component<HasFilter<S>>()?.children?.getOrNull(0)
-    val longFilter = filter?.component<HasFilter<S>>()?.children?.size?.let { it > 3 } == true
+fun <S> MongoshBackend.emitAggregateBody(node: Node<S>, queryContext: QueryContext): MongoshBackend {
+    val allStages = node.component<HasAggregation<S>>()?.children ?: emptyList()
+    val stagesToEmit = when (queryContext.explainPlan) {
+        QueryContext.ExplainPlanType.NONE -> allStages
+        else -> allStages.takeWhile { it.isNotDestructive() }
+    }
 
     emitArrayStart(long = true)
-    emitObjectStart()
-    emitObjectKey(registerConstant('$' + "match"))
-    if (filter != null) {
-        emitObjectStart(long = longFilter)
-        emitQueryFilter(filter)
-        emitObjectEnd(long = longFilter)
-    } else {
-        emitComment("No filter provided.")
+    for (stage in stagesToEmit) {
+        when (stage.component<Named>()?.name) {
+            Name.MATCH -> emitMatchStage(stage)
+            Name.PROJECT -> emitProjectStage(stage)
+            else -> {}
+        }
     }
-    emitObjectEnd()
     emitArrayEnd(long = true)
+    return this
+}
+
+internal fun <S> MongoshBackend.emitAsFieldValueDocument(nodes: List<Node<S>>): MongoshBackend {
+    for (node in nodes) {
+        val field = node.component<HasFieldReference<S>>() ?: continue
+        val value = node.component<HasValueReference<S>>() ?: continue
+
+        emitObjectKey(resolveFieldReference(field))
+        emitContextValue(resolveValueReference(value, field))
+        emitObjectValueEnd()
+    }
 
     return this
+}
+
+private val NON_DESTRUCTIVE_STAGES = setOf(
+    Name.MATCH
+)
+
+private fun <S> Node<S>.isNotDestructive(): Boolean {
+    return component<Named>()?.name?.let { NON_DESTRUCTIVE_STAGES.contains(it) } == true
 }

@@ -2,7 +2,6 @@ package com.mongodb.jbplugin.dialects.mongosh
 
 import com.mongodb.jbplugin.dialects.DialectFormatter
 import com.mongodb.jbplugin.dialects.OutputQuery
-import com.mongodb.jbplugin.dialects.mongosh.aggr.canEmitAggregate
 import com.mongodb.jbplugin.dialects.mongosh.aggr.emitAggregateBody
 import com.mongodb.jbplugin.dialects.mongosh.aggr.isAggregate
 import com.mongodb.jbplugin.dialects.mongosh.backend.MongoshBackend
@@ -23,14 +22,8 @@ object MongoshDialectFormatter : DialectFormatter {
         queryContext: QueryContext,
     ): OutputQuery {
         val isAggregate = query.isAggregate()
-        val canEmitAggregate = query.canEmitAggregate()
 
         val outputString = MongoshBackend(prettyPrint = queryContext.prettyPrint).apply {
-            if (isAggregate && !canEmitAggregate) {
-                emitComment("Only aggregates with a single match stage can be converted.")
-                return@apply
-            }
-
             emitDbAccess()
             emitCollectionReference(query.component<HasCollectionReference<S>>())
             if (queryContext.explainPlan != QueryContext.ExplainPlanType.NONE) {
@@ -62,7 +55,7 @@ object MongoshDialectFormatter : DialectFormatter {
             } else {
                 emitFunctionCall(long = true, {
                     if (query.isAggregate()) {
-                        emitAggregateBody(query)
+                        emitAggregateBody(query, queryContext)
                     } else {
                         emitQueryFilter(query, firstCall = true)
                     }
@@ -76,7 +69,6 @@ object MongoshDialectFormatter : DialectFormatter {
 
         val ref = query.component<HasCollectionReference<S>>()?.reference
         return when {
-            isAggregate && !canEmitAggregate -> OutputQuery.Incomplete(outputString)
             ref is HasCollectionReference.Known -> if (ref.namespace.isValid) {
                 OutputQuery.CanBeRun(outputString)
             } else {
