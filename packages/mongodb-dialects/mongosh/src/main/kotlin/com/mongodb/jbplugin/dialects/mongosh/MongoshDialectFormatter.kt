@@ -26,8 +26,7 @@ object MongoshDialectFormatter : DialectFormatter {
         val canEmitAggregate = query.canEmitAggregate()
 
         val outputString = MongoshBackend(
-            prettyPrint =
-            queryContext.explainPlan != QueryContext.ExplainPlanType.NONE
+            prettyPrint = queryContext.explainPlan == QueryContext.ExplainPlanType.NONE
         ).apply {
             if (isAggregate && !canEmitAggregate) {
                 emitComment("Only aggregates with a single match stage can be converted.")

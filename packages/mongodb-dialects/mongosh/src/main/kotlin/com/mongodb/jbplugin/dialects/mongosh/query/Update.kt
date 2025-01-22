@@ -41,7 +41,7 @@ private fun <S> MongoshBackend.emitEachQueryUpdate(node: Map.Entry<Name, List<No
     val name = node.key
 
     emitObjectKey(registerConstant("${'$'}${name.canonical}"))
-    emitObjectStart()
+    emitObjectStart(long = true)
     when (name) {
         Name.PULL -> {
             for (pullNode in node.value) {
@@ -71,6 +71,6 @@ private fun <S> MongoshBackend.emitEachQueryUpdate(node: Map.Entry<Name, List<No
             }
         }
     }
-    emitObjectEnd()
+    emitObjectEnd(long = true)
     return this
 }

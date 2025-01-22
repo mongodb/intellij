@@ -35,12 +35,14 @@ public class JavaDriverRepository {
             .getDatabase("sample_mflix")
             .getCollection("movies")
             .updateMany(
-                Filters.eq("year", year),
+                Filters.and(Filters.eq("year", year), Filters.ne("languages", "Esperanto")),
                 Updates.combine(
                     Updates.inc(IMDB_VOTES, 1),
                     Updates.inc(AWARDS_WINS, 1),
                     Updates.set("other", 25),
-                    Updates.pull(IMDB_VOTES, Filters.eq("a", 1))
+                    Updates.pull(IMDB_VOTES, Filters.eq("a", 1)),
+                    Updates.pullAll(IMDB_VOTES, List.of("1", "2")),
+                    Updates.push("languages", "Esperanto")
                 )
             );
     }
