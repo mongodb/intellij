@@ -125,11 +125,7 @@ class MongoshDialectFormatterTest {
             var collection = ""
             var database = ""
             
-            db.getSiblingDB(database)
-              .getCollection(collection)
-              .explain("queryPlanner").find(
-                                          {"myField": "myVal", }
-              )
+            db.getSiblingDB(database).getCollection(collection).explain("queryPlanner").find({"myField": "myVal", })
             """.trimIndent(),
             explain = QueryContext.ExplainPlanType.SAFE
         ) {
@@ -163,11 +159,7 @@ class MongoshDialectFormatterTest {
             var collection = ""
             var database = ""
             
-            db.getSiblingDB(database)
-              .getCollection(collection)
-              .explain("executionStats").find(
-                                            {"myField": "myVal", }
-              )
+            db.getSiblingDB(database).getCollection(collection).explain("executionStats").find({"myField": "myVal", })
             """.trimIndent(),
             explain = QueryContext.ExplainPlanType.FULL
         ) {
@@ -252,13 +244,7 @@ class MongoshDialectFormatterTest {
             var collection = ""
             var database = ""
             
-            db.getSiblingDB(database)
-              .getCollection(collection)
-              .explain("queryPlanner").aggregate(
-                                               [
-                                                 {"${'$'}match": {"myField": "myVal"}}
-                                               ]
-              )
+            db.getSiblingDB(database).getCollection(collection).explain("queryPlanner").aggregate([{"${'$'}match": {"myField": "myVal"}}])
             """.trimIndent(),
             explain = QueryContext.ExplainPlanType.SAFE
         ) {
@@ -310,13 +296,7 @@ class MongoshDialectFormatterTest {
             var collection = ""
             var database = ""
             
-            db.getSiblingDB(database)
-              .getCollection(collection)
-              .explain("executionStats").aggregate(
-                                                 [
-                                                   {"${'$'}match": {"myField": "myVal"}}
-                                                 ]
-              )
+            db.getSiblingDB(database).getCollection(collection).explain("executionStats").aggregate([{"${'$'}match": {"myField": "myVal"}}])
             """.trimIndent(),
             explain = QueryContext.ExplainPlanType.FULL
         ) {
@@ -654,7 +634,10 @@ private fun assertGeneratedQuery(
     explain: QueryContext.ExplainPlanType = QueryContext.ExplainPlanType.NONE,
     script: () -> Node<Unit>
 ) {
-    val generated = MongoshDialectFormatter.formatQuery(script(), QueryContext(emptyMap(), explain))
+    val generated = MongoshDialectFormatter.formatQuery(
+        script(),
+        QueryContext(emptyMap(), explain, false)
+    )
     assertEquals(js, generated.query)
 }
 

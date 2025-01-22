@@ -103,6 +103,7 @@ data class Node<S>(
 data class QueryContext(
     val expansions: Map<String, LocalVariable>,
     val explainPlan: ExplainPlanType,
+    val prettyPrint: Boolean,
 ) {
     data class LocalVariable(val type: BsonType, val defaultValue: Any?)
     enum class ExplainPlanType {
@@ -112,6 +113,7 @@ data class QueryContext(
     }
 
     companion object {
-        fun empty(): QueryContext = QueryContext(emptyMap(), ExplainPlanType.NONE)
+        fun empty(prettyPrint: Boolean = false): QueryContext =
+            QueryContext(emptyMap(), ExplainPlanType.NONE, prettyPrint)
     }
 }
