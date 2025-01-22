@@ -51,7 +51,9 @@ object MongoshDialectFormatter : DialectFormatter {
             } else {
                 emitFunctionName(query.component<IsCommand>()?.type?.canonical ?: "find")
             }
-            if (query.canUpdateDocuments()) {
+            if (query.canUpdateDocuments() &&
+                queryContext.explainPlan == QueryContext.ExplainPlanType.NONE
+            ) {
                 emitFunctionCall(long = true, {
                     emitQueryFilter(query, firstCall = true)
                 }, {

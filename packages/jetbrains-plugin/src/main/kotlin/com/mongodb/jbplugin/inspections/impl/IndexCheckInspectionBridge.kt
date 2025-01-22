@@ -66,7 +66,8 @@ internal object IndexCheckLinterInspection : MongoDbInspection {
                 QueryContext.ExplainPlanType.FULL
             } else {
                 QueryContext.ExplainPlanType.SAFE
-            }
+            },
+            prettyPrint = false
         )
 
         val readModelProvider by query.source.project.service<DataGripBasedReadModelProvider>()
