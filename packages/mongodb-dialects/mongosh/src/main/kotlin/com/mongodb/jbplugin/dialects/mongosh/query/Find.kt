@@ -18,6 +18,12 @@ fun <S> MongoshBackend.emitQueryFilter(node: Node<S>, firstCall: Boolean = false
     val hasFilter = node.component<HasFilter<S>>()
     val isLong = allFiltersRecursively<S>().parse(node).orElse { emptyList() }.size > 3
 
+    if (firstCall && hasFilter == null && fieldRef == null && valueRef == null) {
+        emitObjectStart()
+        emitObjectEnd()
+        return this
+    }
+
     if (hasFilter != null && fieldRef == null && valueRef == null && named == null) {
         // 1. has children, nothing else (root node)
         if (firstCall) {
