@@ -256,7 +256,7 @@ class FindTest {
             var collection = ""
             var database = ""
 
-            db.getSiblingDB(database).getCollection(collection).find().sort({"a": 1, })
+            db.getSiblingDB(database).getCollection(collection).find({}).sort({"a": 1, })
             """.trimIndent()
         ) {
             Node(
@@ -304,7 +304,7 @@ class FindTest {
             var collection = ""
             var database = ""
 
-            db.getSiblingDB(database).getCollection(collection).${command.canonical}()
+            db.getSiblingDB(database).getCollection(collection).${command.canonical}({})
             """.trimIndent()
         ) {
             Node(
