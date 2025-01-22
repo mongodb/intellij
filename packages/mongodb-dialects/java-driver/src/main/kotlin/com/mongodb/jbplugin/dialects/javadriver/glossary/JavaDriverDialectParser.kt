@@ -392,7 +392,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
                 filter,
                 listOf(
                     Named(Name.from(method.name)),
-                    HasFilter(
+                    HasUpdates(
                         filter.argumentList.expressions
                             .mapNotNull { resolveBsonBuilderCall(it, UPDATES_FQN) }
                             .mapNotNull { parseUpdatesExpression(it) },
@@ -402,12 +402,36 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
         } else if (method.parameters.size == 2) {
             // If it has two parameters, it's field/value.
             val fieldReference = filter.argumentList.expressions[0].resolveFieldNameFromExpression()
+            val named = Named(Name.from(method.name))
+
+            if (named.name == Name.PULL) {
+                // the second argument can be either a value or a filter
+                val filterExpression = filter.argumentList.expressions[1]
+                val resolvedFilterExpression = resolveBsonBuilderCall(filterExpression, FILTERS_FQN)
+
+                if (resolvedFilterExpression != null) {
+                    val parsedFilter = parseFilterExpression(resolvedFilterExpression)
+                        ?: return null
+
+                    return Node(
+                        filter,
+                        listOf(
+                            named,
+                            HasFieldReference(
+                                fieldReference,
+                            ),
+                            HasFilter(listOf(parsedFilter)),
+                        ),
+                    )
+                }
+            }
+
             val valueReference = resolveValueFromExpression(filter.argumentList.expressions[1])
 
             return Node(
                 filter,
                 listOf(
-                    Named(Name.from(method.name)),
+                    named,
                     HasFieldReference(
                         fieldReference,
                     ),

@@ -6,13 +6,41 @@ package com.mongodb.jbplugin.dialects.javadriver.glossary
 
 import com.intellij.lang.jvm.JvmModifier
 import com.intellij.openapi.project.Project
-import com.intellij.psi.*
+import com.intellij.psi.JavaPsiFacade
+import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiExpression
+import com.intellij.psi.PsiField
+import com.intellij.psi.PsiLiteralExpression
+import com.intellij.psi.PsiLiteralValue
+import com.intellij.psi.PsiLocalVariable
+import com.intellij.psi.PsiMethod
+import com.intellij.psi.PsiMethodCallExpression
+import com.intellij.psi.PsiParenthesizedExpression
+import com.intellij.psi.PsiReference
+import com.intellij.psi.PsiReferenceExpression
+import com.intellij.psi.PsiReturnStatement
+import com.intellij.psi.PsiSuperExpression
+import com.intellij.psi.PsiThisExpression
+import com.intellij.psi.PsiType
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.util.PsiTypesUtil
 import com.intellij.psi.util.childrenOfType
 import com.intellij.psi.util.parentOfType
-import com.mongodb.jbplugin.mql.*
+import com.mongodb.jbplugin.mql.BsonAny
+import com.mongodb.jbplugin.mql.BsonAnyOf
+import com.mongodb.jbplugin.mql.BsonArray
+import com.mongodb.jbplugin.mql.BsonBoolean
+import com.mongodb.jbplugin.mql.BsonDate
+import com.mongodb.jbplugin.mql.BsonDecimal128
+import com.mongodb.jbplugin.mql.BsonDouble
+import com.mongodb.jbplugin.mql.BsonInt32
+import com.mongodb.jbplugin.mql.BsonInt64
+import com.mongodb.jbplugin.mql.BsonNull
+import com.mongodb.jbplugin.mql.BsonObjectId
+import com.mongodb.jbplugin.mql.BsonString
+import com.mongodb.jbplugin.mql.BsonType
 import com.mongodb.jbplugin.mql.components.IsCommand
 
 /**
@@ -397,6 +425,9 @@ fun String.toBsonType(): BsonType {
         return BsonAnyOf(BsonDecimal128, BsonNull)
     } else if (this.endsWith("[]")) {
         val baseType = this.substring(0, this.length - 2)
+        return BsonArray(baseType.toBsonType())
+    } else if (this.contains("List") || this.contains("Set")) {
+        val baseType = this.substringAfter("<").substringBeforeLast(">")
         return BsonArray(baseType.toBsonType())
     }
 
