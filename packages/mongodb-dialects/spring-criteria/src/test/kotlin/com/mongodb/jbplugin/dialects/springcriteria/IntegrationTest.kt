@@ -24,17 +24,16 @@ import com.intellij.psi.util.PsiUtil
 import com.intellij.psi.util.childrenOfType
 import com.intellij.testFramework.IdeaTestUtil
 import com.intellij.testFramework.IndexingTestUtil
-import com.intellij.testFramework.LightProjectDescriptor.SetupHandler
 import com.intellij.testFramework.PsiTestUtil
 import com.intellij.testFramework.TestApplicationManager
 import com.intellij.testFramework.TestDataPath
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.fixtures.DefaultLightProjectDescriptor
-import com.intellij.testFramework.fixtures.DefaultLightProjectDescriptor.addJetBrainsAnnotations
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
 import com.mongodb.assertions.Assertions.assertNotNull
 import com.mongodb.jbplugin.mql.Component
 import com.mongodb.jbplugin.mql.Node
+import com.mongodb.jbplugin.mql.components.HasAddedFields
 import com.mongodb.jbplugin.mql.components.HasAggregation
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasFieldReference
@@ -401,6 +400,31 @@ fun Node<PsiElement>.sortN(
     }
 
     sort.assertions()
+}
+
+fun Node<PsiElement>.addedFieldN(
+    n: Int,
+    name: Name? = null,
+    stageIndex: Int? = null,
+    assertions: Node<PsiElement>.() -> Unit = {
+    },
+) {
+    val addedFields = component<HasAddedFields<PsiElement>>()
+    assertNotNull(addedFields)
+
+    val addedField = addedFields!!.children[n]
+
+    if (name != null) {
+        val qname = addedField.component<Named>()
+        assertNotEquals(null, qname) {
+            "StageIndex: $stageIndex, AddedFieldIndex: $n :: Expected a named operation with name $name but null found."
+        }
+        assertEquals(name, qname?.name) {
+            "StageIndex: $stageIndex, AddedFieldIndex: $n :: Expected a named operation with name $name but $qname found."
+        }
+    }
+
+    addedField.assertions()
 }
 
 fun Node<PsiElement>.updateN(

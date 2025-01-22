@@ -169,7 +169,7 @@ class BookRepository {
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.aggregation.Fields;import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.List;
 import static org.springframework.data.mongodb.core.query.Query.query;
@@ -270,7 +270,27 @@ class BookRepository {
                             )
                         ).descending()
                     )
-                )
+                ),
+                Aggregation.addFields()
+                    // no inspection here as no field reference
+                    .addFieldWithValue("addedField", "released")
+                    // field reference as computed value
+                    .addFieldWithValueOf("addedField", <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>)
+                    .addFieldWithValueOf("addedField", <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>)
+                    .addFieldWithValueOf("addedField", <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>)
+                    .addFieldWithValueOf("addedField", Fields.field(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>))
+                    .addFieldWithValueOf("addedField", Fields.field(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>))
+                    .addFieldWithValueOf("addedField", Fields.field(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>))
+                    // no inspection here as no field reference
+                    .addField("addedField").withValue("released")
+                    // field reference as computed value
+                    .addField("addedField").withValueOf(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>)
+                    .addField("addedField").withValueOf(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>)
+                    .addField("addedField").withValueOf(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>)
+                    .addField("addedField").withValueOf(Fields.field(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>))
+                    .addField("addedField").withValueOf(Fields.field(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>))
+                    .addField("addedField").withValueOf(Fields.field(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>))
+                    .build()
             ),
             Book.class,
             Book.class
