@@ -37,12 +37,6 @@ import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.QueryContext
 import com.mongodb.jbplugin.mql.components.HasSourceDialect
-import com.mongodb.jbplugin.mql.components.IsCommand
-import com.mongodb.jbplugin.mql.parser.components.whenHasAnyCommand
-import com.mongodb.jbplugin.mql.parser.components.whenIsCommand
-import com.mongodb.jbplugin.mql.parser.first
-import com.mongodb.jbplugin.mql.parser.map
-import com.mongodb.jbplugin.mql.parser.parse
 import com.mongodb.jbplugin.observability.TelemetryEvent
 import com.mongodb.jbplugin.observability.TelemetryEvent.QueryRunEvent.Console
 import com.mongodb.jbplugin.observability.probe.QueryRunProbe
@@ -69,10 +63,6 @@ internal object RunQueryCodeAction : MongoDbCodeAction {
         query: Node<PsiElement>,
         formatter: DialectFormatter
     ): LineMarkerInfo<PsiElement>? {
-        if (!shouldShowRunGutterIcon(query)) {
-            return null
-        }
-
         return LineMarkerInfo(
             query.sourceForMarker,
             query.sourceForMarker.textRange,
@@ -122,14 +112,6 @@ internal object RunQueryCodeAction : MongoDbCodeAction {
             if (hasConsole) Console.EXISTING else Console.NEW,
             TelemetryEvent.QueryRunEvent.TriggerLocation.GUTTER
         )
-    }
-
-    private fun shouldShowRunGutterIcon(node: Node<PsiElement>): Boolean {
-        return first(
-            whenIsCommand<PsiElement>(IsCommand.CommandType.AGGREGATE).map { false },
-            whenHasAnyCommand<PsiElement>().map { true }
-        ).parse(node) // if we couldn't parse the query, don't show the gutter icon
-            .orElse { false }
     }
 
     private fun openDataGripConsole(

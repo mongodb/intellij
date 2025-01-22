@@ -8,6 +8,7 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Projections;
 import com.mongodb.client.model.Sorts;
 import org.bson.Document;
+import org.bson.types.ObjectId;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,13 +58,13 @@ public class JavaDriverRepository {
             .into(new ArrayList<>());
     }
 
-    public Document queryMovieById(String id) {
+    public Document queryMovieById(ObjectId id) {
         return client
             .getDatabase("sample_mflix")
             .getCollection("movies")
             .aggregate(List.of(Aggregates.match(
                 Filters.eq(id)
-            ), Aggregates.unwind("year")))
+            ), Aggregates.project(Projections.include("title", "year"))))
             .first();
     }
 

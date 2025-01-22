@@ -35,6 +35,7 @@ fun <S> MongoshBackend.emitAggregateBody(node: Node<S>, queryContext: QueryConte
             Name.PROJECT -> emitProjectStage(stage)
             else -> {}
         }
+        emitObjectValueEnd()
     }
     emitArrayEnd(long = true)
     return this
