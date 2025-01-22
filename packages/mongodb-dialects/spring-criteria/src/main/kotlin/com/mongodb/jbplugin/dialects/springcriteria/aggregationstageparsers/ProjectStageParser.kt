@@ -73,26 +73,12 @@ class ProjectStageParser : StageParser {
         fieldObjectExpression: PsiExpression,
         projectionName: Name
     ): Node<PsiElement>? {
-        val resolvedFieldMethodCall = fieldObjectExpression.resolveToMethodCallExpression {
-                _,
-                fieldObjectMethod
-            ->
-            fieldObjectMethod.containingClass?.qualifiedName == FIELDS_FQN &&
-                fieldObjectMethod.name == "field"
-        } ?: return null
-
-        val resolvedFieldMethod = resolvedFieldMethodCall.fuzzyResolveMethod() ?: return null
-        // This represents the following call:
-        // `Fields.field("fieldAlias", "actualFieldInDocument")`
-        // and since this translates to a rename operation, which we do not support just yet, we
-        // will ignore this until we come back to this.
-        if (resolvedFieldMethodCall.argumentList.expressions.size == 2) {
-            return null
-        } else {
-            val fieldExpression = resolvedFieldMethodCall.argumentList.expressions.getOrNull(0)
-                ?: return null
-            return createProjectedFieldNode(fieldExpression, projectionName)
-        }
+        val fieldExpression = fieldObjectExpression.resolveFieldStringExpressionFromFieldObject()
+            ?: return null
+        return createProjectedFieldNode(
+            fieldExpression = fieldExpression,
+            projectionName = projectionName
+        )
     }
 
     /**
@@ -222,6 +208,29 @@ class ProjectStageParser : StageParser {
             }
         )
     }
+}
+
+fun PsiExpression.resolveFieldStringExpressionFromFieldObject(): PsiExpression? {
+    val resolvedFieldMethodCall = resolveToMethodCallExpression {
+            _,
+            fieldObjectMethod
+        ->
+        fieldObjectMethod.isFieldCreationMethod()
+    } ?: return null
+
+    // This represents the following call:
+    // `Fields.field("fieldAlias", "actualFieldInDocument")`
+    // and since this translates to a rename operation, which we do not support just yet, we
+    // will ignore this until we come back to this.
+    return if (resolvedFieldMethodCall.argumentList.expressions.size == 2) {
+        null
+    } else {
+        resolvedFieldMethodCall.argumentList.expressions.getOrNull(0)
+    }
+}
+
+fun PsiMethod.isFieldCreationMethod(): Boolean {
+    return containingClass?.qualifiedName == FIELDS_FQN && name == "field"
 }
 
 /**
