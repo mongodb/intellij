@@ -5,6 +5,7 @@ MongoDB plugin for IntelliJ IDEA.
 ## [Unreleased]
 
 ### Added
+* [INTELLIJ-193](https://jira.mongodb.org/browse/INTELLIJ-193) Add support for generating aggregates with $match and $project.
 * [INTELLIJ-189](https://jira.mongodb.org/browse/INTELLIJ-189) Add support for generating update queries.
 * [INTELLIJ-177](https://jira.mongodb.org/browse/INTELLIJ-177) Add support for parsing, inspecting and autocompleting in a addFields stage written using `Aggregation.addFields` and chained `AddFieldsOperation`s using `addFieldWithValue`, `addFieldWithValueOf`, `addField().withValue()` and `addField().withValueOf()`. Parsing boxed Java values is not supported yet.
 * [INTELLIJ-174](https://jira.mongodb.org/browse/INTELLIJ-174) Add support for parsing, inspecting and autocompleting in a sort stage written using `Aggregation.sort` and chained `SortOperation`s using `and`. All the overloads of creating a `Sort` object are supported.

@@ -84,39 +84,4 @@ public class Repository {
         assertEquals(Icons.runQueryGutter, gutter.icon)
         assertEquals(CodeActionsMessages.message("code.action.run.query"), gutter.tooltipText)
     }
-
-    @ParsingTest(
-        fileName = "Repository.java",
-        value = """
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoCollection;
-import org.bson.Document;
-import org.bson.types.ObjectId;
-import java.util.List;import static com.mongodb.client.model.Filters.*;
-
-public class Repository {
-    private final MongoClient client;
-
-    public Repository(MongoClient client) {
-        this.client = client;
-    }
-
-    public FindIterable<Document> exampleFind() {
-        return client.getDatabase("myDatabase")
-                .getCollection("myCollection")
-                .aggregate(List.of()).first();
-    }
-}
-        """,
-    )
-    fun `does not show a gutter icon for aggregates`(
-        fixture: CodeInsightTestFixture,
-    ) {
-        fixture.setupConnection()
-        fixture.specifyDialect(JavaDriverDialect)
-
-        val gutters = fixture.findAllGutters()
-        assertEquals(0, gutters.size)
-    }
 }
