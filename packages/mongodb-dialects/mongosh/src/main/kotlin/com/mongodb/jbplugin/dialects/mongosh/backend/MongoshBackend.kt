@@ -114,8 +114,11 @@ class MongoshBackend(
         return this
     }
 
-    fun emitObjectValueEnd(): MongoshBackend {
+    fun emitObjectValueEnd(long: Boolean = false): MongoshBackend {
         emitAsIs(", ")
+        if (long && prettyPrint) {
+            emitNewLine()
+        }
         return this
     }
 

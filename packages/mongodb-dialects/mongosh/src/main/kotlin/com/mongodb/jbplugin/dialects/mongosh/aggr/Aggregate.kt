@@ -33,22 +33,23 @@ fun <S> MongoshBackend.emitAggregateBody(node: Node<S>, queryContext: QueryConte
         when (stage.component<Named>()?.name) {
             Name.MATCH -> emitMatchStage(stage)
             Name.PROJECT -> emitProjectStage(stage)
+            Name.ADD_FIELDS -> emitAddFieldsStage(stage)
             else -> {}
         }
-        emitObjectValueEnd()
+        emitObjectValueEnd(long = true)
     }
     emitArrayEnd(long = true)
     return this
 }
 
-internal fun <S> MongoshBackend.emitAsFieldValueDocument(nodes: List<Node<S>>): MongoshBackend {
+internal fun <S> MongoshBackend.emitAsFieldValueDocument(nodes: List<Node<S>>, isLong: Boolean = false): MongoshBackend {
     for (node in nodes) {
         val field = node.component<HasFieldReference<S>>() ?: continue
         val value = node.component<HasValueReference<S>>() ?: continue
 
         emitObjectKey(resolveFieldReference(field))
         emitContextValue(resolveValueReference(value, field))
-        emitObjectValueEnd()
+        emitObjectValueEnd(long = isLong)
     }
 
     return this
@@ -56,7 +57,8 @@ internal fun <S> MongoshBackend.emitAsFieldValueDocument(nodes: List<Node<S>>): 
 
 private val NON_DESTRUCTIVE_STAGES = setOf(
     Name.MATCH,
-    Name.PROJECT
+    Name.PROJECT,
+    Name.ADD_FIELDS
 )
 
 private fun <S> Node<S>.isNotDestructive(): Boolean {

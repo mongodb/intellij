@@ -11,7 +11,7 @@ internal fun <S> MongoshBackend.emitProjectStage(node: Node<S>): MongoshBackend 
     emitObjectStart(long = isLongProjection)
     emitObjectKey(registerConstant('$' + "project"))
     emitObjectStart(long = isLongProjection)
-    emitAsFieldValueDocument(projections)
+    emitAsFieldValueDocument(projections, isLongProjection)
     emitObjectEnd(long = isLongProjection)
     emitObjectEnd(long = isLongProjection)
 
