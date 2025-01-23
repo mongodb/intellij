@@ -27,7 +27,7 @@ jobs:
           java-version: "17"
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
         with:
           dependency-graph: "generate-and-submit"
           dependency-graph-continue-on-failure: false
@@ -51,7 +51,7 @@ jobs:
           java-version: "17"
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
         with:
           gradle-home-cache-cleanup: true
 
@@ -79,7 +79,7 @@ jobs:
           java-version: "17"
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
         with:
           gradle-home-cache-cleanup: true
 
@@ -91,7 +91,7 @@ jobs:
           sudo install -m 0755 -d /etc/apt/keyrings
           sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
           sudo chmod a+r /etc/apt/keyrings/docker.asc
-          
+
           echo "Adding the repository to APT sources"
           echo \
           "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
@@ -101,7 +101,6 @@ jobs:
 
           echo "Installing docker"
           sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin
-
 
       - name: Run Test Suite
         run: |
@@ -144,7 +143,7 @@ jobs:
 #          java-version: "17"
 #
 #      - name: Setup Gradle
-#        uses: gradle/actions/setup-gradle@v4
+#        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
 #        with:
 #          gradle-home-cache-cleanup: true
 #
@@ -227,7 +226,7 @@ jobs:
           java-version: "17"
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
         with:
           gradle-home-cache-cleanup: true
 
@@ -262,7 +261,7 @@ jobs:
           java-version: "17"
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
         with:
           gradle-home-cache-cleanup: true
 
