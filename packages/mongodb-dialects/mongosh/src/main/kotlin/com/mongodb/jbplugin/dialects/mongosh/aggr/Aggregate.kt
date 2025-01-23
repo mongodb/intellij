@@ -55,7 +55,8 @@ internal fun <S> MongoshBackend.emitAsFieldValueDocument(nodes: List<Node<S>>): 
 }
 
 private val NON_DESTRUCTIVE_STAGES = setOf(
-    Name.MATCH
+    Name.MATCH,
+    Name.PROJECT
 )
 
 private fun <S> Node<S>.isNotDestructive(): Boolean {
