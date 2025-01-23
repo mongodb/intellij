@@ -29,9 +29,9 @@ fun <S> MongoshBackend.resolveValueReference(
 
 fun <S> MongoshBackend.resolveFieldReference(fieldRef: HasFieldReference<S>) =
     when (val ref = fieldRef.reference) {
-        is FromSchema -> registerConstant(ref.fieldName)
-        is Inferred<S> -> registerConstant(ref.fieldName)
-        is HasFieldReference.Computed<S> -> registerConstant(ref.fieldName)
+        is FromSchema -> registerConstant(ref.displayName)
+        is Inferred<S> -> registerConstant(ref.displayName)
+        is HasFieldReference.Computed<S> -> registerConstant(ref.displayName)
         is Unknown -> registerVariable("field", BsonAny)
     }
 
