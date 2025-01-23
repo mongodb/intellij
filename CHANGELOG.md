@@ -5,6 +5,7 @@ MongoDB plugin for IntelliJ IDEA.
 ## [Unreleased]
 
 ### Added
+* [INTELLIJ-195](https://jira.mongodb.org/browse/INTELLIJ-195) Add support for $unwind.
 * [INTELLIJ-194](https://jira.mongodb.org/browse/INTELLIJ-194) Add support for $addFields.
 * [INTELLIJ-193](https://jira.mongodb.org/browse/INTELLIJ-193) Add support for generating aggregates with $match and $project.
 * [INTELLIJ-189](https://jira.mongodb.org/browse/INTELLIJ-189) Add support for generating update queries.
