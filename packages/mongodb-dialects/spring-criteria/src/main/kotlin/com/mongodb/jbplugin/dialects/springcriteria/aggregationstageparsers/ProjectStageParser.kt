@@ -60,28 +60,6 @@ class ProjectStageParser : StageParser {
     }
 
     /**
-     * Parses a `PsiExpression` that represents a `Field` object and returns a `Node` for the field
-     * referenced in the `Field` object.
-     *
-     * The only helper that we support for creating a `Field` object is `Fields.field()` with the
-     * following alternative signatures:
-     * 1. `Fields.field("fieldA")`
-     * 2. `Fields.field(fieldBFromVariable)`
-     * 3. `Fields.field(fieldCFromMethodCall())`
-     */
-    private fun fieldObjectExpressionToProjectedFieldNode(
-        fieldObjectExpression: PsiExpression,
-        projectionName: Name
-    ): Node<PsiElement>? {
-        val fieldExpression = fieldObjectExpression.resolveFieldStringExpressionFromFieldObject()
-            ?: return null
-        return createProjectedFieldNode(
-            fieldExpression = fieldExpression,
-            projectionName = projectionName
-        )
-    }
-
-    /**
      * Parses a `PsiExpression` that represents a `Fields` object and returns a `Node` for each
      * field referenced in the `Fields` object.
      *
@@ -93,29 +71,10 @@ class ProjectStageParser : StageParser {
         fieldsObjectExpression: PsiExpression,
         projectionName: Name
     ): List<Node<PsiElement>> {
-        val resolvedFieldsMethodCall = fieldsObjectExpression.resolveToMethodCallExpression {
-                _,
-                fieldsObjectMethod
-            ->
-            fieldsObjectMethod.containingClass?.qualifiedName == FIELDS_FQN &&
-                (fieldsObjectMethod.name == "fields" || fieldsObjectMethod.name == "from")
-        } ?: return emptyList()
-
-        val resolvedFieldsMethod = resolvedFieldsMethodCall.fuzzyResolveMethod()
-            ?: return emptyList()
-
-        return when (resolvedFieldsMethod.name) {
-            "fields" -> resolvedFieldsMethodCall.argumentList.expressions.mapNotNull {
-                createProjectedFieldNode(it, projectionName)
+        return fieldsObjectExpression.resolveFieldStringExpressionsFromFieldsObject()
+            .map { fieldStringExpression ->
+                createProjectedFieldNode(fieldStringExpression, projectionName)
             }
-            "from" -> resolvedFieldsMethodCall.argumentList.expressions.mapNotNull {
-                fieldObjectExpressionToProjectedFieldNode(it, projectionName)
-            }
-            else -> {
-                // log.warn("Unsupported Fields method: ${resolvedFieldsMethod.name}")
-                emptyList()
-            }
-        }
     }
 
     /**
@@ -210,6 +169,50 @@ class ProjectStageParser : StageParser {
     }
 }
 
+/**
+ * Parses a `PsiExpression` that represents a `Fields` object and returns a `PsiExpression` for each
+ * field referenced in the `Fields` object.
+ *
+ * The two different ways of generating a `Fields` object that we support and parse in here are:
+ * 1. `Fields.fields("fieldA", stringFieldFromVariable, stringFieldFromMethodCall())`
+ * 2. `Fields.from(Fields.field("fieldA"), Fields.field(stringFieldFromVariable))`
+ */
+fun PsiExpression.resolveFieldStringExpressionsFromFieldsObject(): List<PsiExpression> {
+    val resolvedFieldsMethodCall = resolveToMethodCallExpression {
+            _,
+            fieldsObjectMethod
+        ->
+        fieldsObjectMethod.containingClass?.qualifiedName == FIELDS_FQN &&
+            (fieldsObjectMethod.name == "fields" || fieldsObjectMethod.name == "from")
+    } ?: return emptyList()
+
+    val resolvedFieldsMethod = resolvedFieldsMethodCall.fuzzyResolveMethod()
+        ?: return emptyList()
+
+    return when (resolvedFieldsMethod.name) {
+        // Fields.fields("fieldA", "fieldB")
+        "fields" -> resolvedFieldsMethodCall.argumentList.expressions.toList()
+        // Fields.from(Fields.field("fieldA"), Fields.field("fieldB"))
+        "from" -> resolvedFieldsMethodCall.argumentList.expressions.mapNotNull {
+            it.resolveFieldStringExpressionFromFieldObject()
+        }
+        else -> {
+            // log.warn("Unsupported Fields method: ${resolvedFieldsMethod.name}")
+            emptyList()
+        }
+    }
+}
+
+/**
+ * Parses a `PsiExpression` that represents a `Field` object and returns a `PsiExpression` for the
+ * field referenced in the `Field` object.
+ *
+ * The only helper that we support for creating a `Field` object is `Fields.field()` with the
+ * following alternative signatures:
+ * 1. `Fields.field("fieldA")`
+ * 2. `Fields.field(fieldBFromVariable)`
+ * 3. `Fields.field(fieldCFromMethodCall())`
+ */
 fun PsiExpression.resolveFieldStringExpressionFromFieldObject(): PsiExpression? {
     val resolvedFieldMethodCall = resolveToMethodCallExpression {
             _,

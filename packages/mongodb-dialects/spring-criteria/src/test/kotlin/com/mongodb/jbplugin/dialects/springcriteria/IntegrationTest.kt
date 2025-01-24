@@ -33,6 +33,7 @@ import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
 import com.mongodb.assertions.Assertions.assertNotNull
 import com.mongodb.jbplugin.mql.Component
 import com.mongodb.jbplugin.mql.Node
+import com.mongodb.jbplugin.mql.components.HasAccumulatedFields
 import com.mongodb.jbplugin.mql.components.HasAddedFields
 import com.mongodb.jbplugin.mql.components.HasAggregation
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
@@ -425,6 +426,31 @@ fun Node<PsiElement>.addedFieldN(
     }
 
     addedField.assertions()
+}
+
+fun Node<PsiElement>.accumulatedFieldN(
+    n: Int,
+    name: Name? = null,
+    stageIndex: Int? = null,
+    assertions: Node<PsiElement>.() -> Unit = {
+    },
+) {
+    val accumulatedFields = component<HasAccumulatedFields<PsiElement>>()
+    assertNotNull(accumulatedFields)
+
+    val accumulatedField = accumulatedFields!!.children[n]
+
+    if (name != null) {
+        val qname = accumulatedField.component<Named>()
+        assertNotEquals(null, qname) {
+            "StageIndex: $stageIndex, AccumulatedFieldIndex: $n :: Expected a named operation with name $name but null found."
+        }
+        assertEquals(name, qname?.name) {
+            "StageIndex: $stageIndex, AccumulatedFieldIndex: $n :: Expected a named operation with name $name but $qname found."
+        }
+    }
+
+    accumulatedField.assertions()
 }
 
 fun Node<PsiElement>.updateN(
