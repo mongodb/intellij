@@ -68,7 +68,7 @@ class GroupStageParser : StageParser {
                 when (method.name) {
                     "sum", "avg", "first", "last", "max", "min", "push", "addToSet" -> {
                         parseKeyValueAccumulator(
-                            sumMethodCall = methodCall,
+                            operatorMethodCall = methodCall,
                             // The `.as` method call, if at all chained, should be right before this call
                             // in the gathered chain of calls.
                             asMethodCall = allChainedCalls
@@ -143,10 +143,10 @@ class GroupStageParser : StageParser {
      * option.
      */
     private fun parseKeyValueAccumulator(
-        sumMethodCall: PsiMethodCallExpression,
+        operatorMethodCall: PsiMethodCallExpression,
         asMethodCall: PsiMethodCallExpression?
     ): Node<PsiElement> {
-        val fieldExpressionInSumCall = sumMethodCall.argumentList.expressions.getOrNull(0)
+        val fieldExpressionInSumCall = operatorMethodCall.argumentList.expressions.getOrNull(0)
         // The field passed to sum method call could also be an AggregationExpression, which we
         // do not support parsing yet. So we assume that it is a string and try to parse it as
         // a constant and resolve a ValueReference out of it
@@ -170,12 +170,12 @@ class GroupStageParser : StageParser {
             }
         )
 
-        val sumMethod = sumMethodCall.fuzzyResolveMethod()
+        val operatorMethod = operatorMethodCall.fuzzyResolveMethod()
         return Node(
-            source = asMethodCall ?: sumMethodCall,
+            source = asMethodCall ?: operatorMethodCall,
             listOf(
                 Named(
-                    when (sumMethod?.name) {
+                    when (operatorMethod?.name) {
                         "sum" -> Name.SUM
                         "avg" -> Name.AVG
                         "first" -> Name.FIRST
