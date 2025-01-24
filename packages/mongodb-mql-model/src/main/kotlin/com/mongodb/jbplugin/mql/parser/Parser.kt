@@ -217,6 +217,20 @@ fun <I, E, O, E2, O2> Parser<I, E, List<O>>.mapMany(
     }
 }
 
+/**
+ * Returns a parser that runs a parser for each element of the output list.
+ */
+fun <I, E, O> Parser<I, E, List<O?>>.filterNotNullMany(): Parser<I, Either<E, Nothing>, List<O>> {
+    return { input ->
+        when (val result = this(input)) {
+            is Either.Left -> Either.left(Either.left(result.value))
+            is Either.Right -> {
+                Either.right(result.value.filterNotNull())
+            }
+        }
+    }
+}
+
 data object NoConditionFulfilled
 
 fun <I, E> equals(toValue: I): Parser<I, E, Boolean> {
