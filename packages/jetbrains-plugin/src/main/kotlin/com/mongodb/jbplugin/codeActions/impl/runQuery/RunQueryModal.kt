@@ -74,10 +74,8 @@ class RunQueryModal(
                 namespaceSelector =
                     NamespaceSelector(query.source.project, dataSource, coroutineScope)
 
-                builder.addLabeledComponent(
-                    JBLabel("Namespace:"),
-                    namespaceSelector!!
-                )
+                builder.addLabeledComponent("Database:", namespaceSelector!!.databaseComboBox)
+                builder.addLabeledComponent("Collection:", namespaceSelector!!.collectionComboBox)
                 builder.addSeparator()
             }
         }
@@ -91,16 +89,15 @@ class RunQueryModal(
                     ?: continue
 
             val type = fieldValue.type.toNonNullableType()
-
-            val label =
-                JBLabel("${fieldName.fieldName} (${JavaDriverDialectFormatter.formatType(type)}):")
+            val typeWithJavaRepresentation = JavaDriverDialectFormatter.formatType(type)
+            val label = JBLabel("${fieldName.fieldName} ($typeWithJavaRepresentation):")
             val (input, toolTip) = toInput(type) ?: continue
 
             fieldsForContext += Triple(fieldName.fieldName, type, input)
 
             builder.addLabeledComponent(label, input, 8)
             if (toolTip != null) {
-                builder.addLabeledComponent(JBLabel(""), toolTip, 0)
+                builder.addTooltip(toolTip)
             }
         }
 
@@ -147,20 +144,17 @@ class RunQueryModal(
         }
     }
 
-    private fun toInput(type: BsonType): Pair<JComponent, JComponent?>? {
+    private fun toInput(type: BsonType): Pair<JComponent, String?>? {
         return when (type.toNonNullableType()) {
             BsonInt32, BsonInt64, BsonDouble, BsonDecimal128, BsonString -> JBTextField() to null
             BsonBoolean -> JBCheckBox() to null
             BsonUUID -> JBTextField(sampleUuid()) to null
             BsonObjectId ->
-                JBTextField(sampleObjectId()) to JBLabel(
-                    "Hexadecimal ObjectId representation.",
-                    UIUtil.ComponentStyle.SMALL
-                )
+                JBTextField(sampleObjectId()) to "Hexadecimal ObjectId representation."
 
             BsonDate ->
                 JBTextField(sampleDateTime()) to
-                    JBLabel("ISO 8601 Date: yyyy-MM-dd'T'HH:mm:ss.", UIUtil.ComponentStyle.SMALL)
+                    "ISO 8601 Date: yyyy-MM-dd'T'HH:mm:ss."
 
             else ->
                 JBLabel("Unable to specify. Please fill it after generating the query.") to null

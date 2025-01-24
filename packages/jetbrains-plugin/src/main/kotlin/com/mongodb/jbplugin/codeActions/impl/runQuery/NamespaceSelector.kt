@@ -16,17 +16,15 @@ import com.mongodb.jbplugin.meta.latest
 import com.mongodb.jbplugin.meta.service
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.launch
 import java.awt.Component
 import javax.swing.DefaultComboBoxModel
-import javax.swing.JPanel
 import javax.swing.SwingConstants
 
 class NamespaceSelector(
     private val project: Project,
     private val dataSource: LocalDataSource,
     private val coroutineScope: CoroutineScope,
-) : JPanel() {
+) {
     sealed interface Event {
         data object DatabasesLoading : Event
         data class DatabasesLoaded(val databases: List<String>) : Event
@@ -39,9 +37,9 @@ class NamespaceSelector(
     private val events: MutableSharedFlow<Event> = MutableSharedFlow(extraBufferCapacity = 1)
 
     private val databaseModel = DefaultComboBoxModel<String>(emptyArray())
-    private val databaseComboBox = ComboBox<String?>(databaseModel)
+    val databaseComboBox = ComboBox<String?>(databaseModel)
     private val collectionModel = DefaultComboBoxModel<String>(emptyArray())
-    private val collectionComboBox = ComboBox<String?>(collectionModel)
+    val collectionComboBox = ComboBox<String?>(collectionModel)
 
     val selectedDatabase: String?
         get() = databaseModel.selectedItem?.toString()
@@ -51,12 +49,10 @@ class NamespaceSelector(
 
     private val loadingDatabases: Boolean by events.latest(
         onNewEvent = { event, state ->
-            if (event is Event.DatabasesLoading) {
-                true
-            } else if (event is Event.DatabasesLoaded) {
-                false
-            } else {
-                state
+            when (event) {
+                is Event.DatabasesLoading -> true
+                is Event.DatabasesLoaded -> false
+                else -> state
             }
         },
         onChange = {},
@@ -65,12 +61,10 @@ class NamespaceSelector(
 
     private val loadingCollections: Boolean by events.latest(
         onNewEvent = { event, state ->
-            if (event is Event.CollectionsLoaded) {
-                false
-            } else if (event is Event.CollectionsLoading) {
-                true
-            } else {
-                state
+            when (event) {
+                is Event.CollectionsLoading -> true
+                is Event.CollectionsLoaded -> false
+                else -> state
             }
         },
         onChange = {},
@@ -78,16 +72,15 @@ class NamespaceSelector(
     )
 
     init {
-        add(databaseComboBox)
-        add(collectionComboBox)
-
         databaseComboBox.isEnabled = false
         collectionComboBox.isEnabled = false
+        databaseComboBox.name = "DatabaseComboBox"
+        collectionComboBox.name = "CollectionComboBox"
 
-        databaseComboBox.prototypeDisplayValue = "XXXXXXXXXXXXXX"
+        databaseComboBox.prototypeDisplayValue = "XXXXXXXXXXXXXXXXXXXXX"
         databaseComboBox.putClientProperty(ANIMATION_IN_RENDERER_ALLOWED, true)
 
-        collectionComboBox.prototypeDisplayValue = "XXXXXXXXXXXXXX"
+        collectionComboBox.prototypeDisplayValue = "XXXXXXXXXXXXXXXXXXXXX"
         collectionComboBox.putClientProperty(ANIMATION_IN_RENDERER_ALLOWED, true)
 
         databaseComboBox.setRenderer { _, value, index, _, _ -> renderDatabaseItem(value, index) }
@@ -95,7 +88,7 @@ class NamespaceSelector(
             renderCollectionItem(value, index)
         }
 
-        coroutineScope.launch {
+        coroutineScope.launchChildBackground {
             events.collect(::handleEvent)
         }
 
@@ -137,7 +130,7 @@ class NamespaceSelector(
                 databaseModel.removeAllElements()
                 collectionModel.removeAllElements()
                 databaseModel.addAll(event.databases)
-                collectionModel.selectFirst()
+                databaseModel.selectFirst()
                 databaseComboBox.isEnabled = true
             }
             is Event.DatabaseSelected -> {

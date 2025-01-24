@@ -23,6 +23,7 @@ import com.intellij.openapi.project.ProjectManager
 import com.intellij.testFramework.common.cleanApplicationState
 import com.intellij.testFramework.common.initTestApplication
 import com.intellij.testFramework.replaceService
+import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.observability.LogMessage
 import com.mongodb.jbplugin.observability.LogMessageBuilder
@@ -30,8 +31,12 @@ import com.mongodb.jbplugin.observability.RuntimeInformation
 import com.mongodb.jbplugin.observability.RuntimeInformationService
 import com.mongodb.jbplugin.settings.PluginSettings
 import com.mongodb.jbplugin.settings.PluginSettingsStateComponent
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.TestScope
+import org.assertj.swing.core.BasicRobot
+import org.assertj.swing.core.Robot
 import org.junit.jupiter.api.extension.*
+import org.mockito.Mockito
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
@@ -52,6 +57,7 @@ annotation class IntegrationTest
  * Extension class, should not be used directly.
  */
 private class IntegrationTestExtension :
+    BeforeAllCallback,
     BeforeTestExecutionCallback,
     AfterTestExecutionCallback,
     ParameterResolver {
@@ -59,6 +65,11 @@ private class IntegrationTestExtension :
     private lateinit var settings: PluginSettings
     private lateinit var project: Project
     private lateinit var testScope: TestScope
+    private lateinit var robot: Robot
+
+    override fun beforeAll(context: ExtensionContext?) {
+        System.setProperty("java.awt.headless", "false")
+    }
 
     override fun beforeTestExecution(context: ExtensionContext?) {
         initTestApplication()
@@ -77,6 +88,8 @@ private class IntegrationTestExtension :
         settings.isTelemetryEnabled = true
         testScope = TestScope()
         project.withMockedService(application.getService(ClientSessionsManager::class.java))
+
+        robot = BasicRobot.robotWithNewAwtHierarchy()
     }
 
     override fun afterTestExecution(context: ExtensionContext?) {
@@ -85,6 +98,7 @@ private class IntegrationTestExtension :
         }, ModalityState.defaultModalityState())
 
         ApplicationManager.getApplication().cleanApplicationState()
+        robot.cleanUp()
     }
 
     override fun supportsParameter(
@@ -95,8 +109,10 @@ private class IntegrationTestExtension :
             equals(Application::class.java) ||
                 equals(Project::class.java) ||
                 equals(PluginSettings::class.java) ||
-                equals(TestScope::class.java)
-        } ?: false
+                equals(TestScope::class.java) ||
+                equals(CoroutineScope::class.java) ||
+                equals(Robot::class.java)
+        } == true
 
     override fun resolveParameter(
         parameterContext: ParameterContext?,
@@ -107,6 +123,8 @@ private class IntegrationTestExtension :
             Project::class.java -> project
             PluginSettings::class.java -> settings
             TestScope::class.java -> testScope
+            CoroutineScope::class.java -> testScope
+            Robot::class.java -> robot
             else -> TODO()
         }
 }
@@ -224,3 +242,9 @@ internal fun mockDatabaseConnection(dataSource: LocalDataSource) =
         `when`(connectionPoint.dataSource).thenReturn(dataSource)
         `when`(connection.remoteConnection).thenReturn(remoteConnection)
     }
+
+internal fun Project.mockReadModelProvider(): DataGripBasedReadModelProvider {
+    val readModelProvider = Mockito.mock(DataGripBasedReadModelProvider::class.java)
+    withMockedService(readModelProvider)
+    return readModelProvider
+}
