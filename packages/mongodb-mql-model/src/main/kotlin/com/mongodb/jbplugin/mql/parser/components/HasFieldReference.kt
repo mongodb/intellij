@@ -18,8 +18,23 @@ inline fun <reified T : HasFieldReference.FieldReference<S>, S> fieldReference()
         }
     }
 }
+inline fun <reified T : HasFieldReference.FieldReference<S>, S> fieldReferences(): Parser<Node<S>, NoFieldReference, List<T>> {
+    return { input ->
+        val refs = input.components<HasFieldReference<S>>().filter {
+            it.reference is T
+        }.map { it.reference as T }
+
+        if (refs.isNotEmpty()) {
+            Either.right(refs)
+        } else {
+            Either.left(NoFieldReference)
+        }
+    }
+}
 
 fun <S> schemaFieldReference() = fieldReference<HasFieldReference.FromSchema<S>, S>()
+
+fun <S> schemaFieldReferences() = fieldReferences<HasFieldReference.FromSchema<S>, S>()
 
 fun <S> allNodesWithSchemaFieldReferences(): Parser<Node<S>, NoFieldReferences, List<Node<S>>> {
     return { input ->

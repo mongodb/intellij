@@ -290,7 +290,40 @@ class BookRepository {
                     .addField("addedField").withValueOf(Fields.field(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>))
                     .addField("addedField").withValueOf(Fields.field(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>))
                     .addField("addedField").withValueOf(Fields.field(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>))
-                    .build()
+                    .build(),
+                
+                Aggregation.group(),
+                Aggregation.group(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>),
+                Aggregation.group(
+                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>,
+                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>,
+                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>
+                ),
+                Aggregation.group()
+                    .sum(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>).as("accumulatedField")
+                    .sum(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>).as("accumulatedField")
+                    .sum(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>).as("accumulatedField")
+                    .avg(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>).as("accumulatedField")
+                    .avg(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>).as("accumulatedField")
+                    .avg(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>).as("accumulatedField")
+                    .max(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>).as("accumulatedField")
+                    .max(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>).as("accumulatedField")
+                    .max(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>).as("accumulatedField")
+                    .min(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>).as("accumulatedField")
+                    .min(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>).as("accumulatedField")
+                    .min(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>).as("accumulatedField")
+                    .first(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>).as("accumulatedField")
+                    .first(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>).as("accumulatedField")
+                    .first(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>).as("accumulatedField")
+                    .last(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>).as("accumulatedField")
+                    .last(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>).as("accumulatedField")
+                    .last(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>).as("accumulatedField")
+                    .push(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>).as("accumulatedField")
+                    .push(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>).as("accumulatedField")
+                    .push(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>).as("accumulatedField")
+                    .addToSet(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>).as("accumulatedField")
+                    .addToSet(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>).as("accumulatedField")
+                    .addToSet(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>).as("accumulatedField")
             ),
             Book.class,
             Book.class
