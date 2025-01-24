@@ -11,7 +11,9 @@ import org.bson.Document;
 import org.bson.types.ObjectId;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 public class JavaDriverRepository {
     private static final String IMDB_VOTES = "imdb.votes";
@@ -23,11 +25,29 @@ public class JavaDriverRepository {
         this.client = client;
     }
 
-    public Document findMovieById(String id) {
+    public Document randomQuery(
+        String string,
+        Date date,
+        int intVal,
+        float floatVal,
+        ObjectId objectId,
+        UUID uuid,
+        boolean bool,
+        Object anyObj
+    ) {
         return client
-            .getDatabase("sample_mflix")
-            .getCollection("movies")
-            .find(Filters.eq(id))
+            .getDatabase(string)
+            .getCollection(string)
+            .find(Filters.and(
+                Filters.eq(objectId),
+                Filters.eq("string", string),
+                Filters.eq("date", date),
+                Filters.eq("int", intVal),
+                Filters.eq("float", floatVal),
+                Filters.eq("uuid", uuid),
+                Filters.eq("bool", bool),
+                Filters.eq("anyObj", anyObj)
+            ))
             .first();
     }
 

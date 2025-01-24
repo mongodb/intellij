@@ -18,12 +18,14 @@ fun <S> MongoshBackend.resolveValueReference(
     is HasValueReference.Inferred -> registerConstant(ref.value)
     is HasValueReference.Runtime -> registerVariable(
         (fieldRef?.reference as? FromSchema)?.fieldName ?: "value",
-        ref.type
+        ref.type,
+        null
     )
 
     else -> registerVariable(
         "queryField",
-        BsonAny
+        BsonAny,
+        null
     )
 }
 
@@ -32,13 +34,13 @@ fun <S> MongoshBackend.resolveFieldReference(fieldRef: HasFieldReference<S>) =
         is FromSchema -> registerConstant(ref.displayName)
         is Inferred<S> -> registerConstant(ref.displayName)
         is HasFieldReference.Computed<S> -> registerConstant(ref.displayName)
-        is Unknown -> registerVariable("field", BsonAny)
+        is Unknown -> registerVariable("field", BsonAny, null)
     }
 
 fun <S> MongoshBackend.emitCollectionReference(collRef: HasCollectionReference<S>?): MongoshBackend {
     when (val ref = collRef?.reference) {
         is HasCollectionReference.OnlyCollection -> {
-            emitDatabaseAccess(registerVariable("database", BsonString))
+            emitDatabaseAccess(registerVariable("database", BsonString, null))
             emitCollectionAccess(registerConstant(ref.collection))
         }
 
@@ -48,8 +50,8 @@ fun <S> MongoshBackend.emitCollectionReference(collRef: HasCollectionReference<S
         }
 
         else -> {
-            emitDatabaseAccess(registerVariable("database", BsonString))
-            emitCollectionAccess(registerVariable("collection", BsonString))
+            emitDatabaseAccess(registerVariable("database", BsonString, null))
+            emitCollectionAccess(registerVariable("collection", BsonString, null))
         }
     }
 

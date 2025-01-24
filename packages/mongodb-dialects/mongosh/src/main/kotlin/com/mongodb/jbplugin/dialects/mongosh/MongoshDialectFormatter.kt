@@ -23,49 +23,51 @@ object MongoshDialectFormatter : DialectFormatter {
     ): OutputQuery {
         val isAggregate = query.isAggregate()
 
-        val outputString = MongoshBackend(prettyPrint = queryContext.prettyPrint).apply {
-            emitDbAccess()
-            emitCollectionReference(query.component<HasCollectionReference<S>>())
-            if (queryContext.explainPlan != QueryContext.ExplainPlanType.NONE) {
-                emitFunctionName("explain")
-                emitFunctionCall(long = false, {
-                    // https://www.mongodb.com/docs/manual/reference/command/explain/#command-fields
-                    when (queryContext.explainPlan) {
-                        QueryContext.ExplainPlanType.FULL -> emitStringLiteral("executionStats")
-                        else -> emitStringLiteral("queryPlanner")
-                    }
-                })
-                emitPropertyAccess()
-                if (isAggregate) {
-                    emitFunctionName("aggregate")
-                } else {
-                    emitFunctionName("find")
-                }
-            } else {
-                emitFunctionName(query.component<IsCommand>()?.type?.canonical ?: "find")
-            }
-            if (query.canUpdateDocuments() &&
-                queryContext.explainPlan == QueryContext.ExplainPlanType.NONE
-            ) {
-                emitFunctionCall(long = true, {
-                    emitQueryFilter(query, firstCall = true)
-                }, {
-                    emitQueryUpdate(query)
-                })
-            } else {
-                emitFunctionCall(long = true, {
-                    if (query.isAggregate()) {
-                        emitAggregateBody(query, queryContext)
+        val outputString = MongoshBackend(prettyPrint = queryContext.prettyPrint)
+            .applyQueryExpansions(queryContext)
+            .apply {
+                emitDbAccess()
+                emitCollectionReference(query.component<HasCollectionReference<S>>())
+                if (queryContext.explainPlan != QueryContext.ExplainPlanType.NONE) {
+                    emitFunctionName("explain")
+                    emitFunctionCall(long = false, {
+                        // https://www.mongodb.com/docs/manual/reference/command/explain/#command-fields
+                        when (queryContext.explainPlan) {
+                            QueryContext.ExplainPlanType.FULL -> emitStringLiteral("executionStats")
+                            else -> emitStringLiteral("queryPlanner")
+                        }
+                    })
+                    emitPropertyAccess()
+                    if (isAggregate) {
+                        emitFunctionName("aggregate")
                     } else {
-                        emitQueryFilter(query, firstCall = true)
+                        emitFunctionName("find")
                     }
-                })
-            }
+                } else {
+                    emitFunctionName(query.component<IsCommand>()?.type?.canonical ?: "find")
+                }
+                if (query.canUpdateDocuments() &&
+                    queryContext.explainPlan == QueryContext.ExplainPlanType.NONE
+                ) {
+                    emitFunctionCall(long = true, {
+                        emitQueryFilter(query, firstCall = true)
+                    }, {
+                        emitQueryUpdate(query)
+                    })
+                } else {
+                    emitFunctionCall(long = true, {
+                        if (query.isAggregate()) {
+                            emitAggregateBody(query, queryContext)
+                        } else {
+                            emitQueryFilter(query, firstCall = true)
+                        }
+                    })
+                }
 
-            if (query.returnsACursor()) {
-                emitSort(query)
-            }
-        }.computeOutput()
+                if (query.returnsACursor()) {
+                    emitSort(query)
+                }
+            }.computeOutput()
 
         val ref = query.component<HasCollectionReference<S>>()?.reference
         return when {
