@@ -1,5 +1,6 @@
 package com.mongodb.jbplugin.dialects.mongosh.query
 
+import com.mongodb.jbplugin.dialects.mongosh.backend.ContextValue
 import com.mongodb.jbplugin.dialects.mongosh.backend.MongoshBackend
 import com.mongodb.jbplugin.mql.BsonAny
 import com.mongodb.jbplugin.mql.BsonString
@@ -13,18 +14,28 @@ import com.mongodb.jbplugin.mql.components.HasValueReference
 fun <S> MongoshBackend.resolveValueReference(
     valueRef: HasValueReference<S>,
     fieldRef: HasFieldReference<S>?
-) = when (val ref = valueRef.reference) {
-    is HasValueReference.Constant -> registerConstant(ref.value)
-    is HasValueReference.Inferred -> registerConstant(ref.value)
-    is HasValueReference.Runtime -> registerVariable(
-        (fieldRef?.reference as? FromSchema)?.fieldName ?: "value",
-        ref.type
-    )
+): ContextValue {
+    return when (val ref = valueRef.reference) {
+        is HasValueReference.Computed -> {
+            val node = ref.type.expression
+            val fieldRef =
+                node.component<HasFieldReference<S>>()
+                    ?: return registerVariable("queryField", ref.type.baseType)
 
-    else -> registerVariable(
-        "queryField",
-        BsonAny
-    )
+            resolveFieldReference(fieldRef)
+        }
+        is HasValueReference.Constant -> registerConstant(ref.value)
+        is HasValueReference.Inferred -> registerConstant(ref.value)
+        is HasValueReference.Runtime -> registerVariable(
+            (fieldRef?.reference as? FromSchema)?.fieldName ?: "value",
+            ref.type
+        )
+
+        else -> registerVariable(
+            "queryField",
+            BsonAny
+        )
+    }
 }
 
 fun <S> MongoshBackend.resolveFieldReference(fieldRef: HasFieldReference<S>) =
