@@ -3,6 +3,7 @@ package com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiMethodCallExpression
+import com.mongodb.jbplugin.dialects.javadriver.glossary.collectTypeUntil
 import com.mongodb.jbplugin.dialects.javadriver.glossary.fuzzyResolveMethod
 import com.mongodb.jbplugin.dialects.javadriver.glossary.parseFieldExpressionAsValueReference
 import com.mongodb.jbplugin.dialects.javadriver.glossary.resolveFieldNameFromExpression
@@ -28,7 +29,10 @@ class GroupStageParser : StageParser {
         methodCall: PsiMethodCallExpression,
         method: PsiMethod
     ): Boolean {
-        return canParse(method)
+        return (
+            canParse(method) || methodCall.isFieldCreationCallInsideGroupChain()
+            ) &&
+            method.name != "as"
     }
 
     override fun canParse(stageCallMethod: PsiMethod): Boolean {
@@ -205,6 +209,21 @@ class GroupStageParser : StageParser {
             )
         )
     }
+}
+
+/**
+ * Confirms if a `Field` object creation call was inside one of:
+ * 1. AddFieldsOperationBuilder.addFieldWithValueOf()
+ * 2. ValueAppender.withValueOf()
+ */
+fun PsiMethodCallExpression.isFieldCreationCallInsideGroupChain(): Boolean {
+    val method = fuzzyResolveMethod() ?: return false
+    val allParents = method.collectTypeUntil(
+        PsiMethodCallExpression::class.java,
+        PsiMethod::class.java
+    )
+    return method.isFieldCreationMethod() &&
+        allParents.any { isRootGroupCall() }
 }
 
 fun PsiMethodCallExpression.isRootGroupCall(): Boolean {
