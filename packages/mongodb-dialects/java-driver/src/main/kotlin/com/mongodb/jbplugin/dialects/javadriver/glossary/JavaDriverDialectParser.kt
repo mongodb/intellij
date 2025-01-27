@@ -548,11 +548,12 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
                 return nodeWithParsedComponents(parsedComponents)
             }
             "group" -> {
-                // the first parameter of group is going to be a string expression
+                // the first parameter of group is going to be a string expression representing a
+                // field in schema
                 val groupArgument = stageCall.argumentList.expressions.getOrNull(0)
                     ?: return null
 
-                val groupFieldValueExpression = parseComputedExpression(groupArgument)
+                val groupFieldValueExpression = groupArgument.parseFieldExpressionAsValueReference()
 
                 val nodeWithAccumulators: (List<Node<PsiElement>>) -> Node<PsiElement> = { accFields: List<Node<PsiElement>> ->
                     Node(
@@ -697,11 +698,13 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
     }
 
     private fun parseKeyValAccumulator(expression: PsiMethodCallExpression, name: Name): Node<PsiElement>? {
+        // Represents an accumulated field
         val keyExpr = expression.argumentList.expressions.getOrNull(0) ?: return null
+        // Represents a field from the schema that is used as the value in here
         val valueExpr = expression.argumentList.expressions.getOrNull(1) ?: return null
 
         val fieldName = keyExpr.tryToResolveAsConstantString()
-        val accumulatorExpr = parseComputedExpression(valueExpr)
+        val accumulatorExpr = valueExpr.parseFieldExpressionAsValueReference()
 
         return Node(
             expression,
@@ -722,6 +725,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
     private fun parseLeadingAccumulatorExpression(expression: PsiMethodCallExpression, name: Name): Node<PsiElement>? {
         val keyExpr = expression.argumentList.expressions.getOrNull(0) ?: return null
         val sortExprArgument = expression.argumentList.expressions.getOrNull(1) ?: return null
+        // Represents a field from the schema that is used as the value in here
         val valueExpr = expression.argumentList.expressions.getOrNull(2) ?: return null
         val hasLimit = expression.argumentList.expressions.getOrNull(3)?.let {
             val (wasResolved, value) = it.tryToResolveAsConstant()
@@ -737,7 +741,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
 
         val fieldName = keyExpr.tryToResolveAsConstantString()
         val sort = parseBsonBuilderCallsSimilarToProjections(sortExpr, SORTS_FQN)
-        val accumulatorExpr = parseComputedExpression(valueExpr)
+        val accumulatorExpr = valueExpr.parseFieldExpressionAsValueReference()
 
         return Node(
             expression,
@@ -811,38 +815,6 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
 
         val typeOfFirstArg = methodCall.argumentList.expressionTypes[0]
         return typeOfFirstArg != null && typeOfFirstArg.equalsToText(SESSION_FQN)
-    }
-
-    private fun parseComputedExpression(element: PsiElement): HasValueReference<PsiElement> {
-        val (constant, value) = element.tryToResolveAsConstant()
-        return HasValueReference(
-            when {
-                constant && value is String -> HasValueReference.Computed(
-                    element,
-                    type = ComputedBsonType(
-                        BsonAny,
-                        Node(
-                            element,
-                            listOf(
-                                HasFieldReference(
-                                    FromSchema(element, value.trim('$'), value)
-                                )
-                            )
-                        )
-                    )
-                )
-                constant -> HasValueReference.Constant(
-                    element,
-                    value,
-                    value?.javaClass.toBsonType(value)
-                )
-                !constant && element is PsiExpression -> HasValueReference.Runtime(
-                    element,
-                    element.type?.toBsonType() ?: BsonAny
-                )
-                else -> HasValueReference.Unknown as HasValueReference.ValueReference<PsiElement>
-            }
-        )
     }
 
     private fun isAggregationStageMethodCall(callMethod: PsiMethod?): Boolean {
@@ -1197,4 +1169,37 @@ fun <T : PsiElement>PsiElement.resolveElementUntil(
 
         else -> return null
     }
+}
+
+fun PsiElement.parseFieldExpressionAsValueReference(): HasValueReference<PsiElement> {
+    val element = this
+    val (constant, value) = element.tryToResolveAsConstant()
+    return HasValueReference(
+        when {
+            constant && value is String -> HasValueReference.Computed(
+                element,
+                type = ComputedBsonType(
+                    BsonAny,
+                    Node(
+                        element,
+                        listOf(
+                            HasFieldReference(
+                                FromSchema(element, value.trim('$'), value)
+                            )
+                        )
+                    )
+                )
+            )
+            constant -> HasValueReference.Constant(
+                element,
+                value,
+                value?.javaClass.toBsonType(value)
+            )
+            !constant && element is PsiExpression -> HasValueReference.Runtime(
+                element,
+                element.type?.toBsonType() ?: BsonAny
+            )
+            else -> HasValueReference.Unknown as HasValueReference.ValueReference<PsiElement>
+        }
+    )
 }

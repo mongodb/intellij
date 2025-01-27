@@ -19,7 +19,9 @@ import com.mongodb.jbplugin.mql.parser.components.allNodesWithSchemaFieldReferen
 import com.mongodb.jbplugin.mql.parser.components.extractValueReference
 import com.mongodb.jbplugin.mql.parser.components.knownCollection
 import com.mongodb.jbplugin.mql.parser.components.schemaFieldReference
+import com.mongodb.jbplugin.mql.parser.components.schemaFieldReferences
 import com.mongodb.jbplugin.mql.parser.filter
+import com.mongodb.jbplugin.mql.parser.filterNotNullMany
 import com.mongodb.jbplugin.mql.parser.first
 import com.mongodb.jbplugin.mql.parser.map
 import com.mongodb.jbplugin.mql.parser.mapError
@@ -103,25 +105,28 @@ object FieldCheckingLinter {
                 is Either.Left -> emptyList()
                 is Either.Right -> {
                     val collectionSchema = querySchema.value
-                    val extractFieldExistenceWarning = schemaFieldReference<S>()
-                        .map { toFieldNotExistingWarning(collectionSchema, it) }
+                    val extractFieldExistenceWarning = schemaFieldReferences<S>()
+                        .mapMany { toFieldNotExistingWarning(collectionSchema, it) }
+                        .filterNotNullMany()
+                        .mapError { NoFieldReference }
 
                     val extractTypeMismatchWarning = schemaFieldReference<S>()
                         .filter { collectionSchema.typeOf(it.fieldName) != BsonNull }
                         .zip(extractValueReference())
-                        .map { toValueMismatchWarning(collectionSchema, it) }
+                        .map { listOf(toValueMismatchWarning(collectionSchema, it)) }
+                        .filterNotNullMany()
                         .mapError { NoFieldReference }
 
                     val allFieldAndValueReferencesParser = allNodesWithSchemaFieldReferences<S>().mapMany(
                         first(
                             extractTypeMismatchWarning,
                             extractFieldExistenceWarning,
-                            otherwise { null },
+                            otherwise { emptyList() },
                         )
                     )
 
                     val parsingResult = allFieldAndValueReferencesParser.parse(query)
-                    parsingResult.orElse { emptyList() }.filterNotNull()
+                    parsingResult.orElse { emptyList() }.flatten()
                 }
             }
         )
@@ -130,13 +135,14 @@ object FieldCheckingLinter {
     private fun <S> toFieldNotExistingWarning(
         collectionSchema: CollectionSchema,
         known: HasFieldReference.FromSchema<S>
-    ): FieldCheckWarning<S>? {
+    ): Either<Nothing, FieldCheckWarning<S>?> {
         val fieldType = collectionSchema.typeOf(known.fieldName)
-        return FieldCheckWarning.FieldDoesNotExist(
+        val warning = FieldCheckWarning.FieldDoesNotExist(
             known.source,
             known.fieldName,
             collectionSchema.namespace
         ).takeIf { fieldType == BsonNull } as? FieldCheckWarning<S>
+        return Either.right(warning)
     }
 
     private fun <S> toValueMismatchWarning(

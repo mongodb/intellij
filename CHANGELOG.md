@@ -5,6 +5,8 @@ MongoDB plugin for IntelliJ IDEA.
 ## [Unreleased]
 
 ### Added
+* [INTELLIJ-175](https://jira.mongodb.org/browse/INTELLIJ-175) Add support for parsing, inspecting and autocompleting in a group stage written using `Aggregation.group` and chained `GroupOperation`s using `sum`, `avg`, `first`, `last`, `max`, `min`, `push` and `addToSet`.
+* [INTELLIJ-196](https://jira.mongodb.org/browse/INTELLIJ-196) Add support for $sort when generating the query into DataGrip.
 * [INTELLIJ-195](https://jira.mongodb.org/browse/INTELLIJ-195) Add support for $unwind when generating the query into DataGrip.
 * [INTELLIJ-194](https://jira.mongodb.org/browse/INTELLIJ-194) Add support for $addFields when generating the query into DataGrip.
 * [INTELLIJ-193](https://jira.mongodb.org/browse/INTELLIJ-193) Add support for generating aggregates with $match and $project.
