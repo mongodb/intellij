@@ -6,6 +6,7 @@ import org.bson.types.ObjectId
 import org.owasp.encoder.Encode
 import java.math.BigDecimal
 import java.math.BigInteger
+import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -249,7 +250,8 @@ private fun serializePrimitive(value: Any?): String = when (value) {
     is Boolean -> value.toString()
     is ObjectId -> "ObjectId(\"${Encode.forJavaScript(value.toHexString())}\")"
     is String -> '"' + Encode.forJavaScript(value) + '"'
-    is Date, is Instant, is LocalDate, is LocalDateTime, is TemporalAccessor ->
+    is Date -> "ISODate(\"${SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").format(value)}\")"
+    is Instant, is LocalDate, is LocalDateTime, is TemporalAccessor ->
         "ISODate(\"${DateTimeFormatter.ISO_DATE_TIME.format(value as TemporalAccessor)}\")"
     is UUID -> "UUID(\"$value\")"
     is Collection<*> -> value.joinToString(separator = ", ", prefix = "[", postfix = "]") {
@@ -259,7 +261,7 @@ private fun serializePrimitive(value: Any?): String = when (value) {
     is Map<*, *> -> value.entries.joinToString(separator = ", ", prefix = "{", postfix = "}") {
         "\"${it.key}\": ${serializePrimitive(it.value)}"
     }
-    is QueryContext.AsIs -> value.value.toString()
+    is AsIs -> value.value.toString()
     null -> "null"
     else -> "{}"
 }
@@ -269,7 +271,7 @@ private fun defaultValueOfBsonType(type: BsonType): Any? = when (type) {
     is BsonAnyOf -> defaultValueOfBsonType(type.types.firstOrNull { it !is BsonNull } ?: BsonAny)
     is BsonArray -> emptyList<Any>()
     BsonBoolean -> false
-    BsonDate -> Date.from(Instant.parse(MONGODB_FIRST_RELEASE))
+    BsonDate -> LocalDateTime.of(2009, 2, 11, 18, 0)
     BsonDecimal128 -> BigInteger.ZERO
     BsonDouble -> 0.0
     BsonInt32 -> 0
