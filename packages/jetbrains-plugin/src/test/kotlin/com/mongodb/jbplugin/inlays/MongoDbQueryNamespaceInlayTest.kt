@@ -1,14 +1,13 @@
 package com.mongodb.jbplugin.inlays
 
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
-import com.mongodb.jbplugin.fixtures.CodeInsightTest
+import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.ParsingTest
-import org.junit.jupiter.api.Assertions.*
 
-@CodeInsightTest
+@IntegrationTest
 class MongoDbQueryNamespaceInlayTest {
     @ParsingTest(
-        fileName = "Repository.java",
+
         value = """
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoClient;

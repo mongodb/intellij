@@ -5,6 +5,7 @@ import com.intellij.openapi.project.Project
 import com.mongodb.jbplugin.accessadapter.slice.ListCollections
 import com.mongodb.jbplugin.accessadapter.slice.ListDatabases
 import com.mongodb.jbplugin.fixtures.IntegrationTest
+import com.mongodb.jbplugin.fixtures.eventually
 import com.mongodb.jbplugin.fixtures.mockDataSource
 import com.mongodb.jbplugin.fixtures.mockReadModelProvider
 import kotlinx.coroutines.CoroutineScope
@@ -28,8 +29,10 @@ class NamespaceSelectorTest {
         val dataSource = mockDataSource()
         val (fixture, _) = render(robot, project, dataSource, coroutineScope)
 
-        fixture.comboBox("DatabaseComboBox").requireDisabled()
-        fixture.comboBox("CollectionComboBox").requireDisabled()
+        eventually {
+            fixture.comboBox("DatabaseComboBox").requireDisabled()
+            fixture.comboBox("CollectionComboBox").requireDisabled()
+        }
     }
 
     @Test
@@ -52,9 +55,11 @@ class NamespaceSelectorTest {
         val (fixture, _) = render(robot, project, dataSource, coroutineScope)
         val databaseComboBox = fixture.comboBox("DatabaseComboBox")
 
-        databaseComboBox.requireEnabled()
-        databaseComboBox.requireItemCount(1)
-        databaseComboBox.requireSelection("db1")
+        eventually {
+            databaseComboBox.requireEnabled()
+                .requireItemCount(1)
+                .requireSelection("db1")
+        }
     }
 
     @Test
@@ -87,13 +92,16 @@ class NamespaceSelectorTest {
         val databaseComboBox = fixture.comboBox("DatabaseComboBox")
         val collectionComboBox = fixture.comboBox("CollectionComboBox")
 
-        databaseComboBox.requireEnabled()
-        databaseComboBox.requireItemCount(1)
-        databaseComboBox.requireSelection("db1")
+        eventually {
+            databaseComboBox
+                .requireEnabled()
+                .requireItemCount(1)
+                .requireSelection("db1")
 
-        collectionComboBox.requireEnabled()
-        collectionComboBox.requireItemCount(2)
-        collectionComboBox.requireSelection("coll1")
+            collectionComboBox.requireEnabled()
+                .requireItemCount(2)
+                .requireSelection("coll1")
+        }
 
         assertEquals("db1", selector.selectedDatabase)
         assertEquals("coll1", selector.selectedCollection)

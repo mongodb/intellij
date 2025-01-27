@@ -21,28 +21,11 @@ import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 
-@CodeInsightTest
+@IntegrationTest
 class SpringCriteriaFieldCheckLinterInspectionTest {
     @ParsingTest(
-        fileName = "Repository.java",
+        setup = DefaultSetup.SPRING_DATA,
         value = """
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.mapping.Document;
-
-import static org.springframework.data.mongodb.core.query.Query.query;
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class BookRepository {
-    private final MongoTemplate template;
-
-    public BookRepository(MongoTemplate template) {
-        this.template = template;
-    }
-
     public void allReleasedBooks() {
         <warning descr="No connection available to run this check.">template.find(
             query(
@@ -63,7 +46,6 @@ class BookRepository {
             Book.class
         )</warning>;
     }
-}
         """,
     )
     fun `shows an inspection when there is no connection attached to the current editor`(
@@ -75,25 +57,8 @@ class BookRepository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
+        setup = DefaultSetup.SPRING_DATA,
         value = """
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.mapping.Document;
-
-import static org.springframework.data.mongodb.core.query.Query.query;
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class BookRepository {
-    private final MongoTemplate template;
-
-    public BookRepository(MongoTemplate template) {
-        this.template = template;
-    }
-
     public void allReleasedBooks() {
         <warning descr="No database selected to run this check.">template.find(
                 query(where("released").is(true)),
@@ -112,7 +77,6 @@ class BookRepository {
             Book.class
         )</warning>;
     }
-}
         """,
     )
     fun `shows an inspection when there is a connection but no database attached to the current editor`(
@@ -164,27 +128,8 @@ class BookRepository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
+        setup = DefaultSetup.SPRING_DATA,
         value = """
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.Fields;import org.springframework.data.mongodb.core.mapping.Document;
-
-import java.util.List;
-import static org.springframework.data.mongodb.core.query.Query.query;
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class BookRepository {
-    private final MongoTemplate template;
-
-    public BookRepository(MongoTemplate template) {
-        this.template = template;
-    }
-
     public void allReleasedBooks() {
         template.find(
                 query(where(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>).is(true)),
@@ -296,7 +241,6 @@ class BookRepository {
             Book.class
         );
     }
-}
         """,
     )
     fun `shows an inspection when the field does not exist in the current namespace`(
@@ -353,25 +297,8 @@ class BookRepository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
+        setup = DefaultSetup.SPRING_DATA,
         value = """
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.mapping.Document;
-
-import static org.springframework.data.mongodb.core.query.Query.query;
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class BookRepository {
-    private final MongoTemplate template;
-
-    public BookRepository(MongoTemplate template) {
-        this.template = template;
-    }
-
     public void allReleasedBooks() {
         template.find(
                 query(where("released").is(<warning descr="A \"String\"(type of provided value) cannot be assigned to \"boolean\"(type of \"released\")">"true"</warning>)),
@@ -390,7 +317,6 @@ class BookRepository {
             Book.class
         );
     }
-}
         """,
     )
     fun `shows an inspection when a provided value cannot be assigned to a field because of detected type mismatch`(
@@ -450,25 +376,8 @@ class BookRepository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
+        setup = DefaultSetup.SPRING_DATA,
         value = """
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.mapping.Document;
-
-import static org.springframework.data.mongodb.core.query.Query.query;
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class BookRepository {
-    private final MongoTemplate template;
-
-    public BookRepository(MongoTemplate template) {
-        this.template = template;
-    }
-
     public void allReleasedBooks() {
         template.find(
                 query(where("released").is("true")),
@@ -487,7 +396,6 @@ class BookRepository {
             Book.class
         );
     }
-}
         """,
     )
     fun `shows no inspection when a provided value can be assigned to a field`(

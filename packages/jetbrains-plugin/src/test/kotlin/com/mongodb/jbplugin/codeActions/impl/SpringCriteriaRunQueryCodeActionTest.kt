@@ -1,8 +1,10 @@
 package com.mongodb.jbplugin.codeActions.impl
 
+import com.intellij.openapi.application.Application
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.mongodb.jbplugin.dialects.springcriteria.SpringCriteriaDialect
-import com.mongodb.jbplugin.fixtures.CodeInsightTest
+import com.mongodb.jbplugin.fixtures.DefaultSetup
+import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.ParsingTest
 import com.mongodb.jbplugin.fixtures.setupConnection
 import com.mongodb.jbplugin.fixtures.specifyDialect
@@ -11,32 +13,14 @@ import com.mongodb.jbplugin.i18n.Icons
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 
-@CodeInsightTest
-@Suppress("TOO_LONG_FUNCTION", "LONG_LINE")
+@IntegrationTest
 class SpringCriteriaRunQueryCodeActionTest {
     @ParsingTest(
-        fileName = "Repository.java",
+        setup = DefaultSetup.SPRING_DATA,
         value = """
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.mapping.Document;
-
-import static org.springframework.data.mongodb.core.query.Query.query;
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class BookRepository {
-    private final MongoTemplate template;
-
-    public BookRepository(MongoTemplate template) {
-        this.template = template;
-    }
-
     public void allReleasedBooks() {
         template.find(query(where("released").is(true)), Book.class);
     }
-}
         """,
     )
     fun `does show a gutter icon if not connected`(
@@ -48,31 +32,15 @@ class BookRepository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
+        setup = DefaultSetup.SPRING_DATA,
         value = """
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.mapping.Document;
-
-import static org.springframework.data.mongodb.core.query.Query.query;
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class BookRepository {
-    private final MongoTemplate template;
-
-    public BookRepository(MongoTemplate template) {
-        this.template = template;
-    }
-
     public void allReleasedBooks() {
         template.find(query(where("released").is(true)), Book.class);
     }
-}
         """,
     )
     fun `does show a gutter icon if connected`(
+        application: Application,
         fixture: CodeInsightTestFixture,
     ) {
         fixture.setupConnection()
@@ -83,6 +51,9 @@ class BookRepository {
 
         val gutter = gutters.first()
         assertEquals(Icons.runQueryGutter, gutter.icon)
-        assertEquals(CodeActionsMessages.message("code.action.run.query"), gutter.tooltipText)
+
+        application.runReadAction {
+            assertEquals(CodeActionsMessages.message("code.action.run.query"), gutter.tooltipText)
+        }
     }
 }

@@ -14,14 +14,13 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.eq
 
-@CodeInsightTest
+@IntegrationTest
 class SpringCriteriaMongoDbAutocompletionPopupHandlerTest {
     @ParsingTest(
-        fileName = "Repository.java",
+        setup = DefaultSetup.SPRING_DATA,
         value = """
-import org.springframework.data.mongodb.core.mapping.Document;
 @Document(<caret>)
-record Book() {}
+record Entity() {}
         """,
     )
     fun `should autocomplete collections from the current connection`(
@@ -59,30 +58,11 @@ record Book() {}
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
+        setup = DefaultSetup.SPRING_DATA,
         value = """
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
     public List<Book> allReleasedBooks() {
         return template.query(Book.class).matching(where(<caret>
     }
-}
         """,
     )
     fun `should autocomplete fields from the current namespace`(
@@ -127,31 +107,11 @@ class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
+        setup = DefaultSetup.SPRING_DATA,
         value = """
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
     public List<Book> allReleasedBooks() {
         return template.aggregate(Aggregation.newAggregation(), <caret>
     }
-}
         """,
     )
     fun `should autocomplete collections from the current connection in an aggregate call`(
@@ -189,30 +149,11 @@ class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
+        setup = DefaultSetup.SPRING_DATA,
         value = """
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
     public List<Book> allReleasedBooks() {
         return template.aggregateStream(Aggregation.newAggregation(), <caret>
     }
-}
         """,
     )
     fun `should autocomplete collections from the current connection in an aggregateStream call`(
@@ -250,27 +191,8 @@ class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
+        setup = DefaultSetup.SPRING_DATA,
         value = """
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
     public List<Book> allReleasedBooks() {
         return template.aggregate(
             Aggregation.newAggregation(
@@ -280,7 +202,6 @@ class Repository {
             Book.class
         ).getMappedResults();
     }
-}
         """,
     )
     fun `should autocomplete fields from the current namespace in a Criteria inside an aggregate call`(
@@ -325,27 +246,8 @@ class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
+        setup = DefaultSetup.SPRING_DATA,
         value = """
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
     public List<Book> allReleasedBooks() {
         return template.aggregateStream(
             Aggregation.newAggregation(
@@ -355,7 +257,6 @@ class Repository {
             Book.class
         ).toList();
     }
-}
         """,
     )
     fun `should autocomplete fields from the current namespace in a Criteria inside an aggregateStream call`(
@@ -400,27 +301,8 @@ class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
+        setup = DefaultSetup.SPRING_DATA,
         value = """
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
     public List<Book> allReleasedBooks() {
         return template.aggregate(
             Aggregation.newAggregation(
@@ -430,7 +312,6 @@ class Repository {
             Book.class
         ).getMappedResults();
     }
-}
         """,
     )
     fun `should autocomplete fields from the current namespace in a Aggregation#project call`(
@@ -475,27 +356,8 @@ class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
+        setup = DefaultSetup.SPRING_DATA,
         value = """
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.Fields;import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
     public List<Book> allReleasedBooks() {
         return template.aggregate(
             Aggregation.newAggregation(
@@ -505,7 +367,6 @@ class Repository {
             Book.class
         ).getMappedResults();
     }
-}
         """,
     )
     fun `should autocomplete fields from the current namespace in fields helper passed to Aggregation#project call`(
@@ -550,27 +411,8 @@ class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
+        setup = DefaultSetup.SPRING_DATA,
         value = """
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.Fields;import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
     public List<Book> allReleasedBooks() {
         return template.aggregate(
             Aggregation.newAggregation(
@@ -580,7 +422,6 @@ class Repository {
             Book.class
         ).getMappedResults();
     }
-}
         """,
     )
     fun `should autocomplete fields from the current namespace in field helper passed to Aggregation#project call`(
@@ -625,27 +466,8 @@ class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
+        setup = DefaultSetup.SPRING_DATA,
         value = """
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
     public List<Book> allReleasedBooks() {
         return template.aggregate(
             Aggregation.newAggregation(
@@ -655,7 +477,6 @@ class Repository {
             Book.class
         ).getMappedResults();
     }
-}
         """,
     )
     fun `should autocomplete fields from the current namespace in andInclude call chained to Aggregation#project call`(
@@ -700,27 +521,8 @@ class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
+        setup = DefaultSetup.SPRING_DATA,
         value = """
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.Fields;import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
     public List<Book> allReleasedBooks() {
         return template.aggregate(
             Aggregation.newAggregation(
@@ -730,7 +532,6 @@ class Repository {
             Book.class
         ).getMappedResults();
     }
-}
         """,
     )
     fun `should autocomplete fields from the current namespace in fields helper passed to andInclude call chained to Aggregation#project call`(
@@ -775,27 +576,8 @@ class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
+        setup = DefaultSetup.SPRING_DATA,
         value = """
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.Fields;import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
     public List<Book> allReleasedBooks() {
         return template.aggregate(
             Aggregation.newAggregation(
@@ -805,7 +587,6 @@ class Repository {
             Book.class
         ).getMappedResults();
     }
-}
         """,
     )
     fun `should autocomplete fields from the current namespace in field helper passed to andInclude call chained to Aggregation#project call`(
@@ -850,27 +631,8 @@ class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
+        setup = DefaultSetup.SPRING_DATA,
         value = """
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
     public List<Book> allReleasedBooks() {
         return template.aggregate(
             Aggregation.newAggregation(
@@ -880,7 +642,6 @@ class Repository {
             Book.class
         ).getMappedResults();
     }
-}
         """,
     )
     fun `should autocomplete fields from the current namespace in andExclude call chained to Aggregation#project call`(
@@ -925,28 +686,8 @@ class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
+        setup = DefaultSetup.SPRING_DATA,
         value = """
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
     public List<Book> allReleasedBooks() {
         return template.aggregate(
             Aggregation.newAggregation(
@@ -956,7 +697,6 @@ class Repository {
             Book.class
         ).getMappedResults();
     }
-}
         """,
     )
     fun `should autocomplete fields from the current namespace in Aggregation#sort call`(
@@ -1001,28 +741,8 @@ class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
+        setup = DefaultSetup.SPRING_DATA,
         value = """
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
     public List<Book> allReleasedBooks() {
         return template.aggregate(
             Aggregation.newAggregation(
@@ -1034,7 +754,6 @@ class Repository {
             Book.class
         ).getMappedResults();
     }
-}
         """,
     )
     fun `should autocomplete fields from the current namespace in Sort#by of Aggregation#sort call`(
@@ -1079,28 +798,8 @@ class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
+        setup = DefaultSetup.SPRING_DATA,
         value = """
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
     public List<Book> allReleasedBooks() {
         return template.aggregate(
             Aggregation.newAggregation(
@@ -1112,7 +811,6 @@ class Repository {
             Book.class
         ).getMappedResults();
     }
-}
         """,
     )
     fun `should autocomplete fields from the current namespace in Sort#by with direction of Aggregation#sort call`(
@@ -1157,28 +855,8 @@ class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
+        setup = DefaultSetup.SPRING_DATA,
         value = """
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
     public List<Book> allReleasedBooks() {
         return template.aggregate(
             Aggregation.newAggregation(
@@ -1192,7 +870,6 @@ class Repository {
             Book.class
         ).getMappedResults();
     }
-}
         """,
     )
     fun `should autocomplete fields from the current namespace in Order#asc of Aggregation#sort call`(
@@ -1237,28 +914,8 @@ class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
+        setup = DefaultSetup.SPRING_DATA,
         value = """
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
     public List<Book> allReleasedBooks() {
         return template.aggregate(
             Aggregation.newAggregation(
@@ -1272,7 +929,6 @@ class Repository {
             Book.class
         ).getMappedResults();
     }
-}
         """,
     )
     fun `should autocomplete fields from the current namespace in Order#desc of Aggregation#sort call`(
@@ -1317,28 +973,8 @@ class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
+        setup = DefaultSetup.SPRING_DATA,
         value = """
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
     public List<Book> allReleasedBooks() {
         return template.aggregate(
             Aggregation.newAggregation(
@@ -1352,7 +988,6 @@ class Repository {
             Book.class
         ).getMappedResults();
     }
-}
         """,
     )
     fun `should autocomplete fields from the current namespace in Order#by of Aggregation#sort call`(
@@ -1397,28 +1032,8 @@ class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
+        setup = DefaultSetup.SPRING_DATA,
         value = """
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
     public List<Book> allReleasedBooks() {
         return template.aggregate(
             Aggregation.newAggregation(
@@ -1434,7 +1049,6 @@ class Repository {
             Book.class
         ).getMappedResults();
     }
-}
         """,
     )
     fun `should autocomplete fields from the current namespace in List of Order of Aggregation#sort call`(
@@ -1479,28 +1093,8 @@ class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
+        setup = DefaultSetup.SPRING_DATA,
         value = """
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
     public List<Book> allReleasedBooks() {
         return template.aggregate(
             Aggregation.newAggregation(
@@ -1510,7 +1104,6 @@ class Repository {
             Book.class
         ).getMappedResults();
     }
-}
         """,
     )
     fun `should autocomplete fields from the current namespace in Aggregation#addFields#addFieldsWithValueOf call`(
@@ -1555,29 +1148,8 @@ class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
+        setup = DefaultSetup.SPRING_DATA,
         value = """
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.Fields;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
     public List<Book> allReleasedBooks() {
         return template.aggregate(
             Aggregation.newAggregation(
@@ -1587,7 +1159,6 @@ class Repository {
             Book.class
         ).getMappedResults();
     }
-}
         """,
     )
     fun `should autocomplete fields from the current namespace in Fields#field call passed to Aggregation#addFields#addFieldsWithValueOf call`(
@@ -1632,28 +1203,8 @@ class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
+        setup = DefaultSetup.SPRING_DATA,
         value = """
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
     public List<Book> allReleasedBooks() {
         return template.aggregate(
             Aggregation.newAggregation(
@@ -1663,7 +1214,6 @@ class Repository {
             Book.class
         ).getMappedResults();
     }
-}
         """,
     )
     fun `should autocomplete fields from the current namespace in Aggregation#addFields#withValueOf call`(
@@ -1708,29 +1258,8 @@ class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
+        setup = DefaultSetup.SPRING_DATA,
         value = """
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.Fields;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
     public List<Book> allReleasedBooks() {
         return template.aggregate(
             Aggregation.newAggregation(
@@ -1740,7 +1269,6 @@ class Repository {
             Book.class
         ).getMappedResults();
     }
-}
         """,
     )
     fun `should autocomplete fields from the current namespace in Fields#field call passed to Aggregation#addFields#withValueOf call`(

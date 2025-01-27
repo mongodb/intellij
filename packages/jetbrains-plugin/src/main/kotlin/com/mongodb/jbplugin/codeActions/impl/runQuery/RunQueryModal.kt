@@ -9,6 +9,7 @@ import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.FormBuilder
 import com.intellij.util.ui.UIUtil
 import com.mongodb.jbplugin.dialects.javadriver.glossary.JavaDriverDialectFormatter
+import com.mongodb.jbplugin.i18n.CodeActionsMessages
 import com.mongodb.jbplugin.mql.BsonBoolean
 import com.mongodb.jbplugin.mql.BsonDate
 import com.mongodb.jbplugin.mql.BsonDecimal128
@@ -43,13 +44,13 @@ import javax.swing.JPanel
 class RunQueryModal(
     private val query: Node<PsiElement>,
     private val dataSource: LocalDataSource,
-    private val coroutineScope: CoroutineScope,
+    private val coroutineScope: CoroutineScope
 ) : DialogWrapper(query.source.project, false) {
     private var namespaceSelector: NamespaceSelector? = null
     private val fieldsForContext: MutableList<Triple<String, BsonType, JComponent>> =
         mutableListOf()
 
-    override fun createCenterPanel(): JComponent? {
+    public override fun createCenterPanel(): JComponent? {
         fieldsForContext.clear()
 
         val builder = FormBuilder.createFormBuilder()
@@ -57,14 +58,21 @@ class RunQueryModal(
             emptyList()
         }
 
-        builder.addComponent(JBLabel("Specify query test values", UIUtil.ComponentStyle.LARGE))
         builder.addComponent(
             JBLabel(
-                "These are values in your query that are defined at runtime. Please specify test values for them here.",
+                CodeActionsMessages.message("code.action.run.query.modal.title"),
+                UIUtil.ComponentStyle.LARGE
+            )
+        )
+
+        builder.addComponent(
+            JBLabel(
+                CodeActionsMessages.message("code.action.run.query.modal.subtitle"),
                 UIUtil.ComponentStyle.SMALL,
                 UIUtil.FontColor.BRIGHTER
             )
         )
+
         builder.addComponent(JPanel(), 12)
 
         val collectionReference = query.component<HasCollectionReference<PsiElement>>()?.reference
@@ -74,8 +82,15 @@ class RunQueryModal(
                 namespaceSelector =
                     NamespaceSelector(query.source.project, dataSource, coroutineScope)
 
-                builder.addLabeledComponent("Database:", namespaceSelector!!.databaseComboBox)
-                builder.addLabeledComponent("Collection:", namespaceSelector!!.collectionComboBox)
+                builder.addLabeledComponent(
+                    CodeActionsMessages.message("code.action.run.query.modal.database"),
+                    namespaceSelector!!.databaseComboBox
+                )
+                builder.addLabeledComponent(
+                    CodeActionsMessages.message("code.action.run.query.modal.collection"),
+                    namespaceSelector!!.collectionComboBox
+                )
+
                 builder.addSeparator()
             }
         }
@@ -109,12 +124,16 @@ class RunQueryModal(
 
     override fun createActions(): Array<out Action?> {
         return arrayOf(
-            object : DialogWrapperAction("Cancel") {
+            object : DialogWrapperAction(
+                CodeActionsMessages.message("code.action.run.query.modal.action.cancel")
+            ) {
                 override fun doAction(e: ActionEvent?) {
                     close(CANCEL_EXIT_CODE)
                 }
             },
-            object : DialogWrapperAction("OK") {
+            object : DialogWrapperAction(
+                CodeActionsMessages.message("code.action.run.query.modal.action.generate")
+            ) {
                 init {
                     putValue(DEFAULT_ACTION, true)
                 }
@@ -150,14 +169,20 @@ class RunQueryModal(
             BsonBoolean -> JBCheckBox() to null
             BsonUUID -> JBTextField(sampleUuid()) to null
             BsonObjectId ->
-                JBTextField(sampleObjectId()) to "Hexadecimal ObjectId representation."
+                JBTextField(sampleObjectId()) to
+                    CodeActionsMessages.message("code.action.run.query.modal.insight.objectid")
 
             BsonDate ->
                 JBTextField(sampleDateTime()) to
-                    "ISO 8601 Date: yyyy-MM-dd'T'HH:mm:ss."
+                    CodeActionsMessages.message("code.action.run.query.modal.insight.date")
 
             else ->
-                JBLabel("Unable to specify. Please fill it after generating the query.") to null
+                JBLabel(
+                    CodeActionsMessages.message(
+                        "code.action.run.query.modal.warning.can.not.specify"
+                    )
+                ) to
+                    null
         }
     }
 
@@ -219,9 +244,8 @@ class RunQueryModal(
     }
 
     private fun <S : Any> parseOrAsIs(value: String, parser: (String) -> S): Any {
-        return runCatching { parser.invoke(value) }.getOrElse {
-            QueryContext.AsIs(value)
-        }
+        return runCatching { parser.invoke(value) }
+            .getOrElse { QueryContext.AsIs(value) }
     }
 
     companion object {
