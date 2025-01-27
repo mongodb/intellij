@@ -24,7 +24,7 @@ object JavaDriverDialectFormatter : DialectFormatter {
             is BsonInt32 -> "int"
             is BsonInt64 -> "long"
             is BsonDecimal128 -> "BigDecimal"
-            is BsonAny -> "any"
+            is BsonUUID -> "UUID"
             is BsonAnyOf ->
                 if (type.types.contains(BsonNull)) {
                     formatTypeNullable(BsonAnyOf(type.types - BsonNull))

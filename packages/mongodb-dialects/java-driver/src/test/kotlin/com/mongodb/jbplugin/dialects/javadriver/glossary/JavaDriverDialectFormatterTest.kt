@@ -33,6 +33,7 @@ class JavaDriverDialectFormatterTest {
                 arrayOf(BsonInt32, "int"),
                 arrayOf(BsonInt64, "long"),
                 arrayOf(BsonDecimal128, "BigDecimal"),
+                arrayOf(BsonUUID, "UUID"),
                 arrayOf(BsonAny, "any"),
                 arrayOf(BsonAnyOf(BsonNull, BsonDouble), "Double"), // java boxed value
                 arrayOf(BsonAnyOf(BsonInt32, BsonDouble), "double | int"),

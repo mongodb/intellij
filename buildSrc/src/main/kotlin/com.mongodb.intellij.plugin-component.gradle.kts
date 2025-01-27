@@ -64,6 +64,7 @@ dependencies {
     testImplementation(libs.testing.spring.mongodb)
     testImplementation(libs.testing.jsoup)
     testImplementation(libs.testing.video.recorder)
+    testImplementation(libs.testing.assertj.swing)
     testImplementation(libs.testing.remoteRobot)
     testImplementation(libs.testing.remoteRobotDeps.remoteFixtures)
     testImplementation(libs.testing.remoteRobotDeps.ideLauncher)

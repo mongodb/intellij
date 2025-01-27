@@ -10,27 +10,11 @@ import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 
-// Suppressing
-// - LONG_LINE because the complaint is about the templated error description which needs to be in the same line for the
-// match to happen correctly
-// - TOO_LONG_FUNCTION because it is better to keep test logic within the tests and not make them "too smart" otherwise
-// reading through them becomes a task in its own
-@Suppress("LONG_LINE", "TOO_LONG_FUNCTION")
-@CodeInsightTest
+@IntegrationTest
 class SpringCriteriaIndexCheckLinterInspectionTest {
     @ParsingTest(
-        fileName = "Repository.java",
+        setup = DefaultSetup.SPRING_DATA,
         value = """
-
-
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.mapping.Document;
-
-import static org.springframework.data.mongodb.core.query.Query.query;
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
 
 class BookRepository {
     private final MongoTemplate template;

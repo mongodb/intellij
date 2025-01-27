@@ -27,7 +27,7 @@ public class SpringCriteriaRepository {
 
     private List<Movie> allMoviesWithRatingAtLeast(int rating) {
         return template.find(
-                query(where( "tomatoes.viewer.rating").gte(rating)),
+                query(where( "tomatoes.viewer.rating").gte(2456)),
                 Movie.class
         );
     }
@@ -53,6 +53,6 @@ public class SpringCriteriaRepository {
     }
 
     private void updateLanguageOfAllMoviesWithRatingAtLeast(int rating, String newLanguage) {
-        template.updateMulti(query(where("tomatoes.viewer.rating").gte(rating)), update("key", "value"), Movie.class);
+        template.updateFirst(query(where("tomatoes.viewer.rating").gte(rating)), update("language", newLanguage), Movie.class);
     }
 }

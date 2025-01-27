@@ -105,6 +105,10 @@ data class QueryContext(
     val explainPlan: ExplainPlanType,
     val prettyPrint: Boolean,
 ) {
+    data class AsIs(val value: String) {
+        val isEmpty = value.isBlank()
+    }
+
     data class LocalVariable(val type: BsonType, val defaultValue: Any?)
     enum class ExplainPlanType {
         NONE,

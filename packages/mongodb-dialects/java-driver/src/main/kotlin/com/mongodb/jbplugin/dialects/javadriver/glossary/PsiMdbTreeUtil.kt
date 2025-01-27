@@ -41,6 +41,7 @@ import com.mongodb.jbplugin.mql.BsonNull
 import com.mongodb.jbplugin.mql.BsonObjectId
 import com.mongodb.jbplugin.mql.BsonString
 import com.mongodb.jbplugin.mql.BsonType
+import com.mongodb.jbplugin.mql.BsonUUID
 import com.mongodb.jbplugin.mql.components.IsCommand
 
 /**
@@ -429,6 +430,8 @@ fun String.toBsonType(): BsonType {
     } else if (this.contains("List") || this.contains("Set")) {
         val baseType = this.substringAfter("<").substringBeforeLast(">")
         return BsonArray(baseType.toBsonType())
+    } else if (this == ("java.util.UUID")) {
+        return BsonUUID
     }
 
     return BsonAny

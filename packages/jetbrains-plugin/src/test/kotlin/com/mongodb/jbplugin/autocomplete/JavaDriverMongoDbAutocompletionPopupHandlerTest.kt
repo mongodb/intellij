@@ -6,44 +6,27 @@ import com.mongodb.jbplugin.accessadapter.slice.GetCollectionSchema
 import com.mongodb.jbplugin.accessadapter.slice.ListCollections
 import com.mongodb.jbplugin.accessadapter.slice.ListDatabases
 import com.mongodb.jbplugin.dialects.javadriver.glossary.JavaDriverDialect
-import com.mongodb.jbplugin.dialects.springcriteria.SpringCriteriaDialect
-import com.mongodb.jbplugin.fixtures.CodeInsightTest
+import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.ParsingTest
 import com.mongodb.jbplugin.fixtures.setupConnection
-import com.mongodb.jbplugin.fixtures.specifyDatabase
 import com.mongodb.jbplugin.fixtures.specifyDialect
 import com.mongodb.jbplugin.mql.BsonObject
 import com.mongodb.jbplugin.mql.BsonString
 import com.mongodb.jbplugin.mql.CollectionSchema
 import com.mongodb.jbplugin.mql.Namespace
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 
-@CodeInsightTest
+@IntegrationTest
 class JavaDriverMongoDbAutocompletionPopupHandlerTest {
     @ParsingTest(
-        fileName = "Repository.java",
         value = """
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoCollection;
-import org.bson.Document;
-import org.bson.types.ObjectId;
-import static com.mongodb.client.model.Filters.*;
-
-public class Repository {
-    private final MongoClient client;
-
-    public Repository(MongoClient client) {
-        this.client = client;
-    }
-
     public FindIterable<Document> exampleFind() {
         return client.getDatabase(<caret>)
     }
-}
         """,
     )
     fun `should autocomplete databases from the current connection`(
@@ -78,26 +61,10 @@ public class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
         value = """
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoCollection;
-import org.bson.Document;
-import org.bson.types.ObjectId;
-import static com.mongodb.client.model.Filters.*;
-
-public class Repository {
-    private final MongoClient client;
-
-    public Repository(MongoClient client) {
-        this.client = client;
-    }
-
     public FindIterable<Document> exampleFind() {
         return client.getDatabase("myDatabase").getCollection(<caret>).find();
     }
-}
         """,
     )
     fun `should autocomplete collections from the current connection and inferred database`(
@@ -128,27 +95,11 @@ public class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
         value = """
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoCollection;
-import org.bson.Document;
-import org.bson.types.ObjectId;
-import static com.mongodb.client.model.Filters.*;
-
-public class Repository {
-    private final MongoClient client;
-
-    public Repository(MongoClient client) {
-        this.client = client;
-    }
-
     public FindIterable<Document> exampleFind() {
         return client.getDatabase("myDatabase").getCollection("myCollection")
                 .find(eq(<caret>));
     }
-}
         """,
     )
     fun `should autocomplete fields from the current namespace`(
@@ -185,28 +136,11 @@ public class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
         value = """
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoCollection;
-import org.bson.Document;
-import org.bson.types.ObjectId;
-import static com.mongodb.client.model.Filters.*;
-import static com.mongodb.client.model.Updates.*;
-
-public class Repository {
-    private final MongoClient client;
-
-    public Repository(MongoClient client) {
-        this.client = client;
-    }
-
     public void exampleFind() {
         client.getDatabase("myDatabase").getCollection("myCollection")
                 .updateMany(eq(<caret>), set("x", 1));
     }
-}
         """,
     )
     fun `should autocomplete fields from the current namespace in the filters of an update`(
@@ -243,28 +177,11 @@ public class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
         value = """
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoCollection;
-import org.bson.Document;
-import org.bson.types.ObjectId;
-import static com.mongodb.client.model.Filters.*;
-import static com.mongodb.client.model.Updates.*;
-
-public class Repository {
-    private final MongoClient client;
-
-    public Repository(MongoClient client) {
-        this.client = client;
-    }
-
     public void exampleFind() {
         client.getDatabase("myDatabase").getCollection("myCollection")
                 .updateMany(eq("x", 1), set(<caret>, 2));
     }
-}
         """,
     )
     fun `should autocomplete fields from the current namespace in the updates of an update`(
@@ -301,31 +218,13 @@ public class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
         value = """
-import com.mongodb.client.AggregateIterable;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.Aggregates;
-import org.bson.Document;
-import org.bson.types.ObjectId;
-import java.util.List;
-import static com.mongodb.client.model.Filters.*;
-
-public class Repository {
-    private final MongoClient client;
-
-    public Repository(MongoClient client) {
-        this.client = client;
-    }
-
     public AggregateIterable<Document> exampleFind() {
         return client.getDatabase("myDatabase").getCollection("myCollection")
                 .aggregate(List.of(
                     Aggregates.match(eq(<caret>)
                 )));
     }
-}
         """,
     )
     fun `should autocomplete fields from the current namespace in the filters of an Aggregates#match stage`(
@@ -362,25 +261,7 @@ public class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
         value = """
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.Aggregates;
-import com.mongodb.client.model.Projections;import org.bson.Document;
-import org.bson.types.ObjectId;
-import java.util.List;
-import static com.mongodb.client.model.Filters.*;
-import static com.mongodb.client.model.Updates.*;
-
-public class Repository {
-    private final MongoClient client;
-
-    public Repository(MongoClient client) {
-        this.client = client;
-    }
-
     public void exampleFind() {
         client.getDatabase("myDatabase").getCollection("myCollection")
                 .aggregate(List.of(
@@ -389,7 +270,6 @@ public class Repository {
                     )                
                 ));
     }
-}
         """,
     )
     fun `should autocomplete fields from the current namespace in Projections#include of an Aggregates#project stage`(
@@ -426,25 +306,7 @@ public class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
         value = """
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.Aggregates;
-import com.mongodb.client.model.Projections;import org.bson.Document;
-import org.bson.types.ObjectId;
-import java.util.List;
-import static com.mongodb.client.model.Filters.*;
-import static com.mongodb.client.model.Updates.*;
-
-public class Repository {
-    private final MongoClient client;
-
-    public Repository(MongoClient client) {
-        this.client = client;
-    }
-
     public void exampleFind() {
         client.getDatabase("myDatabase").getCollection("myCollection")
                 .aggregate(List.of(
@@ -453,7 +315,6 @@ public class Repository {
                     )                
                 ));
     }
-}
         """,
     )
     fun `should autocomplete fields from the current namespace in Projections#exclude of an Aggregates#project stage`(
@@ -490,25 +351,7 @@ public class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
         value = """
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.Aggregates;
-import com.mongodb.client.model.Projections;import org.bson.Document;
-import org.bson.types.ObjectId;
-import java.util.List;
-import static com.mongodb.client.model.Filters.*;
-import static com.mongodb.client.model.Updates.*;
-
-public class Repository {
-    private final MongoClient client;
-
-    public Repository(MongoClient client) {
-        this.client = client;
-    }
-
     public void exampleFind() {
         client.getDatabase("myDatabase").getCollection("myCollection")
                 .aggregate(List.of(
@@ -519,7 +362,6 @@ public class Repository {
                     )                
                 ));
     }
-}
         """,
     )
     fun `should autocomplete fields from the current namespace in Projections#fields of an Aggregates#project stage`(
@@ -556,27 +398,7 @@ public class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
         value = """
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.Aggregates;
-import com.mongodb.client.model.Projections;
-import com.mongodb.client.model.Sorts;
-import org.bson.Document;
-import org.bson.types.ObjectId;
-import java.util.List;
-import static com.mongodb.client.model.Filters.*;
-import static com.mongodb.client.model.Updates.*;
-
-public class Repository {
-    private final MongoClient client;
-
-    public Repository(MongoClient client) {
-        this.client = client;
-    }
-
     public void exampleFind() {
         client.getDatabase("myDatabase").getCollection("myCollection")
                 .aggregate(List.of(
@@ -585,7 +407,6 @@ public class Repository {
                     )                
                 ));
     }
-}
         """,
     )
     fun `should autocomplete fields from the current namespace in Sorts#ascending of an Aggregates#sort stage`(
@@ -622,27 +443,7 @@ public class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
         value = """
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.Aggregates;
-import com.mongodb.client.model.Projections;
-import com.mongodb.client.model.Sorts;
-import org.bson.Document;
-import org.bson.types.ObjectId;
-import java.util.List;
-import static com.mongodb.client.model.Filters.*;
-import static com.mongodb.client.model.Updates.*;
-
-public class Repository {
-    private final MongoClient client;
-
-    public Repository(MongoClient client) {
-        this.client = client;
-    }
-
     public void exampleFind() {
         client.getDatabase("myDatabase").getCollection("myCollection")
                 .aggregate(List.of(
@@ -651,7 +452,6 @@ public class Repository {
                     )                
                 ));
     }
-}
         """,
     )
     fun `should autocomplete fields from the current namespace in Sorts#descending of an Aggregates#sort stage`(
@@ -688,27 +488,7 @@ public class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
         value = """
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.Aggregates;
-import com.mongodb.client.model.Projections;
-import com.mongodb.client.model.Sorts;
-import org.bson.Document;
-import org.bson.types.ObjectId;
-import java.util.List;
-import static com.mongodb.client.model.Filters.*;
-import static com.mongodb.client.model.Updates.*;
-
-public class Repository {
-    private final MongoClient client;
-
-    public Repository(MongoClient client) {
-        this.client = client;
-    }
-
     public void exampleFind() {
         client.getDatabase("myDatabase").getCollection("myCollection")
                 .aggregate(List.of(
@@ -719,7 +499,6 @@ public class Repository {
                     )                
                 ));
     }
-}
         """,
     )
     fun `should autocomplete fields from the current namespace in Sorts#orderBy of an Aggregates#sort stage`(
@@ -756,27 +535,7 @@ public class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
         value = """
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.Aggregates;
-import com.mongodb.client.model.Field;import com.mongodb.client.model.Projections;
-import com.mongodb.client.model.Sorts;
-import org.bson.Document;
-import org.bson.types.ObjectId;
-import java.util.List;
-import static com.mongodb.client.model.Filters.*;
-import static com.mongodb.client.model.Updates.*;
-
-public class Repository {
-    private final MongoClient client;
-
-    public Repository(MongoClient client) {
-        this.client = client;
-    }
-
     public void exampleFind() {
         client.getDatabase("myDatabase").getCollection("myCollection")
                 .aggregate(List.of(
@@ -785,7 +544,6 @@ public class Repository {
                     )                
                 ));
     }
-}
         """,
     )
     fun `should not autocomplete fields from the current namespace in Aggregates#addFields stage`(
@@ -822,27 +580,7 @@ public class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
         value = """
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.Aggregates;
-import com.mongodb.client.model.Projections;
-import com.mongodb.client.model.Sorts;
-import org.bson.Document;
-import org.bson.types.ObjectId;
-import java.util.List;
-import static com.mongodb.client.model.Filters.*;
-import static com.mongodb.client.model.Updates.*;
-
-public class Repository {
-    private final MongoClient client;
-
-    public Repository(MongoClient client) {
-        this.client = client;
-    }
-
     public void exampleFind() {
         client.getDatabase("myDatabase").getCollection("myCollection")
                 .aggregate(List.of(
@@ -851,7 +589,6 @@ public class Repository {
                     )                
                 ));
     }
-}
         """,
     )
     fun `should autocomplete fields from the current namespace for _id expression in Aggregates#group stage`(
@@ -888,27 +625,7 @@ public class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
         value = """
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.Accumulators;import com.mongodb.client.model.Aggregates;
-import com.mongodb.client.model.Projections;
-import com.mongodb.client.model.Sorts;
-import org.bson.Document;
-import org.bson.types.ObjectId;
-import java.util.List;
-import static com.mongodb.client.model.Filters.*;
-import static com.mongodb.client.model.Updates.*;
-
-public class Repository {
-    private final MongoClient client;
-
-    public Repository(MongoClient client) {
-        this.client = client;
-    }
-
     public void exampleFind() {
         client.getDatabase("myDatabase").getCollection("myCollection")
                 .aggregate(List.of(
@@ -918,7 +635,6 @@ public class Repository {
                     )
                 ));
     }
-}
         """,
     )
     fun `should autocomplete fields from the current namespace for accumulator expression in Aggregates#group stage`(
@@ -955,34 +671,13 @@ public class Repository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
         value = """
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.Aggregates;
-import com.mongodb.client.model.Projections;
-import com.mongodb.client.model.Sorts;
-import org.bson.Document;
-import org.bson.types.ObjectId;
-import java.util.List;
-import static com.mongodb.client.model.Filters.*;
-import static com.mongodb.client.model.Updates.*;
-
-public class Repository {
-    private final MongoClient client;
-
-    public Repository(MongoClient client) {
-        this.client = client;
-    }
-
     public void exampleFind() {
         client.getDatabase("myDatabase").getCollection("myCollection")
                 .aggregate(List.of(
                     Aggregates.unwind(<caret>)                
                 ));
     }
-}
         """,
     )
     fun `should autocomplete fields from the current namespace in an Aggregates#unwind stage`(
@@ -1014,925 +709,6 @@ public class Repository {
         assertTrue(
             elements.containsElements {
                 it.lookupString == "myField"
-            },
-        )
-    }
-
-    @ParsingTest(
-        fileName = "Repository.java",
-        value = """
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
-    public List<Book> allReleasedBooks() {
-        return template.aggregate(
-            Aggregation.newAggregation(
-                Aggregation.group("<caret>")
-            ),
-            Book.class,
-            Book.class
-        ).getMappedResults();
-    }
-}
-        """,
-    )
-    fun `should autocomplete fields from the current namespace in Aggregation#group root call`(
-        fixture: CodeInsightTestFixture,
-    ) {
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
-        fixture.specifyDialect(SpringCriteriaDialect)
-
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
-                ),
-            ),
-        )
-
-        val elements = fixture.completeBasic()
-
-        assertTrue(
-            elements.containsElements {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertTrue(
-            elements.containsElements {
-                it.lookupString == "myField2"
-            },
-        )
-    }
-
-    @ParsingTest(
-        fileName = "Repository.java",
-        value = """
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.Fields;import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
-    public List<Book> allReleasedBooks() {
-        return template.aggregate(
-            Aggregation.newAggregation(
-                Aggregation.group(Fields.fields("<caret>"))
-            ),
-            Book.class,
-            Book.class
-        ).getMappedResults();
-    }
-}
-        """,
-    )
-    fun `should autocomplete fields from the current namespace in Aggregation#group root call with Fields#fields`(
-        fixture: CodeInsightTestFixture,
-    ) {
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
-        fixture.specifyDialect(SpringCriteriaDialect)
-
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
-                ),
-            ),
-        )
-
-        val elements = fixture.completeBasic()
-
-        assertTrue(
-            elements.containsElements {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertTrue(
-            elements.containsElements {
-                it.lookupString == "myField2"
-            },
-        )
-    }
-
-    @ParsingTest(
-        fileName = "Repository.java",
-        value = """
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.Fields;import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
-    public List<Book> allReleasedBooks() {
-        return template.aggregate(
-            Aggregation.newAggregation(
-                Aggregation.group(Fields.fields(Fields.field("<caret>")))
-            ),
-            Book.class,
-            Book.class
-        ).getMappedResults();
-    }
-}
-        """,
-    )
-    fun `should autocomplete fields from the current namespace in Aggregation#group root call with Fields#from(Fields#field)`(
-        fixture: CodeInsightTestFixture,
-    ) {
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
-        fixture.specifyDialect(SpringCriteriaDialect)
-
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
-                ),
-            ),
-        )
-
-        val elements = fixture.completeBasic()
-
-        assertTrue(
-            elements.containsElements {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertTrue(
-            elements.containsElements {
-                it.lookupString == "myField2"
-            },
-        )
-    }
-
-    @ParsingTest(
-        fileName = "Repository.java",
-        value = """
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.Fields;import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
-    public List<Book> allReleasedBooks() {
-        return template.aggregate(
-            Aggregation.newAggregation(
-                Aggregation.group()
-                    .sum(<caret>)
-            ),
-            Book.class,
-            Book.class
-        ).getMappedResults();
-    }
-}
-        """,
-    )
-    fun `should autocomplete fields from the current namespace in Aggregation#group#sum call`(
-        fixture: CodeInsightTestFixture,
-    ) {
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
-        fixture.specifyDialect(SpringCriteriaDialect)
-
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
-                ),
-            ),
-        )
-
-        fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertTrue(
-            elements.containsElements {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertTrue(
-            elements.containsElements {
-                it.lookupString == "myField2"
-            },
-        )
-    }
-
-    @ParsingTest(
-        fileName = "Repository.java",
-        value = """
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.Fields;import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
-    public List<Book> allReleasedBooks() {
-        return template.aggregate(
-            Aggregation.newAggregation(
-                Aggregation.group()
-                    .avg(<caret>)
-            ),
-            Book.class,
-            Book.class
-        ).getMappedResults();
-    }
-}
-        """,
-    )
-    fun `should autocomplete fields from the current namespace in Aggregation#group#avg call`(
-        fixture: CodeInsightTestFixture,
-    ) {
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
-        fixture.specifyDialect(SpringCriteriaDialect)
-
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
-                ),
-            ),
-        )
-
-        fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertTrue(
-            elements.containsElements {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertTrue(
-            elements.containsElements {
-                it.lookupString == "myField2"
-            },
-        )
-    }
-
-    @ParsingTest(
-        fileName = "Repository.java",
-        value = """
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.Fields;import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
-    public List<Book> allReleasedBooks() {
-        return template.aggregate(
-            Aggregation.newAggregation(
-                Aggregation.group()
-                    .first(<caret>)
-            ),
-            Book.class,
-            Book.class
-        ).getMappedResults();
-    }
-}
-        """,
-    )
-    fun `should autocomplete fields from the current namespace in Aggregation#group#first call`(
-        fixture: CodeInsightTestFixture,
-    ) {
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
-        fixture.specifyDialect(SpringCriteriaDialect)
-
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
-                ),
-            ),
-        )
-
-        fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertTrue(
-            elements.containsElements {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertTrue(
-            elements.containsElements {
-                it.lookupString == "myField2"
-            },
-        )
-    }
-
-    @ParsingTest(
-        fileName = "Repository.java",
-        value = """
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.Fields;import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
-    public List<Book> allReleasedBooks() {
-        return template.aggregate(
-            Aggregation.newAggregation(
-                Aggregation.group()
-                    .last(<caret>)
-            ),
-            Book.class,
-            Book.class
-        ).getMappedResults();
-    }
-}
-        """,
-    )
-    fun `should autocomplete fields from the current namespace in Aggregation#group#last call`(
-        fixture: CodeInsightTestFixture,
-    ) {
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
-        fixture.specifyDialect(SpringCriteriaDialect)
-
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
-                ),
-            ),
-        )
-
-        fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertTrue(
-            elements.containsElements {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertTrue(
-            elements.containsElements {
-                it.lookupString == "myField2"
-            },
-        )
-    }
-
-    @ParsingTest(
-        fileName = "Repository.java",
-        value = """
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.Fields;import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
-    public List<Book> allReleasedBooks() {
-        return template.aggregate(
-            Aggregation.newAggregation(
-                Aggregation.group()
-                    .max(<caret>)
-            ),
-            Book.class,
-            Book.class
-        ).getMappedResults();
-    }
-}
-        """,
-    )
-    fun `should autocomplete fields from the current namespace in Aggregation#group#max call`(
-        fixture: CodeInsightTestFixture,
-    ) {
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
-        fixture.specifyDialect(SpringCriteriaDialect)
-
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
-                ),
-            ),
-        )
-
-        fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertTrue(
-            elements.containsElements {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertTrue(
-            elements.containsElements {
-                it.lookupString == "myField2"
-            },
-        )
-    }
-
-    @ParsingTest(
-        fileName = "Repository.java",
-        value = """
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.Fields;import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
-    public List<Book> allReleasedBooks() {
-        return template.aggregate(
-            Aggregation.newAggregation(
-                Aggregation.group()
-                    .min(<caret>)
-            ),
-            Book.class,
-            Book.class
-        ).getMappedResults();
-    }
-}
-        """,
-    )
-    fun `should autocomplete fields from the current namespace in Aggregation#group#min call`(
-        fixture: CodeInsightTestFixture,
-    ) {
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
-        fixture.specifyDialect(SpringCriteriaDialect)
-
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
-                ),
-            ),
-        )
-
-        fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertTrue(
-            elements.containsElements {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertTrue(
-            elements.containsElements {
-                it.lookupString == "myField2"
-            },
-        )
-    }
-
-    @ParsingTest(
-        fileName = "Repository.java",
-        value = """
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.Fields;import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
-    public List<Book> allReleasedBooks() {
-        return template.aggregate(
-            Aggregation.newAggregation(
-                Aggregation.group()
-                    .push(<caret>)
-            ),
-            Book.class,
-            Book.class
-        ).getMappedResults();
-    }
-}
-        """,
-    )
-    fun `should autocomplete fields from the current namespace in Aggregation#group#push call`(
-        fixture: CodeInsightTestFixture,
-    ) {
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
-        fixture.specifyDialect(SpringCriteriaDialect)
-
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
-                ),
-            ),
-        )
-
-        fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertTrue(
-            elements.containsElements {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertTrue(
-            elements.containsElements {
-                it.lookupString == "myField2"
-            },
-        )
-    }
-
-    @ParsingTest(
-        fileName = "Repository.java",
-        value = """
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.Fields;import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
-    public List<Book> allReleasedBooks() {
-        return template.aggregate(
-            Aggregation.newAggregation(
-                Aggregation.group()
-                    .addToSet(<caret>)
-            ),
-            Book.class,
-            Book.class
-        ).getMappedResults();
-    }
-}
-        """,
-    )
-    fun `should autocomplete fields from the current namespace in Aggregation#group#addToSet call`(
-        fixture: CodeInsightTestFixture,
-    ) {
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
-        fixture.specifyDialect(SpringCriteriaDialect)
-
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
-                ),
-            ),
-        )
-
-        fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertTrue(
-            elements.containsElements {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertTrue(
-            elements.containsElements {
-                it.lookupString == "myField2"
-            },
-        )
-    }
-
-    @ParsingTest(
-        fileName = "Repository.java",
-        value = """
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.Fields;import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.query.Criteria;
-
-import java.util.List;
-
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class Repository {
-    private final MongoTemplate template;
-    
-    public Repository(MongoTemplate template) {
-        this.template = template;
-    }
-    
-    public List<Book> allReleasedBooks() {
-        return template.aggregate(
-            Aggregation.newAggregation(
-                Aggregation.group()
-                    .sum("asd")
-                    .as(<caret>)
-            ),
-            Book.class,
-            Book.class
-        ).getMappedResults();
-    }
-}
-        """,
-    )
-    fun `should not autocomplete fields from the current namespace in Aggregation#group#as call`(
-        fixture: CodeInsightTestFixture,
-    ) {
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
-        fixture.specifyDialect(SpringCriteriaDialect)
-
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
-                ),
-            ),
-        )
-
-        fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertFalse(
-            elements.containsElements {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertFalse(
-            elements.containsElements {
-                it.lookupString == "myField2"
             },
         )
     }

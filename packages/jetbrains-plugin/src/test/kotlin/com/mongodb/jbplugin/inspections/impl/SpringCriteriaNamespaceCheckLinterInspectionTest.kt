@@ -9,27 +9,11 @@ import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 
-@CodeInsightTest
+@IntegrationTest
 class SpringCriteriaNamespaceCheckLinterInspectionTest {
     @ParsingTest(
-        fileName = "Repository.java",
+        setup = DefaultSetup.SPRING_DATA,
         value = """
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.mapping.Document;
-
-import static org.springframework.data.mongodb.core.query.Query.query;
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class BookRepository {
-    private final MongoTemplate template;
-
-    public BookRepository(MongoTemplate template) {
-        this.template = template;
-    }
-
     public void allReleasedBooks() {
         template.find(
             query(
@@ -38,7 +22,6 @@ class BookRepository {
             <warning descr="Cannot resolve \"book\" collection in \"myDb\" database in the connected data source.">Book.class</warning>
         );
     }
-}
         """,
     )
     fun `shows an inspection when the collection does not exist in the current data source`(
@@ -61,25 +44,8 @@ class BookRepository {
     }
 
     @ParsingTest(
-        fileName = "Repository.java",
+        setup = DefaultSetup.SPRING_DATA,
         value = """
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.mapping.Document;
-
-import static org.springframework.data.mongodb.core.query.Query.query;
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
-@Document
-record Book() {}
-
-class BookRepository {
-    private final MongoTemplate template;
-
-    public BookRepository(MongoTemplate template) {
-        this.template = template;
-    }
-
     public void allReleasedBooks() {
         template.aggregate(
             Aggregation.newAggregation(
@@ -103,7 +69,6 @@ class BookRepository {
             Book.class
         );
     }
-}
         """,
     )
     fun `shows an inspection when the collection does not exist in the current data source for an aggregation`(

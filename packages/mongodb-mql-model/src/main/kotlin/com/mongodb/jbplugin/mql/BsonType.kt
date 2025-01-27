@@ -164,6 +164,12 @@ data class BsonObject(
 }
 
 /**
+ * Represents a UUID. This is not a BSON type per se (it's a binary with subtype UUID), but it's
+ * widely used making it convenient to have it a first-level type.
+ */
+data object BsonUUID : BsonType
+
+/**
  * Represents the possible types that can be included in an array.
  *
  * @property schema
@@ -205,7 +211,7 @@ fun <T> Class<T>?.toBsonType(value: T? = null): BsonType {
         CharSequence::class.java, String::class.java -> BsonAnyOf(BsonNull, BsonString)
         Date::class.java, Instant::class.java, LocalDate::class.java, LocalDateTime::class.java ->
             BsonAnyOf(BsonNull, BsonDate)
-
+        UUID::class.java -> BsonAnyOf(BsonNull, BsonUUID)
         BigInteger::class.java -> BsonAnyOf(BsonNull, BsonInt64)
         BigDecimal::class.java -> BsonAnyOf(BsonNull, BsonDecimal128)
         Decimal128::class.java -> BsonAnyOf(BsonNull, BsonDecimal128)
@@ -310,4 +316,12 @@ fun flattenAnyOfReferences(schema: BsonType): BsonType =
 fun primitiveOrWrapper(example: Class<*>): Class<*> {
     val type = runCatching { example.getField("TYPE").get(null) as? Class<*> }.getOrNull()
     return type ?: example
+}
+
+fun BsonType.toNonNullableType(): BsonType {
+    return when (this) {
+        is BsonAnyOf -> types.first { it != BsonNull }.toNonNullableType()
+        BsonNull -> BsonAny
+        else -> this
+    }
 }
