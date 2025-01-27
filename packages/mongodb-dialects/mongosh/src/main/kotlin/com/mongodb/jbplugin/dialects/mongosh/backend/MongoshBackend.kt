@@ -261,7 +261,7 @@ private fun serializePrimitive(value: Any?): String = when (value) {
     is Map<*, *> -> value.entries.joinToString(separator = ", ", prefix = "{", postfix = "}") {
         "\"${it.key}\": ${serializePrimitive(it.value)}"
     }
-    is AsIs -> value.value.toString()
+    is AsIs -> value.value
     null -> "null"
     else -> "{}"
 }
