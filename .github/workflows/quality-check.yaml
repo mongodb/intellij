@@ -102,7 +102,7 @@ jobs:
           echo "Installing docker"
           sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin
 
-      - name: Start UI Test Environment
+      - name: Run Unit and Integration Tests
         run: |
           export DISPLAY=:99.0
           Xvfb -ac :99 -screen 0 1920x1080x24 &
