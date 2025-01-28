@@ -145,6 +145,13 @@ class RunQueryModal(
         )
     }
 
+    /**
+     * Opens the modal so the user can fill default values for variables in the query.
+     *
+     * @return null when the user cancels the modal.
+     * @return QueryContext.empty() when all fields are known at compile time.
+     * @return QueryContext when the user fills the modal and confirms.
+     */
     fun askForQueryContext(): QueryContext? {
         val allNodes = allNodesWithKnownRuntimeFields<PsiElement>().parse(query).orElse {
             emptyList()

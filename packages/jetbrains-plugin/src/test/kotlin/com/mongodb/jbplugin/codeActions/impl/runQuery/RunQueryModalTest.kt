@@ -26,7 +26,7 @@ class RunQueryModalTest {
         val query = project.parseJavaQuery(
             code = """
             public Document find() {
-                return this.collection.find(eq("_id", id)).first();
+                return this.client.getDatabase("prod").getCollection("books").find(eq("_id", id)).first();
             }
         """
         )
@@ -52,7 +52,7 @@ class RunQueryModalTest {
         val query = project.parseJavaQuery(
             code = """
             public Document find() {
-                return this.collection.find(eq("_id", id)).first();
+                return this.client.getDatabase("prod").getCollection("books").find(eq("_id", id)).first();
             }
         """
         )
@@ -73,11 +73,10 @@ class RunQueryModalTest {
 
         val query = project.parseJavaQuery(
             code = """
-            public Document find() {
-                return this.collection.find(eq("_id", id)).first();
+            public Document find(String db, String coll) {
+                return this.client.getDatabase(db).getCollection(coll).find(eq("_id", id)).first();
             }
         """,
-            namespace = null
         )
 
         val (fixture, _) = render(robot, query, dataSource, coroutineScope)

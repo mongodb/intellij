@@ -83,6 +83,7 @@ internal object RunQueryCodeAction : MongoDbCodeAction {
                         dataSource,
                         coroutineScope
                     ).askForQueryContext()
+
                     if (queryContext != null) {
                         coroutineScope.launchChildBackground {
                             val outputQuery = MongoshDialect.formatter.formatQuery(

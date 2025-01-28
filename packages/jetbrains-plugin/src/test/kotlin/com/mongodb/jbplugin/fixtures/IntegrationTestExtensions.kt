@@ -49,9 +49,9 @@ import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvide
 import com.mongodb.jbplugin.dialects.Dialect
 import com.mongodb.jbplugin.dialects.javadriver.glossary.JavaDriverDialect
 import com.mongodb.jbplugin.dialects.javadriver.glossary.findAllChildrenOfType
+import com.mongodb.jbplugin.dialects.springcriteria.SpringCriteriaDialect
 import com.mongodb.jbplugin.editor.MongoDbVirtualFileDataSourceProvider
 import com.mongodb.jbplugin.meta.service
-import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.observability.LogMessage
 import com.mongodb.jbplugin.observability.LogMessageBuilder
@@ -79,7 +79,8 @@ import kotlin.jvm.optionals.getOrNull
 enum class DefaultSetup(
     val imports: (String) -> String,
     val fields: (String) -> String,
-    val constructor: (String) -> String
+    val constructor: (String) -> String,
+    val dialect: Dialect<PsiElement, *>
 ) {
     JAVA_DRIVER(
         imports = { className ->
@@ -108,7 +109,8 @@ public $className(MongoClient client) {
     this.client = client;
 } 
 """
-        }
+        },
+        dialect = JavaDriverDialect,
     ),
     SPRING_DATA(
         imports = { className ->
@@ -140,7 +142,8 @@ public $className(MongoTemplate template) {
     this.template = template;
 }
 """
-        }
+        },
+        dialect = SpringCriteriaDialect
     )
 }
 
@@ -460,28 +463,20 @@ internal fun Project.parseJavaQuery(
     @Language(
         "java"
     ) code: String,
-    namespace: Namespace? = Namespace("simple", "books")
+    setup: DefaultSetup = DefaultSetup.JAVA_DRIVER
 ): Node<PsiElement> {
+    val packageName = "parseJavaQuery.inline_${UUID.randomUUID().toString().replace(
+        "-",
+        "_"
+    )}.isolated"
+
     val document = """
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoCollection;
-import org.bson.types.ObjectId;
-import static com.mongodb.client.model.Filters.*;
+${setup.imports(packageName)}
 
 public class Repository {
-    private final MongoCollection<Document> collection;
-    
-    public Repository(MongoClient client) {
-        ${
-        if (namespace != null) {
-            "this.collection = client.getDatabase(\"${namespace.database}\").getCollection(\"${namespace.collection}\")"
-        } else {
-            "// this.collection = client.getDatabase(\".unk.\").getCollection(\".unk.\")"
-        }
-    }
-    }
-    
-$code
+    ${setup.fields("Repository")}
+    ${setup.constructor("Repository")}
+    $code
 }
     """.trimIndent()
 
@@ -497,10 +492,10 @@ $code
             PsiMethodCallExpression::class.java
         )
         val queryExpr = candidateQueryExpr.first {
-            JavaDriverDialect.parser.isCandidateForQuery(it)
+            setup.dialect.parser.isCandidateForQuery(it)
         }
 
-        JavaDriverDialect.parser.parse(queryExpr)
+        setup.dialect.parser.parse(queryExpr)
     }
 }
 
