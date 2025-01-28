@@ -41,6 +41,7 @@ import com.mongodb.jbplugin.mql.BsonNull
 import com.mongodb.jbplugin.mql.BsonObjectId
 import com.mongodb.jbplugin.mql.BsonString
 import com.mongodb.jbplugin.mql.BsonType
+import com.mongodb.jbplugin.mql.BsonUUID
 import com.mongodb.jbplugin.mql.components.IsCommand
 
 /**
@@ -415,6 +416,7 @@ fun String.toBsonType(): BsonType {
     ) {
         return BsonAnyOf(BsonString, BsonNull)
     } else if (this == ("java.util.Date") ||
+        this == ("java.time.Instant") ||
         this == ("java.time.LocalDate") ||
         this == ("java.time.LocalDateTime")
     ) {
@@ -427,8 +429,14 @@ fun String.toBsonType(): BsonType {
         val baseType = this.substring(0, this.length - 2)
         return BsonArray(baseType.toBsonType())
     } else if (this.contains("List") || this.contains("Set")) {
+        if (!this.contains("<")) { // not passing the generic types, so assume an array of BsonAny
+            return BsonArray(BsonAny)
+        }
+
         val baseType = this.substringAfter("<").substringBeforeLast(">")
         return BsonArray(baseType.toBsonType())
+    } else if (this == ("java.util.UUID")) {
+        return BsonUUID
     }
 
     return BsonAny

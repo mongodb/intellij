@@ -11,6 +11,7 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.math.BigDecimal
 import java.math.BigInteger
+import java.time.LocalDateTime
 import java.util.*
 
 class MongoshBackendTest {
@@ -46,13 +47,13 @@ class MongoshBackendTest {
             """.trimIndent()
         ) {
             emitDbAccess()
-            emitDatabaseAccess(registerVariable("myDb", BsonString))
-            emitCollectionAccess(registerVariable("myColl", BsonString))
+            emitDatabaseAccess(registerVariable("myDb", BsonString, null))
+            emitCollectionAccess(registerVariable("myColl", BsonString, null))
             emitFunctionName("find")
             emitFunctionCall(long = false, {
                 emitObjectStart()
                 emitObjectKey(registerConstant("field"))
-                emitContextValue(registerVariable("myValue", BsonString))
+                emitContextValue(registerVariable("myValue", BsonString, null))
                 emitObjectEnd()
             })
         }
@@ -70,13 +71,13 @@ class MongoshBackendTest {
             """.trimIndent()
         ) {
             emitDbAccess()
-            emitDatabaseAccess(registerVariable("myDb", BsonString))
-            emitCollectionAccess(registerVariable("myColl", BsonString))
+            emitDatabaseAccess(registerVariable("myDb", BsonString, null))
+            emitCollectionAccess(registerVariable("myColl", BsonString, null))
             emitFunctionName("update")
             emitFunctionCall(long = false, {
                 emitObjectStart()
                 emitObjectKey(registerConstant("field"))
-                emitContextValue(registerVariable("myValue", BsonString))
+                emitContextValue(registerVariable("myValue", BsonString, null))
                 emitObjectEnd()
             }, {
                 emitObjectStart()
@@ -111,7 +112,7 @@ class MongoshBackendTest {
                 arg
             """.trimIndent()
         ) {
-            emitContextValue(registerVariable("arg", type))
+            emitContextValue(registerVariable("arg", type, null))
         }
     }
 
@@ -121,12 +122,13 @@ class MongoshBackendTest {
             1 to "1",
             1.5 to "1.5",
             "myString" to "\"myString\"",
-            Date() to "ISODate()",
+            LocalDateTime.of(2000, 5, 10, 5, 0) to "ISODate(\"2000-05-10T05:00:00\")",
             BigInteger("5234") to "Decimal128(\"5234\")",
             BigDecimal("5234.5234") to "Decimal128(\"5234.5234\")",
             true to "true",
             ObjectId("66e02569aa5b362fa36f2416") to "ObjectId(\"66e02569aa5b362fa36f2416\")",
-            listOf(1, 2.2, Date()) to "[1, 2.2, ISODate()]",
+            listOf(1, 2.2, LocalDateTime.of(2000, 5, 10, 5, 0)) to
+                "[1, 2.2, ISODate(\"2000-05-10T05:00:00\")]",
             mapOf("a" to "1", "b" to 2) to "{\"a\": \"1\", \"b\": 2}",
             SomeObject(1, "2") to "{}", // we won't serialize unknown objects
         )
@@ -138,7 +140,7 @@ class MongoshBackendTest {
             BsonAnyOf(BsonNull, BsonString, BsonInt64) to "\"\"",
             BsonArray(BsonAny) to "[]",
             BsonBoolean to "false",
-            BsonDate to "ISODate(\"2009-02-11T18:00:00.000Z\")",
+            BsonDate to "ISODate(\"2009-02-11T18:00:00\")",
             BsonDecimal128 to "Decimal128(\"0\")",
             BsonDouble to "0.0",
             BsonInt32 to "0",
