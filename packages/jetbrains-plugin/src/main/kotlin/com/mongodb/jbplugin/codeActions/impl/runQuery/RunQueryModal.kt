@@ -110,6 +110,7 @@ class RunQueryModal(
 
             fieldsForContext += Triple(fieldName.fieldName, type, input)
 
+            input.name = fieldName.fieldName
             builder.addLabeledComponent(label, input, 8)
             if (toolTip != null) {
                 builder.addTooltip(toolTip)
@@ -193,7 +194,7 @@ class RunQueryModal(
         }
     }
 
-    private fun buildQueryContextFromModal(): QueryContext {
+    internal fun buildQueryContextFromModal(): QueryContext {
         val localVariables = fieldsForContext.groupBy { it.first }
             .mapValues { it.value.first().let { it.second to it.third } }
             .mapValues { (_, value) ->

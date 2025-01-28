@@ -416,6 +416,7 @@ fun String.toBsonType(): BsonType {
     ) {
         return BsonAnyOf(BsonString, BsonNull)
     } else if (this == ("java.util.Date") ||
+        this == ("java.time.Instant") ||
         this == ("java.time.LocalDate") ||
         this == ("java.time.LocalDateTime")
     ) {
@@ -428,6 +429,10 @@ fun String.toBsonType(): BsonType {
         val baseType = this.substring(0, this.length - 2)
         return BsonArray(baseType.toBsonType())
     } else if (this.contains("List") || this.contains("Set")) {
+        if (!this.contains("<")) { // not passing the generic types, so assume an array of BsonAny
+            return BsonArray(BsonAny)
+        }
+
         val baseType = this.substringAfter("<").substringBeforeLast(">")
         return BsonArray(baseType.toBsonType())
     } else if (this == ("java.util.UUID")) {

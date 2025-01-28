@@ -117,6 +117,7 @@ class NamespaceSelectorTest {
             selector.databaseComboBox.isVisible = true
             selector.collectionComboBox.isVisible = true
             frame.isVisible = true
+            frame.pack()
 
             FrameFixture(robot, frame) to selector
         }
