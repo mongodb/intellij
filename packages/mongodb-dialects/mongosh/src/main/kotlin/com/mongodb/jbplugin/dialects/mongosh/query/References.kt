@@ -37,7 +37,7 @@ fun <S> MongoshBackend.resolveValueReference(
             // There could be multiple field references in a Computed ValueReference
             val nestedFieldRefs = node.components<HasFieldReference<S>>()
             if (nestedFieldRefs.isEmpty()) {
-                // We treat the empty case of nested fields refs as not providing any id field
+                // We treat the empty case of nested fields refs as not providing field
                 // and hence we register null as the value for that
                 registerConstant(null)
             } else if (nestedFieldRefs.size == 1) {
@@ -62,7 +62,7 @@ fun <S> MongoshBackend.resolveValueReference(
                                 fieldUsedAsValue = true
                             )
                         // If any of the nestedFieldRef is Unknown then we fallback to simply
-                        // register the
+                        // registering a variable value
                         is Unknown -> return registerVariable(
                             (fieldRef?.reference as? FromSchema)?.fieldName ?: "${'$'}value",
                             ref.type,
