@@ -16,7 +16,12 @@ fun <S> MongoshBackend.emitSort(query: Node<S>): MongoshBackend {
         val fieldRef = node.component<HasFieldReference<S>>() ?: return this
         val valueRef = node.component<HasValueReference<S>>() ?: return this
 
-        emitObjectKey(resolveFieldReference(fieldRef))
+        emitObjectKey(
+            resolveFieldReference(
+                fieldRef = fieldRef,
+                fieldUsedAsValue = false,
+            )
+        )
         emitContextValue(resolveValueReference(valueRef, fieldRef))
         return emitObjectValueEnd()
     }

@@ -9,11 +9,9 @@ import com.mongodb.client.model.Projections;
 import com.mongodb.client.model.Sorts;
 import org.bson.Document;
 import org.bson.types.ObjectId;
+import org.springframework.data.mongodb.core.aggregation.Fields;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class JavaDriverRepository {
     private static final String IMDB_VOTES = "imdb.votes";
@@ -94,28 +92,14 @@ public class JavaDriverRepository {
             .getCollection("movies")
             .aggregate(
                 List.of(
-                    Aggregates.match(
-                        Filters.eq("year", year)
-                    ),
                     Aggregates.group(
-                        "newField",
-                        Accumulators.avg("test", "$year"),
-                        Accumulators.sum("test2", "$year"),
-                        Accumulators.bottom("field", Sorts.ascending("year"), "$year")
-                    ),
-                    Aggregates.project(
-                        Projections.fields(
-                            Projections.include("year", "plot")
+                        null,
+                        Accumulators.topN(
+                            "3fields",
+                            Sorts.descending("year"),
+                            "fields",
+                            3
                         )
-                    ),
-                    Aggregates.sort(
-                        Sorts.orderBy(
-                            Sorts.ascending("asd", "qwe")
-                        )
-                    ),
-                    Aggregates.unwind(
-                        "awards.wins",
-                        new UnwindOptions()
                     )
                 )
             )

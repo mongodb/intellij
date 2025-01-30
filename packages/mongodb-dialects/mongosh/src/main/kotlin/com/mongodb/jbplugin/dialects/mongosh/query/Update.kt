@@ -50,10 +50,20 @@ private fun <S> MongoshBackend.emitEachQueryUpdate(node: Map.Entry<Name, List<No
                 val filter = pullNode.component<HasFilter<S>>()
 
                 if (fieldValue != null) {
-                    emitObjectKey(resolveFieldReference(fieldName))
+                    emitObjectKey(
+                        resolveFieldReference(
+                            fieldRef = fieldName,
+                            fieldUsedAsValue = false,
+                        )
+                    )
                     emitContextValue(resolveValueReference(fieldValue, fieldName))
                 } else if (filter != null && filter.children.isNotEmpty()) {
-                    emitObjectKey(resolveFieldReference(fieldName))
+                    emitObjectKey(
+                        resolveFieldReference(
+                            fieldRef = fieldName,
+                            fieldUsedAsValue = false,
+                        )
+                    )
                     emitQueryFilter(filter.children[0], firstCall = true)
                 }
 
@@ -65,7 +75,12 @@ private fun <S> MongoshBackend.emitEachQueryUpdate(node: Map.Entry<Name, List<No
                 val fieldName = updateNode.component<HasFieldReference<S>>() ?: continue
                 val fieldValue = updateNode.component<HasValueReference<S>>() ?: continue
 
-                emitObjectKey(resolveFieldReference(fieldName))
+                emitObjectKey(
+                    resolveFieldReference(
+                        fieldRef = fieldName,
+                        fieldUsedAsValue = false,
+                    )
+                )
                 emitContextValue(resolveValueReference(fieldValue, fieldName))
                 emitObjectValueEnd()
             }
