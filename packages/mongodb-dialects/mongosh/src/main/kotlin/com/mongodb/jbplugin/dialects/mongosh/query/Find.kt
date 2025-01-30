@@ -42,7 +42,12 @@ fun <S> MongoshBackend.emitQueryFilter(node: Node<S>, firstCall: Boolean = false
         if (firstCall) {
             emitObjectStart(long = isLong)
         }
-        emitObjectKey(resolveFieldReference(fieldRef))
+        emitObjectKey(
+            resolveFieldReference(
+                fieldRef = fieldRef,
+                fieldUsedAsValue = false,
+            )
+        )
         emitContextValue(resolveValueReference(valueRef, fieldRef))
         if (firstCall) {
             emitObjectEnd(long = isLong)
@@ -56,7 +61,12 @@ fun <S> MongoshBackend.emitQueryFilter(node: Node<S>, firstCall: Boolean = false
                     emitObjectStart(long = isLong)
                 }
                 if (fieldRef != null) {
-                    emitObjectKey(resolveFieldReference(fieldRef))
+                    emitObjectKey(
+                        resolveFieldReference(
+                            fieldRef = fieldRef,
+                            fieldUsedAsValue = false,
+                        )
+                    )
                 }
 
                 if (valueRef != null) {
@@ -85,7 +95,12 @@ fun <S> MongoshBackend.emitQueryFilter(node: Node<S>, firstCall: Boolean = false
                 }
 
                 if (fieldRef != null) {
-                    emitObjectKey(resolveFieldReference(fieldRef))
+                    emitObjectKey(
+                        resolveFieldReference(
+                            fieldRef = fieldRef,
+                            fieldUsedAsValue = false,
+                        )
+                    )
                 }
 
                 emitObjectStart()
@@ -154,7 +169,12 @@ fun <S> MongoshBackend.emitQueryFilter(node: Node<S>, firstCall: Boolean = false
                 }
 
                 // emit field name first
-                emitObjectKey(resolveFieldReference(fieldRef))
+                emitObjectKey(
+                    resolveFieldReference(
+                        fieldRef = fieldRef,
+                        fieldUsedAsValue = false,
+                    )
+                )
                 // emit the $not
                 emitObjectStart()
                 emitObjectKey(registerConstant('$' + "not"))
@@ -176,7 +196,12 @@ fun <S> MongoshBackend.emitQueryFilter(node: Node<S>, firstCall: Boolean = false
                 if (firstCall) {
                     emitObjectStart(long = isLong)
                 }
-                emitObjectKey(resolveFieldReference(fieldRef))
+                emitObjectKey(
+                    resolveFieldReference(
+                        fieldRef = fieldRef,
+                        fieldUsedAsValue = false,
+                    )
+                )
                 emitObjectStart(long = isLong)
                 emitObjectKey(registerConstant('$' + named.name.canonical))
                 emitContextValue(resolveValueReference(valueRef, fieldRef))

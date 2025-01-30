@@ -36,6 +36,7 @@ fun <S> MongoshBackend.emitAggregateBody(node: Node<S>, queryContext: QueryConte
             Name.ADD_FIELDS -> emitAddFieldsStage(stage)
             Name.UNWIND -> emitUnwindStage(stage)
             Name.SORT -> emitSortStage(stage)
+            Name.GROUP -> emitGroupStage(stage)
             else -> {}
         }
         emitObjectValueEnd(long = true)
@@ -49,7 +50,12 @@ internal fun <S> MongoshBackend.emitAsFieldValueDocument(nodes: List<Node<S>>, i
         val field = node.component<HasFieldReference<S>>() ?: continue
         val value = node.component<HasValueReference<S>>() ?: continue
 
-        emitObjectKey(resolveFieldReference(field))
+        emitObjectKey(
+            resolveFieldReference(
+                fieldRef = field,
+                fieldUsedAsValue = false,
+            )
+        )
         emitContextValue(resolveValueReference(value, field))
         emitObjectValueEnd(long = isLong)
     }
@@ -63,6 +69,7 @@ private val NON_DESTRUCTIVE_STAGES = setOf(
     Name.ADD_FIELDS,
     Name.UNWIND,
     Name.SORT,
+    Name.GROUP,
 )
 
 private fun <S> Node<S>.isNotDestructive(): Boolean {

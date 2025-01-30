@@ -10,7 +10,12 @@ internal fun <S> MongoshBackend.emitUnwindStage(node: Node<S>): MongoshBackend {
 
     emitObjectStart()
     emitObjectKey(registerConstant('$' + "unwind"))
-    emitContextValue(resolveFieldReference(unwindField))
+    emitContextValue(
+        resolveFieldReference(
+            fieldRef = unwindField,
+            fieldUsedAsValue = true,
+        )
+    )
     emitObjectEnd()
 
     return this

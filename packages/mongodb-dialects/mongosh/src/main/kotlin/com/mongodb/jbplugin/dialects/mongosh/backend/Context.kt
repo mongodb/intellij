@@ -49,7 +49,7 @@ class DefaultContext : Context {
         val existingVariable = variables.getOrElse(cleanName) { null }
 
         if (existingVariable != null && existingVariable.value == null) {
-// already exists, generate a new name
+            // already exists, generate a new name
             val nameWithoutCounter = if (cleanName.matches(endsWithNumber)) {
                 cleanName.replace(endsWithNumber, "")
             } else {
