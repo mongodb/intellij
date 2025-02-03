@@ -110,6 +110,59 @@ record Entity() {}
         setup = DefaultSetup.SPRING_DATA,
         value = """
     public List<Book> allReleasedBooks() {
+        return template.query(Book.class).matching(
+            Query.query(
+                where("released").is(true)
+            ).with(
+                Sort.by(<caret>
+    }
+        """,
+    )
+    fun `should autocomplete fields from the current namespace in a chained sort`(
+        fixture: CodeInsightTestFixture,
+    ) {
+        val (dataSource, readModelProvider) = fixture.setupConnection()
+        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDialect(SpringCriteriaDialect)
+
+        val namespace = Namespace("myDatabase", "book")
+
+        `when`(
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
+        ).thenReturn(
+            GetCollectionSchema(
+                CollectionSchema(
+                    namespace,
+                    BsonObject(
+                        mapOf(
+                            "myField" to BsonString,
+                            "myField2" to BsonString,
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        fixture.type('"')
+        val elements = fixture.completeBasic()
+
+        assertTrue(
+            elements.containsElements {
+                it.lookupString == "myField"
+            },
+        )
+
+        assertTrue(
+            elements.containsElements {
+                it.lookupString == "myField2"
+            },
+        )
+    }
+
+    @ParsingTest(
+        setup = DefaultSetup.SPRING_DATA,
+        value = """
+    public List<Book> allReleasedBooks() {
         return template.aggregate(Aggregation.newAggregation(), <caret>
     }
         """,

@@ -137,6 +137,23 @@ class SpringCriteriaFieldCheckLinterInspectionTest {
         );
     }
     
+    public void allReleasedBooksSorted() {
+        template.find(
+                query(
+                    where(
+                        <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>
+                    ).is(true)
+                ).with(
+                    Sort.by(
+                        <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>
+                    )
+                ).with(
+                    Sort.by(Sort.Direction.DESC, <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>)
+                ),
+                Book.class
+        );
+    }
+    
     String releasedFromMethodCall() {
         return "released";
     }
