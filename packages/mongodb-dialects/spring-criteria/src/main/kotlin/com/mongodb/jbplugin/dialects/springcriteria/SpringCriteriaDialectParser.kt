@@ -394,7 +394,7 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
         }
 
         // clean up, we might be in a query() call
-        if (valueFilterMethod.name == "query") {
+        if (valueFilterMethod.name == "query" || valueFilterMethod.name == "of") {
             return parseFilterRecursively(valueMethodCall.argumentList.expressions.getOrNull(0))
         }
 
