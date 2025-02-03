@@ -94,6 +94,10 @@ data class Node<S>(
      */
     fun copy(componentModifier: (component: Component) -> Component): Node<S> =
         copy(source = source, components = components.map(componentModifier))
+
+    override fun toString(): String {
+        return "Node(components=$components)"
+    }
 }
 
 /**

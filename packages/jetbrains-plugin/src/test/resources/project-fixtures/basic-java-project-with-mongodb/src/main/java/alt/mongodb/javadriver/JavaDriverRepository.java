@@ -36,8 +36,8 @@ public class JavaDriverRepository {
         Object anyObj
     ) {
         return client
-            .getDatabase(string)
-            .getCollection(string)
+            .getDatabase("sample_mflix")
+            .getCollection("movies")
             .find(Filters.and(
                 Filters.eq(objectId),
                 Filters.eq("string", string),

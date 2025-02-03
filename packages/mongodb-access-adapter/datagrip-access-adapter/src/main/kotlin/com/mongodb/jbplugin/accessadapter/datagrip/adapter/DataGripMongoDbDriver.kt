@@ -5,15 +5,6 @@
 
 package com.mongodb.jbplugin.accessadapter.datagrip.adapter
 
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
-import com.google.gson.JsonDeserializationContext
-import com.google.gson.JsonDeserializer
-import com.google.gson.JsonElement
-import com.google.gson.JsonObject
-import com.google.gson.JsonPrimitive
-import com.google.gson.JsonSerializationContext
-import com.google.gson.JsonSerializer
 import com.intellij.database.dataSource.DatabaseConnection
 import com.intellij.database.dataSource.DatabaseConnectionManager
 import com.intellij.database.dataSource.LocalDataSource
@@ -37,7 +28,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
-import org.bson.Document
 import org.bson.codecs.configuration.CodecRegistries.fromRegistries
 import org.bson.codecs.configuration.CodecRegistry
 import org.bson.conversions.Bson
@@ -46,12 +36,11 @@ import org.bson.json.JsonWriterSettings
 import org.bson.types.ObjectId
 import org.jetbrains.annotations.VisibleForTesting
 import org.owasp.encoder.Encode
-import java.lang.reflect.Type
 import java.math.BigDecimal
 import java.time.Instant
 import java.util.*
 import kotlin.reflect.KClass
-import kotlin.reflect.full.primaryConstructor
+import kotlin.reflect.cast
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -144,16 +133,18 @@ internal class DataGripMongoDbDriver(
 
         val explainPlanBson = runQueryScript(
             queryScript.query,
-            Document::class,
+            Map::class,
             timeout = 1.seconds
-        ).firstOrNull()
+        ).firstOrNull() as? Map<String, Any>
 
         explainPlanBson ?: return@withContext ExplainPlan.NotRun
 
-        val queryPlanner = explainPlanBson.get("queryPlanner", Document::class.java)
-        val winningPlan = queryPlanner?.get("winningPlan", Document::class.java)
-
-        winningPlan ?: return@withContext ExplainPlan.NotRun
+        val queryPlanner =
+            explainPlanBson["queryPlanner"] as? Map<String, Any>
+                ?: return@withContext ExplainPlan.NotRun
+        val winningPlan =
+            queryPlanner["winningPlan"] as? Map<String, Any>
+                ?: return@withContext ExplainPlan.NotRun
 
         planByMappingStage(
             winningPlan,
@@ -280,7 +271,7 @@ internal class DataGripMongoDbDriver(
         }
 
         @VisibleForTesting
-        internal fun <T: Any> mapToClass(value: Any?, kClass: KClass<T>): T? {
+        internal fun <T : Any> mapToClass(value: Any?, kClass: KClass<T>): T? {
             if (value == null) {
                 return null
             }
@@ -292,12 +283,12 @@ internal class DataGripMongoDbDriver(
             } else if (value is Map<*, *>) {
                 val constructor = kClass.constructors.first()
                 val sortedArgs = constructor.parameters.associate {
-                    it to mapToClass(value[it.name], it.type.javaClass.kotlin)
+                    it to mapToClass(value[it.name], it.type.classifier as KClass<*>)
                 }
 
                 return constructor.callBy(sortedArgs)
             } else {
-                return kClass.java.cast(value)
+                return kClass.cast(value)
             }
         }
     }
@@ -357,10 +348,10 @@ internal class DataGripMongoDbDriver(
         }
     }
 
-    private fun planByMappingStage(stage: Document, mapping: Map<String, ExplainPlan>): ExplainPlan? {
-        val inputStage = stage.get("inputStage", Document::class.java)
-            ?: return mapping.getOrDefault(stage["stage"], null)
-
+    private fun planByMappingStage(stage: Map<String, Any>, mapping: Map<String, ExplainPlan>): ExplainPlan? {
+        val inputStage =
+            stage["inputStage"] as? Map<String, Any>
+                ?: return mapping.getOrDefault(stage["stage"], null)
         return mapping.getOrDefault(inputStage["stage"], null)
     }
 }

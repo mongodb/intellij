@@ -9,8 +9,6 @@ import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.psi.util.CachedValue
-import com.intellij.psi.util.CachedValueProvider
-import com.intellij.psi.util.CachedValuesManager
 import com.mongodb.jbplugin.accessadapter.MongoDbDriver
 import com.mongodb.jbplugin.accessadapter.MongoDbReadModelProvider
 import com.mongodb.jbplugin.accessadapter.Slice
@@ -32,7 +30,7 @@ private typealias DriverFactory = (Project, LocalDataSource) -> MongoDbDriver
  * val buildInfo = readModelProvider.slice(dataSource.localDataSource!!, BuildInfoSlice)
  * ```
  *
- * It will aggressively cache data at the project level, to avoid hitting MongoDB. Also, the provided
+ * It will aggressively cache data at the data source level, to avoid hitting MongoDB. Also, the provided
  * driver is very slow, so it's better to avoid querying on performance sensitive contexts.
  *
  * @param project
@@ -44,30 +42,26 @@ class DataGripBasedReadModelProvider(
     var driverFactory: DriverFactory = { project, dataSource ->
         DataGripMongoDbDriver(project, dataSource)
     }
-    private val cachedValues: MapOfCachedValues = ConcurrentHashMap()
+
+    private val cachedValues: ConcurrentMap<String, Pair<Long, *>> = ConcurrentHashMap()
 
     override fun <T : Any> slice(
         dataSource: LocalDataSource,
         slice: Slice<T>,
-    ): T =
-        cachedValues
-            .computeIfAbsent("${dataSource.uniqueId}/${slice.id}", fromSlice(dataSource, slice))
-            .value as T
+    ): T {
+        return cachedValues.compute("${dataSource.uniqueId}/${slice.id}") { key, data ->
+            val modificationStamp = data?.first ?: -1
+            val cachedValue = data?.second
 
-    private fun <T : Any> fromSlice(
-        dataSource: LocalDataSource,
-        slice: Slice<T>,
-    ): (String) -> CachedValue<T> {
-        val cacheManager = CachedValuesManager.getManager(project)
-        return {
-            cacheManager.createCachedValue {
-                runBlocking {
-                    val driver = driverFactory(project, dataSource)
-                    val sliceData = slice.queryUsingDriver(driver)
-
-                    CachedValueProvider.Result.create(sliceData, dataSource)
-                }
+            if (cachedValue == null || modificationStamp < dataSource.modificationCount) {
+                val driver = driverFactory(project, dataSource)
+                val newValue = runCatching {
+                    runBlocking { slice.queryUsingDriver(driver) }
+                }.getOrNull()
+                dataSource.modificationCount to newValue
+            } else {
+                modificationStamp to cachedValue
             }
-        }
+        }?.second!! as T
     }
 }
