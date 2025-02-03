@@ -10,11 +10,12 @@ import com.mongodb.jbplugin.mql.components.HasValueReference
 import com.mongodb.jbplugin.mql.components.IsCommand
 import com.mongodb.jbplugin.mql.components.Name
 import com.mongodb.jbplugin.mql.components.Named
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 
 class MatchTest {
     @Test
-    fun `can format an aggregate query with a match expression at the beginning`() {
+    fun `can format an aggregate query with a match expression at the beginning`() = runTest {
         assertGeneratedQuery(
             """
             var collection = ""

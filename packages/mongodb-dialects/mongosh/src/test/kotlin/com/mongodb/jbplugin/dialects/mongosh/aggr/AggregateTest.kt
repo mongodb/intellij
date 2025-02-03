@@ -13,11 +13,12 @@ import com.mongodb.jbplugin.mql.components.HasValueReference
 import com.mongodb.jbplugin.mql.components.IsCommand
 import com.mongodb.jbplugin.mql.components.Name
 import com.mongodb.jbplugin.mql.components.Named
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 
 class AggregateTest {
     @Test
-    fun `can format a safe explain command for a valid aggregate query`() {
+    fun `can format a safe explain command for a valid aggregate query`() = runTest {
         assertGeneratedQuery(
             """
             var collection = ""
@@ -69,7 +70,7 @@ class AggregateTest {
     }
 
     @Test
-    fun `can format a full explain command for a valid aggregate query`() {
+    fun `can format a full explain command for a valid aggregate query`() = runTest {
         assertGeneratedQuery(
             """
             var collection = ""
@@ -121,7 +122,7 @@ class AggregateTest {
     }
 
     @Test
-    fun `can format an aggregate with multiple stages`() {
+    fun `can format an aggregate with multiple stages`() = runTest {
         assertGeneratedQuery(
             """
             var collection = ""
@@ -201,7 +202,7 @@ class AggregateTest {
     }
 
     @Test
-    fun `can format a full explain command for a valid aggregate query removing destructive operations`() {
+    fun `can format a full explain command for a valid aggregate query removing destructive operations`() = runTest {
         assertGeneratedQuery(
             """
             var collection = ""

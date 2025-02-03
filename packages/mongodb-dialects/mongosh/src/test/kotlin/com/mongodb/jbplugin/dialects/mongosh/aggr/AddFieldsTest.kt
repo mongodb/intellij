@@ -10,11 +10,12 @@ import com.mongodb.jbplugin.mql.components.HasValueReference
 import com.mongodb.jbplugin.mql.components.IsCommand
 import com.mongodb.jbplugin.mql.components.Name
 import com.mongodb.jbplugin.mql.components.Named
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 
 class AddFieldsTest {
     @Test
-    fun `can format an addFields stage including fields`() {
+    fun `can format an addFields stage including fields`() = runTest {
         assertGeneratedQuery(
             """
             var collection = ""
@@ -65,7 +66,7 @@ class AddFieldsTest {
     }
 
     @Test
-    fun `can format an addFields stage excluding fields`() {
+    fun `can format an addFields stage excluding fields`() = runTest {
         assertGeneratedQuery(
             """
             var collection = ""

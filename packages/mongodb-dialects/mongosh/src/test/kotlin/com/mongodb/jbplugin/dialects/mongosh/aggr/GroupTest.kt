@@ -15,11 +15,12 @@ import com.mongodb.jbplugin.mql.components.HasValueReference
 import com.mongodb.jbplugin.mql.components.IsCommand
 import com.mongodb.jbplugin.mql.components.Name
 import com.mongodb.jbplugin.mql.components.Named
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 
 class GroupTest {
     @Test
-    fun `should emit empty group stage if there is no formattable _id field reference`() {
+    fun `should emit empty group stage if there is no formattable _id field reference`() = runTest {
         assertGeneratedQuery(
             """
           var collection = ""
@@ -48,7 +49,7 @@ class GroupTest {
     }
 
     @Test
-    fun `should emit empty group stage if there is no formattable _id field reference regardless of having accumulated fields`() {
+    fun `should emit empty group stage if there is no formattable _id field reference regardless of having accumulated fields`() = runTest {
         assertGeneratedQuery(
             """
           var collection = ""
@@ -80,7 +81,7 @@ class GroupTest {
     }
 
     @Test
-    fun `should emit group stage with null _id reference`() {
+    fun `should emit group stage with null _id reference`() = runTest {
         assertGeneratedQuery(
             """
           var collection = ""
@@ -126,7 +127,7 @@ class GroupTest {
     }
 
     @Test
-    fun `should emit group stage with _id reference having empty field references`() {
+    fun `should emit group stage with _id reference having empty field references`() = runTest {
         assertGeneratedQuery(
             """
           var collection = ""
@@ -177,7 +178,7 @@ class GroupTest {
     }
 
     @Test
-    fun `should emit group stage with _id reference having just one field reference`() {
+    fun `should emit group stage with _id reference having just one field reference`() = runTest {
         assertGeneratedQuery(
             """
           var collection = ""
@@ -236,7 +237,7 @@ class GroupTest {
     }
 
     @Test
-    fun `should emit group stage with _id reference having multiple field references`() {
+    fun `should emit group stage with _id reference having multiple field references`() = runTest {
         assertGeneratedQuery(
             """
           var collection = ""
@@ -302,7 +303,7 @@ class GroupTest {
     }
 
     @Test
-    fun `should emit group stage with sum accumulator with a constant field reference`() {
+    fun `should emit group stage with sum accumulator with a constant field reference`() = runTest {
         assertGeneratedQuery(
             """
           var collection = ""
@@ -368,7 +369,7 @@ class GroupTest {
     }
 
     @Test
-    fun `should emit group stage with sum accumulator with a schema field reference`() {
+    fun `should emit group stage with sum accumulator with a schema field reference`() = runTest {
         assertGeneratedQuery(
             """
           var collection = ""
@@ -447,7 +448,7 @@ class GroupTest {
     }
 
     @Test
-    fun `should emit group stage with avg accumulator with a constant field reference`() {
+    fun `should emit group stage with avg accumulator with a constant field reference`() = runTest {
         assertGeneratedQuery(
             """
           var collection = ""
@@ -513,7 +514,7 @@ class GroupTest {
     }
 
     @Test
-    fun `should emit group stage with avg accumulator with a schema field reference`() {
+    fun `should emit group stage with avg accumulator with a schema field reference`() = runTest {
         assertGeneratedQuery(
             """
           var collection = ""
@@ -592,7 +593,7 @@ class GroupTest {
     }
 
     @Test
-    fun `should emit group stage with first accumulator with a schema field reference`() {
+    fun `should emit group stage with first accumulator with a schema field reference`() = runTest {
         assertGeneratedQuery(
             """
           var collection = ""
@@ -671,7 +672,7 @@ class GroupTest {
     }
 
     @Test
-    fun `should emit group stage with last accumulator with a schema field reference`() {
+    fun `should emit group stage with last accumulator with a schema field reference`() = runTest {
         assertGeneratedQuery(
             """
           var collection = ""
@@ -750,7 +751,7 @@ class GroupTest {
     }
 
     @Test
-    fun `should emit group stage with max accumulator with a schema field reference`() {
+    fun `should emit group stage with max accumulator with a schema field reference`() = runTest {
         assertGeneratedQuery(
             """
           var collection = ""
@@ -829,7 +830,7 @@ class GroupTest {
     }
 
     @Test
-    fun `should emit group stage with min accumulator with a schema field reference`() {
+    fun `should emit group stage with min accumulator with a schema field reference`() = runTest {
         assertGeneratedQuery(
             """
           var collection = ""
@@ -908,7 +909,7 @@ class GroupTest {
     }
 
     @Test
-    fun `should emit group stage with push accumulator with a schema field reference`() {
+    fun `should emit group stage with push accumulator with a schema field reference`() = runTest {
         assertGeneratedQuery(
             """
           var collection = ""
@@ -987,7 +988,7 @@ class GroupTest {
     }
 
     @Test
-    fun `should emit group stage with addToSet accumulator with a schema field reference`() {
+    fun `should emit group stage with addToSet accumulator with a schema field reference`() = runTest {
         assertGeneratedQuery(
             """
           var collection = ""
@@ -1066,7 +1067,7 @@ class GroupTest {
     }
 
     @Test
-    fun `should emit group stage with top accumulator with a schema field reference`() {
+    fun `should emit group stage with top accumulator with a schema field reference`() = runTest {
         assertGeneratedQuery(
             """
           var collection = ""
@@ -1168,7 +1169,7 @@ class GroupTest {
     }
 
     @Test
-    fun `should emit group stage with topN accumulator with a schema field reference`() {
+    fun `should emit group stage with topN accumulator with a schema field reference`() = runTest {
         assertGeneratedQuery(
             """
           var collection = ""
@@ -1271,7 +1272,7 @@ class GroupTest {
     }
 
     @Test
-    fun `should emit group stage with bottom accumulator with a schema field reference`() {
+    fun `should emit group stage with bottom accumulator with a schema field reference`() = runTest {
         assertGeneratedQuery(
             """
           var collection = ""
@@ -1373,7 +1374,7 @@ class GroupTest {
     }
 
     @Test
-    fun `should emit group stage with bottomN accumulator with a schema field reference`() {
+    fun `should emit group stage with bottomN accumulator with a schema field reference`() = runTest {
         assertGeneratedQuery(
             """
           var collection = ""

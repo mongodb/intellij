@@ -5,13 +5,15 @@ import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.QueryContext
 import com.mongodb.jbplugin.mql.components.*
+import kotlinx.coroutines.test.runTest
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class MongoshDialectFormatterTest {
+
     @Test
-    fun `can format a simple delete query`() {
+    fun `can format a simple delete query`() = runTest {
         val namespace = Namespace("myDb", "myColl")
 
         assertGeneratedQuery(
@@ -46,7 +48,7 @@ class MongoshDialectFormatterTest {
     }
 
     @Test
-    fun `can format a query with a safe explain plan using queryPlanner`() {
+    fun `can format a query with a safe explain plan using queryPlanner`() = runTest {
         assertGeneratedQuery(
             """
             var collection = ""
@@ -80,7 +82,7 @@ class MongoshDialectFormatterTest {
     }
 
     @Test
-    fun `can format a query with a full explain plan using executionStats`() {
+    fun `can format a query with a full explain plan using executionStats`() = runTest {
         assertGeneratedQuery(
             """
             var collection = ""
@@ -114,7 +116,7 @@ class MongoshDialectFormatterTest {
     }
 
     @Test
-    fun `generates an index suggestion for a query given its fields`() {
+    fun `generates an index suggestion for a query given its fields`() = runTest {
         assertGeneratedIndex(
             """
                 // Potential fields to consider indexing: myField, myField2
@@ -161,10 +163,10 @@ class MongoshDialectFormatterTest {
     }
 }
 
-internal fun assertGeneratedQuery(
+internal suspend fun assertGeneratedQuery(
     @Language("js") js: String,
     explain: QueryContext.ExplainPlanType = QueryContext.ExplainPlanType.NONE,
-    script: () -> Node<Unit>
+    script: suspend () -> Node<Unit>
 ) {
     val generated = MongoshDialectFormatter.formatQuery(
         script(),
