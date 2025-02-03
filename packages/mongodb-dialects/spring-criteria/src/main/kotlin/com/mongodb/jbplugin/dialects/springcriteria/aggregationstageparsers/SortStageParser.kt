@@ -90,208 +90,211 @@ class SortStageParser : StageParser {
         }
     }
 
-    private fun parseDirectionArgumentAndFieldsToSortCriteria(
-        directionArgumentExpression: PsiExpression,
-        fieldArgumentExpressions: List<PsiExpression>,
-        directionForcedFromParentChain: Name?,
-        reverseCountForcedFromParentChain: Int
-    ): List<Node<PsiElement>> {
-        val directionName = directionArgumentExpression.resolveToDirectionName().derivedDirection(
-            directionForcedFromParentChain,
-            reverseCountForcedFromParentChain
-        )
-        return fieldArgumentExpressions.map { fieldExpression ->
-            createSortCriteria(
-                directionName = directionName,
-                fieldExpression = fieldExpression,
-                directionExpression = directionArgumentExpression
+    companion object {
+        private fun parseDirectionArgumentAndFieldsToSortCriteria(
+            directionArgumentExpression: PsiExpression,
+            fieldArgumentExpressions: List<PsiExpression>,
+            directionForcedFromParentChain: Name?,
+            reverseCountForcedFromParentChain: Int
+        ): List<Node<PsiElement>> {
+            val directionName = directionArgumentExpression.resolveToDirectionName().derivedDirection(
+                directionForcedFromParentChain,
+                reverseCountForcedFromParentChain
             )
-        }
-    }
-
-    private fun parseSortObjectArgument(
-        sortCreationMethodCall: PsiMethodCallExpression,
-        directionForcedFromParentChain: Name?,
-        reverseCountForcedFromParentChain: Int,
-    ): List<Node<PsiElement>> {
-        // This method can be called recursively in which case the caller will be considered parsing
-        // a parent chain and the current call will become the child chain. Each child chain inherit
-        // the forcedDirection and reverseCount from the parent chain so that they can derive correct
-        // values for themselves
-        var forcedDirection = directionForcedFromParentChain
-        var reverseCount = reverseCountForcedFromParentChain
-
-        return sortCreationMethodCall.gatherChainedCalls().flatMapIndexed { index, methodCall ->
-            val method = methodCall.fuzzyResolveMethod()
-
-            if (method?.containingClass?.qualifiedName != SORT_FQN) {
-                return@flatMapIndexed emptyList<Node<PsiElement>>()
+            return fieldArgumentExpressions.map { fieldExpression ->
+                createSortCriteria(
+                    directionName = directionName,
+                    fieldExpression = fieldExpression,
+                    directionExpression = directionArgumentExpression
+                )
             }
+        }
 
-            if (method.name == "ascending" || method.name == "descending") {
-                // If we have ascending or descending as the last call in the chain and there was no
-                // other forced direction from parent chain then the entire chain is forced to have
-                // the current order from this call.
-                if (index == 0 && forcedDirection == null) {
-                    forcedDirection = if (method.name == "ascending") {
-                        Name.ASCENDING
-                    } else {
-                        Name.DESCENDING
-                    }
+        internal fun parseSortObjectArgument(
+            sortCreationMethodCall: PsiMethodCallExpression,
+            directionForcedFromParentChain: Name?,
+            reverseCountForcedFromParentChain: Int,
+        ): List<Node<PsiElement>> {
+            // This method can be called recursively in which case the caller will be considered parsing
+            // a parent chain and the current call will become the child chain. Each child chain inherit
+            // the forcedDirection and reverseCount from the parent chain so that they can derive correct
+            // values for themselves
+            var forcedDirection = directionForcedFromParentChain
+            var reverseCount = reverseCountForcedFromParentChain
+
+            return sortCreationMethodCall.gatherChainedCalls().flatMapIndexed { index, methodCall ->
+                val method = methodCall.fuzzyResolveMethod()
+
+                if (method?.containingClass?.qualifiedName != SORT_FQN) {
+                    return@flatMapIndexed emptyList<Node<PsiElement>>()
                 }
-                // The current order could also come before a reverse, in this chain or from a parent
-                // chain. In that case, we revert the forced direction as many times as we encountered
-                // reverse and that becomes the new forced direction for this chain
-                else if (index != 0 && forcedDirection == null) {
-                    val supposedNewDirection = if (method.name == "ascending") {
-                        Name.ASCENDING
-                    } else {
-                        Name.DESCENDING
+
+                if (method.name == "ascending" || method.name == "descending") {
+                    // If we have ascending or descending as the last call in the chain and there was no
+                    // other forced direction from parent chain then the entire chain is forced to have
+                    // the current order from this call.
+                    if (index == 0 && forcedDirection == null) {
+                        forcedDirection = if (method.name == "ascending") {
+                            Name.ASCENDING
+                        } else {
+                            Name.DESCENDING
+                        }
                     }
-                    forcedDirection = supposedNewDirection.derivedDirection(
-                        directionForcedFromParentChain = null,
+                    // The current order could also come before a reverse, in this chain or from a parent
+                    // chain. In that case, we revert the forced direction as many times as we encountered
+                    // reverse and that becomes the new forced direction for this chain
+                    else if (index != 0 && forcedDirection == null) {
+                        val supposedNewDirection = if (method.name == "ascending") {
+                            Name.ASCENDING
+                        } else {
+                            Name.DESCENDING
+                        }
+                        forcedDirection = supposedNewDirection.derivedDirection(
+                            directionForcedFromParentChain = null,
+                            reverseCountForcedFromParentChain = reverseCount
+                        )
+                        reverseCount = 0
+                    }
+                    return@flatMapIndexed emptyList<Node<PsiElement>>()
+                }
+                // Accounting for reverse only makes sense when there is no direction forced already
+                // either from the current chain or from parent chain
+                else if (method.name == "reverse" && forcedDirection == null) {
+                    reverseCount += 1
+                    return@flatMapIndexed emptyList<Node<PsiElement>>()
+                }
+                // This is how we chain additional Sort criteria chains onto the current chain.
+                // This chained Sort criteria will inherit the forcedDirection and reverseCount from
+                // the current chain
+                else if (method.name == "and") {
+                    val firstArgumentExpression = methodCall.argumentList.expressions.getOrNull(0)
+                    val sortCreationMethodCallPassedToAnd =
+                        firstArgumentExpression?.resolveToSortCreationCall()
+                            ?: return@flatMapIndexed emptyList<Node<PsiElement>>()
+
+                    return@flatMapIndexed parseSortObjectArgument(
+                        sortCreationMethodCall,
+                        forcedDirection,
+                        reverseCount
+                    )
+                } else if (method.name == "by") {
+                    return@flatMapIndexed parseSortByMethodCall(
+                        methodCall = methodCall,
+                        directionForcedFromParentChain = forcedDirection,
                         reverseCountForcedFromParentChain = reverseCount
                     )
-                    reverseCount = 0
+                } else {
+                    return@flatMapIndexed emptyList<Node<PsiElement>>()
                 }
-                return@flatMapIndexed emptyList<Node<PsiElement>>()
             }
-            // Accounting for reverse only makes sense when there is no direction forced already
-            // either from the current chain or from parent chain
-            else if (method.name == "reverse" && forcedDirection == null) {
-                reverseCount += 1
-                return@flatMapIndexed emptyList<Node<PsiElement>>()
-            }
-            // This is how we chain additional Sort criteria chains onto the current chain.
-            // This chained Sort criteria will inherit the forcedDirection and reverseCount from
-            // the current chain
-            else if (method.name == "and") {
-                val firstArgumentExpression = methodCall.argumentList.expressions.getOrNull(0)
-                val sortCreationMethodCallPassedToAnd =
-                    firstArgumentExpression?.resolveToSortCreationCall()
-                        ?: return@flatMapIndexed emptyList<Node<PsiElement>>()
+        }
 
-                return@flatMapIndexed parseSortObjectArgument(
-                    sortCreationMethodCallPassedToAnd,
-                    forcedDirection,
-                    reverseCount
+        private fun parseSortByMethodCall(
+            methodCall: PsiMethodCallExpression,
+            directionForcedFromParentChain: Name?,
+            reverseCountForcedFromParentChain: Int
+        ): List<Node<PsiElement>> {
+            val firstArgumentExpression = methodCall.argumentList.expressions.getOrNull(0)
+                ?: return emptyList()
+
+            return if (firstArgumentExpression.isDirectionEnum()) {
+                parseDirectionArgumentAndFieldsToSortCriteria(
+                    // Kinda ambiguous if the direction was forced from parent chain
+                    directionArgumentExpression = firstArgumentExpression,
+                    fieldArgumentExpressions = methodCall.argumentList.expressions.drop(1),
+                    directionForcedFromParentChain = directionForcedFromParentChain,
+                    reverseCountForcedFromParentChain = reverseCountForcedFromParentChain
                 )
-            } else if (method.name == "by") {
-                return@flatMapIndexed parseSortByMethodCall(
-                    methodCall = methodCall,
-                    directionForcedFromParentChain = forcedDirection,
-                    reverseCountForcedFromParentChain = reverseCount
+            } else if (firstArgumentExpression.isOrderObject() ||
+                firstArgumentExpression.isParseableJavaIterable()
+            ) {
+                parseOrderObjects(
+                    methodCall.getVarArgsOrIterableArgs(),
+                    directionForcedFromParentChain,
+                    reverseCountForcedFromParentChain
                 )
             } else {
-                return@flatMapIndexed emptyList<Node<PsiElement>>()
+                methodCall.argumentList.expressions.map { fieldExpression ->
+                    createSortCriteria(
+                        directionName = Name.ASCENDING.derivedDirection(
+                            directionForcedFromParentChain,
+                            reverseCountForcedFromParentChain
+                        ),
+                        fieldExpression = fieldExpression,
+                        directionExpression = methodCall
+                    )
+                }
             }
         }
-    }
 
-    private fun parseSortByMethodCall(
-        methodCall: PsiMethodCallExpression,
-        directionForcedFromParentChain: Name?,
-        reverseCountForcedFromParentChain: Int
-    ): List<Node<PsiElement>> {
-        val firstArgumentExpression = methodCall.argumentList.expressions.getOrNull(0)
-            ?: return emptyList()
+        private fun parseOrderObjects(
+            orderObjectsExpression: List<PsiExpression>,
+            directionForcedFromParentChain: Name?,
+            reverseCountForcedFromParentChain: Int
+        ): List<Node<PsiElement>> {
+            return orderObjectsExpression.mapNotNull { orderExpression ->
+                val orderCreationCall = orderExpression.resolveToOrderCreationCall()
+                val orderCreationMethod =
+                    orderCreationCall?.fuzzyResolveMethod() ?: return@mapNotNull null
+                val fieldArgumentExpression =
+                    orderCreationCall.argumentList.expressions.getOrNull(0)
+                        ?: return@mapNotNull null
+                val supposedDirectionForThisOrder = when (orderCreationMethod.name) {
+                    "asc", "by" -> Name.ASCENDING
+                    "desc" -> Name.DESCENDING
+                    else -> Name.UNKNOWN
+                }
+                val finalDirectionForThisOrder = supposedDirectionForThisOrder.derivedDirection(
+                    directionForcedFromParentChain,
+                    reverseCountForcedFromParentChain
+                )
 
-        return if (firstArgumentExpression.isDirectionEnum()) {
-            parseDirectionArgumentAndFieldsToSortCriteria(
-                // Kinda ambiguous if the direction was forced from parent chain
-                directionArgumentExpression = firstArgumentExpression,
-                fieldArgumentExpressions = methodCall.argumentList.expressions.drop(1),
-                directionForcedFromParentChain = directionForcedFromParentChain,
-                reverseCountForcedFromParentChain = reverseCountForcedFromParentChain
-            )
-        } else if (firstArgumentExpression.isOrderObject() ||
-            firstArgumentExpression.isParseableJavaIterable()
-        ) {
-            parseOrderObjects(
-                methodCall.getVarArgsOrIterableArgs(),
-                directionForcedFromParentChain,
-                reverseCountForcedFromParentChain
-            )
-        } else {
-            methodCall.argumentList.expressions.map { fieldExpression ->
                 createSortCriteria(
-                    directionName = Name.ASCENDING.derivedDirection(
-                        directionForcedFromParentChain,
-                        reverseCountForcedFromParentChain
-                    ),
-                    fieldExpression = fieldExpression,
-                    directionExpression = methodCall
+                    directionName = finalDirectionForThisOrder,
+                    fieldExpression = fieldArgumentExpression,
+                    directionExpression = orderExpression
                 )
             }
         }
-    }
 
-    private fun parseOrderObjects(
-        orderObjectsExpression: List<PsiExpression>,
-        directionForcedFromParentChain: Name?,
-        reverseCountForcedFromParentChain: Int
-    ): List<Node<PsiElement>> {
-        return orderObjectsExpression.mapNotNull { orderExpression ->
-            val orderCreationCall = orderExpression.resolveToOrderCreationCall()
-            val orderCreationMethod =
-                orderCreationCall?.fuzzyResolveMethod() ?: return@mapNotNull null
-            val fieldArgumentExpression = orderCreationCall.argumentList.expressions.getOrNull(0)
-                ?: return@mapNotNull null
-            val supposedDirectionForThisOrder = when (orderCreationMethod.name) {
-                "asc", "by" -> Name.ASCENDING
-                "desc" -> Name.DESCENDING
-                else -> Name.UNKNOWN
-            }
-            val finalDirectionForThisOrder = supposedDirectionForThisOrder.derivedDirection(
-                directionForcedFromParentChain,
-                reverseCountForcedFromParentChain
-            )
-
-            createSortCriteria(
-                directionName = finalDirectionForThisOrder,
-                fieldExpression = fieldArgumentExpression,
-                directionExpression = orderExpression
-            )
-        }
-    }
-
-    private fun createSortCriteria(
-        directionName: Name,
-        fieldExpression: PsiExpression,
-        directionExpression: PsiElement,
-    ): Node<PsiElement> {
-        val fieldReference = fieldExpression.resolveFieldNameFromExpression()
-        return Node(
-            source = fieldExpression,
-            components = listOf(
-                Named(directionName),
-                HasFieldReference(fieldReference),
-                HasValueReference(
-                    reference = when (directionName) {
-                        Name.ASCENDING,
-                        Name.DESCENDING -> HasValueReference.Inferred(
-                            source = directionExpression,
-                            type = BsonInt32,
-                            value = if (directionName == Name.ASCENDING) 1 else -1
-                        )
-                        else -> HasValueReference.Unknown
-                    }
+        private fun createSortCriteria(
+            directionName: Name,
+            fieldExpression: PsiExpression,
+            directionExpression: PsiElement,
+        ): Node<PsiElement> {
+            val fieldReference = fieldExpression.resolveFieldNameFromExpression()
+            return Node(
+                source = fieldExpression,
+                components = listOf(
+                    Named(directionName),
+                    HasFieldReference(fieldReference),
+                    HasValueReference(
+                        reference = when (directionName) {
+                            Name.ASCENDING,
+                            Name.DESCENDING -> HasValueReference.Inferred(
+                                source = directionExpression,
+                                type = BsonInt32,
+                                value = if (directionName == Name.ASCENDING) 1 else -1
+                            )
+                            else -> HasValueReference.Unknown
+                        }
+                    )
                 )
             )
-        )
-    }
+        }
 
-    private fun createSortNode(
-        source: PsiMethodCallExpression,
-        criteria: List<Node<PsiElement>>
-    ): Node<PsiElement> {
-        return Node(
-            source = source,
-            components = listOf(
-                Named(Name.SORT),
-                HasSorts(criteria)
+        private fun createSortNode(
+            source: PsiMethodCallExpression,
+            criteria: List<Node<PsiElement>>
+        ): Node<PsiElement> {
+            return Node(
+                source = source,
+                components = listOf(
+                    Named(Name.SORT),
+                    HasSorts(criteria)
+                )
             )
-        )
+        }
     }
 }
 

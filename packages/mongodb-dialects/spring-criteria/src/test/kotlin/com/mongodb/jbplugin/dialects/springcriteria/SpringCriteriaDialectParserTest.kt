@@ -75,6 +75,84 @@ class Repository {
     @ParsingTest(
         fileName = "Book.java",
         """
+import org.springframework.data.domain.Sort;import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+
+import java.util.List;
+
+import static org.springframework.data.mongodb.core.query.Criteria.where;
+
+@Document
+record Book() {}
+
+class Repository {
+    private final MongoTemplate template;
+    
+    public Repository(MongoTemplate template) {
+        this.template = template;
+    }
+    
+    public List<Book> allReleasedBooks() {
+        return template.query(Book.class).matching(
+            Query.query(
+                where("released").is(true)
+            ).with(Sort.by(Sort.Direction.DESC, "year", "ratings"))
+        ).all();
+    }
+}
+        """
+    )
+    fun `extracts a simple criteria query even when chained with Sort using #with`(
+        psiFile: PsiFile
+    ) {
+        val query = psiFile.getQueryAtMethod("Repository", "allReleasedBooks")
+        println(SpringCriteriaDialectParser.parse(query))
+        SpringCriteriaDialectParser.parse(query).assert(IsCommand.CommandType.FIND_MANY) {
+            component<HasSourceDialect> {
+                assertEquals(HasSourceDialect.DialectName.SPRING_CRITERIA, name)
+            }
+
+            collection<HasCollectionReference.OnlyCollection<PsiElement>> {
+                assertEquals("book", collection)
+            }
+
+            filterN(0, Name.EQ) {
+                field<HasFieldReference.FromSchema<PsiElement>> {
+                    assertEquals("released", fieldName)
+                }
+                value<HasValueReference.Constant<PsiElement>> {
+                    assertEquals(BsonAnyOf(BsonNull, BsonBoolean), type)
+                    assertEquals(true, value)
+                }
+            }
+
+            sortN(0, Name.DESCENDING) {
+                field<HasFieldReference.FromSchema<PsiElement>> {
+                    assertEquals("year", fieldName)
+                }
+                value<HasValueReference.Inferred<PsiElement>> {
+                    assertEquals(BsonInt32, type)
+                    assertEquals(-1, value)
+                }
+            }
+
+            sortN(1, Name.DESCENDING) {
+                field<HasFieldReference.FromSchema<PsiElement>> {
+                    assertEquals("ratings", fieldName)
+                }
+                value<HasValueReference.Inferred<PsiElement>> {
+                    assertEquals(BsonInt32, type)
+                    assertEquals(-1, value)
+                }
+            }
+        }
+    }
+
+    @ParsingTest(
+        fileName = "Book.java",
+        """
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.query.Criteria;
