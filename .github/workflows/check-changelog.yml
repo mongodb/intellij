@@ -22,5 +22,5 @@ jobs:
       - name: Check Changelog
         uses: dangoslen/changelog-enforcer@204e7d3ef26579f4cd0fd759c57032656fdf23c7 # 3.6.1
         with:
-          skipLabels: no release notes
+          skipLabels: "no release notes"
           missingUpdateErrorMessage: Please add an entry in CHANGELOG.md or apply the 'no release notes' label to skip this check.
