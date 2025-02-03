@@ -24,6 +24,7 @@ import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.observability.TelemetryEvent
 import com.mongodb.jbplugin.observability.probe.InspectionStatusChangedProbe
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.runBlocking
 
 class FieldCheckInspectionBridge(coroutineScope: CoroutineScope) :
     AbstractMongoDbInspectionBridge(
@@ -67,12 +68,13 @@ internal object FieldCheckLinterInspection : MongoDbInspection {
 
         val readModelProvider by query.source.project.service<DataGripBasedReadModelProvider>()
 
-        val result =
+        val result = runBlocking {
             FieldCheckingLinter.lintQuery(
                 dataSource,
                 readModelProvider,
                 query,
             )
+        }
 
         result.warnings.forEach {
             when (it) {

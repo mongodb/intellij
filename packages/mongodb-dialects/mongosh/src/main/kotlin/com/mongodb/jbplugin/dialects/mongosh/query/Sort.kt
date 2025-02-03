@@ -6,7 +6,7 @@ import com.mongodb.jbplugin.mql.components.HasFieldReference
 import com.mongodb.jbplugin.mql.components.HasSorts
 import com.mongodb.jbplugin.mql.components.HasValueReference
 
-fun <S> MongoshBackend.emitSort(query: Node<S>): MongoshBackend {
+suspend fun <S> MongoshBackend.emitSort(query: Node<S>): MongoshBackend {
     val sortComponent = query.component<HasSorts<S>>()
     if (sortComponent == null) {
         return this

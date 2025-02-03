@@ -11,7 +11,7 @@ import com.mongodb.jbplugin.mql.components.Named
 import com.mongodb.jbplugin.mql.parser.components.allFiltersRecursively
 import com.mongodb.jbplugin.mql.parser.parse
 
-fun <S> MongoshBackend.emitQueryFilter(node: Node<S>, firstCall: Boolean = false): MongoshBackend {
+suspend fun <S> MongoshBackend.emitQueryFilter(node: Node<S>, firstCall: Boolean = false): MongoshBackend {
     val named = node.component<Named>()
     val fieldRef = node.component<HasFieldReference<S>>()
     val valueRef = node.component<HasValueReference<S>>()

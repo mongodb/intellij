@@ -19,10 +19,11 @@ import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasTargetCluster
 import com.mongodb.jbplugin.mql.components.IsCommand
 import io.github.z4kn4fein.semver.Version
+import kotlinx.coroutines.runBlocking
 import org.owasp.encoder.Encode
 
 object MongoshDialectFormatter : DialectFormatter {
-    override fun <S> formatQuery(
+    override suspend fun <S> formatQuery(
         query: Node<S>,
         queryContext: QueryContext,
     ): OutputQuery {
@@ -86,9 +87,7 @@ object MongoshDialectFormatter : DialectFormatter {
     }
 
     override fun <S> indexCommandForQuery(query: Node<S>): String = when (
-        val index = IndexAnalyzer.analyze(
-            query
-        )
+        val index = runBlocking { IndexAnalyzer.analyze(query) }
     ) {
         is IndexAnalyzer.SuggestedIndex.NoIndex -> ""
         is IndexAnalyzer.SuggestedIndex.MongoDbIndex -> {

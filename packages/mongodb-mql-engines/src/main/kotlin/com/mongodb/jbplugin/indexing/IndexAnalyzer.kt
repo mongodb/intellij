@@ -33,7 +33,7 @@ object IndexAnalyzer {
      * @param query
      * @return
      */
-    fun <S> analyze(query: Node<S>): SuggestedIndex<S> {
+    suspend fun <S> analyze(query: Node<S>): SuggestedIndex<S> {
         val collectionRef =
             query.component<HasCollectionReference<S>>() ?: return SuggestedIndex.NoIndex.cast()
         val fields = query.allFieldReferences().distinctBy { it.first }
@@ -42,7 +42,7 @@ object IndexAnalyzer {
         return SuggestedIndex.MongoDbIndex(collectionRef, indexFields)
     }
 
-    private fun <S> Node<S>.allFieldReferences(): List<Pair<String, S>> {
+    private suspend fun <S> Node<S>.allFieldReferences(): List<Pair<String, S>> {
         val extractFieldReference = schemaFieldReference<S>()
             .map { it.fieldName to it.source }
             .mapError { NoFieldReference }

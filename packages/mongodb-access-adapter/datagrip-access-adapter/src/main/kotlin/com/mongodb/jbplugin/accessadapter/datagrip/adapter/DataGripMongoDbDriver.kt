@@ -11,7 +11,7 @@ import com.intellij.database.dataSource.DatabaseConnectionManager
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.database.dataSource.connection.ConnectionRequestor
 import com.intellij.database.run.ConsoleRunConfiguration
-import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.readAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
@@ -92,8 +92,9 @@ internal class DataGripMongoDbDriver(
     override suspend fun <S> explain(query: Node<S>, queryContext: QueryContext): ExplainPlan = withContext(
         Dispatchers.IO
     ) {
-        val queryScript = ApplicationManager.getApplication().runReadAction<OutputQuery> {
-            MongoshDialect.formatter.formatQuery(query, queryContext)
+
+        val queryScript = readAction {
+            runBlocking { MongoshDialect.formatter.formatQuery(query, queryContext) }
         }
 
         if (queryScript !is OutputQuery.CanBeRun) {

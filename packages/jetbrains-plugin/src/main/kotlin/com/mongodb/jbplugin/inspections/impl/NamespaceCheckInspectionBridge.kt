@@ -23,6 +23,7 @@ import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.observability.TelemetryEvent
 import com.mongodb.jbplugin.observability.probe.InspectionStatusChangedProbe
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.runBlocking
 
 /**
  * @param coroutineScope
@@ -68,12 +69,13 @@ internal object NamespaceCheckingLinterInspection : MongoDbInspection {
         }
 
         val readModelProvider by query.source.project.service<DataGripBasedReadModelProvider>()
-        val result =
+        val result = runBlocking {
             NamespaceCheckingLinter.lintQuery(
                 dataSource,
                 readModelProvider,
                 query,
             )
+        }
 
         result.warnings.forEach {
             when (it) {

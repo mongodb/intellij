@@ -103,7 +103,7 @@ sealed interface OutputQuery {
  * for a user given the Dialect.
  */
 interface DialectFormatter {
-    fun <S> formatQuery(query: Node<S>, queryContext: QueryContext): OutputQuery
+    suspend fun <S> formatQuery(query: Node<S>, queryContext: QueryContext): OutputQuery
     fun <S> indexCommandForQuery(query: Node<S>): String
     fun formatType(type: BsonType): String
 }

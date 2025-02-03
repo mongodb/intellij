@@ -9,13 +9,13 @@ import com.mongodb.jbplugin.mql.components.HasValueReference
 import com.mongodb.jbplugin.mql.components.Name
 import com.mongodb.jbplugin.mql.components.Named
 
-fun <S> MongoshBackend.emitQueryUpdate(node: Node<S>): MongoshBackend {
+suspend fun <S> MongoshBackend.emitQueryUpdate(node: Node<S>): MongoshBackend {
     val hasUpdates = node.component<HasUpdates<S>>() ?: return this
     val allUpdates = hasUpdates.children.flatMap { it.recursivelyCollectAllUpdates() }
     val groupedUpdates = groupUpdatesByOperator(allUpdates)
 
     emitObjectStart(long = true)
-    groupedUpdates.forEach {
+    for (it in groupedUpdates) {
         emitEachQueryUpdate(it)
         emitObjectValueEnd()
     }
@@ -37,7 +37,7 @@ private fun <S> groupUpdatesByOperator(updates: List<Node<S>>): Map<Name, List<N
         .filter { it.key != null } as Map<Name, List<Node<S>>>
 }
 
-private fun <S> MongoshBackend.emitEachQueryUpdate(node: Map.Entry<Name, List<Node<S>>>): MongoshBackend {
+private suspend fun <S> MongoshBackend.emitEachQueryUpdate(node: Map.Entry<Name, List<Node<S>>>): MongoshBackend {
     val name = node.key
 
     emitObjectKey(registerConstant("${'$'}${name.canonical}"))
