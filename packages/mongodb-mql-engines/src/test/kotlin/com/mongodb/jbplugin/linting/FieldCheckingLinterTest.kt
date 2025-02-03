@@ -12,6 +12,7 @@ import com.mongodb.jbplugin.mql.components.HasSorts
 import com.mongodb.jbplugin.mql.components.HasValueReference
 import com.mongodb.jbplugin.mql.components.Name
 import com.mongodb.jbplugin.mql.components.Named
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
@@ -21,7 +22,7 @@ import org.mockito.kotlin.any
 
 class FieldCheckingLinterTest {
     @Test
-    fun `warns about a referenced field not in the specified collection`() {
+    fun `warns about a referenced field not in the specified collection`() = runTest {
         val readModelProvider = mock<MongoDbReadModelProvider<Unit>>()
         val collectionNamespace = Namespace("database", "collection")
 
@@ -80,7 +81,7 @@ class FieldCheckingLinterTest {
     }
 
     @Test
-    fun `warns about a referenced field in a nested query not in the specified collection`() {
+    fun `warns about a referenced field in a nested query not in the specified collection`() = runTest {
         val readModelProvider = mock<MongoDbReadModelProvider<Unit>>()
         val collectionNamespace = Namespace("database", "collection")
 
@@ -143,7 +144,7 @@ class FieldCheckingLinterTest {
     }
 
     @Test
-    fun `warns about a referenced field not in the specified collection (alongside a value reference)`() {
+    fun `warns about a referenced field not in the specified collection (alongside a value reference)`() = runTest {
         val readModelProvider = mock<MongoDbReadModelProvider<Unit>>()
         val collectionNamespace = Namespace("database", "collection")
 
@@ -205,7 +206,7 @@ class FieldCheckingLinterTest {
     }
 
     @Test
-    fun `warns about a value not matching the type of underlying field`() {
+    fun `warns about a value not matching the type of underlying field`() = runTest {
         val readModelProvider = mock<MongoDbReadModelProvider<Unit>>()
         val collectionNamespace = Namespace("database", "collection")
 
@@ -259,7 +260,7 @@ class FieldCheckingLinterTest {
     }
 
     @Test
-    fun `warns about the referenced fields in an Aggregation#match not in the specified collection`() {
+    fun `warns about the referenced fields in an Aggregation#match not in the specified collection`() = runTest {
         val readModelProvider = mock<MongoDbReadModelProvider<Unit>>()
         val collectionNamespace = Namespace("database", "collection")
 
@@ -334,7 +335,7 @@ class FieldCheckingLinterTest {
     }
 
     @Test
-    fun `warns about a value not matching the type of underlying field in Aggregation#match`() {
+    fun `warns about a value not matching the type of underlying field in Aggregation#match`() = runTest {
         val readModelProvider = mock<MongoDbReadModelProvider<Unit>>()
         val collectionNamespace = Namespace("database", "collection")
 
@@ -405,7 +406,7 @@ class FieldCheckingLinterTest {
     }
 
     @Test
-    fun `warns about the referenced fields in an Aggregation#project not in the specified collection`() {
+    fun `warns about the referenced fields in an Aggregation#project not in the specified collection`() = runTest {
         val readModelProvider = mock<MongoDbReadModelProvider<Unit>>()
         val collectionNamespace = Namespace("database", "collection")
 
@@ -476,7 +477,7 @@ class FieldCheckingLinterTest {
     }
 
     @Test
-    fun `warns about the referenced fields in an Aggregation#sort not in the specified collection`() {
+    fun `warns about the referenced fields in an Aggregation#sort not in the specified collection`() = runTest {
         val readModelProvider = mock<MongoDbReadModelProvider<Unit>>()
         val collectionNamespace = Namespace("database", "collection")
 
@@ -547,7 +548,7 @@ class FieldCheckingLinterTest {
     }
 
     @Test
-    fun `should not warn about the referenced fields in an Aggregation#addFields`() {
+    fun `should not warn about the referenced fields in an Aggregation#addFields`() = runTest {
         val readModelProvider = mock<MongoDbReadModelProvider<Unit>>()
         val collectionNamespace = Namespace("database", "collection")
 
@@ -615,7 +616,7 @@ class FieldCheckingLinterTest {
     }
 
     @Test
-    fun `should not warn about the referenced fields in an Aggregation#unwind`() {
+    fun `should not warn about the referenced fields in an Aggregation#unwind`() = runTest {
         val readModelProvider = mock<MongoDbReadModelProvider<Unit>>()
         val collectionNamespace = Namespace("database", "collection")
 
