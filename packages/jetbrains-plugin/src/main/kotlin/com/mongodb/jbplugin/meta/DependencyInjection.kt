@@ -14,6 +14,8 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlin.reflect.KProperty
 
+internal val pluginDispatcher = Dispatchers.IO
+
 class DependencyInjection<out T>(private val cm: ComponentManager, private val javaClass: Class<T>) {
     operator fun getValue(thisRef: Any?, property: KProperty<*>): T {
         return cm.getService<T>(javaClass)

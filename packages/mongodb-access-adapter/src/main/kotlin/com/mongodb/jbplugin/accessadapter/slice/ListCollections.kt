@@ -45,10 +45,10 @@ data class ListCollections(
                             "authorizedCollections" to true,
                         ),
                     ),
-                    Document::class
+                    Map::class
                 )
 
-            val collectionMetadata = result.get("cursor", Map::class.java)
+            val collectionMetadata = result["cursor"] as Map<String, Any>
             val collections = collectionMetadata["firstBatch"] as List<Map<String, *>>
 
             return ListCollections(

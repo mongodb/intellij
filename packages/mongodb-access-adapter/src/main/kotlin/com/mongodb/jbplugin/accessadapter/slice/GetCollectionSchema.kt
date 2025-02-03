@@ -2,7 +2,12 @@ package com.mongodb.jbplugin.accessadapter.slice
 
 import com.mongodb.client.model.Filters
 import com.mongodb.jbplugin.accessadapter.MongoDbDriver
+import com.mongodb.jbplugin.accessadapter.QueryResult
 import com.mongodb.jbplugin.mql.*
+import com.mongodb.jbplugin.mql.components.HasCollectionReference
+import com.mongodb.jbplugin.mql.components.HasFilter
+import com.mongodb.jbplugin.mql.components.HasLimit
+import com.mongodb.jbplugin.mql.components.IsCommand
 import org.bson.Document
 
 /**
@@ -31,12 +36,19 @@ data class GetCollectionSchema(
                 )
             }
 
-            val sampleSomeDocs = from.findAll(
-                namespace,
-                Filters.empty(),
-                Document::class,
-                limit = 50
-            )
+            val query = Node(Unit, listOf(
+              HasCollectionReference(HasCollectionReference.Known(Unit, Unit, namespace)),
+              IsCommand(IsCommand.CommandType.FIND_MANY),
+              HasFilter(emptyList<Node<Unit>>()),
+              HasLimit(50),
+            ))
+
+            val sampleSomeDocs: List<Map<String, Any>> =
+                when(val result = from.runQuery(query, Map::class, limit = 50)) {
+                    is QueryResult.NotRun -> emptyList()
+                    is QueryResult.Run -> result.result as List<Map<String, Any>>
+                }
+
             // we need to generate the schema from these docs
             val sampleSchemas = sampleSomeDocs.map(this::recursivelyBuildSchema)
             // now we want to merge them together

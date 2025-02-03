@@ -7,6 +7,7 @@ import com.mongodb.jbplugin.dialects.mongosh.aggr.isAggregate
 import com.mongodb.jbplugin.dialects.mongosh.backend.MongoshBackend
 import com.mongodb.jbplugin.dialects.mongosh.query.canUpdateDocuments
 import com.mongodb.jbplugin.dialects.mongosh.query.emitCollectionReference
+import com.mongodb.jbplugin.dialects.mongosh.query.emitLimit
 import com.mongodb.jbplugin.dialects.mongosh.query.emitQueryFilter
 import com.mongodb.jbplugin.dialects.mongosh.query.emitQueryUpdate
 import com.mongodb.jbplugin.dialects.mongosh.query.emitSort
@@ -72,6 +73,12 @@ object MongoshDialectFormatter : DialectFormatter {
 
                 if (query.returnsACursor()) {
                     emitSort(query)
+                    emitLimit(query)
+                    if (queryContext.explainPlan == QueryContext.ExplainPlanType.NONE && !prettyPrint) {
+                        emitPropertyAccess()
+                        emitFunctionName("toArray")
+                        emitFunctionCall()
+                    }
                 }
             }.computeOutput()
 

@@ -12,6 +12,7 @@ import com.mongodb.client.MongoClient
 import com.mongodb.client.MongoClients
 import com.mongodb.jbplugin.accessadapter.ExplainPlan
 import com.mongodb.jbplugin.accessadapter.MongoDbDriver
+import com.mongodb.jbplugin.accessadapter.QueryResult
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
 import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.Node
@@ -147,6 +148,16 @@ internal class DirectMongoDbDriver(
         throw UnsupportedOperationException()
     }
 
+    override suspend fun <T : Any, S> runQuery(
+        query: Node<S>,
+        result: KClass<T>,
+        queryContext: QueryContext,
+        timeout: Duration,
+        limit: Int
+    ): QueryResult<T> {
+        throw UnsupportedOperationException()
+    }
+
     override suspend fun <T : Any> runCommand(
         database: String,
         command: Bson,
@@ -156,54 +167,6 @@ internal class DirectMongoDbDriver(
         withTimeout(timeout) {
             val doc = client.getDatabase(database).runCommand(command)
             gson.fromJson(doc.toJson(), result.java)
-        }
-
-    override suspend fun <T : Any> findOne(
-        namespace: Namespace,
-        query: Bson,
-        options: Bson,
-        result: KClass<T>,
-        timeout: Duration,
-    ): T? =
-        withTimeout(timeout) {
-            val doc =
-                client
-                    .getDatabase(namespace.database)
-                    .getCollection(namespace.collection)
-                    .find(query)
-                    .limit(1)
-                    .first()
-
-            doc?.toJson()?.let { gson.fromJson(it, result.java) }
-        }
-
-    override suspend fun <T : Any> findAll(
-        namespace: Namespace,
-        query: Bson,
-        result: KClass<T>,
-        limit: Int,
-        timeout: Duration,
-    ): List<T> =
-        withTimeout(timeout) {
-            client
-                .getDatabase(namespace.database)
-                .getCollection(namespace.collection)
-                .find(query)
-                .limit(limit)
-                .map { gson.fromJson(it.toJson(), result.java) }
-                .toList()
-        }
-
-    override suspend fun countAll(
-        namespace: Namespace,
-        query: Bson,
-        timeout: Duration,
-    ): Long =
-        withTimeout(timeout) {
-            client
-                .getDatabase(namespace.database)
-                .getCollection(namespace.collection)
-                .countDocuments(query)
         }
 }
 

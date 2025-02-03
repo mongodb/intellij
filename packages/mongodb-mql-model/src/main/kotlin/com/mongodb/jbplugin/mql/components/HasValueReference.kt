@@ -29,7 +29,11 @@ data class HasValueReference<S>(
         val source: S,
         val value: Any?,
         val type: BsonType,
-    ) : ValueReference<S>
+    ) : ValueReference<S> {
+        override fun toString(): String {
+            return "Constant(value=$value, type=$type)"
+        }
+    }
 
     /**
      * Encodes a ValueReference when the value is not mentioned statically in the user code and
@@ -44,7 +48,11 @@ data class HasValueReference<S>(
         val source: S,
         val value: Any?,
         val type: BsonType,
-    ) : ValueReference<S>
+    ) : ValueReference<S> {
+        override fun toString(): String {
+            return "Constant(value=$value, type=$type)"
+        }
+    }
 
     /**
      * Encodes a ValueReference when the value is mentioned as a variable in the user code and the
@@ -57,7 +65,11 @@ data class HasValueReference<S>(
     data class Runtime<S>(
         val source: S,
         val type: BsonType,
-    ) : ValueReference<S>
+    ) : ValueReference<S> {
+        override fun toString(): String {
+            return "Runtime(type=$type)"
+        }
+    }
 
     /**
      * Encodes a ValueReference when the value is computed on the server side. For example
@@ -73,7 +85,11 @@ data class HasValueReference<S>(
     data class Computed<S>(
         val source: S,
         val type: ComputedBsonType<S>,
-    ) : ValueReference<S>
+    ) : ValueReference<S> {
+        override fun toString(): String {
+            return "Computed(type=$type)"
+        }
+    }
 
     override val children: List<Node<S>>
         get() = when (reference) {
