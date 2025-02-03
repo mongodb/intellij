@@ -173,7 +173,7 @@ class SortStageParser : StageParser {
                             ?: return@flatMapIndexed emptyList<Node<PsiElement>>()
 
                     return@flatMapIndexed parseSortObjectArgument(
-                        sortCreationMethodCall,
+                        sortCreationMethodCallPassedToAnd,
                         forcedDirection,
                         reverseCount
                     )
