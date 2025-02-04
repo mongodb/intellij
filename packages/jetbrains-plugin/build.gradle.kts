@@ -9,13 +9,12 @@ pluginBundle {
 dependencies {
     implementation(project(":packages:mongodb-access-adapter"))
     implementation(project(":packages:mongodb-access-adapter:datagrip-access-adapter"))
-    implementation(project(":packages:mongodb-autocomplete-engine"))
+    implementation(project(":packages:mongodb-mql-engines"))
     implementation(project(":packages:mongodb-dialects"))
     implementation(project(":packages:mongodb-dialects:java-driver"))
     implementation(project(":packages:mongodb-dialects:spring-criteria"))
     implementation(project(":packages:mongodb-dialects:spring-@query"))
     implementation(project(":packages:mongodb-dialects:mongosh"))
-    implementation(project(":packages:mongodb-linting-engine"))
     implementation(project(":packages:mongodb-mql-model"))
 
     implementation(libs.mongodb.driver)

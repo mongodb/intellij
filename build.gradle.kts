@@ -21,13 +21,12 @@ dependencies {
     jacocoAggregation(project(":packages:jetbrains-plugin"))
     jacocoAggregation(project(":packages:mongodb-access-adapter"))
     jacocoAggregation(project(":packages:mongodb-access-adapter:datagrip-access-adapter"))
-    jacocoAggregation(project(":packages:mongodb-autocomplete-engine"))
+    jacocoAggregation(project(":packages:mongodb-mql-engines"))
     jacocoAggregation(project(":packages:mongodb-dialects"))
     jacocoAggregation(project(":packages:mongodb-dialects:java-driver"))
     jacocoAggregation(project(":packages:mongodb-dialects:mongosh"))
     jacocoAggregation(project(":packages:mongodb-dialects:spring-criteria"))
     jacocoAggregation(project(":packages:mongodb-dialects:spring-@query"))
-    jacocoAggregation(project(":packages:mongodb-linting-engine"))
     jacocoAggregation(project(":packages:mongodb-mql-model"))
 }
 

@@ -1,3 +1,15 @@
+package com.mongodb.jbplugin.indexing
+
+import com.mongodb.jbplugin.mql.Node
+import com.mongodb.jbplugin.mql.components.HasCollectionReference
+import com.mongodb.jbplugin.mql.components.Name
+import com.mongodb.jbplugin.mql.parser.*
+import com.mongodb.jbplugin.mql.parser.components.NoFieldReference
+import com.mongodb.jbplugin.mql.parser.components.aggregationStages
+import com.mongodb.jbplugin.mql.parser.components.allNodesWithSchemaFieldReferences
+import com.mongodb.jbplugin.mql.parser.components.hasName
+import com.mongodb.jbplugin.mql.parser.components.schemaFieldReference
+
 /**
  * The index analyzer is responsible for processing a query and return an index
  * that can cover the query correctly for efficiency.
@@ -8,28 +20,6 @@
  * Right now it supports only MongoDB ordinary indexes, but it's open to suggest
  * also Search indexes in the future.
  **/
-
-package com.mongodb.jbplugin.mql
-
-import com.mongodb.jbplugin.mql.components.HasCollectionReference
-import com.mongodb.jbplugin.mql.components.Name
-import com.mongodb.jbplugin.mql.parser.anyError
-import com.mongodb.jbplugin.mql.parser.components.NoFieldReference
-import com.mongodb.jbplugin.mql.parser.components.aggregationStages
-import com.mongodb.jbplugin.mql.parser.components.allNodesWithSchemaFieldReferences
-import com.mongodb.jbplugin.mql.parser.components.hasName
-import com.mongodb.jbplugin.mql.parser.components.schemaFieldReference
-import com.mongodb.jbplugin.mql.parser.filter
-import com.mongodb.jbplugin.mql.parser.first
-import com.mongodb.jbplugin.mql.parser.flatMap
-import com.mongodb.jbplugin.mql.parser.map
-import com.mongodb.jbplugin.mql.parser.mapError
-import com.mongodb.jbplugin.mql.parser.mapMany
-import com.mongodb.jbplugin.mql.parser.matches
-import com.mongodb.jbplugin.mql.parser.nth
-import com.mongodb.jbplugin.mql.parser.parse
-import com.mongodb.jbplugin.mql.parser.requireNonNull
-
 /**
  * The IndexAnalyzer service itself. It's stateless and can be used directly.
  */

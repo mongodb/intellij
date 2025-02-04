@@ -11,8 +11,13 @@ import com.mongodb.jbplugin.dialects.mongosh.query.emitQueryFilter
 import com.mongodb.jbplugin.dialects.mongosh.query.emitQueryUpdate
 import com.mongodb.jbplugin.dialects.mongosh.query.emitSort
 import com.mongodb.jbplugin.dialects.mongosh.query.returnsACursor
-import com.mongodb.jbplugin.mql.*
-import com.mongodb.jbplugin.mql.components.*
+import com.mongodb.jbplugin.indexing.IndexAnalyzer
+import com.mongodb.jbplugin.mql.BsonType
+import com.mongodb.jbplugin.mql.Node
+import com.mongodb.jbplugin.mql.QueryContext
+import com.mongodb.jbplugin.mql.components.HasCollectionReference
+import com.mongodb.jbplugin.mql.components.HasTargetCluster
+import com.mongodb.jbplugin.mql.components.IsCommand
 import io.github.z4kn4fein.semver.Version
 import org.owasp.encoder.Encode
 
