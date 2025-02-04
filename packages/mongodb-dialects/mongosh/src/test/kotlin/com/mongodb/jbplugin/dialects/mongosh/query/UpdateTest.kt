@@ -14,6 +14,7 @@ import com.mongodb.jbplugin.mql.components.HasValueReference
 import com.mongodb.jbplugin.mql.components.IsCommand
 import com.mongodb.jbplugin.mql.components.Name
 import com.mongodb.jbplugin.mql.components.Named
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -21,7 +22,7 @@ import org.junit.jupiter.params.provider.MethodSource
 class UpdateTest {
     @ParameterizedTest
     @MethodSource("allSetterLikeOperators")
-    fun `generates an update one query with a simple setter-like operator`(name: Name) {
+    fun `generates an update one query with a simple setter-like operator`(name: Name) = runTest {
         assertGeneratedQuery(
             """
           db.getSiblingDB("myDb").getCollection("myColl").updateOne({}, {"${'$'}${name.canonical}": {"myField": "myValue", }, })
@@ -57,7 +58,7 @@ class UpdateTest {
 
     @ParameterizedTest
     @MethodSource("allSetterLikeOperators")
-    fun `generates an update many query with a simple setter-like operator`(name: Name) {
+    fun `generates an update many query with a simple setter-like operator`(name: Name) = runTest {
         assertGeneratedQuery(
             """
           db.getSiblingDB("myDb").getCollection("myColl").updateMany({}, {"${'$'}${name.canonical}": {"myField": "myValue", }, })
@@ -92,7 +93,7 @@ class UpdateTest {
     }
 
     @Test
-    fun `supports pull with a filter`() {
+    fun `supports pull with a filter`() = runTest {
         assertGeneratedQuery(
             """
           db.getSiblingDB("myDb").getCollection("myColl").updateMany({}, {"${'$'}pull": {"myField": {"innerField": 123}, }, })
@@ -146,7 +147,7 @@ class UpdateTest {
     }
 
     @Test
-    fun `supports pullAll with a list of elements`() {
+    fun `supports pullAll with a list of elements`() = runTest {
         assertGeneratedQuery(
             """
           db.getSiblingDB("myDb").getCollection("myColl").updateMany({}, {"${'$'}pullAll": {"myField": [1, 2, 3], }, })
@@ -185,7 +186,7 @@ class UpdateTest {
     }
 
     @Test
-    fun `combines the same type of operation`() {
+    fun `combines the same type of operation`() = runTest {
         assertGeneratedQuery(
             """
           db.getSiblingDB("myDb").getCollection("myColl").updateMany({}, {"${'$'}pullAll": {"myField": [1, 2, 3], }, "${'$'}set": {"field1": [1], "field2": "abc", }, })

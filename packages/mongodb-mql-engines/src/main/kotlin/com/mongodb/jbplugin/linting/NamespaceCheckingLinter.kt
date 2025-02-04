@@ -81,7 +81,7 @@ data class NamespaceCheckResult<S>(
  * in the connected data source.
  */
 object NamespaceCheckingLinter {
-    fun <D, S> lintQuery(
+    suspend fun <D, S> lintQuery(
         dataSource: D,
         readModelProvider: MongoDbReadModelProvider<D>,
         query: Node<S>,

@@ -86,7 +86,7 @@ data class FieldCheckResult<S>(
  * Linter that verifies that all fields that are referenced in a query do exist in the target collection.
  */
 object FieldCheckingLinter {
-    fun <D, S> lintQuery(
+    suspend fun <D, S> lintQuery(
         dataSource: D,
         readModelProvider: MongoDbReadModelProvider<D>,
         query: Node<S>,

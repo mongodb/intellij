@@ -15,13 +15,13 @@ import com.mongodb.jbplugin.mql.parser.components.whenIsCommand
 import com.mongodb.jbplugin.mql.parser.map
 import com.mongodb.jbplugin.mql.parser.parse
 
-fun <S> Node<S>.isAggregate(): Boolean {
+suspend fun <S> Node<S>.isAggregate(): Boolean {
     return whenIsCommand<S>(IsCommand.CommandType.AGGREGATE)
         .map { true }
         .parse(this).orElse { false }
 }
 
-fun <S> MongoshBackend.emitAggregateBody(node: Node<S>, queryContext: QueryContext): MongoshBackend {
+suspend fun <S> MongoshBackend.emitAggregateBody(node: Node<S>, queryContext: QueryContext): MongoshBackend {
     val allStages = node.component<HasAggregation<S>>()?.children ?: emptyList()
     val stagesToEmit = when (queryContext.explainPlan) {
         QueryContext.ExplainPlanType.NONE -> allStages

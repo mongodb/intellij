@@ -9,12 +9,13 @@ import com.mongodb.jbplugin.mql.components.HasFieldReference
 import com.mongodb.jbplugin.mql.components.HasFilter
 import com.mongodb.jbplugin.mql.components.Name
 import com.mongodb.jbplugin.mql.components.Named
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class IndexAnalyzerTest {
     @Test
-    fun `queries without a collection reference component are not supported`() {
+    fun `queries without a collection reference component are not supported`() = runTest {
         val query = Node(Unit, emptyList())
         val result = IndexAnalyzer.analyze(query)
 
@@ -22,7 +23,7 @@ class IndexAnalyzerTest {
     }
 
     @Test
-    fun `returns the suggested list of fields for a mongodb query`() {
+    fun `returns the suggested list of fields for a mongodb query`() = runTest {
         val collectionReference =
             HasCollectionReference(Known(Unit, Unit, Namespace("myDb", "myColl")))
         val query = Node(
@@ -53,7 +54,7 @@ class IndexAnalyzerTest {
     }
 
     @Test
-    fun `removes repeated field references`() {
+    fun `removes repeated field references`() = runTest {
         val collectionReference =
             HasCollectionReference(Known(Unit, Unit, Namespace("myDb", "myColl")))
         val query = Node(
@@ -102,7 +103,7 @@ class IndexAnalyzerTest {
     }
 
     @Test
-    fun `considers aggregation pipelines match stages`() {
+    fun `considers aggregation pipelines match stages`() = runTest {
         val collectionReference =
             HasCollectionReference(Known(Unit, Unit, Namespace("myDb", "myColl")))
         val query = Node(
@@ -168,7 +169,7 @@ class IndexAnalyzerTest {
     }
 
     @Test
-    fun `does not consider aggregation pipelines match stages in the second position`() {
+    fun `does not consider aggregation pipelines match stages in the second position`() = runTest {
         val collectionReference =
             HasCollectionReference(Known(Unit, Unit, Namespace("myDb", "myColl")))
         val query = Node(
@@ -226,7 +227,7 @@ class IndexAnalyzerTest {
     }
 
     @Test
-    fun `does not consider aggregation pipelines stages that are not match`() {
+    fun `does not consider aggregation pipelines stages that are not match`() = runTest {
         val collectionReference =
             HasCollectionReference(Known(Unit, Unit, Namespace("myDb", "myColl")))
         val query = Node(

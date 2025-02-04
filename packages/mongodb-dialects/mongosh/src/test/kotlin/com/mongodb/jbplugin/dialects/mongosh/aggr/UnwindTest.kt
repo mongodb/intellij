@@ -7,11 +7,12 @@ import com.mongodb.jbplugin.mql.components.HasFieldReference
 import com.mongodb.jbplugin.mql.components.IsCommand
 import com.mongodb.jbplugin.mql.components.Name
 import com.mongodb.jbplugin.mql.components.Named
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 
 class UnwindTest {
     @Test
-    fun `can format an unwind stage`() {
+    fun `can format an unwind stage`() = runTest {
         assertGeneratedQuery(
             """
             var collection = ""

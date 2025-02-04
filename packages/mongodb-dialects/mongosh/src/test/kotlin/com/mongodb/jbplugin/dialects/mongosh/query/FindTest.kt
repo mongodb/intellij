@@ -16,6 +16,7 @@ import com.mongodb.jbplugin.mql.components.HasValueReference
 import com.mongodb.jbplugin.mql.components.IsCommand
 import com.mongodb.jbplugin.mql.components.Name
 import com.mongodb.jbplugin.mql.components.Named
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -23,7 +24,7 @@ import org.junit.jupiter.params.provider.ValueSource
 
 class FindTest {
     @Test
-    fun `can format a query without references to a collection reference`() {
+    fun `can format a query without references to a collection reference`() = runTest {
         assertGeneratedQuery(
             """
             var collection = ""
@@ -56,7 +57,7 @@ class FindTest {
     }
 
     @Test
-    fun `can format a simple query`() {
+    fun `can format a simple query`() = runTest {
         val namespace = Namespace("myDb", "myColl")
 
         assertGeneratedQuery(
@@ -91,7 +92,7 @@ class FindTest {
 
     @ParameterizedTest
     @ValueSource(strings = ["and", "or", "nor"])
-    fun `can format a query with subquery operators`(operator: String) {
+    fun `can format a query with subquery operators`(operator: String) = runTest {
         assertGeneratedQuery(
             """
             var collection = ""
@@ -125,7 +126,7 @@ class FindTest {
     }
 
     @Test
-    fun `can format query using the not operator`() {
+    fun `can format query using the not operator`() = runTest {
         val namespace = Namespace("myDb", "myColl")
 
         assertGeneratedQuery(
@@ -177,7 +178,7 @@ class FindTest {
 
     @ParameterizedTest
     @ValueSource(strings = ["lt", "lte", "gt", "gte"])
-    fun `can format a query with range operators`(operator: String) {
+    fun `can format a query with range operators`(operator: String) = runTest {
         assertGeneratedQuery(
             """
             var collection = ""
@@ -212,7 +213,7 @@ class FindTest {
 
     @ParameterizedTest
     @ValueSource(strings = ["in", "nin"])
-    fun `can format a query with the in or nin operator`(operator: String) {
+    fun `can format a query with the in or nin operator`(operator: String) = runTest {
         assertGeneratedQuery(
             """
             var collection = ""
@@ -250,7 +251,7 @@ class FindTest {
     }
 
     @Test
-    fun `can sort a find query when specified`() {
+    fun `can sort a find query when specified`() = runTest {
         assertGeneratedQuery(
             """
             var collection = ""
@@ -298,7 +299,9 @@ class FindTest {
 
     @ParameterizedTest
     @MethodSource("queryCommandsThatDoNotReturnSortableCursors")
-    fun `can not sort a query that does not return a cursor`(command: IsCommand.CommandType) {
+    fun `can not sort a query that does not return a cursor`(
+        command: IsCommand.CommandType
+    ) = runTest {
         assertGeneratedQuery(
             """
             var collection = ""

@@ -29,6 +29,7 @@ import com.mongodb.jbplugin.mql.parser.components.allNodesWithKnownRuntimeFields
 import com.mongodb.jbplugin.mql.parser.parse
 import com.mongodb.jbplugin.mql.toNonNullableType
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.runBlocking
 import org.bson.types.ObjectId
 import org.jetbrains.letsPlot.commons.intern.filterNotNullValues
 import java.awt.event.ActionEvent
@@ -54,9 +55,7 @@ class RunQueryModal(
         fieldsForContext.clear()
 
         val builder = FormBuilder.createFormBuilder()
-        val allEmptyFields = allNodesWithKnownRuntimeFields<PsiElement>().parse(query).orElse {
-            emptyList()
-        }
+        val allEmptyFields = allRuntimeFieldNodes()
 
         builder.addComponent(
             JBLabel(
@@ -154,9 +153,7 @@ class RunQueryModal(
      * @return QueryContext when the user fills the modal and confirms.
      */
     fun askForQueryContext(): QueryContext? {
-        val allNodes = allNodesWithKnownRuntimeFields<PsiElement>().parse(query).orElse {
-            emptyList()
-        }
+        val allNodes = allRuntimeFieldNodes()
         if (allNodes.isEmpty()) {
             return QueryContext.empty(prettyPrint = true)
         }
@@ -170,6 +167,13 @@ class RunQueryModal(
             null
         }
     }
+
+    private fun allRuntimeFieldNodes(): List<Node<PsiElement>> =
+        runBlocking {
+            allNodesWithKnownRuntimeFields<PsiElement>().parse(query).orElse {
+                emptyList()
+            }
+        }
 
     private fun toInput(type: BsonType): Pair<JComponent, String?>? {
         return when (type.toNonNullableType()) {

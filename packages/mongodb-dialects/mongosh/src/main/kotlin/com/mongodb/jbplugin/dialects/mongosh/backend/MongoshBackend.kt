@@ -45,7 +45,7 @@ class MongoshBackend(
         return emitPropertyAccess()
     }
 
-    fun emitDatabaseAccess(dbName: ContextValue): MongoshBackend {
+    suspend fun emitDatabaseAccess(dbName: ContextValue): MongoshBackend {
         val nextPadding = column - 1 // align to the dot
 
         emitAsIs("getSiblingDB")
@@ -61,7 +61,7 @@ class MongoshBackend(
         return emitPropertyAccess()
     }
 
-    fun emitCollectionAccess(collName: ContextValue): MongoshBackend {
+    suspend fun emitCollectionAccess(collName: ContextValue): MongoshBackend {
         emitAsIs("getCollection")
         emitFunctionCall(long = false, {
             emitContextValue(collName)
@@ -146,7 +146,7 @@ class MongoshBackend(
 
     fun emitFunctionName(name: String): MongoshBackend = emitAsIs(name)
 
-    fun emitFunctionCall(long: Boolean = false, vararg body: MongoshBackend.() -> MongoshBackend): MongoshBackend {
+    suspend fun emitFunctionCall(long: Boolean = false, vararg body: suspend MongoshBackend.() -> MongoshBackend): MongoshBackend {
         emitAsIs("(")
         if (body.isNotEmpty()) {
             if (long && prettyPrint) {

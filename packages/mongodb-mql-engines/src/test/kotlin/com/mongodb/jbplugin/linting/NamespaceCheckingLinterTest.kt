@@ -6,6 +6,7 @@ import com.mongodb.jbplugin.accessadapter.slice.ListDatabases
 import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
@@ -15,7 +16,7 @@ import org.mockito.kotlin.any
 
 class NamespaceCheckingLinterTest {
     @Test
-    fun `warns about a referenced database not existing`() {
+    fun `warns about a referenced database not existing`() = runTest {
         val readModelProvider = mock<MongoDbReadModelProvider<Unit>>()
         val collectionNamespace = Namespace("database", "collection")
 
@@ -44,7 +45,7 @@ class NamespaceCheckingLinterTest {
     }
 
     @Test
-    fun `warns about a referenced collection not existing`() {
+    fun `warns about a referenced collection not existing`() = runTest {
         val readModelProvider = mock<MongoDbReadModelProvider<Unit>>()
         val collectionNamespace = Namespace("database", "collection")
 
@@ -81,7 +82,7 @@ class NamespaceCheckingLinterTest {
     }
 
     @Test
-    fun `warns about an unknown namespace if only collection is provided`() {
+    fun `warns about an unknown namespace if only collection is provided`() = runTest {
         val readModelProvider = mock<MongoDbReadModelProvider<Unit>>()
 
         val result =
@@ -103,7 +104,7 @@ class NamespaceCheckingLinterTest {
     }
 
     @Test
-    fun `warns about an unknown namespace if unknown`() {
+    fun `warns about an unknown namespace if unknown`() = runTest {
         val readModelProvider = mock<MongoDbReadModelProvider<Unit>>()
 
         val result =
@@ -123,7 +124,7 @@ class NamespaceCheckingLinterTest {
     }
 
     @Test
-    fun `warns about an unknown namespace if not provided`() {
+    fun `warns about an unknown namespace if not provided`() = runTest {
         val readModelProvider = mock<MongoDbReadModelProvider<Unit>>()
 
         val result =

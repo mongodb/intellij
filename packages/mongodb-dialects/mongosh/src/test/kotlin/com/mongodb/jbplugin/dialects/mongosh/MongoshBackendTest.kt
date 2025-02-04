@@ -3,6 +3,8 @@ package com.mongodb.jbplugin.dialects.mongosh
 import com.mongodb.jbplugin.dialects.mongosh.backend.DefaultContext
 import com.mongodb.jbplugin.dialects.mongosh.backend.MongoshBackend
 import com.mongodb.jbplugin.mql.*
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.bson.types.ObjectId
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -12,11 +14,10 @@ import org.junit.jupiter.params.provider.MethodSource
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.time.LocalDateTime
-import java.util.*
 
 class MongoshBackendTest {
     @Test
-    fun `generates a valid find query`() {
+    fun `generates a valid find query`() = runTest {
         assertGeneratedJs(
             """
             db.getSiblingDB("myDb").getCollection("myColl").find({"field": 1})
@@ -36,7 +37,7 @@ class MongoshBackendTest {
     }
 
     @Test
-    fun `generates a valid query with runtime parameters`() {
+    fun `generates a valid query with runtime parameters`() = runTest {
         assertGeneratedJs(
             """
             var myColl = ""
@@ -60,7 +61,7 @@ class MongoshBackendTest {
     }
 
     @Test
-    fun `generates a valid update query`() {
+    fun `generates a valid update query`() = runTest {
         assertGeneratedJs(
             """
             var myColl = ""
@@ -90,7 +91,7 @@ class MongoshBackendTest {
 
     @ParameterizedTest
     @MethodSource("bsonValues")
-    fun `generates a valid bson object given a value`(testCase: Pair<Any, String>) {
+    fun `generates a valid bson object given a value`(testCase: Pair<Any, String>) = runBlocking {
         val (value, expected) = testCase
         assertGeneratedJs(
             expected
@@ -103,7 +104,7 @@ class MongoshBackendTest {
     @MethodSource("bsonTypes")
     fun `generates a valid default object given the type of the value`(
         testCase: Pair<BsonType, String>
-    ) {
+    ) = runTest {
         val (type, expected) = testCase
         assertGeneratedJs(
             """
@@ -155,11 +156,11 @@ class MongoshBackendTest {
     }
 }
 
-private fun assertGeneratedJs(
+private suspend fun assertGeneratedJs(
     @Language(
         "js"
     ) js: String,
-    script: MongoshBackend.() -> MongoshBackend
+    script: suspend MongoshBackend.() -> MongoshBackend
 ) {
     val generated = script(MongoshBackend(DefaultContext())).computeOutput()
     assertEquals(js, generated)

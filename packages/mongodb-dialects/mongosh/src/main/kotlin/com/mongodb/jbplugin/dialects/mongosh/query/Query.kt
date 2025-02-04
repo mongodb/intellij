@@ -7,13 +7,13 @@ import com.mongodb.jbplugin.mql.parser.components.whenIsCommand
 import com.mongodb.jbplugin.mql.parser.map
 import com.mongodb.jbplugin.mql.parser.parse
 
-fun <S> Node<S>.returnsACursor(): Boolean {
+suspend fun <S> Node<S>.returnsACursor(): Boolean {
     return whenIsCommand<S>(IsCommand.CommandType.FIND_MANY)
         .map { true }
         .parse(this).orElse { false }
 }
 
-fun <S> Node<S>.canUpdateDocuments(): Boolean {
+suspend fun <S> Node<S>.canUpdateDocuments(): Boolean {
     return whenHasAnyCommand<S>()
         .map { it.component<IsCommand>()!!.type }
         .map {

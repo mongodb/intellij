@@ -5,7 +5,7 @@ import com.mongodb.jbplugin.dialects.mongosh.query.emitQueryFilter
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.components.HasFilter
 
-internal fun <S> MongoshBackend.emitMatchStage(node: Node<S>): MongoshBackend {
+internal suspend fun <S> MongoshBackend.emitMatchStage(node: Node<S>): MongoshBackend {
     val filter = node.component<HasFilter<S>>()?.children?.getOrNull(0)
     val longFilter = filter?.component<HasFilter<S>>()?.children?.size?.let { it > 3 } == true
 

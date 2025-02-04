@@ -103,7 +103,7 @@ fun <S> MongoshBackend.resolveFieldReference(
     }
 }
 
-fun <S> MongoshBackend.emitCollectionReference(collRef: HasCollectionReference<S>?): MongoshBackend {
+suspend fun <S> MongoshBackend.emitCollectionReference(collRef: HasCollectionReference<S>?): MongoshBackend {
     when (val ref = collRef?.reference) {
         is HasCollectionReference.OnlyCollection -> {
             emitDatabaseAccess(registerVariable("database", BsonString, null))

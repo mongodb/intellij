@@ -10,11 +10,12 @@ import com.mongodb.jbplugin.mql.components.HasValueReference
 import com.mongodb.jbplugin.mql.components.IsCommand
 import com.mongodb.jbplugin.mql.components.Name
 import com.mongodb.jbplugin.mql.components.Named
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 
 class SortTest {
     @Test
-    fun `can format a sort stage`() {
+    fun `can format a sort stage`() = runTest {
         assertGeneratedQuery(
             """
             var collection = ""
