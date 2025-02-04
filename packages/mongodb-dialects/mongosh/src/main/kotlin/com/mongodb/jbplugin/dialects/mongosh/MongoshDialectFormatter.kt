@@ -39,6 +39,8 @@ object MongoshDialectFormatter : DialectFormatter {
         )
             .applyQueryExpansions(queryContext)
             .apply {
+                var suffixToAddToSerialize: String? = null
+
                 emitDbAccess()
                 emitCollectionReference(query.component<HasCollectionReference<S>>())
                 if (explainPlan != ExplainPlanType.NONE) {
@@ -55,13 +57,18 @@ object MongoshDialectFormatter : DialectFormatter {
                         emitFunctionName("aggregate")
                     } else {
                         emitFunctionName("find")
+                        suffixToAddToSerialize = "_baseCursor.explain"
                     }
                 } else {
-                    emitFunctionName(query.component<IsCommand>()?.type?.canonical ?: "find")
+                    val funcName = query.component<IsCommand>()?.type?.canonical ?: "find"
+                    if (funcName == "find") {
+                        suffixToAddToSerialize = "toArray"
+                    }
+
+                    emitFunctionName(funcName)
                 }
-                if (query.canUpdateDocuments() &&
-                    explainPlan == ExplainPlanType.NONE
-                ) {
+
+                if (query.canUpdateDocuments() && explainPlan == ExplainPlanType.NONE) {
                     emitFunctionCall(long = true, {
                         emitQueryFilter(query, firstCall = true)
                     }, {
@@ -80,13 +87,18 @@ object MongoshDialectFormatter : DialectFormatter {
                 if (query.returnsACursor()) {
                     emitSort(query)
                     emitLimit(query)
-                    if (explainPlan == ExplainPlanType.NONE && !prettyPrint) {
-                        emitPropertyAccess()
-                        emitFunctionName("toArray")
-                        emitFunctionCall()
-                    }
+                    suffixToAddToSerialize = "toArray"
+                }
+
+                // we need this because serializing a cursor fails, MONGOSH-2002
+                if (automaticallyRun && suffixToAddToSerialize != null) {
+                    emitPropertyAccess()
+                    emitFunctionName(suffixToAddToSerialize)
+                    emitFunctionCall()
                 }
             }.computeOutput()
+
+        println(outputString)
 
         val ref = query.component<HasCollectionReference<S>>()?.reference
         return when {

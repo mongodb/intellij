@@ -99,7 +99,10 @@ internal class DataGripMongoDbDriver(
         timeout: Duration,
         limit: Int
     ): QueryResult<T> = withContext(Dispatchers.IO) {
-        val queryScript = MongoshDialect.formatter.formatQuery(query, queryContext)
+        val queryScript = MongoshDialect.formatter.formatQuery(
+            query,
+            queryContext.willAutomaticallyRun()
+        )
 
         if (queryScript !is OutputQuery.CanBeRun) {
             return@withContext QueryResult.NotRun()
@@ -111,7 +114,11 @@ internal class DataGripMongoDbDriver(
 
         val result = runQueryScript(wrappedScriptInEJson, result, timeout)
         if (limit == 1) {
-            QueryResult.Run(result[0])
+            if (result.isEmpty()) {
+                QueryResult.NoResult()
+            } else {
+                QueryResult.Run(result[0])
+            }
         } else {
             QueryResult.Run(result as T)
         }

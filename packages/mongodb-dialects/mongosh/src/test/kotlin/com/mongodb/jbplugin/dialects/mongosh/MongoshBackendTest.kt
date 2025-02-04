@@ -112,7 +112,7 @@ class MongoshBackendTest {
         val output = backend.computeOutput()
         assertEquals(
             """
-            (function () { var myColl = "";var myDb = "";var myValue = ""; return db.getSiblingDB(myDb).getCollection(myColl).update({"field": myValue}, {"myUpdate": 1}); })();
+            (function () { var myColl = "";var myDb = "";var myValue = ""; return db.getSiblingDB(myDb).getCollection(myColl).update({"field": myValue}, {"myUpdate": 1}); })()
             """.trimIndent(),
             output
         )

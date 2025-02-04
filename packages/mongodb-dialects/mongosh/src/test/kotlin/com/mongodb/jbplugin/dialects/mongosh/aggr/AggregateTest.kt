@@ -24,7 +24,7 @@ class AggregateTest {
             var collection = ""
             var database = ""
             
-            db.getSiblingDB(database).getCollection(collection).explain("queryPlanner").aggregate([{"${'$'}match": {"myField": "myVal"}}, ])
+            db.getSiblingDB(database).getCollection(collection).explain("queryPlanner").aggregate([{"${'$'}match": {"myField": "myVal"}}, ]).limit(50)
             """.trimIndent(),
             explain = ExplainPlanType.SAFE
         ) {
@@ -76,7 +76,7 @@ class AggregateTest {
             var collection = ""
             var database = ""
             
-            db.getSiblingDB(database).getCollection(collection).explain("executionStats").aggregate([{"${'$'}match": {"myField": "myVal"}}, ])
+            db.getSiblingDB(database).getCollection(collection).explain("executionStats").aggregate([{"${'$'}match": {"myField": "myVal"}}, ]).limit(50)
             """.trimIndent(),
             explain = ExplainPlanType.FULL
         ) {
@@ -128,7 +128,7 @@ class AggregateTest {
             var collection = ""
             var database = ""
             
-            db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}match": {"myField": "myVal"}}, {"${'$'}project": {"myField": 1, }}, ])
+            db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}match": {"myField": "myVal"}}, {"${'$'}project": {"myField": 1, }}, ]).limit(50)
             """.trimIndent(),
             explain = ExplainPlanType.NONE
         ) {
@@ -208,7 +208,7 @@ class AggregateTest {
             var collection = ""
             var database = ""
             
-            db.getSiblingDB(database).getCollection(collection).explain("executionStats").aggregate([{"${'$'}match": {"myField": "myVal"}}, ])
+            db.getSiblingDB(database).getCollection(collection).explain("executionStats").aggregate([{"${'$'}match": {"myField": "myVal"}}, ]).limit(50)
             """.trimIndent(),
             explain = ExplainPlanType.FULL
         ) {

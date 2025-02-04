@@ -41,7 +41,7 @@ class ExplainQueryTest {
             )
         )
 
-        val explainPlanResult = ExplainQuery.Slice(query, QueryContext(emptyMap(), false))
+        val explainPlanResult = ExplainQuery.Slice(query, QueryContext(emptyMap(), false, true))
             .queryUsingDriver(driver)
 
         assertEquals(ExplainQuery(ExplainPlan.CollectionScan), explainPlanResult)
@@ -75,7 +75,7 @@ class ExplainQueryTest {
             )
         )
 
-        val explainPlanResult = ExplainQuery.Slice(query, QueryContext(emptyMap(), false))
+        val explainPlanResult = ExplainQuery.Slice(query, QueryContext(emptyMap(), false, true))
             .queryUsingDriver(driver)
 
         assertEquals(ExplainQuery(ExplainPlan.IndexScan), explainPlanResult)

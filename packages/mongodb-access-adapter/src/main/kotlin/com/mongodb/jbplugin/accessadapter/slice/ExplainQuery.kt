@@ -37,6 +37,7 @@ data class ExplainQuery(
             val explainPlanQueryResult = runCatching {
                 from.runQuery(query, Map::class, queryContext, limit = 1)
             }.getOrNull() ?: return ExplainQuery(ExplainPlan.NotRun)
+
             val explainPlanDoc =
                 (explainPlanQueryResult as? QueryResult.Run)?.result
                     ?: return ExplainQuery(ExplainPlan.NotRun)
@@ -48,12 +49,14 @@ data class ExplainQuery(
                 queryPlanner["winningPlan"] as? Map<String, Any>
                     ?: return ExplainQuery(ExplainPlan.NotRun)
 
+            // https://www.mongodb.com/docs/manual/reference/explain-results/#explain-output-structure
             val result = planByMappingStage(
                 winningPlan,
                 mapOf(
                     "COLLSCAN" to ExplainPlan.CollectionScan,
+                    "EXPRESS_IXSCAN" to ExplainPlan.IndexScan,
                     "IXSCAN" to ExplainPlan.IndexScan,
-                    "IDHACK" to ExplainPlan.IndexScan
+                    "IDHACK" to ExplainPlan.IndexScan,
                 )
             ) ?: ExplainPlan.NotRun
 

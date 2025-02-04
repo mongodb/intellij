@@ -21,7 +21,7 @@ class ProjectTest {
             var collection = ""
             var database = ""
 
-            db.getSiblingDB(database).getCollection(collection).aggregate([{"${"$"}project": {"myField": 1, }}, ])
+            db.getSiblingDB(database).getCollection(collection).aggregate([{"${"$"}project": {"myField": 1, }}, ]).limit(50)
             """.trimIndent()
         ) {
             Node(
@@ -72,7 +72,7 @@ class ProjectTest {
             var collection = ""
             var database = ""
 
-            db.getSiblingDB(database).getCollection(collection).aggregate([{"${"$"}project": {"myField": -1, }}, ])
+            db.getSiblingDB(database).getCollection(collection).aggregate([{"${"$"}project": {"myField": -1, }}, ]).limit(50)
             """.trimIndent()
         ) {
             Node(

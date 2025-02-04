@@ -146,7 +146,7 @@ class MongoshBackend(
 
         // if we are forced to run this query, wrap it into a function and call itself
         if (automaticallyRun) {
-            return "(function () { ${prelude.replace('\n', ';')} return $output; })();"
+            return "(function () { ${prelude.replace('\n', ';')} return $output; })()"
         }
 
         return (prelude + "\n" + output.toString()).trim()

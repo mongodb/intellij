@@ -18,7 +18,7 @@ class UnwindTest {
             var collection = ""
             var database = ""
 
-            db.getSiblingDB(database).getCollection(collection).aggregate([{"${"$"}unwind": "${'$'}myField"}, ])
+            db.getSiblingDB(database).getCollection(collection).aggregate([{"${"$"}unwind": "${'$'}myField"}, ]).limit(50)
             """.trimIndent()
         ) {
             Node(

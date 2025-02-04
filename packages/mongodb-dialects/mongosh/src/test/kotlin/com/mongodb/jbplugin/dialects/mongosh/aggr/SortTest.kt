@@ -21,7 +21,7 @@ class SortTest {
             var collection = ""
             var database = ""
 
-            db.getSiblingDB(database).getCollection(collection).aggregate([{"${"$"}sort": {"myField": 1, "myOtherField": -1, }}, ])
+            db.getSiblingDB(database).getCollection(collection).aggregate([{"${"$"}sort": {"myField": 1, "myOtherField": -1, }}, ]).limit(50)
             """.trimIndent()
         ) {
             Node(

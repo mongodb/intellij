@@ -70,7 +70,8 @@ internal object IndexCheckLinterInspection : MongoDbInspection {
 
         val queryContext = QueryContext(
             emptyMap(),
-            prettyPrint = false
+            prettyPrint = false,
+            automaticallyRun = true
         )
 
         val readModelProvider by query.source.project.service<DataGripBasedReadModelProvider>()

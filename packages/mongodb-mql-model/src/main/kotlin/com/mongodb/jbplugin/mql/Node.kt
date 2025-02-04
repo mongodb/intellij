@@ -119,6 +119,8 @@ data class QueryContext(
 
     data class LocalVariable(val type: BsonType, val defaultValue: Any?)
 
+    fun willAutomaticallyRun() = copy(automaticallyRun = true)
+
     companion object {
         fun empty(prettyPrint: Boolean = false, automaticallyRun: Boolean = false): QueryContext =
             QueryContext(emptyMap(), prettyPrint, automaticallyRun)

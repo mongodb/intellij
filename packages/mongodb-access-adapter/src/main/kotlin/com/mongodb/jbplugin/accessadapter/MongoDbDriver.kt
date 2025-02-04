@@ -32,6 +32,7 @@ sealed interface ExplainPlan {
  */
 sealed interface QueryResult<S> {
     class NotRun<S> : QueryResult<S>
+    class NoResult<S> : QueryResult<S>
     data class Run<S>(val result: S) : QueryResult<S>
 }
 

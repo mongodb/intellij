@@ -227,7 +227,7 @@ class RunQueryModal(
             )
         }
 
-        return QueryContext(localVariables, prettyPrint = true)
+        return QueryContext(localVariables, prettyPrint = true, automaticallyRun = true)
     }
 
     private fun mapToLocalVariable(type: BsonType, value: String): QueryContext.LocalVariable {
