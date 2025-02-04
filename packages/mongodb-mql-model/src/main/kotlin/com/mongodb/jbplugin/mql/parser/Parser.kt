@@ -2,11 +2,8 @@ package com.mongodb.jbplugin.mql.parser
 
 import com.mongodb.jbplugin.mql.adt.Either
 import com.mongodb.jbplugin.mql.adt.EitherInclusive
-import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.runBlocking
-import java.util.concurrent.Executors
 
 /**
  * A Parser is a suspendable function that returns either an error or a valid output from a
@@ -86,6 +83,24 @@ fun <I, E, O, OO> Parser<I, E, O>.map(mapFn: (O) -> OO): Parser<I, E, OO> {
         when (val result = this(input)) {
             is Either.Left -> Either.left(result.value)
             is Either.Right -> Either.right(mapFn(result.value))
+        }
+    }
+}
+
+/**
+ * Returns a new parser that maps the output to a new type that can be an error or a success
+ * value.
+ */
+fun <I, E, O, EE, OO> Parser<I, E, O>.flatMap(
+    mapFn: suspend (O) -> Either<EE, OO>
+): Parser<I, Either<E, EE>, OO> {
+    return { input ->
+        when (val result = this(input)) {
+            is Either.Left -> Either.left(Either.left(result.value))
+            is Either.Right -> when (val mappingResult = mapFn(result.value)) {
+                is Either.Left -> Either.left(Either.right(mappingResult.value))
+                is Either.Right -> Either.right(mappingResult.value)
+            }
         }
     }
 }
@@ -199,6 +214,20 @@ fun <I, E, O, E2, O2> Parser<I, E, List<O>>.mapMany(
     }
 }
 
+/**
+ * Returns a parser that runs a parser for each element of the output list.
+ */
+fun <I, E, O> Parser<I, E, List<O?>>.filterNotNullMany(): Parser<I, Either<E, Nothing>, List<O>> {
+    return { input ->
+        when (val result = this(input)) {
+            is Either.Left -> Either.left(Either.left(result.value))
+            is Either.Right -> {
+                Either.right(result.value.filterNotNull())
+            }
+        }
+    }
+}
+
 data object NoConditionFulfilled
 
 fun <I, E> equals(toValue: I): Parser<I, E, Boolean> {
@@ -275,11 +304,17 @@ fun <I, E, O> first(
     return cond(*branches)
 }
 
-private val PARSER = Executors.newWorkStealingPool(4).asCoroutineDispatcher()
+suspend fun <I, E, O> Parser<I, E, O>.parse(input: I): Either<E, O> {
+    return this@parse(input)
+}
 
-fun <I, E, O> Parser<I, E, O>.parse(input: I): Either<E, O> {
-    return runBlocking(PARSER) {
-        this@parse(input)
+fun <I, E> requireNonNull(err: E): Parser<I?, E, I> {
+    return { input ->
+        if (input == null) {
+            Either.left(err)
+        } else {
+            Either.right(input)
+        }
     }
 }
 

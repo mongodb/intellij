@@ -22,6 +22,7 @@ import com.intellij.psi.PsiLiteralExpression
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
 import com.mongodb.jbplugin.codeActions.AbstractMongoDbCodeActionBridge
 import com.mongodb.jbplugin.codeActions.MongoDbCodeAction
+import com.mongodb.jbplugin.codeActions.impl.runQuery.RunQueryModal
 import com.mongodb.jbplugin.codeActions.sourceForMarker
 import com.mongodb.jbplugin.dialects.DialectFormatter
 import com.mongodb.jbplugin.dialects.OutputQuery
@@ -36,12 +37,9 @@ import com.mongodb.jbplugin.i18n.Icons
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.components.HasSourceDialect
-import com.mongodb.jbplugin.mql.components.IsCommand
-import com.mongodb.jbplugin.mql.parser.components.whenHasAnyCommand
-import com.mongodb.jbplugin.mql.parser.components.whenIsCommand
-import com.mongodb.jbplugin.mql.parser.first
-import com.mongodb.jbplugin.mql.parser.map
-import com.mongodb.jbplugin.mql.parser.parse
+import com.mongodb.jbplugin.observability.TelemetryEvent
+import com.mongodb.jbplugin.observability.TelemetryEvent.QueryRunEvent.Console
+import com.mongodb.jbplugin.observability.probe.QueryRunProbe
 import kotlinx.coroutines.CoroutineScope
 
 /**
@@ -65,10 +63,6 @@ internal object RunQueryCodeAction : MongoDbCodeAction {
         query: Node<PsiElement>,
         formatter: DialectFormatter
     ): LineMarkerInfo<PsiElement>? {
-        if (!shouldShowRunGutterIcon(query)) {
-            return null
-        }
-
         return LineMarkerInfo(
             query.sourceForMarker,
             query.sourceForMarker.textRange,
@@ -78,22 +72,37 @@ internal object RunQueryCodeAction : MongoDbCodeAction {
                 if (shouldDelegateToIntelliJRunQuery(query)) {
                     delegateRunQueryToIntelliJ(query)
                 } else {
-                    coroutineScope.launchChildBackground {
-                        val outputQuery = MongoshDialect.formatter.formatQuery(
-                            query,
-                            explain = false
-                        )
-                        if (dataSource?.isConnected() == true) {
-                            coroutineScope.launchChildOnUi {
-                                openDataGripConsole(query, dataSource, outputQuery.query)
-                            }
-                        } else {
-                            openConsoleAfterSelection(
+                    emitRunQueryEvent(query, dataSource)
+
+                    if (dataSource == null || dataSource.isConnected() == false) {
+                        return@LineMarkerInfo
+                    }
+
+                    val queryContext = RunQueryModal(
+                        query,
+                        dataSource,
+                        coroutineScope
+                    ).askForQueryContext()
+
+                    if (queryContext != null) {
+                        coroutineScope.launchChildBackground {
+                            val outputQuery = MongoshDialect.formatter.formatQuery(
                                 query,
-                                outputQuery,
-                                query.source.project,
-                                coroutineScope
+                                queryContext
                             )
+
+                            if (dataSource.isConnected() == true) {
+                                coroutineScope.launchChildOnUi {
+                                    openDataGripConsole(query, dataSource, outputQuery.query)
+                                }
+                            } else {
+                                openConsoleAfterSelection(
+                                    query,
+                                    outputQuery,
+                                    query.source.project,
+                                    coroutineScope
+                                )
+                            }
                         }
                     }
                 }
@@ -103,12 +112,18 @@ internal object RunQueryCodeAction : MongoDbCodeAction {
         )
     }
 
-    private fun shouldShowRunGutterIcon(node: Node<PsiElement>): Boolean {
-        return first(
-            whenIsCommand<PsiElement>(IsCommand.CommandType.AGGREGATE).map { false },
-            whenHasAnyCommand<PsiElement>().map { true }
-        ).parse(node) // if we couldn't parse the query, don't show the gutter icon
-            .orElse { false }
+    private fun emitRunQueryEvent(
+        query: Node<PsiElement>,
+        dataSource: LocalDataSource?
+    ) {
+        val hasConsole = DatagripConsoleEditor.isThereAnEditorForDataSource(dataSource)
+
+        val probe by service<QueryRunProbe>()
+        probe.queryRunRequested(
+            query,
+            if (hasConsole) Console.EXISTING else Console.NEW,
+            TelemetryEvent.QueryRunEvent.TriggerLocation.GUTTER
+        )
     }
 
     private fun openDataGripConsole(

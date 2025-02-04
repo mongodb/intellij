@@ -95,3 +95,29 @@ data class Node<S>(
     fun copy(componentModifier: (component: Component) -> Component): Node<S> =
         copy(source = source, components = components.map(componentModifier))
 }
+
+/**
+ * A data holder for the information required to run a query. To be used alongside with
+ * a DialectFormatter.
+ */
+data class QueryContext(
+    val expansions: Map<String, LocalVariable>,
+    val explainPlan: ExplainPlanType,
+    val prettyPrint: Boolean,
+) {
+    data class AsIs(val value: String) {
+        val isEmpty = value.isBlank()
+    }
+
+    data class LocalVariable(val type: BsonType, val defaultValue: Any?)
+    enum class ExplainPlanType {
+        NONE,
+        SAFE,
+        FULL
+    }
+
+    companion object {
+        fun empty(prettyPrint: Boolean = false): QueryContext =
+            QueryContext(emptyMap(), ExplainPlanType.NONE, prettyPrint)
+    }
+}

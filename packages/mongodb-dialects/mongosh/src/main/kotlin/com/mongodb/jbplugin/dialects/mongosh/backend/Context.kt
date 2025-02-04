@@ -15,7 +15,7 @@ sealed interface ContextValue {
      * @property name
      * @property type
      */
-    data class Variable(val name: String, val type: BsonType) : ContextValue
+    data class Variable(val name: String, val type: BsonType, val value: Any?) : ContextValue
 
 /**
      * @property value
@@ -30,7 +30,7 @@ sealed interface ContextValue {
 interface Context {
     fun variableList(): List<ContextValue.Variable>
 
-    fun registerVariable(name: String, type: BsonType): ContextValue.Variable
+    fun registerVariable(name: String, type: BsonType, value: Any?): ContextValue.Variable
     fun registerConstant(value: Any?): ContextValue.Constant
 }
 
@@ -44,11 +44,12 @@ class DefaultContext : Context {
 
     override fun variableList(): List<ContextValue.Variable> = variables.values.toList()
 
-    override fun registerVariable(name: String, type: BsonType): ContextValue.Variable {
+    override fun registerVariable(name: String, type: BsonType, value: Any?): ContextValue.Variable {
         val cleanName = name.replace(".", "_")
+        val existingVariable = variables.getOrElse(cleanName) { null }
 
-        if (variables.containsKey(cleanName)) {
-// already exists, generate a new name
+        if (existingVariable != null && existingVariable.value == null) {
+            // already exists, generate a new name
             val nameWithoutCounter = if (cleanName.matches(endsWithNumber)) {
                 cleanName.replace(endsWithNumber, "")
             } else {
@@ -57,11 +58,13 @@ class DefaultContext : Context {
 
             counters[nameWithoutCounter] = counters.getOrDefault(nameWithoutCounter, 0) + 1
             val nameWithCounter = cleanName + counters[nameWithoutCounter]
-            val variable = ContextValue.Variable(nameWithCounter, type)
+            val variable = ContextValue.Variable(nameWithCounter, type, value)
             variables[nameWithCounter] = variable
             return variable
+        } else if (existingVariable != null && existingVariable.value != null) {
+            return existingVariable
         } else {
-            val variable = ContextValue.Variable(cleanName, type)
+            val variable = ContextValue.Variable(cleanName, type, value)
             variables[cleanName] = variable
             return variable
         }

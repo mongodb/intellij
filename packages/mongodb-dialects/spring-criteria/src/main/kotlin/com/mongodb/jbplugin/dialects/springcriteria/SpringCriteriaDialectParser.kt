@@ -6,19 +6,40 @@ import com.intellij.psi.util.findParentOfType
 import com.intellij.psi.util.parentOfType
 import com.mongodb.jbplugin.dialects.DialectParser
 import com.mongodb.jbplugin.dialects.javadriver.glossary.*
-import com.mongodb.jbplugin.dialects.springcriteria.QueryTargetCollectionExtractor.extractCollectionFromParameter
+import com.mongodb.jbplugin.dialects.springcriteria.QueryTargetCollectionExtractor.extractCollectionFromClassTypeParameter
 import com.mongodb.jbplugin.dialects.springcriteria.QueryTargetCollectionExtractor.extractCollectionFromQueryChain
+import com.mongodb.jbplugin.dialects.springcriteria.QueryTargetCollectionExtractor.extractCollectionFromStringTypeParameter
 import com.mongodb.jbplugin.dialects.springcriteria.QueryTargetCollectionExtractor.or
+import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.AddFieldsStageParser
+import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.GroupStageParser
+import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.MatchStageParser
+import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.ProjectStageParser
+import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.SortStageParser
+import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.StageParser
+import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.UnwindStageParser
 import com.mongodb.jbplugin.mql.BsonAny
 import com.mongodb.jbplugin.mql.BsonArray
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.components.*
 import com.mongodb.jbplugin.mql.toBsonType
 
-private const val CRITERIA_CLASS_FQN = "org.springframework.data.mongodb.core.query.Criteria"
-private const val DOCUMENT_FQN = "org.springframework.data.mongodb.core.mapping.Document"
+internal const val CRITERIA_CLASS_FQN = "org.springframework.data.mongodb.core.query.Criteria"
+internal const val DOCUMENT_FQN = "org.springframework.data.mongodb.core.mapping.Document"
+internal const val MONGO_TEMPLATE_FQN = "org.springframework.data.mongodb.core.MongoTemplate"
+internal const val AGGREGATE_FQN = "org.springframework.data.mongodb.core.aggregation.Aggregation"
+internal const val PROJECTION_OPERATION_FQN = "org.springframework.data.mongodb.core.aggregation.ProjectionOperation"
+internal const val FIELDS_FQN = "org.springframework.data.mongodb.core.aggregation.Fields"
 
 object SpringCriteriaDialectParser : DialectParser<PsiElement> {
+    private val aggregationStageParsers: List<StageParser> = listOf(
+        MatchStageParser(::parseFilterRecursively),
+        ProjectStageParser(),
+        UnwindStageParser(),
+        SortStageParser(),
+        AddFieldsStageParser(),
+        GroupStageParser(),
+    )
+
     override fun isCandidateForQuery(source: PsiElement) =
         inferCommandFromMethod((source as? PsiMethodCallExpression)?.fuzzyResolveMethod()).type !=
             IsCommand.CommandType.UNKNOWN
@@ -53,20 +74,22 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                 val actualMethod = mongoOpCall.firstChild?.firstChild as? PsiMethodCallExpression
                     ?: return Node(mongoOpCall, listOf(sourceDialect, command, inferredFromChain))
 
+                val filters = actualMethod.argumentList.expressions.getOrNull(0)
                 return Node(
                     actualMethod,
                     listOf(
                         sourceDialect,
                         command,
                         inferredFromChain.or(
-                            extractCollectionFromParameter(
+                            extractCollectionFromClassTypeParameter(
                                 actualMethod.argumentList.expressions.getOrNull(1)
                             )
                         ),
                         HasFilter(
-                            parseFilterRecursively(
-                                actualMethod.argumentList.expressions.getOrNull(0)
-                            ).reversed()
+                            parseFilterRecursively(filters).reversed()
+                        ),
+                        HasSorts(
+                            QuerySortParser().parse(filters)
                         )
                     )
                 )
@@ -80,87 +103,106 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
             "findAndRemove",
             "findOne",
             "scroll",
-            "stream" -> Node(
-                mongoOpCall,
-                listOf(
-                    sourceDialect,
-                    command,
-                    inferredFromChain.or(
-                        extractCollectionFromParameter(
-                            mongoOpCall.argumentList.expressions.getOrNull(1)
+            "stream" -> {
+                val filters = mongoOpCall.argumentList.expressions.getOrNull(0)
+                Node(
+                    mongoOpCall,
+                    listOf(
+                        sourceDialect,
+                        command,
+                        inferredFromChain.or(
+                            extractCollectionFromClassTypeParameter(
+                                mongoOpCall.argumentList.expressions.getOrNull(1)
+                            )
+                        ),
+                        HasFilter(
+                            parseFilterRecursively(filters).reversed()
+                        ),
+                        HasSorts(
+                            QuerySortParser().parse(filters)
                         )
-                    ),
-                    HasFilter(
-                        parseFilterRecursively(mongoOpCall.argumentList.expressions.getOrNull(0))
-                            .reversed()
                     )
                 )
-            )
+            }
             "findAndModify",
             "findAndReplace",
             "update",
             "updateFirst",
             "updateMulti",
-            "upsert" -> Node(
-                mongoOpCall,
-                listOf(
-                    sourceDialect,
-                    command,
-                    inferredFromChain.or(
-                        extractCollectionFromParameter(
-                            mongoOpCall.argumentList.expressions.getOrNull(1)
+            "upsert" -> {
+                val filters = mongoOpCall.argumentList.expressions.getOrNull(0)
+                Node(
+                    mongoOpCall,
+                    listOf(
+                        sourceDialect,
+                        command,
+                        inferredFromChain.or(
+                            extractCollectionFromClassTypeParameter(
+                                mongoOpCall.argumentList.expressions.getOrNull(1)
+                            )
+                        ).or(
+                            extractCollectionFromClassTypeParameter(
+                                mongoOpCall.argumentList.expressions.getOrNull(2)
+                            )
+                        ),
+                        HasFilter(
+                            parseFilterRecursively(filters)
+                                .reversed()
+                        ),
+                        HasSorts(
+                            QuerySortParser().parse(filters)
+                        ),
+                        HasUpdates(
+                            parseUpdateRecursively(
+                                mongoOpCall.argumentList.expressions.getOrNull(1)
+                            )
+                                .reversed()
                         )
-                    ).or(
-                        extractCollectionFromParameter(
-                            mongoOpCall.argumentList.expressions.getOrNull(2)
-                        )
-                    ),
-                    HasFilter(
-                        parseFilterRecursively(mongoOpCall.argumentList.expressions.getOrNull(0))
-                            .reversed()
-                    ),
-                    HasUpdates(
-                        parseUpdateRecursively(mongoOpCall.argumentList.expressions.getOrNull(1))
-                            .reversed()
                     )
                 )
-            )
+            }
             "findById" -> Node(
                 mongoOpCall,
                 listOf(
                     sourceDialect,
                     command,
                     inferredFromChain.or(
-                        extractCollectionFromParameter(
+                        extractCollectionFromClassTypeParameter(
                             mongoOpCall.argumentList.expressions.getOrNull(1)
                         )
                     ),
                     HasFilter(parseFindById(mongoOpCall.argumentList.expressions.getOrNull(0)))
                 )
             )
-            "findDistinct" -> Node(
-                mongoOpCall,
-                listOf(
-                    sourceDialect,
-                    command,
-                    inferredFromChain.or(
-                        extractCollectionFromParameter(
-                            mongoOpCall.argumentList.expressions.getOrNull(1)
+            "findDistinct" -> {
+                val filters = mongoOpCall.argumentList.expressions.getOrNull(0)
+                Node(
+                    mongoOpCall,
+                    listOf(
+                        sourceDialect,
+                        command,
+                        inferredFromChain.or(
+                            extractCollectionFromClassTypeParameter(
+                                mongoOpCall.argumentList.expressions.getOrNull(1)
+                            )
+                        ),
+                        HasFilter(
+                            parseFilterRecursively(filters)
+                                .reversed()
+                        ),
+                        HasSorts(
+                            QuerySortParser().parse(filters)
                         )
-                    ),
-                    HasFilter(
-                        parseFilterRecursively(mongoOpCall.argumentList.expressions.getOrNull(0))
-                            .reversed()
                     )
                 )
-            )
+            }
             "insert" -> Node(
                 mongoOpCall,
                 listOf(
                     sourceDialect,
                     command,
                     inferredFromChain.or(
-                        extractCollectionFromParameter(
+                        extractCollectionFromClassTypeParameter(
                             mongoOpCall.argumentList.expressions.getOrNull(1)
                         )
                     ),
@@ -172,51 +214,84 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                     sourceDialect,
                     command,
                     inferredFromChain.or(
-                        extractCollectionFromParameter(
+                        extractCollectionFromClassTypeParameter(
                             mongoOpCall.argumentList.expressions.getOrNull(1)
                         )
                     ),
                 )
             )
-            "remove" -> Node(
-                mongoOpCall,
-                listOf(
-                    sourceDialect,
-                    command,
-                    inferredFromChain.or(
-                        extractCollectionFromParameter(
-                            mongoOpCall.argumentList.expressions.getOrNull(1)
-                        )
-                    ),
-                    HasFilter(
-                        parseFilterRecursively(mongoOpCall.argumentList.expressions.getOrNull(0))
-                            .reversed()
+            "remove" -> {
+                val filters = mongoOpCall.argumentList.expressions.getOrNull(0)
+                Node(
+                    mongoOpCall,
+                    listOf(
+                        sourceDialect,
+                        command,
+                        inferredFromChain.or(
+                            extractCollectionFromClassTypeParameter(
+                                mongoOpCall.argumentList.expressions.getOrNull(1)
+                            )
+                        ),
+                        HasFilter(
+                            parseFilterRecursively(filters)
+                                .reversed()
+                        ),
+                        HasSorts(QuerySortParser().parse(filters))
                     )
                 )
-            )
-            "replace" -> Node(
-                mongoOpCall,
-                listOf(
-                    sourceDialect,
-                    command,
-                    inferredFromChain.or(
-                        extractCollectionFromParameter(
-                            mongoOpCall.argumentList.expressions.getOrNull(1)
-                        )
-                    ),
-                    HasFilter(
-                        parseFilterRecursively(mongoOpCall.argumentList.expressions.getOrNull(0))
-                            .reversed()
+            }
+            "replace" -> {
+                val filters = mongoOpCall.argumentList.expressions.getOrNull(0)
+                Node(
+                    mongoOpCall,
+                    listOf(
+                        sourceDialect,
+                        command,
+                        inferredFromChain.or(
+                            extractCollectionFromClassTypeParameter(
+                                mongoOpCall.argumentList.expressions.getOrNull(1)
+                            )
+                        ),
+                        HasFilter(
+                            parseFilterRecursively(filters)
+                                .reversed()
+                        ),
+                        HasSorts(QuerySortParser().parse(filters))
                     )
                 )
-            )
+            }
+            "aggregate", "aggregateStream" -> {
+                val expressions = mongoOpCall.argumentList.expressions
+                val collectionExpression = expressions.getOrNull(1)
+                return Node(
+                    mongoOpCall,
+                    listOf(
+                        sourceDialect,
+                        command,
+                        // MongoTemplate.aggregate accepts both Class and a string for specifying the
+                        // collection where the aggregation will run so we need to account for both
+                        // method signatures while extracting the collection
+                        //
+                        // Note: It is uncommon to have the class type parameter referenced as a variable
+                        // which is why we don't attempt to resolve the parameter as ClassType
+                        extractCollectionFromClassTypeParameter(collectionExpression).or(
+                            extractCollectionFromStringTypeParameter(collectionExpression)
+                        ),
+                        HasAggregation(
+                            children = AggregationStagesParser(
+                                stageParsers = aggregationStageParsers
+                            ).parse(mongoOpCall)
+                        )
+                    )
+                )
+            }
             else -> Node(
                 mongoOpCall!!,
                 listOf(
                     sourceDialect,
                     command,
                     inferredFromChain.or(
-                        extractCollectionFromParameter(
+                        extractCollectionFromClassTypeParameter(
                             mongoOpCall.argumentList.expressions.getOrNull(1)
                         )
                     ),
@@ -229,12 +304,11 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
     }
 
     override fun isReferenceToDatabase(source: PsiElement): Boolean {
-        return false // databases are in property files and we don't support AC there yet
+        return false // databases are in property files, and we don't support AC there yet
     }
 
     override fun isReferenceToCollection(source: PsiElement): Boolean {
-        val docAnnotation = source.parentOfType<PsiAnnotation>() ?: return false
-        return docAnnotation.hasQualifiedName(DOCUMENT_FQN)
+        return isInsideDocAnnotations(source) || isInsideOneOfAggregationFactoryMethod(source)
     }
 
     override fun isReferenceToField(source: PsiElement): Boolean {
@@ -261,7 +335,23 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                 }
         }
 
-        return isString && methodCall.isCriteriaExpression()
+        return isString &&
+            (
+                methodCall.isCriteriaExpression() ||
+                    methodCall.isSuitableForFieldAutoCompleteInAggregation(aggregationStageParsers)
+                )
+    }
+
+    private fun isInsideDocAnnotations(source: PsiElement): Boolean {
+        val docAnnotation = source.parentOfType<PsiAnnotation>() ?: return false
+        return docAnnotation.hasQualifiedName(DOCUMENT_FQN)
+    }
+
+    private fun isInsideOneOfAggregationFactoryMethod(source: PsiElement): Boolean {
+        val maybeNewAggregationCall = source.parentOfType<PsiMethodCallExpression>() ?: return false
+        val methodCall = maybeNewAggregationCall.fuzzyResolveMethod() ?: return false
+        return methodCall.containingClass?.qualifiedName == MONGO_TEMPLATE_FQN &&
+            (methodCall.name == "aggregate" || methodCall.name == "aggregateStream")
     }
 
     private fun parseFindById(
@@ -296,8 +386,15 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
 
         val valueFilterMethod = valueMethodCall.fuzzyResolveMethod() ?: return emptyList()
 
+        // clean up, we are in the chain where we attach a Sort, Pageable object, so we need to
+        // walk upwards in the chain to parse the actual filters
+        if (valueFilterMethod.name == "with") {
+            val actualMethod = valueMethodCall.firstChild?.firstChild as? PsiMethodCallExpression
+            return parseFilterRecursively(actualMethod)
+        }
+
         // clean up, we might be in a query() call
-        if (valueFilterMethod.name == "query") {
+        if (valueFilterMethod.name == "query" || valueFilterMethod.name == "of") {
             return parseFilterRecursively(valueMethodCall.argumentList.expressions.getOrNull(0))
         }
 
@@ -554,6 +651,13 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
 fun PsiMethodCallExpression.isCriteriaExpression(): Boolean {
     val method = fuzzyResolveMethod() ?: return false
     return method.containingClass?.qualifiedName == CRITERIA_CLASS_FQN
+}
+
+fun PsiMethodCallExpression.isSuitableForFieldAutoCompleteInAggregation(
+    parsers: List<StageParser>
+): Boolean {
+    val method = fuzzyResolveMethod() ?: return false
+    return parsers.any { it.isSuitableForFieldAutoComplete(this, method) }
 }
 
 private fun PsiMethodCallExpression.findSpringMongoDbExpression(): PsiMethodCallExpression? {

@@ -7,6 +7,7 @@ package com.mongodb.jbplugin.accessadapter.slice
 import com.mongodb.jbplugin.accessadapter.ExplainPlan
 import com.mongodb.jbplugin.accessadapter.MongoDbDriver
 import com.mongodb.jbplugin.mql.Node
+import com.mongodb.jbplugin.mql.QueryContext
 
 /**
  * Runs the explain plan of a query.
@@ -21,12 +22,15 @@ data class ExplainQuery(
      * @property query
      */
     data class Slice<S>(
-        val query: Node<S>
+        val query: Node<S>,
+        val queryContext: QueryContext,
     ) : com.mongodb.jbplugin.accessadapter.Slice<ExplainQuery> {
         override val id = "${javaClass.canonicalName}::$query"
 
         override suspend fun queryUsingDriver(from: MongoDbDriver): ExplainQuery {
-            val plan = runCatching { from.explain(query) }.getOrDefault(ExplainPlan.NotRun)
+            val plan = runCatching {
+                from.explain(query, queryContext)
+            }.getOrDefault(ExplainPlan.NotRun)
             return ExplainQuery(plan)
         }
     }

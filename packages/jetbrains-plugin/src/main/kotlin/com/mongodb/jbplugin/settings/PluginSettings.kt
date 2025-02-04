@@ -48,6 +48,7 @@ class PluginSettingsStateComponent : SimplePersistentStateComponent<PluginSettin
 class PluginSettings : BaseState(), Serializable {
     var isTelemetryEnabled by property(true)
     var hasTelemetryOptOutputNotificationBeenShown by property(false)
+    var isFullExplainPlanEnabled by property(false)
 }
 
 class SettingsDelegate<T>(private val settingProp: KMutableProperty0<T>) {

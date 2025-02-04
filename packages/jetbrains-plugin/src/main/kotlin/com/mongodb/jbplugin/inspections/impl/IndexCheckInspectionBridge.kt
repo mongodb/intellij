@@ -21,17 +21,26 @@ import com.mongodb.jbplugin.linting.IndexCheckWarning
 import com.mongodb.jbplugin.linting.IndexCheckingLinter
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.mql.Node
+import com.mongodb.jbplugin.mql.QueryContext
+import com.mongodb.jbplugin.observability.TelemetryEvent
+import com.mongodb.jbplugin.observability.probe.CreateIndexIntentionProbe
+import com.mongodb.jbplugin.observability.probe.InspectionStatusChangedProbe
+import com.mongodb.jbplugin.settings.pluginSetting
 import kotlinx.coroutines.CoroutineScope
 
-/**
- * @param coroutineScope
- */
-@Suppress("MISSING_KDOC_TOP_LEVEL")
 class IndexCheckInspectionBridge(coroutineScope: CoroutineScope) :
     AbstractMongoDbInspectionBridge(
         coroutineScope,
         IndexCheckLinterInspection,
-    )
+    ) {
+    override fun emitFinishedInspectionTelemetryEvent(problemsHolder: ProblemsHolder) {
+        val probe by service<InspectionStatusChangedProbe>()
+        probe.finishedProcessingInspections(
+            TelemetryEvent.InspectionStatusChangeEvent.InspectionType.FIELD_DOES_NOT_EXIST,
+            problemsHolder,
+        )
+    }
+}
 
 /**
  * This inspection object calls the linting engine and transforms the result so they can be rendered in the IntelliJ
@@ -45,17 +54,29 @@ internal object IndexCheckLinterInspection : MongoDbInspection {
         query: Node<PsiElement>,
         formatter: DialectFormatter,
     ) {
+        val isFullExplainPlanEnabled by pluginSetting { ::isFullExplainPlanEnabled }
+
         if (dataSource == null || !dataSource.isConnected()) {
             return
         }
 
+        val queryContext = QueryContext(
+            emptyMap(),
+            if (isFullExplainPlanEnabled) {
+                QueryContext.ExplainPlanType.FULL
+            } else {
+                QueryContext.ExplainPlanType.SAFE
+            },
+            prettyPrint = false
+        )
+
         val readModelProvider by query.source.project.service<DataGripBasedReadModelProvider>()
-        val result =
-            IndexCheckingLinter.lintQuery(
-                dataSource,
-                readModelProvider,
-                query,
-            )
+        val result = IndexCheckingLinter.lintQuery(
+            dataSource,
+            readModelProvider,
+            query,
+            queryContext
+        )
 
         result.warnings.forEach {
             when (it) {
@@ -75,6 +96,12 @@ internal object IndexCheckLinterInspection : MongoDbInspection {
             "inspection.index.checking.error.query.not.covered.by.index",
         )
 
+        val probe by service<InspectionStatusChangedProbe>()
+        probe.inspectionChanged(
+            TelemetryEvent.InspectionStatusChangeEvent.InspectionType.QUERY_NOT_COVERED_BY_INDEX,
+            query
+        )
+
         problems.registerProblem(
             query.source,
             problemDescription,
@@ -86,6 +113,9 @@ internal object IndexCheckLinterInspection : MongoDbInspection {
                 ),
                 localDataSource
             ) {
+                val createIndexClicked by query.source.project.service<CreateIndexIntentionProbe>()
+                createIndexClicked.intentionClicked(query)
+
                 MongoshDialect.formatter.indexCommandForQuery(query)
             }
         )

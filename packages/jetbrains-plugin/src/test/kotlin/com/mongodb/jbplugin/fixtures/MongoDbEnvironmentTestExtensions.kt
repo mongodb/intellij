@@ -15,6 +15,7 @@ import com.mongodb.jbplugin.accessadapter.MongoDbDriver
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
 import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.Node
+import com.mongodb.jbplugin.mql.QueryContext
 import kotlinx.coroutines.withTimeout
 import org.bson.Document
 import org.bson.conversions.Bson
@@ -142,7 +143,7 @@ internal class DirectMongoDbDriver(
 
     override suspend fun connectionString(): ConnectionString = ConnectionString(uri)
 
-    override suspend fun <S> explain(query: Node<S>): ExplainPlan {
+    override suspend fun <S> explain(query: Node<S>, queryContext: QueryContext): ExplainPlan {
         throw UnsupportedOperationException()
     }
 

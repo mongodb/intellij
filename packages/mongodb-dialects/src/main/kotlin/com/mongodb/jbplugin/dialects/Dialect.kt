@@ -8,6 +8,7 @@ package com.mongodb.jbplugin.dialects
 
 import com.mongodb.jbplugin.mql.BsonType
 import com.mongodb.jbplugin.mql.Node
+import com.mongodb.jbplugin.mql.QueryContext
 
 /**
  * Represents the dialect itself, S is the input type of the dialect. It's an opaque type,
@@ -102,7 +103,7 @@ sealed interface OutputQuery {
  * for a user given the Dialect.
  */
 interface DialectFormatter {
-    fun <S> formatQuery(query: Node<S>, explain: Boolean): OutputQuery
+    suspend fun <S> formatQuery(query: Node<S>, queryContext: QueryContext): OutputQuery
     fun <S> indexCommandForQuery(query: Node<S>): String
     fun formatType(type: BsonType): String
 }

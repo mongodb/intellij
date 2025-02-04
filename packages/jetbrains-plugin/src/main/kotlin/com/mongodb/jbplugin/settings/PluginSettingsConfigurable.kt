@@ -30,13 +30,16 @@ class PluginSettingsConfigurable : Configurable {
     override fun isModified(): Boolean {
         val savedSettings by service<PluginSettingsStateComponent>()
         return settingsComponent.isTelemetryEnabledCheckBox.isSelected !=
-            savedSettings.state.isTelemetryEnabled
+            savedSettings.state.isTelemetryEnabled ||
+            settingsComponent.enableFullExplainPlan.isSelected !=
+            savedSettings.state.isFullExplainPlanEnabled
     }
 
     override fun apply() {
         val savedSettings by service<PluginSettingsStateComponent>()
         savedSettings.state.apply {
             isTelemetryEnabled = settingsComponent.isTelemetryEnabledCheckBox.isSelected
+            isFullExplainPlanEnabled = settingsComponent.enableFullExplainPlan.isSelected
         }
     }
 
@@ -44,6 +47,8 @@ class PluginSettingsConfigurable : Configurable {
         val savedSettings by service<PluginSettingsStateComponent>()
         settingsComponent.isTelemetryEnabledCheckBox.isSelected =
             savedSettings.state.isTelemetryEnabled
+        settingsComponent.enableFullExplainPlan.isSelected =
+            savedSettings.state.isFullExplainPlanEnabled
     }
 
     override fun getDisplayName() = SettingsMessages.message("settings.display-name")
@@ -56,15 +61,29 @@ private class PluginSettingsComponent {
     val root: JPanel
     val isTelemetryEnabledCheckBox =
         JBCheckBox(TelemetryMessages.message("settings.telemetry-collection-checkbox"))
+    val enableFullExplainPlan =
+        JBCheckBox(TelemetryMessages.message("settings.full-explain-plan-checkbox"))
     val privacyPolicyButton = JButton(TelemetryMessages.message("action.view-privacy-policy"))
+    val evaluateOperationPerformanceButton =
+        JButton(TelemetryMessages.message("settings.view-full-explain-plan-documentation"))
 
     init {
         privacyPolicyButton.addActionListener {
             BrowserUtil.browse(TelemetryMessages.message("settings.telemetry-privacy-policy"))
         }
 
+        evaluateOperationPerformanceButton.addActionListener {
+            BrowserUtil.browse(
+                TelemetryMessages.message("settings.full-explain-plan-documentation")
+            )
+        }
+
         root =
             FormBuilder.createFormBuilder()
+                .addComponent(enableFullExplainPlan)
+                .addTooltip(TelemetryMessages.message("settings.full-explain-plan-tooltip"))
+                .addComponent(evaluateOperationPerformanceButton)
+                .addSeparator()
                 .addComponent(isTelemetryEnabledCheckBox)
                 .addTooltip(TelemetryMessages.message("settings.telemetry-collection-tooltip"))
                 .addComponent(privacyPolicyButton)
@@ -73,5 +92,6 @@ private class PluginSettingsComponent {
 
         root.accessibleContext.accessibleName = "MongoDB Settings"
         isTelemetryEnabledCheckBox.accessibleContext.accessibleName = "MongoDB Enable Telemetry"
+        enableFullExplainPlan.accessibleContext.accessibleName = "MongoDB Enable Full Explain Plan"
     }
 }

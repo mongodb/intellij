@@ -7,7 +7,7 @@
 package com.mongodb.jbplugin.observability
 
 import com.google.common.base.Objects
-import com.mongodb.jbplugin.dialects.Dialect
+import com.mongodb.jbplugin.mql.components.HasSourceDialect
 import org.intellij.lang.annotations.Pattern
 import org.jetbrains.annotations.Nls
 
@@ -37,6 +37,20 @@ enum class TelemetryProperty(
     AUTOCOMPLETE_TYPE("ac_type"),
     AUTOCOMPLETE_COUNT("ac_count"),
     COMMAND("command"),
+    CONSOLE("console"),
+    TRIGGER_LOCATION("trigger_location"),
+    SIGNAL_TYPE("signal_type"),
+    INSPECTION_TYPE("inspection_type"),
+    ERROR_FIELD_TYPE("error_field_type"),
+    ACTUAL_ERROR_TYPE("actual_field_type"),
+    ERROR_STATUS("error_status")
+}
+
+enum class SignalType(
+    @Pattern("[a-z_]+")
+    val publicName: String
+) {
+    MISSING_INDEX("missing_index")
 }
 
 /**
@@ -168,7 +182,7 @@ sealed class TelemetryEvent(
      * @param count
      */
     class AutocompleteGroupEvent(
-        dialect: Dialect<*, *>,
+        dialect: HasSourceDialect.DialectName,
         autocompleteType: String,
         command: String,
         count: Int,
@@ -176,10 +190,77 @@ sealed class TelemetryEvent(
         name = "AutocompleteSelected",
         properties =
         mapOf(
-            TelemetryProperty.DIALECT to dialect.javaClass.simpleName,
+            TelemetryProperty.DIALECT to dialect.name.lowercase(),
             TelemetryProperty.AUTOCOMPLETE_TYPE to autocompleteType,
             TelemetryProperty.COMMAND to command,
             TelemetryProperty.AUTOCOMPLETE_COUNT to count,
         ),
     )
+
+    class QueryRunEvent(
+        dialect: HasSourceDialect.DialectName,
+        console: Console,
+        triggerLocation: TriggerLocation,
+    ) : TelemetryEvent(
+        name = "QueryRun",
+        properties =
+        mapOf(
+            TelemetryProperty.DIALECT to dialect.name.lowercase(),
+            TelemetryProperty.CONSOLE to console.name.lowercase(),
+            TelemetryProperty.TRIGGER_LOCATION to triggerLocation.name.lowercase(),
+        )
+    ) {
+        enum class Console {
+            NEW,
+            EXISTING
+        }
+
+        enum class TriggerLocation {
+            GUTTER,
+            CONTEXT_MENU
+        }
+    }
+
+    class CreateIndexIntentionEvent(
+        dialect: HasSourceDialect.DialectName
+    ) : TelemetryEvent(
+        name = "CreateIndex",
+        properties =
+        mapOf(
+            TelemetryProperty.DIALECT to dialect.name.lowercase(),
+            TelemetryProperty.SIGNAL_TYPE to SignalType.MISSING_INDEX.publicName,
+        )
+    )
+
+    class InspectionStatusChangeEvent(
+        dialect: HasSourceDialect.DialectName,
+        inspectionType: InspectionType,
+        inspectionStatus: InspectionStatus,
+        actualFieldType: String?,
+        expectedFieldType: String?,
+    ) : TelemetryEvent(
+        name = "Inspection",
+        properties =
+        mapOf(
+            TelemetryProperty.DIALECT to dialect.name.lowercase(),
+            TelemetryProperty.INSPECTION_TYPE to inspectionType.name.lowercase(),
+            TelemetryProperty.ERROR_STATUS to inspectionStatus.name.lowercase(),
+            TelemetryProperty.ERROR_FIELD_TYPE to (actualFieldType ?: "<none>"),
+            TelemetryProperty.ACTUAL_ERROR_TYPE to (expectedFieldType ?: "<none>"),
+        )
+    ) {
+        enum class InspectionType {
+            FIELD_DOES_NOT_EXIST,
+            TYPE_MISMATCH,
+            QUERY_NOT_COVERED_BY_INDEX,
+            NO_NAMESPACE_INFERRED,
+            COLLECTION_DOES_NOT_EXIST,
+            DATABASE_DOES_NOT_EXIST
+        }
+
+        enum class InspectionStatus {
+            ACTIVE,
+            RESOLVED
+        }
+    }
 }

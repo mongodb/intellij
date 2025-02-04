@@ -2,8 +2,10 @@ package com.mongodb.jbplugin.editor
 
 import com.intellij.codeInsight.daemon.impl.EditorTracker
 import com.intellij.database.dataSource.LocalDataSource
+import com.intellij.database.editor.DatabaseEditorHelper
 import com.intellij.database.util.DbUIUtil
 import com.intellij.database.vfs.DbVFSUtils
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
@@ -14,19 +16,28 @@ import com.intellij.psi.PsiManager
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
 
 object DatagripConsoleEditor {
+    fun isThereAnEditorForDataSource(dataSource: LocalDataSource?): Boolean {
+        if (dataSource == null) {
+            return false
+        }
+
+        return ApplicationManager.getApplication().runReadAction<Boolean> {
+            DatabaseEditorHelper.getConsoleVirtualFile(dataSource) != null
+        }
+    }
+
     fun openConsoleForDataSource(project: Project, dataSource: LocalDataSource): Editor? {
         if (!dataSource.isConnected()) {
             return null
         }
 
         var activeEditor = allConsoleEditorsForDataSource(project, dataSource).firstOrNull()
+        if (activeEditor != null) {
+            val currentFile = PsiDocumentManager.getInstance(project)
+                .getPsiFile(activeEditor.document)!!.virtualFile
 
-        activeEditor?.let {
-            val currentFile = PsiDocumentManager.getInstance(
-                project
-            ).getPsiFile(it.document)!!.virtualFile
             FileEditorManager.getInstance(project).openFile(currentFile, true)
-        } ?: run {
+        } else {
             activeEditor = openNewEmptyEditorForDataSource(project, dataSource)
         }
 

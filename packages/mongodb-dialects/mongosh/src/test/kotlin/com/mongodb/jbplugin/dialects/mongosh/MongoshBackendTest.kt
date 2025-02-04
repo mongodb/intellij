@@ -3,6 +3,8 @@ package com.mongodb.jbplugin.dialects.mongosh
 import com.mongodb.jbplugin.dialects.mongosh.backend.DefaultContext
 import com.mongodb.jbplugin.dialects.mongosh.backend.MongoshBackend
 import com.mongodb.jbplugin.mql.*
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.bson.types.ObjectId
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -11,11 +13,11 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.math.BigDecimal
 import java.math.BigInteger
-import java.util.*
+import java.time.LocalDateTime
 
 class MongoshBackendTest {
     @Test
-    fun `generates a valid find query`() {
+    fun `generates a valid find query`() = runTest {
         assertGeneratedJs(
             """
             db.getSiblingDB("myDb").getCollection("myColl").find({"field": 1})
@@ -35,7 +37,7 @@ class MongoshBackendTest {
     }
 
     @Test
-    fun `generates a valid query with runtime parameters`() {
+    fun `generates a valid query with runtime parameters`() = runTest {
         assertGeneratedJs(
             """
             var myColl = ""
@@ -46,20 +48,20 @@ class MongoshBackendTest {
             """.trimIndent()
         ) {
             emitDbAccess()
-            emitDatabaseAccess(registerVariable("myDb", BsonString))
-            emitCollectionAccess(registerVariable("myColl", BsonString))
+            emitDatabaseAccess(registerVariable("myDb", BsonString, null))
+            emitCollectionAccess(registerVariable("myColl", BsonString, null))
             emitFunctionName("find")
             emitFunctionCall(long = false, {
                 emitObjectStart()
                 emitObjectKey(registerConstant("field"))
-                emitContextValue(registerVariable("myValue", BsonString))
+                emitContextValue(registerVariable("myValue", BsonString, null))
                 emitObjectEnd()
             })
         }
     }
 
     @Test
-    fun `generates a valid update query`() {
+    fun `generates a valid update query`() = runTest {
         assertGeneratedJs(
             """
             var myColl = ""
@@ -70,13 +72,13 @@ class MongoshBackendTest {
             """.trimIndent()
         ) {
             emitDbAccess()
-            emitDatabaseAccess(registerVariable("myDb", BsonString))
-            emitCollectionAccess(registerVariable("myColl", BsonString))
+            emitDatabaseAccess(registerVariable("myDb", BsonString, null))
+            emitCollectionAccess(registerVariable("myColl", BsonString, null))
             emitFunctionName("update")
             emitFunctionCall(long = false, {
                 emitObjectStart()
                 emitObjectKey(registerConstant("field"))
-                emitContextValue(registerVariable("myValue", BsonString))
+                emitContextValue(registerVariable("myValue", BsonString, null))
                 emitObjectEnd()
             }, {
                 emitObjectStart()
@@ -89,7 +91,7 @@ class MongoshBackendTest {
 
     @ParameterizedTest
     @MethodSource("bsonValues")
-    fun `generates a valid bson object given a value`(testCase: Pair<Any, String>) {
+    fun `generates a valid bson object given a value`(testCase: Pair<Any, String>) = runBlocking {
         val (value, expected) = testCase
         assertGeneratedJs(
             expected
@@ -102,7 +104,7 @@ class MongoshBackendTest {
     @MethodSource("bsonTypes")
     fun `generates a valid default object given the type of the value`(
         testCase: Pair<BsonType, String>
-    ) {
+    ) = runTest {
         val (type, expected) = testCase
         assertGeneratedJs(
             """
@@ -111,7 +113,7 @@ class MongoshBackendTest {
                 arg
             """.trimIndent()
         ) {
-            emitContextValue(registerVariable("arg", type))
+            emitContextValue(registerVariable("arg", type, null))
         }
     }
 
@@ -121,12 +123,13 @@ class MongoshBackendTest {
             1 to "1",
             1.5 to "1.5",
             "myString" to "\"myString\"",
-            Date() to "ISODate()",
+            LocalDateTime.of(2000, 5, 10, 5, 0) to "ISODate(\"2000-05-10T05:00:00\")",
             BigInteger("5234") to "Decimal128(\"5234\")",
             BigDecimal("5234.5234") to "Decimal128(\"5234.5234\")",
             true to "true",
             ObjectId("66e02569aa5b362fa36f2416") to "ObjectId(\"66e02569aa5b362fa36f2416\")",
-            listOf(1, 2.2, Date()) to "[1, 2.2, ISODate()]",
+            listOf(1, 2.2, LocalDateTime.of(2000, 5, 10, 5, 0)) to
+                "[1, 2.2, ISODate(\"2000-05-10T05:00:00\")]",
             mapOf("a" to "1", "b" to 2) to "{\"a\": \"1\", \"b\": 2}",
             SomeObject(1, "2") to "{}", // we won't serialize unknown objects
         )
@@ -138,7 +141,7 @@ class MongoshBackendTest {
             BsonAnyOf(BsonNull, BsonString, BsonInt64) to "\"\"",
             BsonArray(BsonAny) to "[]",
             BsonBoolean to "false",
-            BsonDate to "ISODate(\"2009-02-11T18:00:00.000Z\")",
+            BsonDate to "ISODate(\"2009-02-11T18:00:00\")",
             BsonDecimal128 to "Decimal128(\"0\")",
             BsonDouble to "0.0",
             BsonInt32 to "0",
@@ -153,11 +156,11 @@ class MongoshBackendTest {
     }
 }
 
-private fun assertGeneratedJs(
+private suspend fun assertGeneratedJs(
     @Language(
         "js"
     ) js: String,
-    script: MongoshBackend.() -> MongoshBackend
+    script: suspend MongoshBackend.() -> MongoshBackend
 ) {
     val generated = script(MongoshBackend(DefaultContext())).computeOutput()
     assertEquals(js, generated)

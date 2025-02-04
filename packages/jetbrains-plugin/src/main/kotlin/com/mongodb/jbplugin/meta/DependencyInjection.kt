@@ -50,16 +50,17 @@ private val asyncStatusRefreshScope = Dispatchers.IO.limitedParallelism(1)
 class AsyncState<E : Any, T : Any>(
     parent: Disposable,
     private val sharedFlow: SharedFlow<E>,
-    private val accessor: E.() -> T,
+    private val accessor: (E, T) -> T,
     private val onChange: suspend T.() -> Unit,
+    defaultValue: T
 ) : Disposable {
-    private lateinit var state: T
+    private var state: T = defaultValue
     private val scope: CoroutineScope = CoroutineScope(asyncStatusRefreshScope)
 
     init {
         scope.launchChildBackground {
             sharedFlow.collectLatest {
-                val newState = it.accessor()
+                val newState = accessor(it, state)
                 if (state != newState) {
                     state = newState
                     scope.launchChildBackground {
@@ -123,13 +124,14 @@ class AsyncState<E : Any, T : Any>(
 fun <E : Any, T : Any> SharedFlow<E>.latest(
     parent: Disposable = ProjectManager.getInstance().openProjects.firstOrNull()
         ?: ApplicationManager.getApplication(),
-    onNewState: E.() -> T,
-    onChange: suspend T.() -> Unit = {}
-
+    onNewEvent: (E, T) -> T,
+    onChange: suspend T.() -> Unit = {},
+    defaultValue: T
 ): AsyncState<E, T> =
     AsyncState(
         parent,
         this,
-        onNewState,
-        onChange
+        onNewEvent,
+        onChange,
+        defaultValue
     )
