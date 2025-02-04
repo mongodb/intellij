@@ -44,6 +44,18 @@ class DataGripBasedReadModelProvider(
 
     @VisibleForTesting
     internal var wasCached: Boolean = false
+
+    /**
+     * LocalDataSource implements ModificationTracker, which is a mechanism by which a consumer
+     * of the data source can detect if the metadata of the LocalDataSource has changed. This
+     * modification is similar to a versioning system, it contains a Long value that contains
+     * the current version, and on each change it just increases by 1.
+     *
+     * We are using the `modificationCount` as a modification stamp: if the modification count
+     * did not change *and we already have a result from that slice* we can just return the cached
+     * result. Otherwise, we call the slice and store the current modificationCount along with the
+     * result of the query.
+     */
     private val cachedValues: ConcurrentMap<String, Pair<Long, *>> = ConcurrentHashMap()
 
     override fun <T : Any> slice(
