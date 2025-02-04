@@ -5,7 +5,9 @@
 
 This specification documents the structure of an MQL Component from a mixed perspective of both
 the original source code and the target server that might run the query. It is primarily aimed
-to provide developers of dialects and linters a common and flexible structure for code processing.
+to provide developers of [dialects](/packages/mongodb-mql-model/src/docs/md/mql-dialect/mql-dialect.md)
+and [engines](/packages/mongodb-mql-model/src/docs/md/mql-engine/mql-engine.md) a common and 
+flexible structure for query processing.
 
 ## META
 
