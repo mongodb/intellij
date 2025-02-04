@@ -58,6 +58,10 @@ data class Node<S>(
 
     inline fun <reified C : Component> components(): List<C> = components.filterIsInstance<C>()
 
+    fun with(component: Component): Node<S> {
+        return copy(components = components + component)
+    }
+
     fun componentsWithChildren(): List<HasChildren<S>> = components.filterIsInstance<HasChildren<S>>()
 
     inline fun <reified C : Component> hasComponent(): Boolean = component<C>() != null
@@ -106,22 +110,17 @@ data class Node<S>(
  */
 data class QueryContext(
     val expansions: Map<String, LocalVariable>,
-    val explainPlan: ExplainPlanType,
     val prettyPrint: Boolean,
+    val automaticallyRun: Boolean
 ) {
     data class AsIs(val value: String) {
         val isEmpty = value.isBlank()
     }
 
     data class LocalVariable(val type: BsonType, val defaultValue: Any?)
-    enum class ExplainPlanType {
-        NONE,
-        SAFE,
-        FULL
-    }
 
     companion object {
-        fun empty(prettyPrint: Boolean = false): QueryContext =
-            QueryContext(emptyMap(), ExplainPlanType.NONE, prettyPrint)
+        fun empty(prettyPrint: Boolean = false, automaticallyRun: Boolean = false): QueryContext =
+            QueryContext(emptyMap(), prettyPrint, automaticallyRun)
     }
 }

@@ -10,7 +10,6 @@ import com.intellij.database.dataSource.DatabaseConnectionManager
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.database.dataSource.connection.ConnectionRequestor
 import com.intellij.database.run.ConsoleRunConfiguration
-import com.intellij.openapi.application.readAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
@@ -42,7 +41,6 @@ import java.util.*
 import kotlin.reflect.KClass
 import kotlin.reflect.cast
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
 
 private const val TIMEOUT = 5
 
@@ -117,43 +115,6 @@ internal class DataGripMongoDbDriver(
         } else {
             QueryResult.Run(result as T)
         }
-    }
-
-    override suspend fun <S> explain(query: Node<S>, queryContext: QueryContext): ExplainPlan = withContext(
-        Dispatchers.IO
-    ) {
-
-        val queryScript = readAction {
-            runBlocking { MongoshDialect.formatter.formatQuery(query, queryContext) }
-        }
-
-        if (queryScript !is OutputQuery.CanBeRun) {
-            return@withContext ExplainPlan.NotRun
-        }
-
-        val explainPlanBson = runQueryScript(
-            queryScript.query,
-            Map::class,
-            timeout = 1.seconds
-        ).firstOrNull() as? Map<String, Any>
-
-        explainPlanBson ?: return@withContext ExplainPlan.NotRun
-
-        val queryPlanner =
-            explainPlanBson["queryPlanner"] as? Map<String, Any>
-                ?: return@withContext ExplainPlan.NotRun
-        val winningPlan =
-            queryPlanner["winningPlan"] as? Map<String, Any>
-                ?: return@withContext ExplainPlan.NotRun
-
-        planByMappingStage(
-            winningPlan,
-            mapOf(
-                "COLLSCAN" to ExplainPlan.CollectionScan,
-                "IXSCAN" to ExplainPlan.IndexScan,
-                "IDHACK" to ExplainPlan.IndexScan
-            )
-        ) ?: ExplainPlan.NotRun
     }
 
     override suspend fun <T : Any> runCommand(

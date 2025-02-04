@@ -3,18 +3,9 @@ package com.mongodb.jbplugin.accessadapter.datagrip.adapter
 import com.google.gson.Gson
 import com.intellij.database.dataSource.DatabaseDriver
 import com.intellij.database.dataSource.LocalDataSource
-import com.mongodb.jbplugin.accessadapter.ExplainPlan
 import com.mongodb.jbplugin.accessadapter.MongoDbDriver
 import com.mongodb.jbplugin.accessadapter.datagrip.IntegrationTest
 import com.mongodb.jbplugin.accessadapter.datagrip.MongoDbVersion
-import com.mongodb.jbplugin.mql.BsonString
-import com.mongodb.jbplugin.mql.Namespace
-import com.mongodb.jbplugin.mql.Node
-import com.mongodb.jbplugin.mql.QueryContext
-import com.mongodb.jbplugin.mql.components.HasCollectionReference
-import com.mongodb.jbplugin.mql.components.HasFieldReference
-import com.mongodb.jbplugin.mql.components.HasFilter
-import com.mongodb.jbplugin.mql.components.HasValueReference
 import kotlinx.coroutines.test.runTest
 import org.bson.Document
 import org.bson.types.ObjectId
@@ -117,104 +108,6 @@ class DataGripMongoDbDriverTest {
             )
 
         assertEquals(result.version, version.versionString)
-    }
-
-    @Test
-    fun `it is able to run an explain plan given a query and returns a collscan if no index available`(
-        driver: MongoDbDriver,
-    ) = runTest {
-        val namespace = Namespace("myDb", "myCollection")
-
-        val query = Node(
-            Unit,
-            listOf(
-                HasCollectionReference(HasCollectionReference.Known(Unit, Unit, namespace)),
-                HasFilter(
-                    listOf(
-                        Node(
-                            Unit,
-                            listOf(
-                                HasFieldReference(HasFieldReference.FromSchema(Unit, "myField")),
-                                HasValueReference(
-                                    HasValueReference.Constant(Unit, "myVal", BsonString)
-                                ),
-                            )
-                        )
-                    )
-                )
-            )
-        )
-
-        driver.runCommand(
-            namespace.database,
-            Document(
-                mapOf(
-                    "insert" to namespace.collection,
-                    "documents" to
-                        listOf(
-                            mapOf("a" to 1),
-                        ),
-                ),
-            ),
-            Unit::class,
-        )
-
-        val explainPlanResult = driver.explain(
-            query,
-            QueryContext(emptyMap(), QueryContext.ExplainPlanType.SAFE, false)
-        )
-        assertEquals(ExplainPlan.CollectionScan, explainPlanResult)
-    }
-
-    @Test
-    fun `it is able to run an explain plan given a query and returns a indexscan if an index available`(
-        driver: MongoDbDriver,
-    ) = runTest {
-        val namespace = Namespace("myDb", "myCollection")
-
-        driver.runCommand(
-            namespace.database,
-            Document(
-                mapOf(
-                    "createIndexes" to namespace.collection,
-                    "indexes" to arrayOf(
-                        Document(
-                            mapOf(
-                                "key" to Document("myField", 1),
-                                "name" to "myField_1"
-                            )
-                        )
-                    )
-                )
-            ),
-            Unit::class
-        )
-
-        val query = Node(
-            Unit,
-            listOf(
-                HasCollectionReference(HasCollectionReference.Known(Unit, Unit, namespace)),
-                HasFilter(
-                    listOf(
-                        Node(
-                            Unit,
-                            listOf(
-                                HasFieldReference(HasFieldReference.FromSchema(Unit, "myField")),
-                                HasValueReference(
-                                    HasValueReference.Constant(Unit, "myVal", BsonString)
-                                ),
-                            )
-                        )
-                    )
-                )
-            )
-        )
-
-        val explainPlanResult = driver.explain(
-            query,
-            QueryContext(emptyMap(), QueryContext.ExplainPlanType.SAFE, false)
-        )
-        assertEquals(ExplainPlan.IndexScan, explainPlanResult)
     }
 
     @ParameterizedTest

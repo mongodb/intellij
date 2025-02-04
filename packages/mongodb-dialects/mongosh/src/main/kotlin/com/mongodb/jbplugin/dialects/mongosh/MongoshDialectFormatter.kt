@@ -17,6 +17,8 @@ import com.mongodb.jbplugin.mql.BsonType
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.QueryContext
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
+import com.mongodb.jbplugin.mql.components.HasExplain
+import com.mongodb.jbplugin.mql.components.HasExplain.ExplainPlanType
 import com.mongodb.jbplugin.mql.components.HasTargetCluster
 import com.mongodb.jbplugin.mql.components.IsCommand
 import io.github.z4kn4fein.semver.Version
@@ -29,18 +31,22 @@ object MongoshDialectFormatter : DialectFormatter {
         queryContext: QueryContext,
     ): OutputQuery {
         val isAggregate = query.isAggregate()
+        val explainPlan = query.component<HasExplain>()?.explainType ?: ExplainPlanType.NONE
 
-        val outputString = MongoshBackend(prettyPrint = queryContext.prettyPrint)
+        val outputString = MongoshBackend(
+            prettyPrint = queryContext.prettyPrint,
+            automaticallyRun = queryContext.automaticallyRun
+        )
             .applyQueryExpansions(queryContext)
             .apply {
                 emitDbAccess()
                 emitCollectionReference(query.component<HasCollectionReference<S>>())
-                if (queryContext.explainPlan != QueryContext.ExplainPlanType.NONE) {
+                if (explainPlan != ExplainPlanType.NONE) {
                     emitFunctionName("explain")
                     emitFunctionCall(long = false, {
                         // https://www.mongodb.com/docs/manual/reference/command/explain/#command-fields
-                        when (queryContext.explainPlan) {
-                            QueryContext.ExplainPlanType.FULL -> emitStringLiteral("executionStats")
+                        when (explainPlan) {
+                            ExplainPlanType.FULL -> emitStringLiteral("executionStats")
                             else -> emitStringLiteral("queryPlanner")
                         }
                     })
@@ -54,7 +60,7 @@ object MongoshDialectFormatter : DialectFormatter {
                     emitFunctionName(query.component<IsCommand>()?.type?.canonical ?: "find")
                 }
                 if (query.canUpdateDocuments() &&
-                    queryContext.explainPlan == QueryContext.ExplainPlanType.NONE
+                    explainPlan == ExplainPlanType.NONE
                 ) {
                     emitFunctionCall(long = true, {
                         emitQueryFilter(query, firstCall = true)
@@ -64,7 +70,7 @@ object MongoshDialectFormatter : DialectFormatter {
                 } else {
                     emitFunctionCall(long = true, {
                         if (query.isAggregate()) {
-                            emitAggregateBody(query, queryContext)
+                            emitAggregateBody(query, explainPlan)
                         } else {
                             emitQueryFilter(query, firstCall = true)
                         }
@@ -74,9 +80,7 @@ object MongoshDialectFormatter : DialectFormatter {
                 if (query.returnsACursor()) {
                     emitSort(query)
                     emitLimit(query)
-                    if (queryContext.explainPlan == QueryContext.ExplainPlanType.NONE &&
-                        !prettyPrint
-                    ) {
+                    if (explainPlan == ExplainPlanType.NONE && !prettyPrint) {
                         emitPropertyAccess()
                         emitFunctionName("toArray")
                         emitFunctionCall()

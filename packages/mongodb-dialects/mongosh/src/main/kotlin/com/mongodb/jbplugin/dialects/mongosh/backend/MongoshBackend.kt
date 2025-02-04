@@ -22,6 +22,7 @@ private const val MONGODB_FIRST_RELEASE = "2009-02-11T18:00:00.000Z"
 class MongoshBackend(
     private val context: Context = DefaultContext(),
     val prettyPrint: Boolean = false,
+    val automaticallyRun: Boolean = false,
     private val paddingSpaces: Int = 2
 ) : Context by context {
     private val output: StringBuilder = StringBuilder()
@@ -135,12 +136,19 @@ class MongoshBackend(
     }
 
     fun computeOutput(): String {
-        val preludeBackend = MongoshBackend(context, prettyPrint, paddingSpaces)
+        val preludeBackend =
+            MongoshBackend(context, prettyPrint, automaticallyRun = false, paddingSpaces)
         preludeBackend.variableList().sortedBy { it.name }.forEach {
             preludeBackend.emitVariableDeclaration(it.name, it.type, it.value)
         }
 
         val prelude = preludeBackend.output.toString()
+
+        // if we are forced to run this query, wrap it into a function and call itself
+        if (automaticallyRun) {
+            return "(function () { ${prelude.replace('\n', ';')} return $output; })();"
+        }
+
         return (prelude + "\n" + output.toString()).trim()
     }
 

@@ -89,6 +89,35 @@ class MongoshBackendTest {
         }
     }
 
+    @Test
+    fun `generates valid scripts that can be run in an expression context`() = runTest {
+        val backend = MongoshBackend(DefaultContext(), automaticallyRun = true).apply {
+            emitDbAccess()
+            emitDatabaseAccess(registerVariable("myDb", BsonString, null))
+            emitCollectionAccess(registerVariable("myColl", BsonString, null))
+            emitFunctionName("update")
+            emitFunctionCall(long = false, {
+                emitObjectStart()
+                emitObjectKey(registerConstant("field"))
+                emitContextValue(registerVariable("myValue", BsonString, null))
+                emitObjectEnd()
+            }, {
+                emitObjectStart()
+                emitObjectKey(registerConstant("myUpdate"))
+                emitContextValue(registerConstant(1))
+                emitObjectEnd()
+            })
+        }
+
+        val output = backend.computeOutput()
+        assertEquals(
+            """
+            (function () { var myColl = "";var myDb = "";var myValue = ""; return db.getSiblingDB(myDb).getCollection(myColl).update({"field": myValue}, {"myUpdate": 1}); })();
+            """.trimIndent(),
+            output
+        )
+    }
+
     @ParameterizedTest
     @MethodSource("bsonValues")
     fun `generates a valid bson object given a value`(testCase: Pair<Any, String>) = runBlocking {

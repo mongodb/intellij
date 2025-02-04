@@ -25,6 +25,14 @@ public class JavaDriverRepository {
         this.client = client;
     }
 
+    public Document notIndexedQuery(String string) {
+        return client
+            .getDatabase("sample_mflix")
+            .getCollection("movies")
+            .find(Filters.eq("directors", string))
+            .first();
+    }
+
     public Document randomQuery(
         String string,
         Date date,

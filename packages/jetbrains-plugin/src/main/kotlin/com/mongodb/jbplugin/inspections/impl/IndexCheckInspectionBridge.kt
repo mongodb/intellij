@@ -22,6 +22,8 @@ import com.mongodb.jbplugin.linting.IndexCheckingLinter
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.QueryContext
+import com.mongodb.jbplugin.mql.components.HasExplain
+import com.mongodb.jbplugin.mql.components.HasExplain.ExplainPlanType
 import com.mongodb.jbplugin.observability.TelemetryEvent
 import com.mongodb.jbplugin.observability.probe.CreateIndexIntentionProbe
 import com.mongodb.jbplugin.observability.probe.InspectionStatusChangedProbe
@@ -60,13 +62,14 @@ internal object IndexCheckLinterInspection : MongoDbInspection {
             return
         }
 
+        val explainPlanType = if (isFullExplainPlanEnabled) {
+            ExplainPlanType.FULL
+        } else {
+            ExplainPlanType.SAFE
+        }
+
         val queryContext = QueryContext(
             emptyMap(),
-            if (isFullExplainPlanEnabled) {
-                QueryContext.ExplainPlanType.FULL
-            } else {
-                QueryContext.ExplainPlanType.SAFE
-            },
             prettyPrint = false
         )
 
@@ -74,7 +77,7 @@ internal object IndexCheckLinterInspection : MongoDbInspection {
         val result = IndexCheckingLinter.lintQuery(
             dataSource,
             readModelProvider,
-            query,
+            query.with(HasExplain(explainPlanType)),
             queryContext
         )
 

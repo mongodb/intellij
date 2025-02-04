@@ -5,6 +5,7 @@ import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.QueryContext
 import com.mongodb.jbplugin.mql.components.*
+import com.mongodb.jbplugin.mql.components.HasExplain.ExplainPlanType
 import kotlinx.coroutines.test.runTest
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -56,7 +57,7 @@ class MongoshDialectFormatterTest {
             
             db.getSiblingDB(database).getCollection(collection).explain("queryPlanner").find({"myField": "myVal", })
             """.trimIndent(),
-            explain = QueryContext.ExplainPlanType.SAFE
+            explain = ExplainPlanType.SAFE
         ) {
             Node(
                 Unit,
@@ -90,7 +91,7 @@ class MongoshDialectFormatterTest {
             
             db.getSiblingDB(database).getCollection(collection).explain("executionStats").find({"myField": "myVal", })
             """.trimIndent(),
-            explain = QueryContext.ExplainPlanType.FULL
+            explain = ExplainPlanType.FULL
         ) {
             Node(
                 Unit,
@@ -165,12 +166,18 @@ class MongoshDialectFormatterTest {
 
 internal suspend fun assertGeneratedQuery(
     @Language("js") js: String,
-    explain: QueryContext.ExplainPlanType = QueryContext.ExplainPlanType.NONE,
+    explain: ExplainPlanType = ExplainPlanType.NONE,
     script: suspend () -> Node<Unit>
 ) {
     val generated = MongoshDialectFormatter.formatQuery(
-        script(),
-        QueryContext(emptyMap(), explain, false)
+        script().let {
+            if (explain != ExplainPlanType.NONE) {
+                it.with(HasExplain(explain))
+            } else {
+                it
+            }
+        },
+        QueryContext(emptyMap(), false, false)
     )
     assertEquals(js, generated.query)
 }
