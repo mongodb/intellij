@@ -10,12 +10,14 @@ import com.mongodb.jbplugin.accessadapter.QueryResult
 import com.mongodb.jbplugin.accessadapter.toNs
 import com.mongodb.jbplugin.mql.BsonString
 import com.mongodb.jbplugin.mql.Node
+import com.mongodb.jbplugin.mql.QueryContext
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasFieldReference
 import com.mongodb.jbplugin.mql.components.HasFilter
 import com.mongodb.jbplugin.mql.components.HasValueReference
 import com.mongodb.jbplugin.mql.components.IsCommand
 import org.bson.Document
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Slice to be used when querying the MongoDbReadModelProvider.
@@ -149,9 +151,17 @@ data class BuildInfo(
                     )
                 )
 
-                when (val countOfAdminCli = from.runQuery(query, Long::class, limit = 1)) {
-                    is QueryResult.NotRun -> false
+                when (
+                    val countOfAdminCli = from.runQuery(
+                        query,
+                        Long::class,
+                        queryContext = QueryContext.empty(),
+                        timeout = 1.seconds,
+                        limit = 1
+                    )
+                ) {
                     is QueryResult.Run -> countOfAdminCli.result > 0
+                    else -> false
                 }
             } else {
                 false

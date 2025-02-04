@@ -47,8 +47,8 @@ data class GetCollectionSchema(
 
             val sampleSomeDocs: List<Map<String, Any>> =
                 when (val result = from.runQuery(query, Map::class, limit = 50)) {
-                    is QueryResult.NotRun -> emptyList()
                     is QueryResult.Run -> result.result as List<Map<String, Any>>
+                    else -> emptyList()
                 }
 
             // we need to generate the schema from these docs

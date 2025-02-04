@@ -257,7 +257,7 @@ class FindTest {
             var collection = ""
             var database = ""
 
-            db.getSiblingDB(database).getCollection(collection).find({}).sort({"a": 1, })
+            db.getSiblingDB(database).getCollection(collection).find({}).sort({"a": 1, }).limit(50).toArray()
             """.trimIndent()
         ) {
             Node(

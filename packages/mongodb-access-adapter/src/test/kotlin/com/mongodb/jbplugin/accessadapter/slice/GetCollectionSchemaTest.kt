@@ -1,16 +1,27 @@
 package com.mongodb.jbplugin.accessadapter.slice
 
-import com.mongodb.client.model.Filters
 import com.mongodb.jbplugin.accessadapter.MongoDbDriver
-import com.mongodb.jbplugin.mql.*
+import com.mongodb.jbplugin.accessadapter.QueryResult
+import com.mongodb.jbplugin.mql.BsonAnyOf
+import com.mongodb.jbplugin.mql.BsonArray
+import com.mongodb.jbplugin.mql.BsonDouble
+import com.mongodb.jbplugin.mql.BsonInt32
+import com.mongodb.jbplugin.mql.BsonNull
+import com.mongodb.jbplugin.mql.BsonObject
+import com.mongodb.jbplugin.mql.BsonString
+import com.mongodb.jbplugin.mql.Namespace
 import kotlinx.coroutines.runBlocking
 import org.bson.Document
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
+import kotlin.time.Duration.Companion.seconds
 
 class GetCollectionSchemaTest {
     @Test
@@ -28,7 +39,7 @@ class GetCollectionSchemaTest {
                 result.schema.schema,
             )
 
-            verify(driver, never()).findAll(namespace, Filters.empty(), Document::class, 50)
+            verify(driver, never()).runQuery<Any, Any>(any(), any(), any(), eq(1.seconds), any())
         }
     }
 
@@ -47,7 +58,7 @@ class GetCollectionSchemaTest {
                 result.schema.schema,
             )
 
-            verify(driver, never()).findAll(namespace, Filters.empty(), Document::class, 50)
+            verify(driver, never()).runQuery<Any, Any>(any(), any(), any(), eq(1.seconds), any())
         }
     }
 
@@ -57,12 +68,16 @@ class GetCollectionSchemaTest {
             val namespace = Namespace("myDb", "myColl")
             val driver = mock<MongoDbDriver>()
 
-            `when`(driver.findAll(namespace, Filters.empty(), Document::class, 50)).thenReturn(
-                listOf(
-                    Document(mapOf("string" to "myString")),
-                    Document(mapOf("integer" to 52, "string" to "anotherString")),
-                ),
-            )
+            whenever(driver.runQuery<List<Map<String, Any>>, Any>(any(), any(), any()))
+                .thenReturn(
+                    QueryResult.Run(
+                        listOf(
+                            mapOf("string" to "myString"),
+                            mapOf("integer" to 52, "string" to "anotherString"),
+                        )
+                    )
+                )
+
             val result = GetCollectionSchema.Slice(namespace).queryUsingDriver(driver)
 
             assertEquals(namespace, result.schema.namespace)
@@ -84,17 +99,15 @@ class GetCollectionSchemaTest {
             val namespace = Namespace("myDb", "myColl")
             val driver = mock<MongoDbDriver>()
 
-            `when`(driver.findAll(namespace, Filters.empty(), Document::class, 50)).thenReturn(
-                listOf(
-                    Document(mapOf("book" to Document(mapOf("author" to "Someone")))),
-                    Document(
-                        mapOf(
-                            "book" to
-                                Document(mapOf("author" to "Someone Else", "isbn" to "XXXXXXXX"))
-                        )
-                    ),
-                ),
+            `when`(driver.runQuery<List<Map<String, Any>>, Any>(any(), any(), any())).thenReturn(
+                QueryResult.Run(
+                    listOf(
+                        mapOf("book" to Document(mapOf("author" to "Someone"))),
+                        mapOf("book" to mapOf("author" to "Someone Else", "isbn" to "XXXXXXXX"))
+                    )
+                )
             )
+
             val result = GetCollectionSchema.Slice(namespace).queryUsingDriver(driver)
 
             assertEquals(namespace, result.schema.namespace)
@@ -121,12 +134,15 @@ class GetCollectionSchemaTest {
             val namespace = Namespace("myDb", "myColl")
             val driver = mock<MongoDbDriver>()
 
-            `when`(driver.findAll(namespace, Filters.empty(), Document::class, 50)).thenReturn(
-                listOf(
-                    Document(mapOf("array" to arrayOf(1, 2, 3, "abc"))),
-                    Document(mapOf("array" to arrayOf(1.2f, "jkl"))),
-                ),
+            `when`(driver.runQuery<List<Map<String, Any>>, Any>(any(), any(), any())).thenReturn(
+                QueryResult.Run(
+                    listOf(
+                        mapOf("array" to arrayOf(1, 2, 3, "abc")),
+                        mapOf("array" to arrayOf(1.2f, "jkl")),
+                    )
+                )
             )
+
             val result = GetCollectionSchema.Slice(namespace).queryUsingDriver(driver)
 
             assertEquals(namespace, result.schema.namespace)
