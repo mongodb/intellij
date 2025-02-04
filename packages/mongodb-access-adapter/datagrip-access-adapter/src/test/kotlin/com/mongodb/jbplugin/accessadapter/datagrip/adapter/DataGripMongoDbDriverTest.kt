@@ -11,7 +11,6 @@ import com.mongodb.jbplugin.mql.BsonString
 import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.QueryContext
-import com.mongodb.jbplugin.mql.adt.Either
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasFieldReference
 import com.mongodb.jbplugin.mql.components.HasFilter
@@ -28,10 +27,7 @@ import org.junit.jupiter.params.provider.MethodSource
 import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.Mockito
 import java.math.BigDecimal
-import java.text.DateFormat
 import java.time.Instant
-import java.time.format.DateTimeFormatter
-import java.util.Date
 import java.util.UUID
 
 @IntegrationTest
@@ -233,13 +229,27 @@ class DataGripMongoDbDriverTest {
     companion object {
         @JvmStatic
         fun ejsonMapping() = arrayOf(
-          arrayOf("{\"${'$'}oid\":\"5d505646cf6d4fe581014ab2\"}", ObjectId("5d505646cf6d4fe581014ab2")),
-          arrayOf("{ \"doc\": [\"hello\",{\"${'$'}numberInt\":\"10\"}]}", mapOf("doc" to listOf("hello", 10))),
-          arrayOf("{\"${'$'}date\":{\"${'$'}numberLong\":\"1565546054692\"}}", Instant.ofEpochMilli(1565546054692L)),
-          arrayOf("{\"${'$'}numberDecimal\":\"10.99\"}", BigDecimal("10.99")),
-          arrayOf("{\"${'$'}numberInt\":\"10\"}", 10),
-          arrayOf("{\"${'$'}numberLong\":\"999999999\"}", 999999999L),
-          arrayOf("{\"${'$'}uuid\":\"3b241101-e2bb-4255-8caf-4136c566a962\"}", UUID.fromString("3b241101-e2bb-4255-8caf-4136c566a962")),
+            arrayOf(
+                "{\"${'$'}oid\":\"5d505646cf6d4fe581014ab2\"}",
+                ObjectId("5d505646cf6d4fe581014ab2")
+            ),
+            arrayOf(
+                "{ \"doc\": [\"hello\",{\"${'$'}numberInt\":\"10\"}]}",
+                mapOf(
+                    "doc" to listOf("hello", 10)
+                )
+            ),
+            arrayOf(
+                "{\"${'$'}date\":{\"${'$'}numberLong\":\"1565546054692\"}}",
+                Instant.ofEpochMilli(1565546054692L)
+            ),
+            arrayOf("{\"${'$'}numberDecimal\":\"10.99\"}", BigDecimal("10.99")),
+            arrayOf("{\"${'$'}numberInt\":\"10\"}", 10),
+            arrayOf("{\"${'$'}numberLong\":\"999999999\"}", 999999999L),
+            arrayOf(
+                "{\"${'$'}uuid\":\"3b241101-e2bb-4255-8caf-4136c566a962\"}",
+                UUID.fromString("3b241101-e2bb-4255-8caf-4136c566a962")
+            ),
         )
     }
 }

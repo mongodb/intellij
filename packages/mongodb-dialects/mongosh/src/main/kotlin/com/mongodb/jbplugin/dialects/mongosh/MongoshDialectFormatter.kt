@@ -74,7 +74,9 @@ object MongoshDialectFormatter : DialectFormatter {
                 if (query.returnsACursor()) {
                     emitSort(query)
                     emitLimit(query)
-                    if (queryContext.explainPlan == QueryContext.ExplainPlanType.NONE && !prettyPrint) {
+                    if (queryContext.explainPlan == QueryContext.ExplainPlanType.NONE &&
+                        !prettyPrint
+                    ) {
                         emitPropertyAccess()
                         emitFunctionName("toArray")
                         emitFunctionCall()

@@ -14,7 +14,6 @@ import com.mongodb.jbplugin.accessadapter.ExplainPlan
 import com.mongodb.jbplugin.accessadapter.MongoDbDriver
 import com.mongodb.jbplugin.accessadapter.QueryResult
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
-import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.QueryContext
 import kotlinx.coroutines.withTimeout

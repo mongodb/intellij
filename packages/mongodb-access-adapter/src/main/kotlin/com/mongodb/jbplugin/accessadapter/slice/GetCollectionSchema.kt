@@ -1,6 +1,5 @@
 package com.mongodb.jbplugin.accessadapter.slice
 
-import com.mongodb.client.model.Filters
 import com.mongodb.jbplugin.accessadapter.MongoDbDriver
 import com.mongodb.jbplugin.accessadapter.QueryResult
 import com.mongodb.jbplugin.mql.*
@@ -36,15 +35,18 @@ data class GetCollectionSchema(
                 )
             }
 
-            val query = Node(Unit, listOf(
-              HasCollectionReference(HasCollectionReference.Known(Unit, Unit, namespace)),
-              IsCommand(IsCommand.CommandType.FIND_MANY),
-              HasFilter(emptyList<Node<Unit>>()),
-              HasLimit(50),
-            ))
+            val query = Node(
+                Unit,
+                listOf(
+                    HasCollectionReference(HasCollectionReference.Known(Unit, Unit, namespace)),
+                    IsCommand(IsCommand.CommandType.FIND_MANY),
+                    HasFilter(emptyList<Node<Unit>>()),
+                    HasLimit(50),
+                )
+            )
 
             val sampleSomeDocs: List<Map<String, Any>> =
-                when(val result = from.runQuery(query, Map::class, limit = 50)) {
+                when (val result = from.runQuery(query, Map::class, limit = 50)) {
                     is QueryResult.NotRun -> emptyList()
                     is QueryResult.Run -> result.result as List<Map<String, Any>>
                 }

@@ -48,7 +48,7 @@ interface MongoDbDriver {
 
     suspend fun connectionString(): ConnectionString
 
-    suspend fun <T: Any, S> runQuery(
+    suspend fun <T : Any, S> runQuery(
         query: Node<S>,
         result: KClass<T>,
         queryContext: QueryContext = QueryContext.empty(),

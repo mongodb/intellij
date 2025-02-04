@@ -25,7 +25,7 @@ data class ListDatabases(
                             "listDatabases" to 1,
                         ),
                     ),
-                  Map::class,
+                    Map::class,
                 )
 
             val databases = result["databases"] as List<Map<String, String>>

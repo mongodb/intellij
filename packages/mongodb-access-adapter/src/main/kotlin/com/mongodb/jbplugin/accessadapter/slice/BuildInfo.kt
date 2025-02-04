@@ -5,14 +5,11 @@
 package com.mongodb.jbplugin.accessadapter.slice
 
 import com.mongodb.ConnectionString
-import com.mongodb.client.model.Filters
 import com.mongodb.jbplugin.accessadapter.MongoDbDriver
 import com.mongodb.jbplugin.accessadapter.QueryResult
 import com.mongodb.jbplugin.accessadapter.toNs
 import com.mongodb.jbplugin.mql.BsonString
-import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.Node
-import com.mongodb.jbplugin.mql.QueryContext
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasFieldReference
 import com.mongodb.jbplugin.mql.components.HasFilter
@@ -123,18 +120,36 @@ data class BuildInfo(
 
         private suspend fun checkIsAtlasCliIfConnected(from: MongoDbDriver) =
             if (from.connected) {
-                val query = Node(Unit, listOf(
-                  HasCollectionReference(HasCollectionReference.Known(Unit, Unit, "admin.atlascli".toNs())),
-                  IsCommand(IsCommand.CommandType.COUNT_DOCUMENTS),
-                  HasFilter(listOf(
-                    Node(Unit, listOf(
-                      HasFieldReference(HasFieldReference.FromSchema(Unit, "managedClusterType")),
-                      HasValueReference(HasValueReference.Constant(Unit, "atlasCliLocalDevCluster", BsonString))
-                    ))
-                  ))
-                ))
+                val query = Node(
+                    Unit,
+                    listOf(
+                        HasCollectionReference(
+                            HasCollectionReference.Known(Unit, Unit, "admin.atlascli".toNs())
+                        ),
+                        IsCommand(IsCommand.CommandType.COUNT_DOCUMENTS),
+                        HasFilter(
+                            listOf(
+                                Node(
+                                    Unit,
+                                    listOf(
+                                        HasFieldReference(
+                                            HasFieldReference.FromSchema(Unit, "managedClusterType")
+                                        ),
+                                        HasValueReference(
+                                            HasValueReference.Constant(
+                                                Unit,
+                                                "atlasCliLocalDevCluster",
+                                                BsonString
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
 
-                when(val countOfAdminCli = from.runQuery(query, Long::class, limit = 1)) {
+                when (val countOfAdminCli = from.runQuery(query, Long::class, limit = 1)) {
                     is QueryResult.NotRun -> false
                     is QueryResult.Run -> countOfAdminCli.result > 0
                 }

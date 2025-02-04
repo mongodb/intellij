@@ -17,7 +17,6 @@ import kotlinx.coroutines.runBlocking
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 
-private typealias MapOfCachedValues = ConcurrentMap<String, CachedValue<*>>
 private typealias DriverFactory = (Project, LocalDataSource) -> MongoDbDriver
 
 /**
