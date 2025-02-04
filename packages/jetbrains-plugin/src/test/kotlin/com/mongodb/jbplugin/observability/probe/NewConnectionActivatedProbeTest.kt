@@ -9,8 +9,6 @@ import com.intellij.database.dataSource.DatabaseConnectionPoint
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.openapi.application.Application
 import com.intellij.openapi.project.Project
-import com.intellij.psi.util.CachedValuesManager
-import com.intellij.util.CachedValuesManagerImpl
 import com.mongodb.jbplugin.fixtures.*
 import com.mongodb.jbplugin.observability.TelemetryProperty
 import com.mongodb.jbplugin.observability.TelemetryService
@@ -51,10 +49,9 @@ internal abstract class NewConnectionActivatedProbeTest(
         application.withMockedService(logMessage)
 
         `when`(session.project).thenReturn(project)
-        project.withMockedService<Project, CachedValuesManager>(CachedValuesManagerImpl(project))
-
         `when`(session.connectionPoint).thenReturn(connectionPoint)
         `when`(connectionPoint.dataSource).thenReturn(dataSource)
+        `when`(connectionPoint.dataSource.modificationCount).thenReturn(1)
 
         project.withMockedMongoDbConnection(serverUrl)
         val probe = NewConnectionActivatedProbe()
