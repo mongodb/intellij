@@ -51,7 +51,7 @@ private const val TIMEOUT = 5
  * we are running the queries in a dedicated single thread.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-val mongosh = Dispatchers.IO.limitedParallelism(1)
+private val mongosh = Dispatchers.IO.limitedParallelism(1)
 private val logger: Logger = logger<DataGripMongoDbDriver>()
 
 /**
