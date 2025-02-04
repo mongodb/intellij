@@ -13,6 +13,7 @@ import com.mongodb.jbplugin.accessadapter.MongoDbReadModelProvider
 import com.mongodb.jbplugin.accessadapter.Slice
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.DataGripMongoDbDriver
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.annotations.VisibleForTesting
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 
@@ -41,6 +42,7 @@ class DataGripBasedReadModelProvider(
         DataGripMongoDbDriver(project, dataSource)
     }
 
+    @VisibleForTesting
     internal var wasCached: Boolean = false
     private val cachedValues: ConcurrentMap<String, Pair<Long, *>> = ConcurrentHashMap()
 
