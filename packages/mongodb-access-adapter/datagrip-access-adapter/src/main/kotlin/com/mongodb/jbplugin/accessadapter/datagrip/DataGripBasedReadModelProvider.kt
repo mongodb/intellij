@@ -8,7 +8,6 @@ package com.mongodb.jbplugin.accessadapter.datagrip
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
-import com.intellij.psi.util.CachedValue
 import com.mongodb.jbplugin.accessadapter.MongoDbDriver
 import com.mongodb.jbplugin.accessadapter.MongoDbReadModelProvider
 import com.mongodb.jbplugin.accessadapter.Slice
@@ -42,6 +41,7 @@ class DataGripBasedReadModelProvider(
         DataGripMongoDbDriver(project, dataSource)
     }
 
+    internal var wasCached: Boolean = false
     private val cachedValues: ConcurrentMap<String, Pair<Long, *>> = ConcurrentHashMap()
 
     override fun <T : Any> slice(
@@ -57,8 +57,10 @@ class DataGripBasedReadModelProvider(
                 val newValue = runCatching {
                     runBlocking { slice.queryUsingDriver(driver) }
                 }.getOrNull()
+                wasCached = false
                 dataSource.modificationCount to newValue
             } else {
+                wasCached = true
                 modificationStamp to cachedValue
             }
         }?.second!! as T
