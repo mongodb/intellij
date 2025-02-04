@@ -105,6 +105,9 @@ in either a field or a value reference.
 We will say that type $A$ is assignable to type $B$ if $Q_A$ and $Q_B$ are 
 [equivalent queries](/main/packages/mongodb-mql-model/src/docs/md/mql-query/mql-query.md#query-equivalence).
 
+The most common usage of this property is type checking, to ensure that given a type in a query, it
+does behave properly based on the type of the schema of a field.
+
 Type assignability MAY NOT be commutative.
 
 #### Assignability table
