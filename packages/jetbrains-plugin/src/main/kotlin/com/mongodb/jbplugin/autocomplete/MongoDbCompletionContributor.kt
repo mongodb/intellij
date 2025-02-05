@@ -39,6 +39,7 @@ import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.IsCommand
 import com.mongodb.jbplugin.mql.components.IsCommand.CommandType
 import com.mongodb.jbplugin.observability.probe.AutocompleteSuggestionAcceptedProbe
+import com.mongodb.jbplugin.settings.PluginSettings
 import kotlin.collections.emptyList
 import kotlin.collections.map
 
@@ -138,12 +139,14 @@ internal object Field {
             }
 
             val readModelProvider by parameters.originalFile.project.service<DataGripBasedReadModelProvider>()
+            val pluginSettings by parameters.originalFile.project.service<PluginSettings>()
 
             val completions =
                 Autocompletion.autocompleteFields(
                     dataSource,
                     readModelProvider,
                     Namespace(database, collection),
+                    pluginSettings.sampleSize
                 ) as? AutocompletionResult.Successful
 
             val lookupEntries = completions?.entries?.map {

@@ -90,7 +90,7 @@ class AutocompletionTest {
     fun `returns the list of fields for sample documents`() {
         val readModelProvider = mock<MongoDbReadModelProvider<Any?>>()
         val namespace = Namespace("myDb", "myColl")
-        val slice = GetCollectionSchema.Slice(namespace)
+        val slice = GetCollectionSchema.Slice(namespace, 50)
 
         `when`(readModelProvider.slice(null, slice)).thenReturn(
             GetCollectionSchema(
@@ -110,7 +110,8 @@ class AutocompletionTest {
             autocompleteFields(
                 null,
                 readModelProvider,
-                namespace
+                namespace,
+                50
             ) as AutocompletionResult.Successful
 
         assertEquals(
