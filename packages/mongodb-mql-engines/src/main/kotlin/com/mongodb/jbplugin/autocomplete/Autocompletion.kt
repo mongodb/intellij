@@ -117,12 +117,14 @@ object Autocompletion {
         dataSource: D,
         readModelProvider: MongoDbReadModelProvider<D>,
         namespace: Namespace,
+        documentsSampleSize: Int,
     ): AutocompletionResult {
         val schema = runCatching {
-            readModelProvider.slice(dataSource, GetCollectionSchema.Slice(namespace)).schema
-        }
-            .getOrNull()
-        schema ?: return AutocompletionResult.NoModel(namespace)
+            readModelProvider.slice(
+                dataSource,
+                GetCollectionSchema.Slice(namespace, documentsSampleSize)
+            ).schema
+        }.getOrNull() ?: return AutocompletionResult.NoModel(namespace)
 
         val entries =
             schema.allFieldNamesQualified().map {

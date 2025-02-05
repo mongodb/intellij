@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 
 class GetCollectionSchemaTest {
@@ -18,7 +19,7 @@ class GetCollectionSchemaTest {
         runBlocking {
             val namespace = Namespace("", "myColl")
             val driver = mock<MongoDbDriver>()
-            val result = GetCollectionSchema.Slice(namespace).queryUsingDriver(driver)
+            val result = GetCollectionSchema.Slice(namespace, 50).queryUsingDriver(driver)
 
             assertEquals(namespace, result.schema.namespace)
             assertEquals(
@@ -37,7 +38,7 @@ class GetCollectionSchemaTest {
         runBlocking {
             val namespace = Namespace("myDb", "")
             val driver = mock<MongoDbDriver>()
-            val result = GetCollectionSchema.Slice(namespace).queryUsingDriver(driver)
+            val result = GetCollectionSchema.Slice(namespace, 50).queryUsingDriver(driver)
 
             assertEquals(namespace, result.schema.namespace)
             assertEquals(
@@ -63,7 +64,7 @@ class GetCollectionSchemaTest {
                     Document(mapOf("integer" to 52, "string" to "anotherString")),
                 ),
             )
-            val result = GetCollectionSchema.Slice(namespace).queryUsingDriver(driver)
+            val result = GetCollectionSchema.Slice(namespace, 50).queryUsingDriver(driver)
 
             assertEquals(namespace, result.schema.namespace)
             assertEquals(
@@ -95,7 +96,7 @@ class GetCollectionSchemaTest {
                     ),
                 ),
             )
-            val result = GetCollectionSchema.Slice(namespace).queryUsingDriver(driver)
+            val result = GetCollectionSchema.Slice(namespace, 50).queryUsingDriver(driver)
 
             assertEquals(namespace, result.schema.namespace)
             assertEquals(
@@ -127,7 +128,7 @@ class GetCollectionSchemaTest {
                     Document(mapOf("array" to arrayOf(1.2f, "jkl"))),
                 ),
             )
-            val result = GetCollectionSchema.Slice(namespace).queryUsingDriver(driver)
+            val result = GetCollectionSchema.Slice(namespace, 50).queryUsingDriver(driver)
 
             assertEquals(namespace, result.schema.namespace)
             assertEquals(
@@ -140,6 +141,24 @@ class GetCollectionSchemaTest {
                 ),
                 result.schema.schema,
             )
+        }
+    }
+
+    @Test
+    fun `should respect the provided limit for fetching sample documents`() {
+        runBlocking {
+            val namespace = Namespace("myDb", "myColl")
+            val driver = mock<MongoDbDriver>()
+
+            `when`(driver.findAll(namespace, Filters.empty(), Document::class, 10)).thenReturn(
+                listOf(
+                    Document(mapOf("string" to "myString")),
+                    Document(mapOf("integer" to 52, "string" to "anotherString")),
+                ),
+            )
+            GetCollectionSchema.Slice(namespace, 10).queryUsingDriver(driver)
+
+            verify(driver, times(1)).findAll(namespace, Filters.empty(), Document::class, 10)
         }
     }
 }

@@ -13,11 +13,9 @@ import org.bson.Document
 data class GetCollectionSchema(
     val schema: CollectionSchema,
 ) {
-    /**
-     * @param namespace
-     */
     data class Slice(
         private val namespace: Namespace,
+        private val documentsSampleSize: Int,
     ) : com.mongodb.jbplugin.accessadapter.Slice<GetCollectionSchema> {
         override val id = "${javaClass.canonicalName}::$namespace"
 
@@ -35,7 +33,7 @@ data class GetCollectionSchema(
                 namespace,
                 Filters.empty(),
                 Document::class,
-                limit = 50
+                limit = documentsSampleSize
             )
             // we need to generate the schema from these docs
             val sampleSchemas = sampleSomeDocs.map(this::recursivelyBuildSchema)

@@ -26,6 +26,8 @@ class PluginSettingsStateComponent : SimplePersistentStateComponent<PluginSettin
     PluginSettings()
 )
 
+internal const val DEFAULT_SAMPLE_SIZE = 50
+
 /**
  * The settings themselves. They are tracked, so any change on the settings properties will be eventually
  * persisted by IntelliJ. To access the settings, use the pluginSetting provider. For example,
@@ -49,6 +51,7 @@ class PluginSettings : BaseState(), Serializable {
     var isTelemetryEnabled by property(true)
     var hasTelemetryOptOutputNotificationBeenShown by property(false)
     var isFullExplainPlanEnabled by property(false)
+    var sampleSize by property(DEFAULT_SAMPLE_SIZE)
 }
 
 class SettingsDelegate<T>(private val settingProp: KMutableProperty0<T>) {
