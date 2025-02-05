@@ -26,6 +26,7 @@ class MongoshBackendTest {
             emitDbAccess()
             emitDatabaseAccess(registerConstant("myDb"))
             emitCollectionAccess(registerConstant("myColl"))
+            emitPropertyAccess()
             emitFunctionName("find")
             emitFunctionCall(long = false, {
                 emitObjectStart()
@@ -50,6 +51,7 @@ class MongoshBackendTest {
             emitDbAccess()
             emitDatabaseAccess(registerVariable("myDb", BsonString, null))
             emitCollectionAccess(registerVariable("myColl", BsonString, null))
+            emitPropertyAccess()
             emitFunctionName("find")
             emitFunctionCall(long = false, {
                 emitObjectStart()
@@ -74,6 +76,7 @@ class MongoshBackendTest {
             emitDbAccess()
             emitDatabaseAccess(registerVariable("myDb", BsonString, null))
             emitCollectionAccess(registerVariable("myColl", BsonString, null))
+            emitPropertyAccess()
             emitFunctionName("update")
             emitFunctionCall(long = false, {
                 emitObjectStart()
@@ -95,6 +98,7 @@ class MongoshBackendTest {
             emitDbAccess()
             emitDatabaseAccess(registerVariable("myDb", BsonString, null))
             emitCollectionAccess(registerVariable("myColl", BsonString, null))
+            emitPropertyAccess()
             emitFunctionName("update")
             emitFunctionCall(long = false, {
                 emitObjectStart()

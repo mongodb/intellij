@@ -26,7 +26,7 @@ class GroupTest {
           var collection = ""
           var database = ""
           
-          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {}}, ]).limit(50)
+          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {}}, ])
             """.trimIndent()
         ) {
             Node(
@@ -55,7 +55,7 @@ class GroupTest {
           var collection = ""
           var database = ""
           
-          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {}}, ]).limit(50)
+          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {}}, ])
             """.trimIndent()
         ) {
             Node(
@@ -87,7 +87,7 @@ class GroupTest {
           var collection = ""
           var database = ""
           
-          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": null, }}, ]).limit(50)
+          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": null, }}, ])
             """.trimIndent()
         ) {
             Node(
@@ -133,7 +133,7 @@ class GroupTest {
           var collection = ""
           var database = ""
           
-          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": null, }}, ]).limit(50)
+          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": null, }}, ])
             """.trimIndent()
         ) {
             Node(
@@ -184,7 +184,7 @@ class GroupTest {
           var collection = ""
           var database = ""
           
-          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": "${'$'}field0", }}, ]).limit(50)
+          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": "${'$'}field0", }}, ])
             """.trimIndent()
         ) {
             Node(
@@ -243,7 +243,7 @@ class GroupTest {
           var collection = ""
           var database = ""
           
-          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": {"field0": "${'$'}field0", "field1": "${'$'}field1"}, }}, ]).limit(50)
+          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": {"field0": "${'$'}field0", "field1": "${'$'}field1"}, }}, ])
             """.trimIndent()
         ) {
             Node(
@@ -309,7 +309,7 @@ class GroupTest {
           var collection = ""
           var database = ""
           
-          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": null, "sumField": {"${'$'}sum": 1}, }}, ]).limit(50)
+          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": null, "sumField": {"${'$'}sum": 1}, }}, ])
             """.trimIndent()
         ) {
             Node(
@@ -375,7 +375,7 @@ class GroupTest {
           var collection = ""
           var database = ""
           
-          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": null, "sumField": {"${'$'}sum": "${'$'}field0"}, }}, ]).limit(50)
+          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": null, "sumField": {"${'$'}sum": "${'$'}field0"}, }}, ])
             """.trimIndent()
         ) {
             Node(
@@ -454,7 +454,7 @@ class GroupTest {
           var collection = ""
           var database = ""
           
-          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": null, "avgField": {"${'$'}avg": 1}, }}, ]).limit(50)
+          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": null, "avgField": {"${'$'}avg": 1}, }}, ])
             """.trimIndent()
         ) {
             Node(
@@ -520,7 +520,7 @@ class GroupTest {
           var collection = ""
           var database = ""
           
-          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": null, "avgField": {"${'$'}avg": "${'$'}field0"}, }}, ]).limit(50)
+          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": null, "avgField": {"${'$'}avg": "${'$'}field0"}, }}, ])
             """.trimIndent()
         ) {
             Node(
@@ -599,7 +599,7 @@ class GroupTest {
           var collection = ""
           var database = ""
           
-          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": null, "firstField": {"${'$'}first": "${'$'}field0"}, }}, ]).limit(50)
+          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": null, "firstField": {"${'$'}first": "${'$'}field0"}, }}, ])
             """.trimIndent()
         ) {
             Node(
@@ -678,7 +678,7 @@ class GroupTest {
           var collection = ""
           var database = ""
           
-          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": null, "lastField": {"${'$'}last": "${'$'}field0"}, }}, ]).limit(50)
+          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": null, "lastField": {"${'$'}last": "${'$'}field0"}, }}, ])
             """.trimIndent()
         ) {
             Node(
@@ -757,7 +757,7 @@ class GroupTest {
           var collection = ""
           var database = ""
           
-          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": null, "maxField": {"${'$'}max": "${'$'}field0"}, }}, ]).limit(50)
+          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": null, "maxField": {"${'$'}max": "${'$'}field0"}, }}, ])
             """.trimIndent()
         ) {
             Node(
@@ -836,7 +836,7 @@ class GroupTest {
           var collection = ""
           var database = ""
           
-          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": null, "minField": {"${'$'}min": "${'$'}field0"}, }}, ]).limit(50)
+          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": null, "minField": {"${'$'}min": "${'$'}field0"}, }}, ])
             """.trimIndent()
         ) {
             Node(
@@ -915,7 +915,7 @@ class GroupTest {
           var collection = ""
           var database = ""
           
-          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": null, "pushField": {"${'$'}push": "${'$'}field0"}, }}, ]).limit(50)
+          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": null, "pushField": {"${'$'}push": "${'$'}field0"}, }}, ])
             """.trimIndent()
         ) {
             Node(
@@ -994,7 +994,7 @@ class GroupTest {
           var collection = ""
           var database = ""
           
-          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": null, "addToSetField": {"${'$'}addToSet": "${'$'}field0"}, }}, ]).limit(50)
+          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": null, "addToSetField": {"${'$'}addToSet": "${'$'}field0"}, }}, ])
             """.trimIndent()
         ) {
             Node(
@@ -1073,7 +1073,7 @@ class GroupTest {
           var collection = ""
           var database = ""
           
-          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": null, "topField": {"${'$'}top": {"sortBy": {"field0": -1, }, "output": "${'$'}field0", }}, }}, ]).limit(50)
+          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": null, "topField": {"${'$'}top": {"sortBy": {"field0": -1, }, "output": "${'$'}field0", }}, }}, ])
             """.trimIndent()
         ) {
             Node(
@@ -1175,7 +1175,7 @@ class GroupTest {
           var collection = ""
           var database = ""
           
-          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": null, "topNField": {"${'$'}topN": {"sortBy": {"field0": -1, }, "output": "${'$'}field0", "n": 3, }}, }}, ]).limit(50)
+          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": null, "topNField": {"${'$'}topN": {"sortBy": {"field0": -1, }, "output": "${'$'}field0", "n": 3, }}, }}, ])
             """.trimIndent()
         ) {
             Node(
@@ -1278,7 +1278,7 @@ class GroupTest {
           var collection = ""
           var database = ""
           
-          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": null, "bottomField": {"${'$'}bottom": {"sortBy": {"field0": -1, }, "output": "${'$'}field0", }}, }}, ]).limit(50)
+          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": null, "bottomField": {"${'$'}bottom": {"sortBy": {"field0": -1, }, "output": "${'$'}field0", }}, }}, ])
             """.trimIndent()
         ) {
             Node(
@@ -1380,7 +1380,7 @@ class GroupTest {
           var collection = ""
           var database = ""
           
-          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": null, "bottomNField": {"${'$'}bottomN": {"sortBy": {"field0": -1, }, "output": "${'$'}field0", "n": 3, }}, }}, ]).limit(50)
+          db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}group": {"_id": null, "bottomNField": {"${'$'}bottomN": {"sortBy": {"field0": -1, }, "output": "${'$'}field0", "n": 3, }}, }}, ])
             """.trimIndent()
         ) {
             Node(

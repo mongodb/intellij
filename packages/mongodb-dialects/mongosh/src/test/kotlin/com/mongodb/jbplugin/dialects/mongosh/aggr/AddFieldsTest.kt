@@ -21,7 +21,7 @@ class AddFieldsTest {
             var collection = ""
             var database = ""
 
-            db.getSiblingDB(database).getCollection(collection).aggregate([{"${"$"}addFields": {"myField": 1, }}, ]).limit(50)
+            db.getSiblingDB(database).getCollection(collection).aggregate([{"${"$"}addFields": {"myField": 1, }}, ])
             """.trimIndent()
         ) {
             Node(
@@ -72,7 +72,7 @@ class AddFieldsTest {
             var collection = ""
             var database = ""
 
-            db.getSiblingDB(database).getCollection(collection).aggregate([{"${"$"}addFields": {"myField": -1, }}, ]).limit(50)
+            db.getSiblingDB(database).getCollection(collection).aggregate([{"${"$"}addFields": {"myField": -1, }}, ])
             """.trimIndent()
         ) {
             Node(

@@ -21,7 +21,7 @@ class MatchTest {
             var collection = ""
             var database = ""
 
-            db.getSiblingDB(database).getCollection(collection).aggregate([{"${"$"}match": {"myField": "myVal"}}, ]).limit(50)
+            db.getSiblingDB(database).getCollection(collection).aggregate([{"${"$"}match": {"myField": "myVal"}}, ])
             """.trimIndent()
         ) {
             Node(

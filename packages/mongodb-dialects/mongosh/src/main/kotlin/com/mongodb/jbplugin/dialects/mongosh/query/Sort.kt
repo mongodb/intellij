@@ -23,7 +23,6 @@ suspend fun <S> MongoshBackend.emitSort(query: Node<S>): MongoshBackend {
             )
         )
 
-        emitPropertyAccess()
         emitContextValue(resolveValueReference(valueRef, fieldRef))
         return emitObjectValueEnd()
     }
