@@ -111,7 +111,7 @@ class JavaDriverMongoDbAutocompletionPopupHandlerTest {
         val namespace = Namespace("myDatabase", "myCollection")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -152,7 +152,7 @@ class JavaDriverMongoDbAutocompletionPopupHandlerTest {
         val namespace = Namespace("myDatabase", "myCollection")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -193,7 +193,7 @@ class JavaDriverMongoDbAutocompletionPopupHandlerTest {
         val namespace = Namespace("myDatabase", "myCollection")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -236,7 +236,7 @@ class JavaDriverMongoDbAutocompletionPopupHandlerTest {
         val namespace = Namespace("myDatabase", "myCollection")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -281,7 +281,7 @@ class JavaDriverMongoDbAutocompletionPopupHandlerTest {
         val namespace = Namespace("myDatabase", "myCollection")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -326,7 +326,7 @@ class JavaDriverMongoDbAutocompletionPopupHandlerTest {
         val namespace = Namespace("myDatabase", "myCollection")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -373,7 +373,7 @@ class JavaDriverMongoDbAutocompletionPopupHandlerTest {
         val namespace = Namespace("myDatabase", "myCollection")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -418,7 +418,7 @@ class JavaDriverMongoDbAutocompletionPopupHandlerTest {
         val namespace = Namespace("myDatabase", "myCollection")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -463,7 +463,7 @@ class JavaDriverMongoDbAutocompletionPopupHandlerTest {
         val namespace = Namespace("myDatabase", "myCollection")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -510,7 +510,7 @@ class JavaDriverMongoDbAutocompletionPopupHandlerTest {
         val namespace = Namespace("myDatabase", "myCollection")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -555,7 +555,7 @@ class JavaDriverMongoDbAutocompletionPopupHandlerTest {
         val namespace = Namespace("myDatabase", "myCollection")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -600,7 +600,7 @@ class JavaDriverMongoDbAutocompletionPopupHandlerTest {
         val namespace = Namespace("myDatabase", "myCollection")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -646,7 +646,7 @@ class JavaDriverMongoDbAutocompletionPopupHandlerTest {
         val namespace = Namespace("myDatabase", "myCollection")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -689,7 +689,7 @@ class JavaDriverMongoDbAutocompletionPopupHandlerTest {
         val namespace = Namespace("myDatabase", "myCollection")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
