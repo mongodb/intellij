@@ -1,5 +1,6 @@
 package com.mongodb.jbplugin.dialects.mongosh
 
+import com.mongodb.jbplugin.mql.BsonInt32
 import com.mongodb.jbplugin.mql.BsonString
 import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.Node
@@ -55,7 +56,7 @@ class MongoshDialectFormatterTest {
             var collection = ""
             var database = ""
             
-            db.getSiblingDB(database).getCollection(collection).find({"myField": "myVal", }, {"explain": "queryPlanner"}).next()
+            db.getSiblingDB(database).getCollection(collection).find({"myField": "myVal", }).limit(50).explain("queryPlanner")
             """.trimIndent(),
             explain = ExplainPlanType.SAFE
         ) {
@@ -90,7 +91,7 @@ class MongoshDialectFormatterTest {
             var collection = ""
             var database = ""
             
-            db.getSiblingDB(database).getCollection(collection).find({"myField": "myVal", }, {"explain": "executionStats"}).next()
+            db.getSiblingDB(database).getCollection(collection).find({"myField": "myVal", }).limit(50).explain("executionStats")
             """.trimIndent(),
             explain = ExplainPlanType.FULL
         ) {
@@ -125,7 +126,7 @@ class MongoshDialectFormatterTest {
             var collection = ""
             var database = ""
             
-            db.getSiblingDB(database).getCollection(collection).aggregate([], {"explain": "queryPlanner"})
+            db.getSiblingDB(database).getCollection(collection).explain("queryPlanner").aggregate([{"${'$'}sort": {"myField": 1, }}, ])
             """.trimIndent(),
             explain = ExplainPlanType.SAFE
         ) {
@@ -133,7 +134,38 @@ class MongoshDialectFormatterTest {
                 Unit,
                 listOf(
                     IsCommand(IsCommand.CommandType.AGGREGATE),
-                    HasAggregation<List<Node<Unit>>>(emptyList())
+                    HasAggregation(
+                        listOf(
+                            Node(
+                                Unit,
+                                listOf(
+                                    Named(Name.SORT),
+                                    HasSorts(
+                                        listOf(
+                                            Node(
+                                                Unit,
+                                                listOf(
+                                                    HasFieldReference(
+                                                        HasFieldReference.FromSchema(
+                                                            Unit,
+                                                            "myField"
+                                                        )
+                                                    ),
+                                                    HasValueReference(
+                                                        HasValueReference.Inferred(
+                                                            Unit,
+                                                            1,
+                                                            BsonInt32
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
                 )
             )
         }
@@ -146,7 +178,7 @@ class MongoshDialectFormatterTest {
             var collection = ""
             var database = ""
             
-            db.getSiblingDB(database).getCollection(collection).updateMany({}, {}, {"explain": "queryPlanner"})
+            db.getSiblingDB(database).getCollection(collection).find({}).limit(50).explain("queryPlanner")
             """.trimIndent(),
             explain = ExplainPlanType.SAFE
         ) {
@@ -168,7 +200,7 @@ class MongoshDialectFormatterTest {
             var collection = ""
             var database = ""
             
-            db.getSiblingDB(database).getCollection(collection).deleteMany({}, {"explain": "queryPlanner"})
+            db.getSiblingDB(database).getCollection(collection).find({}).limit(50).explain("queryPlanner")
             """.trimIndent(),
             explain = ExplainPlanType.SAFE
         ) {

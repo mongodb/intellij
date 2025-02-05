@@ -35,17 +35,8 @@ public class SpringCriteriaRepository {
     private List<Movie> allMoviesWithRatingAtLeastAgg(int rating) {
         return template.aggregate(
             Aggregation.newAggregation(
-                Aggregation.match(where( "tomatoes.viewer.rating").gte(rating)),
-                Aggregation.project("fieldA").andInclude("fieldB").andExclude("fieldC"),
-                Aggregation.sort(Sort.Direction.ASC, "asd"),
-                Aggregation.sort(Sort.by("rated", "qwe")),
-                Aggregation.sort(Sort.by(Sort.Direction.ASC, "rates")),
-                Aggregation.sort(Sort.by(Sort.Order.by("rated"), Sort.Order.by("ratedd"))),
-                Aggregation.sort(Sort.by(List.of(Sort.Order.by("rated"), Sort.Order.by("rateds")))),
-                Aggregation.addFields().addFieldWithValueOf("addedField", "value").build(),
-                Aggregation.addFields().addFieldWithValueOf("addedField", Fields.field("qwe")).build(),
-                Aggregation.addFields().addField("addedField").withValueOf("rateds").build(),
-                Aggregation.addFields().addField("addedField").withValueOf(Fields.field("asd")).build()
+                Aggregation.match(where( "tomatoes.viewer.rating").gte("S")),
+                Aggregation.project("fieldA").andInclude("fieldB").andExclude("fieldC")
             ),
             Movie.class,
             Movie.class

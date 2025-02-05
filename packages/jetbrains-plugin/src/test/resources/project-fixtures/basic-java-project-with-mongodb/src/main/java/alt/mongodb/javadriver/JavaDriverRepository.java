@@ -10,10 +10,7 @@ import com.mongodb.client.model.Sorts;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class JavaDriverRepository {
     private static final String IMDB_VOTES = "imdb.votes";
@@ -29,7 +26,17 @@ public class JavaDriverRepository {
         return client
             .getDatabase("sample_mflix")
             .getCollection("movies")
-            .find(Filters.eq("test", 123))
+            .find(Filters.eq("rated", "L"))
+            .first();
+    }
+
+    public Document notIndexedAggregate(String string) {
+        return client
+            .getDatabase("sample_mflix")
+            .getCollection("movies")
+            .aggregate(Arrays.asList(
+                Aggregates.match(Filters.eq("rated", string)),
+                ))
             .first();
     }
 }

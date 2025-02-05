@@ -70,7 +70,7 @@ class MongoshBackend(
             emitNewLine()
         }
 
-        return emitPropertyAccess()
+        return this
     }
 
     fun emitObjectStart(long: Boolean = false): MongoshBackend {

@@ -8,18 +8,8 @@ import com.mongodb.jbplugin.mql.components.HasAggregation
 import com.mongodb.jbplugin.mql.components.HasExplain.ExplainPlanType
 import com.mongodb.jbplugin.mql.components.HasFieldReference
 import com.mongodb.jbplugin.mql.components.HasValueReference
-import com.mongodb.jbplugin.mql.components.IsCommand
 import com.mongodb.jbplugin.mql.components.Name
 import com.mongodb.jbplugin.mql.components.Named
-import com.mongodb.jbplugin.mql.parser.components.whenIsCommand
-import com.mongodb.jbplugin.mql.parser.map
-import com.mongodb.jbplugin.mql.parser.parse
-
-suspend fun <S> Node<S>.isAggregate(): Boolean {
-    return whenIsCommand<S>(IsCommand.CommandType.AGGREGATE)
-        .map { true }
-        .parse(this).orElse { false }
-}
 
 suspend fun <S> MongoshBackend.emitAggregateBody(node: Node<S>, explainPlan: ExplainPlanType): MongoshBackend {
     val allStages = node.component<HasAggregation<S>>()?.children ?: emptyList()

@@ -3,7 +3,6 @@ package com.mongodb.jbplugin.dialects.mongosh
 import com.mongodb.jbplugin.dialects.DialectFormatter
 import com.mongodb.jbplugin.dialects.OutputQuery
 import com.mongodb.jbplugin.dialects.mongosh.aggr.emitAggregateBody
-import com.mongodb.jbplugin.dialects.mongosh.aggr.isAggregate
 import com.mongodb.jbplugin.dialects.mongosh.backend.MongoshBackend
 import com.mongodb.jbplugin.dialects.mongosh.query.canUpdateDocuments
 import com.mongodb.jbplugin.dialects.mongosh.query.emitCollectionReference
@@ -11,7 +10,6 @@ import com.mongodb.jbplugin.dialects.mongosh.query.emitLimit
 import com.mongodb.jbplugin.dialects.mongosh.query.emitQueryFilter
 import com.mongodb.jbplugin.dialects.mongosh.query.emitQueryUpdate
 import com.mongodb.jbplugin.dialects.mongosh.query.emitSort
-import com.mongodb.jbplugin.dialects.mongosh.query.returnsACursor
 import com.mongodb.jbplugin.indexing.IndexAnalyzer
 import com.mongodb.jbplugin.mql.BsonType
 import com.mongodb.jbplugin.mql.Node
@@ -24,16 +22,24 @@ import com.mongodb.jbplugin.mql.components.IsCommand
 import io.github.z4kn4fein.semver.Version
 import kotlinx.coroutines.runBlocking
 import org.owasp.encoder.Encode
-import java.lang.IllegalStateException
 
 object MongoshDialectFormatter : DialectFormatter {
     override suspend fun <S> formatQuery(
         query: Node<S>,
         queryContext: QueryContext,
     ): OutputQuery {
-        val isAggregate = query.isAggregate()
         val explainPlan = query.component<HasExplain>()?.explainType ?: ExplainPlanType.NONE
         val queryCommand = query.component<IsCommand>() ?: return OutputQuery.None
+        val isAggregate = queryCommand.type == IsCommand.CommandType.AGGREGATE
+
+        val (isAFindQuery, functionName) = when (explainPlan) {
+            ExplainPlanType.NONE -> (queryCommand.type == IsCommand.CommandType.FIND_MANY) to
+                (queryCommand.type.canonical)
+            else -> if (isAggregate) false to "aggregate" else true to "find"
+        }
+
+        val usesSuffixExplainPlan = isAFindQuery
+        val usesPrefixExplainPlan = isAggregate && !isAFindQuery
 
         val outputString = MongoshBackend(
             prettyPrint = queryContext.prettyPrint,
@@ -43,7 +49,12 @@ object MongoshDialectFormatter : DialectFormatter {
             .apply {
                 emitDbAccess()
                 emitCollectionReference(query.component<HasCollectionReference<S>>())
-                emitFunctionName(queryCommand.type.canonical)
+                if (usesPrefixExplainPlan && explainPlan != ExplainPlanType.NONE) {
+                    emitExplainPlan(explainPlan)
+                }
+
+                emitPropertyAccess()
+                emitFunctionName(functionName)
                 emitFunctionCall(long = false, {
                     if (isAggregate) {
                         emitAggregateBody(query, explainPlan)
@@ -51,46 +62,26 @@ object MongoshDialectFormatter : DialectFormatter {
                         emitQueryFilter(query, firstCall = true)
                     }
                 }, {
-                    if (queryCommand.type == IsCommand.CommandType.AGGREGATE ||
-                        queryCommand.type == IsCommand.CommandType.FIND_MANY
-                    ) {
-                        if (explainPlan != ExplainPlanType.NONE) {
-                            emitExplainPlanOption(explainPlan)
-                        } else {
-                            didNotEmit()
-                        }
-                    } else if (query.canUpdateDocuments()) {
+                    if (query.canUpdateDocuments() && !isAFindQuery) { // only if it was not converted for an explain plan
                         emitQueryUpdate(query)
-                    } else {
-                        didNotEmit()
-                    }
-                }, {
-                    if (queryCommand.type != IsCommand.CommandType.AGGREGATE &&
-                        queryCommand.type != IsCommand.CommandType.FIND_MANY
-                    ) {
-                        if (explainPlan != ExplainPlanType.NONE) {
-                            emitExplainPlanOption(explainPlan)
-                        } else {
-                            didNotEmit()
-                        }
                     } else {
                         didNotEmit()
                     }
                 })
 
-                if (query.returnsACursor()) {
+                if (isAFindQuery) {
                     emitSort(query)
-                    if (explainPlan == ExplainPlanType.NONE) {
-                        emitLimit(query)
-                    }
+                    emitLimit(query)
                 }
 
-                if (queryCommand.type == IsCommand.CommandType.FIND_MANY &&
-                    explainPlan != ExplainPlanType.NONE
-                ) {
+                if (usesSuffixExplainPlan && explainPlan != ExplainPlanType.NONE) {
+                    emitExplainPlan(explainPlan)
+                }
+
+                if (isAFindQuery && explainPlan == ExplainPlanType.NONE && automaticallyRun) {
                     emitPropertyAccess()
-                    emitFunctionName("next")
-                    emitFunctionCall()
+                    emitFunctionName("toArray")
+                    emitFunctionCall(long = false)
                 }
             }.computeOutput()
 
@@ -146,11 +137,13 @@ object MongoshDialectFormatter : DialectFormatter {
 
     override fun formatType(type: BsonType) = ""
 
-    private fun MongoshBackend.emitExplainPlanOption(explainPlanType: ExplainPlanType): MongoshBackend {
-        emitObjectStart()
-        emitObjectKey(registerConstant("explain"))
-        emitContextValue(registerConstant(explainPlanType.serverName()))
-        return emitObjectEnd()
+    private suspend fun MongoshBackend.emitExplainPlan(explainPlanType: ExplainPlanType): MongoshBackend {
+        emitPropertyAccess()
+        emitFunctionName("explain")
+        emitFunctionCall(long = false, {
+            emitContextValue(registerConstant(explainPlanType.serverName()))
+        })
+        return this
     }
 
     // https://www.mongodb.com/docs/manual/reference/command/explain/#command-fields
