@@ -5,6 +5,7 @@ MongoDB plugin for IntelliJ IDEA.
 ## [Unreleased]
 
 ### Added
+* [INTELLIJ-211](https://jira.mongodb.org/browse/INTELLIJ-211) Introduce a new configurable plugin setting `sampleSize` which dictates how many documents to be fetched and used for analysing a collection's schema.
 * [INTELLIJ-199](https://jira.mongodb.org/browse/INTELLIJ-199) Add support for parsing, inspecting and autocompleting in method call used for chaining a `Sort` object on top of a Criteria chain in Spring data MongoDB using `Query.with()` call.
 * [INTELLIJ-197](https://jira.mongodb.org/browse/INTELLIJ-197) Add support for generating shell syntax for $group stage and supported accumulators when running queries.
 * [INTELLIJ-198](https://jira.mongodb.org/browse/INTELLIJ-198) New modal to provide default values when generating queries with unknown runtime expressions.

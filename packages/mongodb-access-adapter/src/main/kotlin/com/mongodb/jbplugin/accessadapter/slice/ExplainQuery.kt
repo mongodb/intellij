@@ -10,6 +10,7 @@ import com.mongodb.jbplugin.accessadapter.QueryResult
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.QueryContext
 import com.mongodb.jbplugin.mql.components.HasExplain
+import com.mongodb.jbplugin.mql.components.HasLimit
 
 /**
  * Runs the explain plan of a query.
@@ -35,7 +36,7 @@ data class ExplainQuery(
             }
 
             val explainPlanQueryResult = runCatching {
-                from.runQuery(query, Map::class, queryContext, limit = 1)
+                from.runQuery(query.with(HasLimit(1)), Map::class, queryContext)
             }.getOrNull() ?: return ExplainQuery(ExplainPlan.NotRun)
 
             val explainPlanDoc =

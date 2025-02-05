@@ -26,7 +26,7 @@ class BuildInfoTest {
             `when`(driver.connected).thenReturn(true)
             `when`(driver.connectionString()).thenReturn(ConnectionString("mongodb://localhost/"))
             `when`(
-                driver.runQuery<Long, Unit>(any(), eq(Long::class), any(), eq(1.seconds), any())
+                driver.runQuery<Long, Unit>(any(), eq(Long::class), any(), eq(1.seconds))
             ).thenReturn(QueryResult.Run(1L))
             `when`(driver.runCommand("admin", command, BuildInfoFromMongoDb::class)).thenReturn(
                 defaultBuildInfo(),
@@ -45,7 +45,7 @@ class BuildInfoTest {
             `when`(driver.connected).thenReturn(false)
             `when`(driver.connectionString()).thenReturn(ConnectionString("mongodb://localhost/"))
             `when`(
-                driver.runQuery<Long, Unit>(any(), eq(Long::class), any(), eq(1.seconds), any())
+                driver.runQuery<Long, Unit>(any(), eq(Long::class), any(), eq(1.seconds))
             ).doThrow(NotImplementedError())
             `when`(driver.runCommand("admin", command, BuildInfo::class)).doThrow(
                 NotImplementedError(),
@@ -91,8 +91,7 @@ class BuildInfoTest {
                     any(),
                     eq(Long::class),
                     eq(QueryContext.empty()),
-                    eq(1.seconds),
-                    eq(1)
+                    eq(1.seconds)
                 )
             ).thenReturn(QueryResult.Run(1L))
             `when`(driver.runCommand("admin", command, BuildInfoFromMongoDb::class)).thenReturn(
@@ -135,7 +134,7 @@ class BuildInfoTest {
             `when`(driver.connected).thenReturn(true)
             `when`(driver.connectionString()).thenReturn(ConnectionString(url))
             `when`(
-                driver.runQuery<Long, Unit>(any(), eq(Long::class), any(), eq(1.seconds), any())
+                driver.runQuery<Long, Unit>(any(), eq(Long::class), any(), eq(1.seconds))
             ).thenReturn(QueryResult.Run(1L))
             `when`(driver.runCommand("admin", command, BuildInfoFromMongoDb::class)).thenReturn(
                 defaultBuildInfo(),

@@ -90,13 +90,14 @@ object FieldCheckingLinter {
         dataSource: D,
         readModelProvider: MongoDbReadModelProvider<D>,
         query: Node<S>,
+        documentsSampleSize: Int,
     ): FieldCheckResult<S> {
         val querySchema = knownCollection<S>()
             .filter { it.namespace.isValid }
             .map {
                 readModelProvider.slice(
                     dataSource,
-                    GetCollectionSchema.Slice(it.namespace)
+                    GetCollectionSchema.Slice(it.namespace, documentsSampleSize)
                 ).schema
             }.parse(query)
 

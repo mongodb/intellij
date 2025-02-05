@@ -22,6 +22,7 @@ import com.mongodb.jbplugin.dialects.OutputQuery
 import com.mongodb.jbplugin.dialects.mongosh.MongoshDialect
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.QueryContext
+import com.mongodb.jbplugin.mql.components.HasLimit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -96,9 +97,9 @@ internal class DataGripMongoDbDriver(
         query: Node<S>,
         result: KClass<T>,
         queryContext: QueryContext,
-        timeout: Duration,
-        limit: Int
+        timeout: Duration
     ): QueryResult<T> = withContext(Dispatchers.IO) {
+        val limit = query.component<HasLimit>()?.limit ?: 1
         val queryScript = MongoshDialect.formatter.formatQuery(
             query,
             queryContext.willAutomaticallyRun()

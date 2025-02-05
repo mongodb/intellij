@@ -21,7 +21,7 @@ class ExplainQueryTest {
         val driver = mock<MongoDbDriver>()
         val namespace = Namespace("myDb", "myCollection")
 
-        whenever(driver.runQuery<Map<String, Any>, Unit>(any(), any(), any(), any())).thenReturn(
+        whenever(driver.runQuery<Map<String, Any>, Unit>(any(), any(), any())).thenReturn(
             QueryResult.Run(
                 mapOf(
                     "queryPlanner" to mapOf(
@@ -52,7 +52,7 @@ class ExplainQueryTest {
         val driver = mock<MongoDbDriver>()
         val namespace = Namespace("myDb", "myCollection")
 
-        whenever(driver.runQuery<Map<String, Any>, Unit>(any(), any(), any(), any())).thenReturn(
+        whenever(driver.runQuery<Map<String, Any>, Unit>(any(), any(), any())).thenReturn(
             QueryResult.Run(
                 mapOf(
                     "queryPlanner" to mapOf(

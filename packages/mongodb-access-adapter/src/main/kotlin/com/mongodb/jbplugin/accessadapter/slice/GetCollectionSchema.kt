@@ -17,11 +17,9 @@ import org.bson.Document
 data class GetCollectionSchema(
     val schema: CollectionSchema,
 ) {
-    /**
-     * @param namespace
-     */
     data class Slice(
         private val namespace: Namespace,
+        private val documentsSampleSize: Int,
     ) : com.mongodb.jbplugin.accessadapter.Slice<GetCollectionSchema> {
         override val id = "${javaClass.canonicalName}::$namespace"
 
@@ -41,12 +39,12 @@ data class GetCollectionSchema(
                     HasCollectionReference(HasCollectionReference.Known(Unit, Unit, namespace)),
                     IsCommand(IsCommand.CommandType.FIND_MANY),
                     HasFilter(emptyList<Node<Unit>>()),
-                    HasLimit(50),
+                    HasLimit(documentsSampleSize),
                 )
             )
 
             val sampleSomeDocs: List<Map<String, Any>> =
-                when (val result = from.runQuery(query, Map::class, limit = 50)) {
+                when (val result = from.runQuery(query, Map::class)) {
                     is QueryResult.Run -> result.result as List<Map<String, Any>>
                     else -> emptyList()
                 }

@@ -53,22 +53,19 @@ interface MongoDbDriver {
         query: Node<S>,
         result: KClass<T>,
         queryContext: QueryContext,
-        timeout: Duration,
-        limit: Int
+        timeout: Duration
     ): QueryResult<T>
 
     suspend fun <T : Any, S> runQuery(
         query: Node<S>,
         result: KClass<T>,
-        queryContext: QueryContext,
-        limit: Int
-    ): QueryResult<T> = runQuery(query, result, queryContext, 1.seconds, limit)
+        queryContext: QueryContext
+    ): QueryResult<T> = runQuery(query, result, queryContext, 1.seconds)
 
     suspend fun <T : Any, S> runQuery(
         query: Node<S>,
-        result: KClass<T>,
-        limit: Int
-    ): QueryResult<T> = runQuery(query, result, QueryContext.empty(), 1.seconds, limit)
+        result: KClass<T>
+    ): QueryResult<T> = runQuery(query, result, QueryContext.empty())
 
     suspend fun <T : Any> runCommand(
         database: String,

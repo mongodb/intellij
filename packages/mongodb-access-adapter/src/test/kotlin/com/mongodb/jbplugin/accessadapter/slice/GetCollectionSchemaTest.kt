@@ -10,6 +10,7 @@ import com.mongodb.jbplugin.mql.BsonNull
 import com.mongodb.jbplugin.mql.BsonObject
 import com.mongodb.jbplugin.mql.BsonString
 import com.mongodb.jbplugin.mql.Namespace
+import com.mongodb.jbplugin.mql.components.HasLimit
 import kotlinx.coroutines.runBlocking
 import org.bson.Document
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -17,8 +18,10 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import kotlin.time.Duration.Companion.seconds
@@ -29,7 +32,7 @@ class GetCollectionSchemaTest {
         runBlocking {
             val namespace = Namespace("", "myColl")
             val driver = mock<MongoDbDriver>()
-            val result = GetCollectionSchema.Slice(namespace).queryUsingDriver(driver)
+            val result = GetCollectionSchema.Slice(namespace, 50).queryUsingDriver(driver)
 
             assertEquals(namespace, result.schema.namespace)
             assertEquals(
@@ -39,7 +42,7 @@ class GetCollectionSchemaTest {
                 result.schema.schema,
             )
 
-            verify(driver, never()).runQuery<Any, Any>(any(), any(), any(), eq(1.seconds), any())
+            verify(driver, never()).runQuery<Any, Any>(any(), any(), any(), eq(1.seconds))
         }
     }
 
@@ -48,7 +51,7 @@ class GetCollectionSchemaTest {
         runBlocking {
             val namespace = Namespace("myDb", "")
             val driver = mock<MongoDbDriver>()
-            val result = GetCollectionSchema.Slice(namespace).queryUsingDriver(driver)
+            val result = GetCollectionSchema.Slice(namespace, 50).queryUsingDriver(driver)
 
             assertEquals(namespace, result.schema.namespace)
             assertEquals(
@@ -58,7 +61,7 @@ class GetCollectionSchemaTest {
                 result.schema.schema,
             )
 
-            verify(driver, never()).runQuery<Any, Any>(any(), any(), any(), eq(1.seconds), any())
+            verify(driver, never()).runQuery<Any, Any>(any(), any(), any(), eq(1.seconds))
         }
     }
 
@@ -68,7 +71,7 @@ class GetCollectionSchemaTest {
             val namespace = Namespace("myDb", "myColl")
             val driver = mock<MongoDbDriver>()
 
-            whenever(driver.runQuery<List<Map<String, Any>>, Any>(any(), any(), any()))
+            whenever(driver.runQuery<List<Map<String, Any>>, Any>(any(), any()))
                 .thenReturn(
                     QueryResult.Run(
                         listOf(
@@ -78,7 +81,7 @@ class GetCollectionSchemaTest {
                     )
                 )
 
-            val result = GetCollectionSchema.Slice(namespace).queryUsingDriver(driver)
+            val result = GetCollectionSchema.Slice(namespace, 50).queryUsingDriver(driver)
 
             assertEquals(namespace, result.schema.namespace)
             assertEquals(
@@ -99,7 +102,7 @@ class GetCollectionSchemaTest {
             val namespace = Namespace("myDb", "myColl")
             val driver = mock<MongoDbDriver>()
 
-            `when`(driver.runQuery<List<Map<String, Any>>, Any>(any(), any(), any())).thenReturn(
+            `when`(driver.runQuery<List<Map<String, Any>>, Any>(any(), any())).thenReturn(
                 QueryResult.Run(
                     listOf(
                         mapOf("book" to Document(mapOf("author" to "Someone"))),
@@ -108,7 +111,7 @@ class GetCollectionSchemaTest {
                 )
             )
 
-            val result = GetCollectionSchema.Slice(namespace).queryUsingDriver(driver)
+            val result = GetCollectionSchema.Slice(namespace, 50).queryUsingDriver(driver)
 
             assertEquals(namespace, result.schema.namespace)
             assertEquals(
@@ -134,7 +137,7 @@ class GetCollectionSchemaTest {
             val namespace = Namespace("myDb", "myColl")
             val driver = mock<MongoDbDriver>()
 
-            `when`(driver.runQuery<List<Map<String, Any>>, Any>(any(), any(), any())).thenReturn(
+            `when`(driver.runQuery<List<Map<String, Any>>, Any>(any(), any())).thenReturn(
                 QueryResult.Run(
                     listOf(
                         mapOf("array" to arrayOf(1, 2, 3, "abc")),
@@ -143,7 +146,7 @@ class GetCollectionSchemaTest {
                 )
             )
 
-            val result = GetCollectionSchema.Slice(namespace).queryUsingDriver(driver)
+            val result = GetCollectionSchema.Slice(namespace, 50).queryUsingDriver(driver)
 
             assertEquals(namespace, result.schema.namespace)
             assertEquals(
@@ -155,6 +158,32 @@ class GetCollectionSchemaTest {
                     ),
                 ),
                 result.schema.schema,
+            )
+        }
+    }
+
+    @Test
+    fun `should respect the provided limit for fetching sample documents`() {
+        runBlocking {
+            val namespace = Namespace("myDb", "myColl")
+            val driver = mock<MongoDbDriver>()
+
+            `when`(driver.runQuery<List<Map<String, Any>>, Any>(any(), any(), any())).thenReturn(
+                QueryResult.Run(
+                    listOf(
+                        mapOf("string" to "myString"),
+                        mapOf("integer" to 52, "string" to "anotherString"),
+                    )
+                )
+            )
+
+            GetCollectionSchema.Slice(namespace, 1).queryUsingDriver(driver)
+
+            verify(driver, times(1)).runQuery<List<Map<String, Any>>, Any>(
+                argThat {
+                    component<HasLimit>()?.limit == 1
+                },
+                any()
             )
         }
     }

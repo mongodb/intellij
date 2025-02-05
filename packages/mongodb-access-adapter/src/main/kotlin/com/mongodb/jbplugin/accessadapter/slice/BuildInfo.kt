@@ -156,8 +156,7 @@ data class BuildInfo(
                         query,
                         Long::class,
                         queryContext = QueryContext.empty(),
-                        timeout = 1.seconds,
-                        limit = 1
+                        timeout = 1.seconds
                     )
                 ) {
                     is QueryResult.Run -> countOfAdminCli.result > 0
