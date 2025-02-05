@@ -68,8 +68,6 @@ internal abstract class NewConnectionActivatedProbeTest(
                     !event.properties.containsKey(TelemetryProperty.ATLAS_HOST)
             },
         )
-
-        driver.closeConnectionForTesting()
     }
 }
 
