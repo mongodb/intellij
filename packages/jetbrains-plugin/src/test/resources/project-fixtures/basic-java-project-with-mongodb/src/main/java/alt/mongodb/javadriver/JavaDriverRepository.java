@@ -29,7 +29,7 @@ public class JavaDriverRepository {
         return client
             .getDatabase("sample_mflix")
             .getCollection("movies")
-            .find(Filters.eq("test", 14))
+            .find(Filters.eq("test", 123))
             .first();
     }
 }

@@ -55,13 +55,14 @@ class MongoshDialectFormatterTest {
             var collection = ""
             var database = ""
             
-            db.getSiblingDB(database).getCollection(collection).explain("queryPlanner").find({"myField": "myVal", })
+            db.getSiblingDB(database).getCollection(collection).find({"myField": "myVal", }, {"explain": "queryPlanner"}).next()
             """.trimIndent(),
             explain = ExplainPlanType.SAFE
         ) {
             Node(
                 Unit,
                 listOf(
+                    IsCommand(IsCommand.CommandType.FIND_MANY),
                     HasFilter(
                         listOf(
                             Node(
@@ -89,13 +90,14 @@ class MongoshDialectFormatterTest {
             var collection = ""
             var database = ""
             
-            db.getSiblingDB(database).getCollection(collection).explain("executionStats").find({"myField": "myVal", })
+            db.getSiblingDB(database).getCollection(collection).find({"myField": "myVal", }, {"explain": "executionStats"}).next()
             """.trimIndent(),
             explain = ExplainPlanType.FULL
         ) {
             Node(
                 Unit,
                 listOf(
+                    IsCommand(IsCommand.CommandType.FIND_MANY),
                     HasFilter(
                         listOf(
                             Node(
@@ -111,6 +113,70 @@ class MongoshDialectFormatterTest {
                             )
                         )
                     )
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `can format an aggregate with a safe explain plan using queryPlanner`() = runTest {
+        assertGeneratedQuery(
+            """
+            var collection = ""
+            var database = ""
+            
+            db.getSiblingDB(database).getCollection(collection).aggregate([], {"explain": "queryPlanner"})
+            """.trimIndent(),
+            explain = ExplainPlanType.SAFE
+        ) {
+            Node(
+                Unit,
+                listOf(
+                    IsCommand(IsCommand.CommandType.AGGREGATE),
+                    HasAggregation<List<Node<Unit>>>(emptyList())
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `can format an update with a safe explain plan using queryPlanner`() = runTest {
+        assertGeneratedQuery(
+            """
+            var collection = ""
+            var database = ""
+            
+            db.getSiblingDB(database).getCollection(collection).updateMany({}, {}, {"explain": "queryPlanner"})
+            """.trimIndent(),
+            explain = ExplainPlanType.SAFE
+        ) {
+            Node(
+                Unit,
+                listOf(
+                    IsCommand(IsCommand.CommandType.UPDATE_MANY),
+                    HasUpdates<List<Node<Unit>>>(emptyList()),
+                    HasFilter<List<Node<Unit>>>(emptyList())
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `can format a delete query with a safe explain plan using queryPlanner`() = runTest {
+        assertGeneratedQuery(
+            """
+            var collection = ""
+            var database = ""
+            
+            db.getSiblingDB(database).getCollection(collection).deleteMany({}, {"explain": "queryPlanner"})
+            """.trimIndent(),
+            explain = ExplainPlanType.SAFE
+        ) {
+            Node(
+                Unit,
+                listOf(
+                    IsCommand(IsCommand.CommandType.DELETE_MANY),
+                    HasFilter<List<Node<Unit>>>(emptyList())
                 )
             )
         }

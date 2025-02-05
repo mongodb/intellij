@@ -14,8 +14,6 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAccessor
 import java.util.*
 
-private const val MONGODB_FIRST_RELEASE = "2009-02-11T18:00:00.000Z"
-
 /**
  * @param context
  */
@@ -138,6 +136,7 @@ class MongoshBackend(
     fun computeOutput(): String {
         val preludeBackend =
             MongoshBackend(context, prettyPrint, automaticallyRun = false, paddingSpaces)
+
         preludeBackend.variableList().sortedBy { it.name }.forEach {
             preludeBackend.emitVariableDeclaration(it.name, it.type, it.value)
         }
@@ -154,7 +153,7 @@ class MongoshBackend(
 
     fun emitFunctionName(name: String): MongoshBackend = emitAsIs(name)
 
-    suspend fun emitFunctionCall(long: Boolean = false, vararg body: suspend MongoshBackend.() -> MongoshBackend): MongoshBackend {
+    suspend fun emitFunctionCall(long: Boolean = false, vararg body: suspend MongoshBackend.() -> MongoshBackend?): MongoshBackend {
         emitAsIs("(")
         if (body.isNotEmpty()) {
             if (long && prettyPrint) {
@@ -163,14 +162,21 @@ class MongoshBackend(
                 emitNewLine()
             }
 
-            body[0].invoke(this)
-            body.slice(1 until body.size).forEach {
-                if (long && prettyPrint) {
-                    emitNewLine()
+            val args = body.mapNotNull {
+                MongoshBackend(
+                    context,
+                    prettyPrint,
+                    automaticallyRun = false,
+                    paddingSpaces
+                ).it()
+            }.joinToString(
+                separator = when (prettyPrint) {
+                    true -> ",${newLineWithPaddingString()}"
+                    false -> ", "
                 }
-                emitAsIs(", ")
-                it(this)
-            }
+            ) { it.output.toString() }
+
+            output.append(args) // it's already encoded by the child backends
         }
 
         if (long && prettyPrint) {
@@ -181,6 +187,8 @@ class MongoshBackend(
         emitAsIs(")")
         return this
     }
+
+    fun didNotEmit() = null
 
     fun emitPropertyAccess(): MongoshBackend {
         emitAsIs(".")
@@ -202,29 +210,18 @@ class MongoshBackend(
     }
 
     fun emitNewLine(): MongoshBackend {
-        output.append("\n")
-        emitAsIs(" ".repeat(paddingScopes.lastOrNull() ?: 0))
-
-        line += 1
-        column = 1
-
+        emitAsIs(newLineWithPaddingString(), encode = false)
         return this
     }
 
-    /**
-     * Emits a literal string value into the script.
-     *
-     * This function is <b>unsafe</b>, <b>it does not encode input values, so it's sensitive
-     * to code injection</b>. Only use this for well-known, literal constant values that we have
-     * control of.
-     *
-     * @see emitContextValue for dynamic values provided by the user.
-     */
-    fun emitStringLiteral(value: String): MongoshBackend {
-        return emitAsIs("\"$value\"", encode = false)
+    private fun newLineWithPaddingString(): String {
+        line += 1
+        column = 1
+
+        return "\n" + " ".repeat(paddingScopes.lastOrNull() ?: 0)
     }
 
-    private fun emitAsIs(string: String, encode: Boolean = true): MongoshBackend {
+    fun emitAsIs(string: String, encode: Boolean = true): MongoshBackend {
         val stringToOutput = if (encode) Encode.forJavaScript(string) else string
 
         output.append(stringToOutput)

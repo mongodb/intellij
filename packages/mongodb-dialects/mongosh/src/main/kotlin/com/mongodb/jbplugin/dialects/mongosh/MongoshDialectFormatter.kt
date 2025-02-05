@@ -24,6 +24,7 @@ import com.mongodb.jbplugin.mql.components.IsCommand
 import io.github.z4kn4fein.semver.Version
 import kotlinx.coroutines.runBlocking
 import org.owasp.encoder.Encode
+import java.lang.IllegalStateException
 
 object MongoshDialectFormatter : DialectFormatter {
     override suspend fun <S> formatQuery(
@@ -32,6 +33,7 @@ object MongoshDialectFormatter : DialectFormatter {
     ): OutputQuery {
         val isAggregate = query.isAggregate()
         val explainPlan = query.component<HasExplain>()?.explainType ?: ExplainPlanType.NONE
+        val queryCommand = query.component<IsCommand>() ?: return OutputQuery.None
 
         val outputString = MongoshBackend(
             prettyPrint = queryContext.prettyPrint,
@@ -39,66 +41,58 @@ object MongoshDialectFormatter : DialectFormatter {
         )
             .applyQueryExpansions(queryContext)
             .apply {
-                var suffixToAddToSerialize: String? = null
-
                 emitDbAccess()
                 emitCollectionReference(query.component<HasCollectionReference<S>>())
-                if (explainPlan != ExplainPlanType.NONE) {
-                    emitFunctionName("explain")
-                    emitFunctionCall(long = false, {
-                        // https://www.mongodb.com/docs/manual/reference/command/explain/#command-fields
-                        when (explainPlan) {
-                            ExplainPlanType.FULL -> emitStringLiteral("executionStats")
-                            else -> emitStringLiteral("queryPlanner")
-                        }
-                    })
-                    emitPropertyAccess()
+                emitFunctionName(queryCommand.type.canonical)
+                emitFunctionCall(long = false, {
                     if (isAggregate) {
-                        emitFunctionName("aggregate")
+                        emitAggregateBody(query, explainPlan)
                     } else {
-                        emitFunctionName("find")
-                        suffixToAddToSerialize = "_baseCursor.explain"
-                    }
-                } else {
-                    val funcName = query.component<IsCommand>()?.type?.canonical ?: "find"
-                    if (funcName == "find") {
-                        suffixToAddToSerialize = "toArray"
-                    }
-
-                    emitFunctionName(funcName)
-                }
-
-                if (query.canUpdateDocuments() && explainPlan == ExplainPlanType.NONE) {
-                    emitFunctionCall(long = true, {
                         emitQueryFilter(query, firstCall = true)
-                    }, {
-                        emitQueryUpdate(query)
-                    })
-                } else {
-                    emitFunctionCall(long = true, {
-                        if (query.isAggregate()) {
-                            emitAggregateBody(query, explainPlan)
+                    }
+                }, {
+                    if (queryCommand.type == IsCommand.CommandType.AGGREGATE ||
+                        queryCommand.type == IsCommand.CommandType.FIND_MANY
+                    ) {
+                        if (explainPlan != ExplainPlanType.NONE) {
+                            emitExplainPlanOption(explainPlan)
                         } else {
-                            emitQueryFilter(query, firstCall = true)
+                            didNotEmit()
                         }
-                    })
-                }
+                    } else if (query.canUpdateDocuments()) {
+                        emitQueryUpdate(query)
+                    } else {
+                        didNotEmit()
+                    }
+                }, {
+                    if (queryCommand.type != IsCommand.CommandType.AGGREGATE &&
+                        queryCommand.type != IsCommand.CommandType.FIND_MANY
+                    ) {
+                        if (explainPlan != ExplainPlanType.NONE) {
+                            emitExplainPlanOption(explainPlan)
+                        } else {
+                            didNotEmit()
+                        }
+                    } else {
+                        didNotEmit()
+                    }
+                })
 
                 if (query.returnsACursor()) {
                     emitSort(query)
-                    emitLimit(query)
-                    suffixToAddToSerialize = "toArray"
+                    if (explainPlan == ExplainPlanType.NONE) {
+                        emitLimit(query)
+                    }
                 }
 
-                // we need this because serializing a cursor fails, MONGOSH-2002
-                if (automaticallyRun && suffixToAddToSerialize != null) {
+                if (queryCommand.type == IsCommand.CommandType.FIND_MANY &&
+                    explainPlan != ExplainPlanType.NONE
+                ) {
                     emitPropertyAccess()
-                    emitFunctionName(suffixToAddToSerialize)
+                    emitFunctionName("next")
                     emitFunctionCall()
                 }
             }.computeOutput()
-
-        println(outputString)
 
         val ref = query.component<HasCollectionReference<S>>()?.reference
         return when {
@@ -151,4 +145,22 @@ object MongoshDialectFormatter : DialectFormatter {
     }
 
     override fun formatType(type: BsonType) = ""
+
+    private fun MongoshBackend.emitExplainPlanOption(explainPlanType: ExplainPlanType): MongoshBackend {
+        emitObjectStart()
+        emitObjectKey(registerConstant("explain"))
+        emitContextValue(registerConstant(explainPlanType.serverName()))
+        return emitObjectEnd()
+    }
+
+    // https://www.mongodb.com/docs/manual/reference/command/explain/#command-fields
+    private fun ExplainPlanType.serverName(): String {
+        return when (this) {
+            ExplainPlanType.NONE -> throw IllegalStateException(
+                "Must not generate an explain plan when the type is NONE."
+            )
+            ExplainPlanType.SAFE -> "queryPlanner"
+            ExplainPlanType.FULL -> "executionStats"
+        }
+    }
 }

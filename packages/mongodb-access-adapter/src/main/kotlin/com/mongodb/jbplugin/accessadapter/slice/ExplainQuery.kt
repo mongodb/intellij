@@ -54,9 +54,13 @@ data class ExplainQuery(
                 winningPlan,
                 mapOf(
                     "COLLSCAN" to ExplainPlan.CollectionScan,
-                    "EXPRESS_IXSCAN" to ExplainPlan.IndexScan,
                     "IXSCAN" to ExplainPlan.IndexScan,
                     "IDHACK" to ExplainPlan.IndexScan,
+                    // EXPRESS_* are basically like a generalisation of IDHACK for other fields
+                    "EXPRESS_IXSCAN" to ExplainPlan.IndexScan,
+                    "EXPRESS_CLUSTERED_IXSCAN" to ExplainPlan.IndexScan,
+                    "EXPRESS_UPDATE" to ExplainPlan.IndexScan,
+                    "EXPRESS_DELETE" to ExplainPlan.IndexScan,
                 )
             ) ?: ExplainPlan.NotRun
 
