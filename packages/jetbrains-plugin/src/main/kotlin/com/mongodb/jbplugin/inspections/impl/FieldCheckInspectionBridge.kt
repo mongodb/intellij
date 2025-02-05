@@ -23,7 +23,7 @@ import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.observability.TelemetryEvent
 import com.mongodb.jbplugin.observability.probe.InspectionStatusChangedProbe
-import com.mongodb.jbplugin.settings.PluginSettings
+import com.mongodb.jbplugin.settings.pluginSetting
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
 
@@ -68,14 +68,14 @@ internal object FieldCheckLinterInspection : MongoDbInspection {
         }
 
         val readModelProvider by query.source.project.service<DataGripBasedReadModelProvider>()
-        val pluginSettings by query.source.project.service<PluginSettings>()
+        val sampleSize by pluginSetting { ::sampleSize }
 
         val result = runBlocking {
             FieldCheckingLinter.lintQuery(
                 dataSource,
                 readModelProvider,
                 query,
-                pluginSettings.sampleSize
+                sampleSize
             )
         }
 
