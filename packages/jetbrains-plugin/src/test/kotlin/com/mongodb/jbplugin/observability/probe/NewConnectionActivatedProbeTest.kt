@@ -6,7 +6,6 @@ package com.mongodb.jbplugin.observability.probe
 
 import com.intellij.database.console.session.DatabaseSession
 import com.intellij.database.dataSource.DatabaseConnectionPoint
-import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.openapi.application.Application
 import com.intellij.openapi.project.Project
 import com.mongodb.jbplugin.fixtures.*
@@ -43,17 +42,17 @@ internal abstract class NewConnectionActivatedProbeTest(
         val telemetryService = mock<TelemetryService>()
         val logMessage = mockLogMessage()
         val connectionPoint = mock<DatabaseConnectionPoint>()
-        val dataSource = mock<LocalDataSource>()
 
         application.withMockedService(telemetryService)
         application.withMockedService(logMessage)
 
+        val dataSource = project.connectTo(serverUrl)
+        val driver = project.createDriver(dataSource)
+
         `when`(session.project).thenReturn(project)
         `when`(session.connectionPoint).thenReturn(connectionPoint)
         `when`(connectionPoint.dataSource).thenReturn(dataSource)
-        `when`(connectionPoint.dataSource.modificationCount).thenReturn(1)
 
-        project.withMockedMongoDbConnection(serverUrl)
         val probe = NewConnectionActivatedProbe()
 
         probe.connected(session)
@@ -69,6 +68,8 @@ internal abstract class NewConnectionActivatedProbeTest(
                     !event.properties.containsKey(TelemetryProperty.ATLAS_HOST)
             },
         )
+
+        driver.closeConnectionForTesting()
     }
 }
 

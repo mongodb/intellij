@@ -15,7 +15,6 @@ import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.mongodb.ConnectionString
 import com.mongodb.MongoClientSettings
-import com.mongodb.jbplugin.accessadapter.ExplainPlan
 import com.mongodb.jbplugin.accessadapter.MongoDbDriver
 import com.mongodb.jbplugin.accessadapter.QueryResult
 import com.mongodb.jbplugin.dialects.OutputQuery
@@ -62,7 +61,7 @@ private val logger: Logger = logger<DataGripMongoDbDriver>()
  * @param project
  * @param dataSource
  */
-internal class DataGripMongoDbDriver(
+class DataGripMongoDbDriver(
     private val project: Project,
     private val dataSource: LocalDataSource,
 ) : MongoDbDriver {
@@ -193,7 +192,7 @@ internal class DataGripMongoDbDriver(
          * for the actual mappings.
          */
         @VisibleForTesting
-        internal fun deserializeEJson(doc: Any?): Any? {
+        fun deserializeEJson(doc: Any?): Any? {
             if (doc is Map<*, *>) {
                 val mappings = doc.map { (key, value) ->
                     when (key) {
@@ -240,7 +239,7 @@ internal class DataGripMongoDbDriver(
         }
 
         @VisibleForTesting
-        internal fun <T : Any> mapToClass(value: Any?, kClass: KClass<T>): T? {
+        fun <T : Any> mapToClass(value: Any?, kClass: KClass<T>): T? {
             if (value == null) {
                 return null
             }
@@ -262,7 +261,8 @@ internal class DataGripMongoDbDriver(
         }
     }
 
-    private suspend fun getConnection(): DatabaseConnection {
+    @VisibleForTesting
+    suspend fun getConnection(): DatabaseConnection {
         val connections = DatabaseConnectionManager.getInstance().activeConnections
         val connectionHandler =
             DatabaseConnectionManager
@@ -300,7 +300,7 @@ internal class DataGripMongoDbDriver(
     }
 
     @VisibleForTesting
-    private fun withActiveConnectionList(fn: (MutableSet<DatabaseConnection>) -> Unit) {
+    fun withActiveConnectionList(fn: (MutableSet<DatabaseConnection>) -> Unit) {
         runBlocking {
             val connectionsManager = DatabaseConnectionManager.getInstance()
             val myConnectionsField =
@@ -315,13 +315,6 @@ internal class DataGripMongoDbDriver(
             fn(myConnections)
             myConnectionsField.isAccessible = false
         }
-    }
-
-    private fun planByMappingStage(stage: Map<String, Any>, mapping: Map<String, ExplainPlan>): ExplainPlan? {
-        val inputStage =
-            stage["inputStage"] as? Map<String, Any>
-                ?: return mapping.getOrDefault(stage["stage"], null)
-        return mapping.getOrDefault(inputStage["stage"], null)
     }
 }
 

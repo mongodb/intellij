@@ -5,19 +5,22 @@
 
 package com.mongodb.jbplugin.fixtures
 
-import com.google.gson.Gson
+import com.intellij.database.dataSource.DatabaseDriverManager
+import com.intellij.database.dataSource.LocalDataSource
+import com.intellij.database.dataSource.LocalDataSourceManager
+import com.intellij.database.dataSource.validation.DatabaseDriverValidator.createDownloaderTask
+import com.intellij.openapi.application.EDT
+import com.intellij.openapi.progress.EmptyProgressIndicator
 import com.intellij.openapi.project.Project
+import com.intellij.util.ui.EDT
 import com.mongodb.ConnectionString
-import com.mongodb.client.MongoClient
 import com.mongodb.client.MongoClients
 import com.mongodb.jbplugin.accessadapter.MongoDbDriver
-import com.mongodb.jbplugin.accessadapter.QueryResult
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
-import com.mongodb.jbplugin.mql.Node
-import com.mongodb.jbplugin.mql.QueryContext
-import kotlinx.coroutines.withTimeout
+import com.mongodb.jbplugin.accessadapter.datagrip.adapter.DataGripMongoDbDriver
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import org.bson.Document
-import org.bson.conversions.Bson
 import org.junit.jupiter.api.extension.*
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.mock
@@ -25,8 +28,7 @@ import org.testcontainers.containers.DockerComposeContainer
 import org.testcontainers.containers.MongoDBContainer
 import org.testcontainers.lifecycle.Startable
 import java.io.File
-import kotlin.reflect.KClass
-import kotlin.time.Duration
+import java.util.UUID
 
 /**
  * Test environment.
@@ -127,67 +129,47 @@ class MongoDbEnvironmentTestExtensions :
     ): Any = serverUrl!!
 }
 
-/**
- * Driver implementation that delegates directly to the real MongoDbDriver instead of going through the JDBC driver.
- *
- * @property uri
- * @property client
- */
-internal class DirectMongoDbDriver(
-    val uri: String,
-    val client: MongoClient,
-) : MongoDbDriver {
-    override val connected = true
-    val gson = Gson()
-
-    override suspend fun connectionString(): ConnectionString = ConnectionString(uri)
-
-    override suspend fun <T : Any, S> runQuery(
-        query: Node<S>,
-        result: KClass<T>,
-        queryContext: QueryContext,
-        timeout: Duration,
-        limit: Int
-    ): QueryResult<T> {
-        throw UnsupportedOperationException()
+internal fun Project.connectTo(url: MongoDbServerUrl): LocalDataSource {
+    val dataSource = createDataSource(url)
+    createDownloaderTask(dataSource, null).run(EmptyProgressIndicator())
+    runBlocking(Dispatchers.EDT) {
+        EDT.dispatchAllInvocationEvents()
     }
 
-    override suspend fun <T : Any> runCommand(
-        database: String,
-        command: Bson,
-        result: KClass<T>,
-        timeout: Duration,
-    ): T =
-        withTimeout(timeout) {
-            val doc = client.getDatabase(database).runCommand(command)
-            gson.fromJson(doc.toJson(), result.java)
-        }
+    return dataSource
 }
 
-/**
- * Allows to mock a MongoDB connection at the project level.
- *
- * @param url
- * @return
- */
-fun Project.withMockedMongoDbConnection(url: MongoDbServerUrl): Project {
-    val client = MongoClients.create(url.value)
+private fun Project.createDataSource(serverUrl: MongoDbServerUrl) =
+    runBlocking {
+        val dataSourceManager = LocalDataSourceManager.byDataSource(
+            this@createDataSource,
+            LocalDataSource::class.java
+        )!!
+        val instance = DatabaseDriverManager.getInstance()
+        val jdbcDriver = instance.getDriver("mongo")
 
-    val readModelProvider =
-        DataGripBasedReadModelProvider(
-            this,
-        ).apply {
-            driverFactory = { _, _ -> DirectMongoDbDriver(url.value, client) }
-        }
-    return withMockedService(readModelProvider)
+        val dataSource =
+            LocalDataSource().apply {
+                name = UUID.randomUUID().toString()
+                url = serverUrl.value
+                isConfiguredByUrl = true
+                username = ""
+                passwordStorage = LocalDataSource.Storage.PERSIST
+                databaseDriver = jdbcDriver
+            }
+
+        dataSourceManager.addDataSource(dataSource)
+        dataSource
+    }
+
+internal fun Project.createDriver(
+    dataSource: LocalDataSource,
+): DataGripMongoDbDriver {
+    val driver = DataGripMongoDbDriver(this, dataSource)
+    driver.forceConnectForTesting()
+    return driver
 }
 
-/**
- * Allows to mock a MongoDB connection at the project level that is not connected.
- *
- * @param url
- * @return
- */
 suspend fun Project.withMockedUnconnectedMongoDbConnection(url: MongoDbServerUrl): Project {
     val driver = mock<MongoDbDriver>()
     `when`(driver.connected).thenReturn(false)
