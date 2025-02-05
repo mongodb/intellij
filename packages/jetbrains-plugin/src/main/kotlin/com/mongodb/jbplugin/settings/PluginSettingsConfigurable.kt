@@ -116,6 +116,7 @@ private class PluginSettingsComponent {
         root.accessibleContext.accessibleName = "MongoDB Settings"
         isTelemetryEnabledCheckBox.accessibleContext.accessibleName = "MongoDB Enable Telemetry"
         enableFullExplainPlan.accessibleContext.accessibleName = "MongoDB Enable Full Explain Plan"
+        sampleSize.accessibleContext.accessibleName = "MongoDB Sample Size"
     }
 
     fun getSampleSizeField(): JComponent {
