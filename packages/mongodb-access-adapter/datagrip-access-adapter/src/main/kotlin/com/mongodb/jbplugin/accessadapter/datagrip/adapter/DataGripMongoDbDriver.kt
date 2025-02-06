@@ -98,7 +98,14 @@ class DataGripMongoDbDriver(
         queryContext: QueryContext,
         timeout: Duration
     ): QueryResult<T> = withContext(Dispatchers.IO) {
-        val limit = query.component<HasLimit>()?.limit ?: 1
+        val limit = query.component<HasLimit>()?.limit
+        if (limit == null && queryContext.automaticallyRun) {
+            logger.error(
+                "Could not run query $query because it's meant to be automatically run but it doesn't have a limit. This is likely a bug."
+            )
+            return@withContext QueryResult.NotRun()
+        }
+
         val queryScript = MongoshDialect.formatter.formatQuery(
             query,
             queryContext.willAutomaticallyRun()
