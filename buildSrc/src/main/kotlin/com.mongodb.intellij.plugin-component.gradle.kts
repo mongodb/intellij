@@ -136,8 +136,6 @@ tasks {
             excludeTags("UI")
         }
 
-        maxParallelForks = 1
-
         environment("TESTCONTAINERS_RYUK_DISABLED", "true")
         val homePath =
             project.layout.buildDirectory
