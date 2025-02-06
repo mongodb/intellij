@@ -111,7 +111,10 @@ data class Node<S>(
 data class QueryContext(
     val expansions: Map<String, LocalVariable>,
     val prettyPrint: Boolean,
-    val automaticallyRun: Boolean
+    // This boolean dictates whether the query to which this context will be attached is supposed
+    // to be run automatically or not. A query will run automatically where there is no user
+    // interactions involved like - sampling, explaining a query for indexes, etc.
+    val automaticallyRun: Boolean,
 ) {
     data class AsIs(val value: String) {
         val isEmpty = value.isBlank()

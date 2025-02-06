@@ -32,14 +32,19 @@ object MongoshDialectFormatter : DialectFormatter {
         val queryCommand = query.component<IsCommand>() ?: return OutputQuery.None
         val isAggregate = queryCommand.type == IsCommand.CommandType.AGGREGATE
 
+        // When the query is asking to be explained we simply disregard what the actual query is
+        // and assume that it is either aggregate (when mentioned to be as aggregate) otherwise a
+        // find because only on these two can we actually chain an explain. This is a limitation on
+        // the Java Shell.
         val (isAFindQuery, functionName) = when (explainPlan) {
             ExplainPlanType.NONE -> (queryCommand.type == IsCommand.CommandType.FIND_MANY) to
                 (queryCommand.type.canonical)
             else -> if (isAggregate) false to "aggregate" else true to "find"
         }
 
-        val usesSuffixExplainPlan = isAFindQuery
-        val usesPrefixExplainPlan = isAggregate && !isAFindQuery
+        val usesSuffixExplainPlan = explainPlan != ExplainPlanType.NONE && isAFindQuery
+        val usesPrefixExplainPlan =
+            explainPlan != ExplainPlanType.NONE && isAggregate && !isAFindQuery
 
         val outputString = MongoshBackend(
             prettyPrint = queryContext.prettyPrint,
@@ -49,7 +54,7 @@ object MongoshDialectFormatter : DialectFormatter {
             .apply {
                 emitDbAccess()
                 emitCollectionReference(query.component<HasCollectionReference<S>>())
-                if (usesPrefixExplainPlan && explainPlan != ExplainPlanType.NONE) {
+                if (usesPrefixExplainPlan) {
                     emitExplainPlan(explainPlan)
                 }
 
@@ -74,7 +79,7 @@ object MongoshDialectFormatter : DialectFormatter {
                     emitLimit(query)
                 }
 
-                if (usesSuffixExplainPlan && explainPlan != ExplainPlanType.NONE) {
+                if (usesSuffixExplainPlan) {
                     emitExplainPlan(explainPlan)
                 }
 
