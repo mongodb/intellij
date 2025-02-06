@@ -65,12 +65,6 @@ dependencies {
     testImplementation(libs.testing.jsoup)
     testImplementation(libs.testing.video.recorder)
     testImplementation(libs.testing.assertj.swing)
-    testImplementation(libs.testing.remoteRobot)
-    testImplementation(libs.testing.remoteRobotDeps.remoteFixtures)
-    testImplementation(libs.testing.remoteRobotDeps.ideLauncher)
-    testImplementation(libs.testing.remoteRobotDeps.okHttp)
-    testImplementation(libs.testing.remoteRobotDeps.retrofit)
-    testImplementation(libs.testing.remoteRobotDeps.retrofitGson)
     testImplementation(libs.testing.testContainers.core)
     testImplementation(libs.testing.testContainers.mongodb)
     testImplementation(libs.testing.testContainers.jupiter)
@@ -113,6 +107,7 @@ jmhReport {
             .file("reports/jmh/results.json")
             .get()
             .asFile.absolutePath
+
     jmhReportOutput =
         rootProject.layout.buildDirectory
             .dir("reports/jmh/")
@@ -121,20 +116,25 @@ jmhReport {
 }
 
 tasks {
-    register("buildProperties", WriteProperties::class) {
-        group = "build"
+    if (pluginBundle.enableBundle.get() == true) {
+        register("buildProperties", WriteProperties::class) {
+            group = "build"
 
-        destinationFile.set(project.layout.projectDirectory.file("src/main/resources/build.properties"))
-        property("pluginVersion", rootProject.version)
-        property("segmentApiKey", System.getenv("BUILD_SEGMENT_API_KEY") ?: "<none>")
+            val segmentApiKey = System.getenv("BUILD_SEGMENT_API_KEY")
+            if (segmentApiKey == null) {
+                throw GradleException("Environment variable 'BUILD_SEGMENT_API_KEY' is not set. For local builds set it to empty.")
+            }
+
+            destinationFile.set(project.layout.projectDirectory.file("src/main/resources/build.properties"))
+            property("pluginVersion", rootProject.version)
+            property("segmentApiKey", segmentApiKey)
+        }
     }
 
     named("test", Test::class) {
         useJUnitPlatform {
             excludeTags("UI")
         }
-
-        maxParallelForks = 1
 
         environment("TESTCONTAINERS_RYUK_DISABLED", "true")
         val homePath =
@@ -156,57 +156,10 @@ tasks {
         )
     }
 
-    register("uiTest", Test::class) {
-        group = "verification"
-        useJUnitPlatform {
-            includeTags("UI")
+    if (pluginBundle.enableBundle.get() == true) {
+        withType<ProcessResources> {
+            dependsOn("buildProperties")
         }
-
-        maxParallelForks = 1
-
-        retry {
-            failOnPassedAfterRetry.set(false)
-            maxFailures.set(3)
-            maxRetries.set(3)
-            maxParallelForks = 1
-        }
-
-        extensions.configure(JacocoTaskExtension::class) {
-            isJmx = true
-            includes = listOf("com.mongodb.*")
-            isIncludeNoLocationClasses = true
-        }
-
-        jacoco {
-            toolVersion = libs.versions.jacoco.get()
-            isScanForTestClasses = true
-        }
-    }
-
-    named("runIdeForUiTests", RunIdeForUiTestTask::class) {
-        systemProperties(
-            mapOf(
-                "jb.consents.confirmation.enabled" to false,
-                "jb.privacy.policy.text" to "<!--999.999-->",
-                "eap.require.license" to true,
-                "ide.mac.message.dialogs.as.sheets" to false,
-                "ide.mac.file.chooser.native" to false,
-                "jbScreenMenuBar.enabled" to false,
-                "apple.laf.useScreenMenuBar" to false,
-                "idea.trust.all.projects" to true,
-                "ide.show.tips.on.startup.default.value" to false,
-                "idea.is.internal" to true,
-                "robot-server.port" to "8082",
-            ),
-        )
-    }
-
-    downloadRobotServerPlugin {
-        version.set(libs.versions.intellij.remoteRobot)
-    }
-
-    withType<ProcessResources> {
-        dependsOn("buildProperties")
     }
 
     patchPluginXml {

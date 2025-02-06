@@ -10,7 +10,7 @@
       </option>
       <option name="taskNames">
         <list>
-          <option value="runIdeForUiTests" />
+          <option value=":packages:jetbrains-plugin:runIde" />
         </list>
       </option>
       <option name="vmOptions" />

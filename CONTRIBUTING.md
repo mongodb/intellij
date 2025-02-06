@@ -40,8 +40,7 @@ please follow the steps below before you start writing any code:
 
 You can report new bugs by creating a new issue either in [JIRA](https://jira.mongodb.org/projects/INTELLIJ/issues/) or
 [GitHub](https://github.com/mongodb-js/intellij/issues). Please include as much information as possible about your
-environment
-and include any relevant logs.
+environment and include any relevant logs.
 
 ## Starting the plugin locally
 
@@ -64,46 +63,10 @@ following command:
 
 Will apply the latest changes to the running IDE.
 
-> [!INFO]
+> [!IMPORTANT]
 > It's important to note that this only works because the plugin is a dynamic plugin.
 > If you find out that it consistently fail, we might have break one of the dynamic plugin
 > rules so run the `./gradlew :packages:jetbrains-plugin:runPluginVerifier` task to check.
-
-## Running UI Tests
-
-UI tests require a working local environment, so before running them, please revisit the
-`Getting Started` section.
-
-Once the environment is set up, run the follow commandline script to run all the UI tests of
-the project:
-
-```sh
-./gradle/run-ui-test.sh
-```
-
-It will take a while, and Remote Robot will take ownership of your mouse once it starts
-a running IntelliJ environment, so please take a seat and watch it run.
-
-If a test fails, there will be a video recording in `packages/jetbrains-plugin/video` in AVI format
-(you might need VLC Player to view it if you use a Mac) and also a screenshot
-in `packages/jetbrains-plugin/build/reports`
-alongside the hierarchy of the view (the "DOM").
-
-## Running a single UI Test
-
-We can run a single UI test for debugging using Gradle and IntelliJ IDEA. To do so, first we need
-to start the plugin with the Remote Robot server, by running the following Gradle task:
-
-```sh
-./gradlew :packages:jetbrains-plugin:runIdeForUiTests
-```
-
-Once the IDE is started, now we can go to any test in IntelliJ IDEA and press the Play button
-to run it. When the button is clicked, it will ask for which Gradle task to use to run the test,
-and we will choose `uiTest` instead of `test`.
-
-> [!CAUTION]
-> :warning: Using `test` instead of `uiTest` won't run any test, so make sure to use `uiTest`. :warning:
 
 ## Managing third-party dependencies
 

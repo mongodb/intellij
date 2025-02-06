@@ -4,7 +4,6 @@ intellij-min = "2024.1.1"
 intellij-minBuild = "241.15989.155"
 intellij-minRelease = "241"
 intellij-type = "IU"
-intellij-remoteRobot = "0.11.22"
 java-target="17"
 # Other plugin dependencies
 versions-plugin = "0.51.0"
@@ -22,8 +21,6 @@ kotlinx-coroutines = "1.8.0"
 jupiter = "5.10.2"
 mockito = "5.11.0"
 mockito-kotlin = "5.3.1"
-okHttp = "4.12.0"
-retrofit = "2.11.0"
 jmh = "1.37"
 segment = "3.5.1"
 jsoup = "1.17.2"
@@ -60,15 +57,9 @@ testing-jsoup = { group = "org.jsoup", name = "jsoup", version.ref = "jsoup" }
 testing-mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "mockito" }
 testing-mockito-kotlin = { group = "org.mockito.kotlin", name = "mockito-kotlin", version.ref = "mockito-kotlin" }
 testing-video-recorder = { group = "com.automation-remarks", name = "video-recorder-junit5", version.ref = "video-recorder" }
-testing-remoteRobot = { group = "com.intellij.remoterobot", name = "remote-robot", version.ref = "intellij-remoteRobot" }
-testing-remoteRobotDeps-remoteFixtures = { group = "com.intellij.remoterobot", name = "remote-fixtures", version.ref = "intellij-remoteRobot" }
-testing-remoteRobotDeps-ideLauncher = { group = "com.intellij.remoterobot", name = "ide-launcher", version.ref = "intellij-remoteRobot" }
-testing-remoteRobotDeps-okHttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okHttp" }
 testing-intellij-ideImpl = { group = "com.jetbrains.intellij.platform", name = "ide", version.ref = "intellij-minBuild" }
 testing-intellij-coreUi = { group = "com.jetbrains.intellij.platform", name = "core-ui", version.ref = "intellij-minBuild" }
 testing-intellij-testingFramework = { group = "com.jetbrains.intellij.platform", name = "test-framework-junit5", version.ref = "intellij-minBuild" }
-testing-remoteRobotDeps-retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
-testing-remoteRobotDeps-retrofitGson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
 testing-jmh-core = { group = "org.openjdk.jmh", name = "jmh-core", version.ref = "jmh" }
 testing-jmh-annotationProcessor = { group = "org.openjdk.jmh", name = "jmh-generator-annprocess", version.ref = "jmh" }
 testing-jmh-generatorByteCode = { group = "org.openjdk.jmh", name = "jmh-generator-bytecode", version.ref = "jmh" }
