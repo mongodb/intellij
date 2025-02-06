@@ -8,7 +8,6 @@ java-target="17"
 # Other plugin dependencies
 versions-plugin = "0.51.0"
 jacoco = "0.8.12"
-video-recorder = "2.0"
 test-retry = "1.6.0"
 intellij-plugin = "1.17.4"
 changelog-plugin = "2.2.1"
@@ -23,7 +22,6 @@ mockito = "5.11.0"
 mockito-kotlin = "5.3.1"
 jmh = "1.37"
 segment = "3.5.1"
-jsoup = "1.17.2"
 gson = "2.10.1"
 mongodb-driver = "5.1.3"
 owasp-encoder = "1.2.3"
@@ -53,10 +51,8 @@ snakeyaml = { group = "org.yaml", name = "snakeyaml", version.ref = "snakeyaml" 
 testing-jupiter-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version.ref = "jupiter" }
 testing-jupiter-params = { group = "org.junit.jupiter", name = "junit-jupiter-params", version.ref = "jupiter" }
 testing-jupiter-vintage-engine = { group = "org.junit.vintage", name = "junit-vintage-engine", version.ref = "jupiter" }
-testing-jsoup = { group = "org.jsoup", name = "jsoup", version.ref = "jsoup" }
 testing-mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "mockito" }
 testing-mockito-kotlin = { group = "org.mockito.kotlin", name = "mockito-kotlin", version.ref = "mockito-kotlin" }
-testing-video-recorder = { group = "com.automation-remarks", name = "video-recorder-junit5", version.ref = "video-recorder" }
 testing-intellij-ideImpl = { group = "com.jetbrains.intellij.platform", name = "ide", version.ref = "intellij-minBuild" }
 testing-intellij-coreUi = { group = "com.jetbrains.intellij.platform", name = "core-ui", version.ref = "intellij-minBuild" }
 testing-intellij-testingFramework = { group = "com.jetbrains.intellij.platform", name = "test-framework-junit5", version.ref = "intellij-minBuild" }
