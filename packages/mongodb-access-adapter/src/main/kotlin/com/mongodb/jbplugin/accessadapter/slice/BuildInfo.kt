@@ -14,6 +14,7 @@ import com.mongodb.jbplugin.mql.QueryContext
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasFieldReference
 import com.mongodb.jbplugin.mql.components.HasFilter
+import com.mongodb.jbplugin.mql.components.HasLimit
 import com.mongodb.jbplugin.mql.components.HasValueReference
 import com.mongodb.jbplugin.mql.components.IsCommand
 import org.bson.Document
@@ -128,6 +129,7 @@ data class BuildInfo(
                         HasCollectionReference(
                             HasCollectionReference.Known(Unit, Unit, "admin.atlascli".toNs())
                         ),
+                        HasLimit(1),
                         IsCommand(IsCommand.CommandType.COUNT_DOCUMENTS),
                         HasFilter(
                             listOf(
