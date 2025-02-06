@@ -4,21 +4,39 @@
 
 package com.mongodb.jbplugin.fixtures
 
-import com.intellij.remoterobot.RemoteRobot
-import com.intellij.remoterobot.stepsProcessing.step
-import com.intellij.remoterobot.utils.keyboard
-import com.intellij.remoterobot.utils.waitFor
 import java.time.Duration
 
 /**
- * Closes all open modals by using the ESC key. This should be enough for recovering on a lot of different test cases.
+ * Waits for a given condition to be success, or throws an assertion error on timeout.
+ *
  */
-fun RemoteRobot.closeAllOpenModals() {
-    // just do it a few times, to ensure we closed all modals
-    for (i in 0..5) {
-        keyboard {
-            escape()
-        }
+fun <T> waitFor(timeout: Duration, interval: Duration, condition: () -> Pair<Boolean, T>): T {
+    if (timeout <= Duration.ZERO) {
+        throw AssertionError("Test timed out.")
+    }
+
+    val (success, result) = condition()
+    if (success) {
+        return result
+    } else {
+        Thread.sleep(interval.toMillis())
+        return waitFor(timeout - interval, interval, condition)
+    }
+}
+
+/**
+ *  Convenience method that uses a single boolean value instead of a pair.
+ *
+ *  If the condition throws an exception or returns false it's considered a failure.
+ */
+fun waitFor(timeout: Duration, interval: Duration, condition: () -> Boolean) {
+    waitFor<Boolean>(timeout, interval) {
+        val (success, result) = runCatching {
+            val value = runCatching { condition() }.getOrDefault(false)
+            value to value
+        }.getOrDefault(false to false)
+
+        success to result
     }
 }
 
@@ -48,9 +66,8 @@ fun eventually(
     fn: (Int) -> Unit
 ) {
     eventually(timeout, recovery) { attempt ->
-        step("$description, attempt=$attempt") {
-            fn(attempt)
-        }
+        println("$description, attempt=$attempt")
+        fn(attempt)
     }
 }
 
