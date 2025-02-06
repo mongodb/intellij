@@ -115,21 +115,21 @@ class RunQueryModalTest {
         )
 
         val (fixture, modal) = render(robot, query, dataSource, coroutineScope)
+        val queryContext = modal.buildQueryContextFromModal()
 
         eventually {
             fixture.comboBox("DatabaseComboBox").requireVisible()
             fixture.comboBox("CollectionComboBox").requireVisible()
+
+            val dbInput = queryContext.expansions.getValue("database")
+            val collInput = queryContext.expansions.getValue("collection")
+
+            assertEquals("db1", dbInput.defaultValue)
+            assertEquals(BsonString, dbInput.type)
+
+            assertEquals("coll1", collInput.defaultValue)
+            assertEquals(BsonString, collInput.type)
         }
-
-        val queryContext = modal.buildQueryContextFromModal()
-        val dbInput = queryContext.expansions.getValue("database")
-        val collInput = queryContext.expansions.getValue("collection")
-
-        assertEquals("db1", dbInput.defaultValue)
-        assertEquals(BsonString, dbInput.type)
-
-        assertEquals("coll1", collInput.defaultValue)
-        assertEquals(BsonString, collInput.type)
     }
 
     @Test
