@@ -5,6 +5,31 @@ MongoDB plugin for IntelliJ IDEA.
 ## [Unreleased]
 
 ### Added
+* [INTELLIJ-211](https://jira.mongodb.org/browse/INTELLIJ-211) Introduce a new configurable plugin setting `sampleSize` which dictates how many documents to be fetched and used for analysing a collection's schema.
+* [INTELLIJ-199](https://jira.mongodb.org/browse/INTELLIJ-199) Add support for parsing, inspecting and autocompleting in method call used for chaining a `Sort` object on top of a Criteria chain in Spring data MongoDB using `Query.with()` call.
+* [INTELLIJ-197](https://jira.mongodb.org/browse/INTELLIJ-197) Add support for generating shell syntax for $group stage and supported accumulators when running queries.
+* [INTELLIJ-198](https://jira.mongodb.org/browse/INTELLIJ-198) New modal to provide default values when generating queries with unknown runtime expressions.
+* [INTELLIJ-175](https://jira.mongodb.org/browse/INTELLIJ-175) Add support for parsing, inspecting and autocompleting in a group stage written using `Aggregation.group` and chained `GroupOperation`s using `sum`, `avg`, `first`, `last`, `max`, `min`, `push` and `addToSet`.
+* [INTELLIJ-196](https://jira.mongodb.org/browse/INTELLIJ-196) Add support for $sort when generating the query into DataGrip.
+* [INTELLIJ-195](https://jira.mongodb.org/browse/INTELLIJ-195) Add support for $unwind when generating the query into DataGrip.
+* [INTELLIJ-194](https://jira.mongodb.org/browse/INTELLIJ-194) Add support for $addFields when generating the query into DataGrip.
+* [INTELLIJ-193](https://jira.mongodb.org/browse/INTELLIJ-193) Add support for generating aggregates with $match and $project.
+* [INTELLIJ-189](https://jira.mongodb.org/browse/INTELLIJ-189) Add support for generating update queries.
+* [INTELLIJ-177](https://jira.mongodb.org/browse/INTELLIJ-177) Add support for parsing, inspecting and autocompleting in a addFields stage written using `Aggregation.addFields` and chained `AddFieldsOperation`s using `addFieldWithValue`, `addFieldWithValueOf`, `addField().withValue()` and `addField().withValueOf()`. Parsing boxed Java values is not supported yet.
+* [INTELLIJ-174](https://jira.mongodb.org/browse/INTELLIJ-174) Add support for parsing, inspecting and autocompleting in a sort stage written using `Aggregation.sort` and chained `SortOperation`s using `and`. All the overloads of creating a `Sort` object are supported.
+* [INTELLIJ-188](https://jira.mongodb.org/browse/INTELLIJ-188) Support for generating sort in the query generator.
+* [INTELLIJ-186](https://jira.mongodb.org/browse/INTELLIJ-186) Support for parsing Sorts in the Java Driver.
+* [INTELLIJ-187](https://jira.mongodb.org/browse/INTELLIJ-187) Use safe execution plans by default. Allow full execution
+  plans through a Plugin settings flag.
+* [INTELLIJ-180](https://jira.mongodb.org/browse/INTELLIJ-180) Telemetry when inspections are shown and resolved.
+  It can be disabled in the Plugin settings.
+* [INTELLIJ-176](https://jira.mongodb.org/browse/INTELLIJ-176) Add support for parsing, inspecting and autocompleting in an unwind stage written using `Aggregation.unwind`.
+* [INTELLIJ-173](https://jira.mongodb.org/browse/INTELLIJ-173) Add support for parsing, inspecting and autocompleting in a project stage written using `Aggregation.match` and chained `ProjectionOperations` using `andInclude` and `andExclude`.
+* [INTELLIJ-172](https://jira.mongodb.org/browse/INTELLIJ-172) Add support for parsing, inspecting and autocompleting in an aggregation written using Spring Data MongoDB (`MongoTemplate.aggregate`, `MongoTemplate.aggregateStream`) and a match stage written using `Aggregation.match`.
+* [INTELLIJ-179](https://jira.mongodb.org/browse/INTELLIJ-179) Telemetry when Create Index intention is clicked.
+  It can be disabled in the Plugin settings.
+* [INTELLIJ-178](https://jira.mongodb.org/browse/INTELLIJ-178) Telemetry when the Run Query button is clicked.
+  It can be disabled in the Plugin settings.
 * [INTELLIJ-153](https://jira.mongodb.org/browse/INTELLIJ-153) Add support for parsing, linting and
   autocompleting fields in Accumulators.topN and Accumulators.bottomN
 * [INTELLIJ-104](https://jira.mongodb.org/browse/INTELLIJ-104) Add support for Spring Criteria
@@ -57,5 +82,7 @@ This data source is used for autocompletion and type checking.
 ### Removed
 
 ### Fixed
+* [INTELLIJ-158](https://jira.mongodb.org/browse/INTELLIJ-158): Autocomplete does not work when triggered inside valid positions but wrapped in a parseable Java Iterable. 
+* [INTELLIJ-157](https://jira.mongodb.org/browse/INTELLIJ-157): Unable to parse and hence inspect `Filters.and`, `Filters.or` and `Filters.nor`, in code that uses Java Driver, when argument for these method calls is a parseable Java Iterable. 
 
 ### Security

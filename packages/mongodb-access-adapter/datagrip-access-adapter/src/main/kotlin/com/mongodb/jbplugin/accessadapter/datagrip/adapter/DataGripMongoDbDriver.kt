@@ -11,7 +11,9 @@ import com.intellij.database.dataSource.DatabaseConnectionManager
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.database.dataSource.connection.ConnectionRequestor
 import com.intellij.database.run.ConsoleRunConfiguration
-import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.readAction
+import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.mongodb.ConnectionString
 import com.mongodb.MongoClientSettings
@@ -21,6 +23,7 @@ import com.mongodb.jbplugin.dialects.OutputQuery
 import com.mongodb.jbplugin.dialects.mongosh.MongoshDialect
 import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.Node
+import com.mongodb.jbplugin.mql.QueryContext
 import kotlinx.coroutines.*
 import org.bson.Document
 import org.bson.codecs.DecoderContext
@@ -43,6 +46,8 @@ private const val TIMEOUT = 5
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 private val mongosh = Dispatchers.IO.limitedParallelism(1)
+
+private val logger: Logger = logger<DataGripMongoDbDriver>()
 
 /**
  * The driver itself. Shouldn't be used directly, but through the
@@ -84,9 +89,12 @@ internal class DataGripMongoDbDriver(
 
     override suspend fun connectionString(): ConnectionString = ConnectionString(dataSource.url!!)
 
-    override suspend fun <S> explain(query: Node<S>): ExplainPlan = withContext(Dispatchers.IO) {
-        val queryScript = ApplicationManager.getApplication().runReadAction<OutputQuery> {
-            MongoshDialect.formatter.formatQuery(query, explain = true)
+    override suspend fun <S> explain(query: Node<S>, queryContext: QueryContext): ExplainPlan = withContext(
+        Dispatchers.IO
+    ) {
+
+        val queryScript = readAction {
+            runBlocking { MongoshDialect.formatter.formatQuery(query, queryContext) }
         }
 
         if (queryScript !is OutputQuery.CanBeRun) {
@@ -206,8 +214,16 @@ internal class DataGripMongoDbDriver(
 
             withTimeout(timeout) {
                 val listOfResults = mutableListOf<T>()
-                val resultSet = statement.executeQuery() ?: return@withTimeout emptyList()
+                val queryResult = runCatching { statement.executeQuery() }
+                if (queryResult.isFailure) {
+                    logger.error(
+                        "Can not query MongoDB: $queryString",
+                        queryResult.exceptionOrNull()
+                    )
+                    return@withTimeout emptyList()
+                }
 
+                val resultSet = queryResult.getOrNull() ?: return@withTimeout emptyList()
                 if (resultClass.java == Unit::class.java) {
                     listOfResults.add(Unit as T)
                     return@withTimeout listOfResults

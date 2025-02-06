@@ -5,7 +5,7 @@ import com.mongodb.jbplugin.dialects.OutputQuery
 import com.mongodb.jbplugin.mql.*
 
 object JavaDriverDialectFormatter : DialectFormatter {
-    override fun <S> formatQuery(query: Node<S>, explain: Boolean) =
+    override suspend fun <S> formatQuery(query: Node<S>, queryContext: QueryContext) =
         OutputQuery.None
 
     override fun <S> indexCommandForQuery(query: Node<S>) =
@@ -24,7 +24,7 @@ object JavaDriverDialectFormatter : DialectFormatter {
             is BsonInt32 -> "int"
             is BsonInt64 -> "long"
             is BsonDecimal128 -> "BigDecimal"
-            is BsonAny -> "any"
+            is BsonUUID -> "UUID"
             is BsonAnyOf ->
                 if (type.types.contains(BsonNull)) {
                     formatTypeNullable(BsonAnyOf(type.types - BsonNull))

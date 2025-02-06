@@ -34,6 +34,7 @@ testContainers = "1.19.8"
 spring-mongodb="4.3.2"
 semver-parser="2.0.0"
 snakeyaml="2.3"
+assertj-swing="3.17.1"
 
 [libraries]
 ## Kotlin compileOnly libraries. They must not be bundled because they are already part of the
@@ -75,7 +76,7 @@ testing-testContainers-core = { group = "org.testcontainers", name = "testcontai
 testing-testContainers-mongodb = { group = "org.testcontainers", name = "mongodb", version.ref = "testContainers" }
 testing-testContainers-jupiter = { group = "org.testcontainers", name = "junit-jupiter", version.ref = "testContainers" }
 testing-spring-mongodb = { group = "org.springframework.data", name="spring-data-mongodb", version.ref="spring-mongodb" }
-
+testing-assertj-swing = { group = "org.assertj", name="assertj-swing", version.ref="assertj-swing" }
 ######################################################
 ## Libraries and plugins only used for the buildScript.
 buildScript-plugin-kotlin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin-stdlib" }

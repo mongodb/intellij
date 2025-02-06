@@ -11,6 +11,7 @@ package com.mongodb.jbplugin.fixtures.components
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.data.RemoteComponent
 import com.intellij.remoterobot.fixtures.*
+import com.intellij.remoterobot.search.locators.byXpath
 import com.mongodb.jbplugin.fixtures.findVisible
 import com.mongodb.jbplugin.fixtures.openSettingsAtSection
 
@@ -33,10 +34,28 @@ class MongoDbSettingsFixture(
         findAll<JCheckboxFixture>().find { it.text == "Enable telemetry" }
             ?: throw NoSuchElementException()
     }
+
+    val enableFullExplainPlan by lazy {
+        findAll<JCheckboxFixture>().find { it.text == "Enable full explain plan" }
+            ?: throw NoSuchElementException()
+    }
+
     val privacyPolicyButton by lazy {
         findAll<JButtonFixture>().find { it.text == "View Privacy Policy" }
             ?: throw NoSuchElementException()
     }
+
+    val analyzeQueryPerformanceButton by lazy {
+        findAll<JButtonFixture>().find { it.text == "Analyze Query Performance" }
+            ?: throw NoSuchElementException()
+    }
+
+    val sampleSizeField by lazy {
+        find<JTextFieldFixture>(
+            byXpath("//div[@class='JFormattedTextField' and @accessiblename='MongoDB Sample Size']")
+        )
+    }
+
     val ok by lazy {
         remoteRobot.findAll<JButtonFixture>().find { it.text == "OK" }
             ?: throw NoSuchElementException()

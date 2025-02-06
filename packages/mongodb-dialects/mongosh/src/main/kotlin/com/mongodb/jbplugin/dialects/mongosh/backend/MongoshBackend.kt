@@ -1,13 +1,17 @@
 package com.mongodb.jbplugin.dialects.mongosh.backend
 
 import com.mongodb.jbplugin.mql.*
+import com.mongodb.jbplugin.mql.QueryContext.AsIs
 import org.bson.types.ObjectId
 import org.owasp.encoder.Encode
 import java.math.BigDecimal
 import java.math.BigInteger
+import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.time.temporal.TemporalAccessor
 import java.util.*
 
 private const val MONGODB_FIRST_RELEASE = "2009-02-11T18:00:00.000Z"
@@ -28,12 +32,20 @@ class MongoshBackend(
         push(0)
     }
 
+    fun applyQueryExpansions(context: QueryContext): MongoshBackend {
+        for (variable in context.expansions) {
+            registerVariable(variable.key, variable.value.type, variable.value.defaultValue)
+        }
+
+        return this
+    }
+
     fun emitDbAccess(): MongoshBackend {
         emitAsIs("db")
         return emitPropertyAccess()
     }
 
-    fun emitDatabaseAccess(dbName: ContextValue): MongoshBackend {
+    suspend fun emitDatabaseAccess(dbName: ContextValue): MongoshBackend {
         val nextPadding = column - 1 // align to the dot
 
         emitAsIs("getSiblingDB")
@@ -49,7 +61,7 @@ class MongoshBackend(
         return emitPropertyAccess()
     }
 
-    fun emitCollectionAccess(collName: ContextValue): MongoshBackend {
+    suspend fun emitCollectionAccess(collName: ContextValue): MongoshBackend {
         emitAsIs("getCollection")
         emitFunctionCall(long = false, {
             emitContextValue(collName)
@@ -108,21 +120,24 @@ class MongoshBackend(
     fun emitObjectKey(key: ContextValue): MongoshBackend {
         when (key) {
             is ContextValue.Variable -> emitAsIs("[${key.name}]")
-            is ContextValue.Constant -> emitPrimitive(key.value, false)
+            is ContextValue.Constant -> emitPrimitive(key.value)
         }
         emitAsIs(": ")
         return this
     }
 
-    fun emitObjectValueEnd(): MongoshBackend {
+    fun emitObjectValueEnd(long: Boolean = false): MongoshBackend {
         emitAsIs(", ")
+        if (long && prettyPrint) {
+            emitNewLine()
+        }
         return this
     }
 
     fun computeOutput(): String {
         val preludeBackend = MongoshBackend(context, prettyPrint, paddingSpaces)
         preludeBackend.variableList().sortedBy { it.name }.forEach {
-            preludeBackend.emitVariableDeclaration(it.name, defaultValueOfBsonType(it.type))
+            preludeBackend.emitVariableDeclaration(it.name, it.type, it.value)
         }
 
         val prelude = preludeBackend.output.toString()
@@ -131,7 +146,7 @@ class MongoshBackend(
 
     fun emitFunctionName(name: String): MongoshBackend = emitAsIs(name)
 
-    fun emitFunctionCall(long: Boolean = false, vararg body: MongoshBackend.() -> MongoshBackend): MongoshBackend {
+    suspend fun emitFunctionCall(long: Boolean = false, vararg body: suspend MongoshBackend.() -> MongoshBackend): MongoshBackend {
         emitAsIs("(")
         if (body.isNotEmpty()) {
             if (long && prettyPrint) {
@@ -171,7 +186,7 @@ class MongoshBackend(
 
     fun emitContextValue(value: ContextValue): MongoshBackend {
         when (value) {
-            is ContextValue.Constant -> emitPrimitive(value.value, false)
+            is ContextValue.Constant -> emitPrimitive(value.value)
             is ContextValue.Variable -> emitAsIs(value.name)
         }
 
@@ -188,6 +203,19 @@ class MongoshBackend(
         return this
     }
 
+    /**
+     * Emits a literal string value into the script.
+     *
+     * This function is <b>unsafe</b>, <b>it does not encode input values, so it's sensitive
+     * to code injection</b>. Only use this for well-known, literal constant values that we have
+     * control of.
+     *
+     * @see emitContextValue for dynamic values provided by the user.
+     */
+    fun emitStringLiteral(value: String): MongoshBackend {
+        return emitAsIs("\"$value\"", encode = false)
+    }
+
     private fun emitAsIs(string: String, encode: Boolean = true): MongoshBackend {
         val stringToOutput = if (encode) Encode.forJavaScript(string) else string
 
@@ -196,43 +224,44 @@ class MongoshBackend(
         return this
     }
 
-    private fun emitVariableDeclaration(name: String, value: Any?): MongoshBackend {
+    private fun emitVariableDeclaration(name: String, type: BsonType, value: Any?): MongoshBackend {
         emitAsIs("var ")
         emitAsIs(name)
         emitAsIs(" = ")
-        emitPrimitive(value, true)
+        if (value == null || (value as? AsIs)?.isEmpty == true) {
+            emitPrimitive(defaultValueOfBsonType(type))
+        } else {
+            emitPrimitive(value)
+        }
         emitNewLine()
         return this
     }
 
-    private fun emitPrimitive(value: Any?, isPlaceholder: Boolean): MongoshBackend {
-        emitAsIs(serializePrimitive(value, isPlaceholder), encode = false)
+    private fun emitPrimitive(value: Any?): MongoshBackend {
+        emitAsIs(serializePrimitive(value), encode = false)
         return this
     }
 }
 
-private fun serializePrimitive(value: Any?, isPlaceholder: Boolean): String = when (value) {
-    is Byte, Short, Int, Long, Float, Double -> Encode.forJavaScript(value.toString())
+private fun serializePrimitive(value: Any?): String = when (value) {
     is BigInteger -> "Decimal128(\"$value\")"
     is BigDecimal -> "Decimal128(\"$value\")"
+    is Byte, is Short, is Int, is Long, is Float, is Double, is Number -> value.toString()
     is Boolean -> value.toString()
     is ObjectId -> "ObjectId(\"${Encode.forJavaScript(value.toHexString())}\")"
-    is Number -> Encode.forJavaScript(value.toString())
     is String -> '"' + Encode.forJavaScript(value) + '"'
-    is Date, is Instant, is LocalDate, is LocalDateTime -> if (isPlaceholder) {
-        "ISODate(\"$MONGODB_FIRST_RELEASE\")"
-    } else {
-        "ISODate()"
-    }
-
+    is Date -> "ISODate(\"${SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").format(value)}\")"
+    is Instant, is LocalDate, is LocalDateTime, is TemporalAccessor ->
+        "ISODate(\"${DateTimeFormatter.ISO_DATE_TIME.format(value as TemporalAccessor)}\")"
+    is UUID -> "UUID(\"$value\")"
     is Collection<*> -> value.joinToString(separator = ", ", prefix = "[", postfix = "]") {
-        serializePrimitive(it, isPlaceholder)
+        serializePrimitive(it)
     }
 
     is Map<*, *> -> value.entries.joinToString(separator = ", ", prefix = "{", postfix = "}") {
-        "\"${it.key}\": ${serializePrimitive(it.value, isPlaceholder)}"
+        "\"${it.key}\": ${serializePrimitive(it.value)}"
     }
-
+    is AsIs -> value.value
     null -> "null"
     else -> "{}"
 }
@@ -242,11 +271,12 @@ private fun defaultValueOfBsonType(type: BsonType): Any? = when (type) {
     is BsonAnyOf -> defaultValueOfBsonType(type.types.firstOrNull { it !is BsonNull } ?: BsonAny)
     is BsonArray -> emptyList<Any>()
     BsonBoolean -> false
-    BsonDate -> Date.from(Instant.parse(MONGODB_FIRST_RELEASE))
+    BsonDate -> LocalDateTime.of(2009, 2, 11, 18, 0)
     BsonDecimal128 -> BigInteger.ZERO
     BsonDouble -> 0.0
     BsonInt32 -> 0
     BsonInt64 -> 0
+    BsonUUID -> UUID.randomUUID()
     BsonNull -> null
     is BsonObject -> emptyMap<Any, Any>()
     BsonObjectId -> ObjectId("000000000000000000000000")

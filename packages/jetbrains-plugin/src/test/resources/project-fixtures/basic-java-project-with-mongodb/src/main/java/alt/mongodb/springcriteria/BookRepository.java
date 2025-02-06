@@ -1,7 +1,10 @@
 package alt.mongodb.springcriteria;
 
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.query.Query;
 
 import java.util.List;
 
@@ -18,6 +21,24 @@ class BookRepository {
     }
 
     public List<Book> allReleasedBooks() {
-        return template.query(Book.class).matching(where("released").is(true)).all();
+        return template.query(Book.class).matching(
+            Query.query(
+                where("released").is(true)
+            ).with(
+                Sort.by("year", "title")
+            )
+        )
+    }
+
+    public List<Book> allReleasedBooksAgg() {
+        return template.aggregate(
+            Aggregation.newAggregation(
+                Aggregation.match(
+                    where("released").is(true)
+                )
+            ),
+            Book.class,
+            Book.class
+        ).getMappedResults();
     }
 }

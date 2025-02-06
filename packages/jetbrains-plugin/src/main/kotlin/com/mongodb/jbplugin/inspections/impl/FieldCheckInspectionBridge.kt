@@ -21,17 +21,31 @@ import com.mongodb.jbplugin.linting.FieldCheckingLinter
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
+import com.mongodb.jbplugin.observability.TelemetryEvent
+import com.mongodb.jbplugin.observability.probe.InspectionStatusChangedProbe
+import com.mongodb.jbplugin.settings.pluginSetting
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.runBlocking
 
-/**
- * @param coroutineScope
- */
-@Suppress("MISSING_KDOC_TOP_LEVEL")
 class FieldCheckInspectionBridge(coroutineScope: CoroutineScope) :
     AbstractMongoDbInspectionBridge(
         coroutineScope,
         FieldCheckLinterInspection,
-    )
+    ) {
+    override fun emitFinishedInspectionTelemetryEvent(problemsHolder: ProblemsHolder) {
+        val probe by service<InspectionStatusChangedProbe>()
+
+        probe.finishedProcessingInspections(
+            TelemetryEvent.InspectionStatusChangeEvent.InspectionType.FIELD_DOES_NOT_EXIST,
+            problemsHolder
+        )
+
+        probe.finishedProcessingInspections(
+            TelemetryEvent.InspectionStatusChangeEvent.InspectionType.TYPE_MISMATCH,
+            problemsHolder
+        )
+    }
+}
 
 /**
  * This inspection object calls the linting engine and transforms the result so they can be rendered in the IntelliJ
@@ -54,23 +68,27 @@ internal object FieldCheckLinterInspection : MongoDbInspection {
         }
 
         val readModelProvider by query.source.project.service<DataGripBasedReadModelProvider>()
+        val sampleSize by pluginSetting { ::sampleSize }
 
-        val result =
+        val result = runBlocking {
             FieldCheckingLinter.lintQuery(
                 dataSource,
                 readModelProvider,
                 query,
+                sampleSize
             )
+        }
 
         result.warnings.forEach {
             when (it) {
                 is FieldCheckWarning.FieldDoesNotExist -> registerFieldDoesNotExistProblem(
                     coroutineScope,
                     problems,
-                    it
+                    it,
+                    query
                 )
                 is FieldCheckWarning.FieldValueTypeMismatch ->
-                    registerFieldValueTypeMismatch(coroutineScope, problems, it, formatter)
+                    registerFieldValueTypeMismatch(coroutineScope, problems, it, formatter, query)
             }
         }
     }
@@ -121,6 +139,7 @@ internal object FieldCheckLinterInspection : MongoDbInspection {
         coroutineScope: CoroutineScope,
         problems: ProblemsHolder,
         warningInfo: FieldCheckWarning.FieldDoesNotExist<PsiElement>,
+        query: Node<PsiElement>,
     ) {
         val problemDescription = InspectionsAndInlaysMessages.message(
             "inspection.field.checking.error.message",
@@ -138,6 +157,12 @@ internal object FieldCheckLinterInspection : MongoDbInspection {
                 ),
             ),
         )
+
+        val probe by service<InspectionStatusChangedProbe>()
+        probe.inspectionChanged(
+            TelemetryEvent.InspectionStatusChangeEvent.InspectionType.FIELD_DOES_NOT_EXIST,
+            query
+        )
     }
 
     private fun registerFieldValueTypeMismatch(
@@ -145,11 +170,15 @@ internal object FieldCheckLinterInspection : MongoDbInspection {
         problems: ProblemsHolder,
         warningInfo: FieldCheckWarning.FieldValueTypeMismatch<PsiElement>,
         formatter: DialectFormatter,
+        query: Node<PsiElement>
     ) {
+        val expectedType = formatter.formatType(warningInfo.fieldType)
+        val actualType = formatter.formatType(warningInfo.valueType)
+
         val problemDescription = InspectionsAndInlaysMessages.message(
             "inspection.field.checking.error.message.value.type.mismatch",
-            formatter.formatType(warningInfo.valueType),
-            formatter.formatType(warningInfo.fieldType),
+            actualType,
+            expectedType,
             warningInfo.field,
         )
         problems.registerProblem(
@@ -162,6 +191,13 @@ internal object FieldCheckLinterInspection : MongoDbInspection {
                     "inspection.field.checking.quickfix.choose.new.connection"
                 ),
             ),
+        )
+
+        val probe by service<InspectionStatusChangedProbe>()
+        probe.typeMismatchInspectionActive(
+            query,
+            actualType,
+            expectedType,
         )
     }
 }

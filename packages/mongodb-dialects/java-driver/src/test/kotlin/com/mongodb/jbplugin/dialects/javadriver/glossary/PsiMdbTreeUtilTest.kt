@@ -28,6 +28,15 @@ class PsiMdbTreeUtilTest {
         }
     }
 
+    @ParameterizedTest
+    @MethodSource("stringToBsonType")
+    fun `should map all known java qualified names to their corresponding bson types`(
+        javaQualifiedName: String,
+        expected: BsonType,
+    ) {
+        assertEquals(expected, javaQualifiedName.toBsonType())
+    }
+
     companion object {
         @JvmStatic
         fun psiTypeToBsonType(): Array<Array<Any>> =
@@ -89,6 +98,38 @@ class PsiMdbTreeUtilTest {
                     BsonAnyOf(BsonDecimal128, BsonNull),
                 ),
             )
+
+        @JvmStatic
+        fun stringToBsonType(): Array<Array<Any>> = arrayOf(
+            arrayOf("org.bson.types.ObjectId", BsonAnyOf(BsonObjectId, BsonNull)),
+            arrayOf("boolean", BsonBoolean),
+            arrayOf("java.lang.Boolean", BsonBoolean),
+            arrayOf("short", BsonInt32),
+            arrayOf("java.lang.Short", BsonInt32),
+            arrayOf("int", BsonInt32),
+            arrayOf("java.lang.Integer", BsonInt32),
+            arrayOf("long", BsonInt64),
+            arrayOf("java.lang.Long", BsonInt64),
+            arrayOf("float", BsonDouble),
+            arrayOf("java.lang.Float", BsonDouble),
+            arrayOf("double", BsonDouble),
+            arrayOf("java.lang.Double", BsonDouble),
+            arrayOf("java.lang.CharSequence", BsonAnyOf(BsonString, BsonNull)),
+            arrayOf("java.lang.String", BsonAnyOf(BsonString, BsonNull)),
+            arrayOf("String", BsonAnyOf(BsonString, BsonNull)),
+            arrayOf("java.util.Date", BsonAnyOf(BsonDate, BsonNull)),
+            arrayOf("java.time.LocalDate", BsonAnyOf(BsonDate, BsonNull)),
+            arrayOf("java.time.LocalDateTime", BsonAnyOf(BsonDate, BsonNull)),
+            arrayOf("java.math.BigInteger", BsonAnyOf(BsonInt64, BsonNull)),
+            arrayOf("java.math.BigDecimal", BsonAnyOf(BsonDecimal128, BsonNull)),
+            arrayOf("int[]", BsonArray(BsonInt32)),
+            arrayOf("java.lang.Long[]", BsonArray(BsonInt64)),
+            arrayOf("List<String>", BsonArray(BsonAnyOf(BsonString, BsonNull))),
+            arrayOf("List<java.lang.Integer>[]", BsonArray(BsonArray(BsonInt32))),
+            arrayOf("Set<String>", BsonArray(BsonAnyOf(BsonString, BsonNull))),
+            arrayOf("Map<String, Integer>", BsonAny),
+            arrayOf("HashMap<String, Integer>", BsonAny),
+        )
     }
 }
 

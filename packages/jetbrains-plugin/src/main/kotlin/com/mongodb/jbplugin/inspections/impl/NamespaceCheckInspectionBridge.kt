@@ -20,17 +20,37 @@ import com.mongodb.jbplugin.linting.NamespaceCheckWarning
 import com.mongodb.jbplugin.linting.NamespaceCheckingLinter
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.mql.Node
+import com.mongodb.jbplugin.observability.TelemetryEvent
+import com.mongodb.jbplugin.observability.probe.InspectionStatusChangedProbe
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.runBlocking
 
 /**
  * @param coroutineScope
  */
-@Suppress("MISSING_KDOC_TOP_LEVEL")
 class NamespaceCheckInspectionBridge(coroutineScope: CoroutineScope) :
     AbstractMongoDbInspectionBridge(
         coroutineScope,
         NamespaceCheckingLinterInspection,
-    )
+    ) {
+    override fun emitFinishedInspectionTelemetryEvent(problemsHolder: ProblemsHolder) {
+        val probe by service<InspectionStatusChangedProbe>()
+        probe.finishedProcessingInspections(
+            TelemetryEvent.InspectionStatusChangeEvent.InspectionType.NO_NAMESPACE_INFERRED,
+            problemsHolder
+        )
+
+        probe.finishedProcessingInspections(
+            TelemetryEvent.InspectionStatusChangeEvent.InspectionType.DATABASE_DOES_NOT_EXIST,
+            problemsHolder
+        )
+
+        probe.finishedProcessingInspections(
+            TelemetryEvent.InspectionStatusChangeEvent.InspectionType.COLLECTION_DOES_NOT_EXIST,
+            problemsHolder
+        )
+    }
+}
 
 /**
  * This inspection object calls the linting engine and transforms the result so they can be rendered in the IntelliJ
@@ -49,27 +69,35 @@ internal object NamespaceCheckingLinterInspection : MongoDbInspection {
         }
 
         val readModelProvider by query.source.project.service<DataGripBasedReadModelProvider>()
-        val result =
+        val result = runBlocking {
             NamespaceCheckingLinter.lintQuery(
                 dataSource,
                 readModelProvider,
                 query,
             )
+        }
 
         result.warnings.forEach {
             when (it) {
                 is NamespaceCheckWarning.NoNamespaceInferred ->
-                    registerNoNamespaceInferred(coroutineScope, problems, it.source)
+                    registerNoNamespaceInferred(coroutineScope, problems, it.source, query)
                 is NamespaceCheckWarning.CollectionDoesNotExist ->
                     registerCollectionDoesNotExist(
                         coroutineScope,
                         problems,
                         it.source,
                         it.database,
-                        it.collection
+                        it.collection,
+                        query
                     )
                 is NamespaceCheckWarning.DatabaseDoesNotExist ->
-                    registerDatabaseDoesNotExist(coroutineScope, problems, it.source, it.database)
+                    registerDatabaseDoesNotExist(
+                        coroutineScope,
+                        problems,
+                        it.source,
+                        it.database,
+                        query
+                    )
             }
         }
     }
@@ -77,8 +105,15 @@ internal object NamespaceCheckingLinterInspection : MongoDbInspection {
     private fun registerNoNamespaceInferred(
         coroutineScope: CoroutineScope,
         problems: ProblemsHolder,
-        source: PsiElement
+        source: PsiElement,
+        query: Node<PsiElement>
     ) {
+        val probe by service<InspectionStatusChangedProbe>()
+        probe.inspectionChanged(
+            TelemetryEvent.InspectionStatusChangeEvent.InspectionType.NO_NAMESPACE_INFERRED,
+            query
+        )
+
         val problemDescription = InspectionsAndInlaysMessages.message(
             "inspection.namespace.checking.error.message",
         )
@@ -100,7 +135,14 @@ internal object NamespaceCheckingLinterInspection : MongoDbInspection {
         problems: ProblemsHolder,
         source: PsiElement,
         dbName: String,
+        query: Node<PsiElement>
     ) {
+        val probe by service<InspectionStatusChangedProbe>()
+        probe.inspectionChanged(
+            TelemetryEvent.InspectionStatusChangeEvent.InspectionType.DATABASE_DOES_NOT_EXIST,
+            query
+        )
+
         val problemDescription = InspectionsAndInlaysMessages.message(
             "inspection.namespace.checking.error.message.database.missing",
             dbName
@@ -123,8 +165,15 @@ internal object NamespaceCheckingLinterInspection : MongoDbInspection {
         problems: ProblemsHolder,
         source: PsiElement,
         dbName: String,
-        collName: String
+        collName: String,
+        query: Node<PsiElement>
     ) {
+        val probe by service<InspectionStatusChangedProbe>()
+        probe.inspectionChanged(
+            TelemetryEvent.InspectionStatusChangeEvent.InspectionType.COLLECTION_DOES_NOT_EXIST,
+            query
+        )
+
         val problemDescription = InspectionsAndInlaysMessages.message(
             "inspection.namespace.checking.error.message.collection.missing",
             collName,
