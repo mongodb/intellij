@@ -6,6 +6,7 @@ import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.accessadapter.slice.ListCollections
 import com.mongodb.jbplugin.accessadapter.slice.ListDatabases
 import com.mongodb.jbplugin.fixtures.IntegrationTest
+import com.mongodb.jbplugin.fixtures.eventually
 import com.mongodb.jbplugin.fixtures.mockDataSource
 import com.mongodb.jbplugin.fixtures.mockReadModelProvider
 import com.mongodb.jbplugin.fixtures.parseJavaQuery
@@ -48,12 +49,14 @@ class RunQueryModalTest {
 
         val (fixture, _) = render(robot, query, dataSource, coroutineScope)
 
-        fixture.label(JLabelMatcher.withText("Specify query test values")).requireVisible()
-        fixture.label(
-            JLabelMatcher.withText(
-                "These are values in your query that are defined at runtime. Please specify test values for them here."
-            )
-        ).requireVisible()
+        eventually {
+            fixture.label(JLabelMatcher.withText("Specify query test values")).requireVisible()
+            fixture.label(
+                JLabelMatcher.withText(
+                    "These are values in your query that are defined at runtime. Please specify test values for them here."
+                )
+            ).requireVisible()
+        }
     }
 
     @Test
@@ -113,8 +116,10 @@ class RunQueryModalTest {
 
         val (fixture, modal) = render(robot, query, dataSource, coroutineScope)
 
-        fixture.comboBox("DatabaseComboBox").requireVisible()
-        fixture.comboBox("CollectionComboBox").requireVisible()
+        eventually {
+            fixture.comboBox("DatabaseComboBox").requireVisible()
+            fixture.comboBox("CollectionComboBox").requireVisible()
+        }
 
         val queryContext = modal.buildQueryContextFromModal()
         val dbInput = queryContext.expansions.getValue("database")
@@ -144,7 +149,10 @@ class RunQueryModalTest {
         )
 
         val (fixture, modal) = render(robot, query, dataSource, coroutineScope)
-        fixture.textBox("_id").requireVisible().focus().setText("myId")
+
+        eventually {
+            fixture.textBox("_id").requireVisible().focus().setText("myId")
+        }
 
         val queryContext = modal.buildQueryContextFromModal()
         val idInput = queryContext.expansions.getValue("_id")
@@ -173,7 +181,10 @@ class RunQueryModalTest {
         )
 
         val (fixture, _) = render(robot, query, dataSource, coroutineScope)
-        fixture.label(JLabelMatcher.withText(expectedHint)).requireVisible()
+
+        eventually {
+            fixture.label(JLabelMatcher.withText(expectedHint)).requireVisible()
+        }
     }
 
     @ParameterizedTest
@@ -195,11 +206,14 @@ class RunQueryModalTest {
         )
 
         val (fixture, _) = render(robot, query, dataSource, coroutineScope)
-        fixture.label(
-            JLabelMatcher.withText(
-                "Unable to specify. Please fill it after generating the query."
-            )
-        ).requireVisible()
+
+        eventually {
+            fixture.label(
+                JLabelMatcher.withText(
+                    "Unable to specify. Please fill it after generating the query."
+                )
+            ).requireVisible()
+        }
     }
 
     @Test
@@ -219,10 +233,13 @@ class RunQueryModalTest {
         )
 
         val (fixture, modal) = render(robot, query, dataSource, coroutineScope)
-        fixture.checkBox("_id")
-            .requireVisible()
-            .focus()
-            .check(true)
+
+        eventually {
+            fixture.checkBox("_id")
+                .requireVisible()
+                .focus()
+                .check(true)
+        }
 
         val queryContext = modal.buildQueryContextFromModal()
         val idInput = queryContext.expansions.getValue("_id")
