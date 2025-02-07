@@ -239,13 +239,13 @@ class RunQueryModalTest {
                 .requireVisible()
                 .focus()
                 .check(true)
+
+            val queryContext = modal.buildQueryContextFromModal()
+            val idInput = queryContext.expansions.getValue("_id")
+
+            assertEquals(true, idInput.defaultValue)
+            assertEquals(BsonBoolean, idInput.type)
         }
-
-        val queryContext = modal.buildQueryContextFromModal()
-        val idInput = queryContext.expansions.getValue("_id")
-
-        assertEquals(true, idInput.defaultValue)
-        assertEquals(BsonBoolean, idInput.type)
     }
 
     companion object {
