@@ -4,13 +4,39 @@
 
 package com.mongodb.jbplugin.accessadapter.slice
 
-import com.mongodb.jbplugin.accessadapter.ExplainPlan
 import com.mongodb.jbplugin.accessadapter.MongoDbDriver
 import com.mongodb.jbplugin.accessadapter.QueryResult
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.QueryContext
 import com.mongodb.jbplugin.mql.components.HasExplain
 import com.mongodb.jbplugin.mql.components.HasLimit
+
+/**
+ * Represents the result of an explain plan command.
+ */
+sealed interface ExplainPlan : Comparable<ExplainPlan> {
+    val cost: Int
+
+    override fun compareTo(other: ExplainPlan): Int {
+        return cost.compareTo(other.cost)
+    }
+
+    data object NotRun : ExplainPlan {
+        override val cost = 0
+    }
+
+    data object CollectionScan : ExplainPlan {
+        override val cost = 3
+    }
+
+    data object IndexScan : ExplainPlan {
+        override val cost = 1
+    }
+
+    data object IneffectiveIndexUsage : ExplainPlan {
+        override val cost = 2
+    }
+}
 
 /**
  * Runs the explain plan of a query.
@@ -59,22 +85,28 @@ data class ExplainQuery(
                     "COLLSCAN" to ExplainPlan.CollectionScan,
                     "IXSCAN" to ExplainPlan.IndexScan,
                     "IDHACK" to ExplainPlan.IndexScan,
+                    "SORT" to ExplainPlan.IneffectiveIndexUsage,
+                    "FILTER" to ExplainPlan.IneffectiveIndexUsage,
                     // EXPRESS_* are basically like a generalisation of IDHACK for other fields
                     "EXPRESS_IXSCAN" to ExplainPlan.IndexScan,
                     "EXPRESS_CLUSTERED_IXSCAN" to ExplainPlan.IndexScan,
                     "EXPRESS_UPDATE" to ExplainPlan.IndexScan,
                     "EXPRESS_DELETE" to ExplainPlan.IndexScan,
                 )
-            ) ?: ExplainPlan.NotRun
+            )
 
             return ExplainQuery(result)
         }
 
-        private fun planByMappingStage(stage: Map<String, Any>, mapping: Map<String, ExplainPlan>): ExplainPlan? {
-            val inputStage =
-                stage["inputStage"] as? Map<String, Any>
-                    ?: return mapping.getOrDefault(stage["stage"], null)
-            return mapping.getOrDefault(inputStage["stage"], null)
+        private fun planByMappingStage(stage: Map<String, Any>, mapping: Map<String, ExplainPlan>): ExplainPlan {
+            val parentStage: ExplainPlan = if (stage["inputStage"] != null) {
+                planByMappingStage(stage["inputStage"] as Map<String, Any>, mapping)
+            } else {
+                ExplainPlan.NotRun
+            }
+
+            val currentStage = mapping.getOrDefault(stage["stage"], null) ?: ExplainPlan.NotRun
+            return maxOf(parentStage, currentStage)
         }
     }
 }

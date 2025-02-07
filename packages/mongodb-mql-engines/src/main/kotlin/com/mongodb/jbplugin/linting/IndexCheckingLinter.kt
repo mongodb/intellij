@@ -4,10 +4,11 @@
 
 package com.mongodb.jbplugin.linting
 
-import com.mongodb.jbplugin.accessadapter.ExplainPlan
 import com.mongodb.jbplugin.accessadapter.MongoDbReadModelProvider
+import com.mongodb.jbplugin.accessadapter.slice.ExplainPlan
 import com.mongodb.jbplugin.accessadapter.slice.ExplainQuery
 import com.mongodb.jbplugin.linting.IndexCheckWarning.QueryNotCoveredByIndex
+import com.mongodb.jbplugin.linting.IndexCheckWarning.QueryNotUsingEffectiveIndex
 import com.mongodb.jbplugin.mql.*
 
 /**
@@ -25,6 +26,16 @@ sealed interface IndexCheckWarning<S> {
      * @property source
      */
     data class QueryNotCoveredByIndex<S>(
+        val source: S,
+    ) : IndexCheckWarning<S>
+
+    /**
+     * If the used index is not effective enough, because we are sorting in memory for example.
+     *
+     * @param S
+     * @property source
+     */
+    data class QueryNotUsingEffectiveIndex<S>(
         val source: S,
     ) : IndexCheckWarning<S>
 }
@@ -60,6 +71,13 @@ object IndexCheckingLinter {
                 IndexCheckResult(
                     listOf(
                         QueryNotCoveredByIndex(query.source)
+                    )
+                )
+
+            is ExplainPlan.IneffectiveIndexUsage ->
+                IndexCheckResult(
+                    listOf(
+                        QueryNotUsingEffectiveIndex(query.source)
                     )
                 )
 

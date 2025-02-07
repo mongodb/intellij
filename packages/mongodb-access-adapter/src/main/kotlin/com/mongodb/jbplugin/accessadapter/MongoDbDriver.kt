@@ -19,15 +19,6 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 /**
- * Represents the result of an explain plan command.
- */
-sealed interface ExplainPlan {
-    data object NotRun : ExplainPlan
-    data object CollectionScan : ExplainPlan
-    data object IndexScan : ExplainPlan
-}
-
-/**
  * Represents the result of running a query.
  */
 sealed interface QueryResult<S> {

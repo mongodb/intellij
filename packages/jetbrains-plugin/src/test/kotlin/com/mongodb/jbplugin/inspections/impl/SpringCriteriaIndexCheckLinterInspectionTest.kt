@@ -1,7 +1,7 @@
 package com.mongodb.jbplugin.inspections.impl
 
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
-import com.mongodb.jbplugin.accessadapter.ExplainPlan
+import com.mongodb.jbplugin.accessadapter.slice.ExplainPlan
 import com.mongodb.jbplugin.accessadapter.slice.ExplainQuery
 import com.mongodb.jbplugin.dialects.springcriteria.SpringCriteriaDialect
 import com.mongodb.jbplugin.fixtures.*
@@ -43,6 +43,43 @@ class BookRepository {
 
         `when`(readModelProvider.slice(eq(dataSource), any<ExplainQuery.Slice<Any>>())).thenReturn(
             ExplainQuery(ExplainPlan.CollectionScan)
+        )
+
+        fixture.enableInspections(IndexCheckInspectionBridge::class.java)
+        fixture.testHighlighting()
+    }
+
+    @ParsingTest(
+        setup = DefaultSetup.SPRING_DATA,
+        value = """
+
+class BookRepository {
+    private final MongoTemplate template;
+
+    public BookRepository(MongoTemplate template) {
+        this.template = template;
+    }
+
+    public void allReleasedBooks() {
+        <warning descr="This query is using an index, but it still requires to filter or sort an important amount of documents in memory. If you plan on using this query heavily in your application, you should create an index that covers this query better.">template.find(
+            query(
+            where("released")
+            .is(true)),
+            Book.class
+        )</warning>;
+    }
+}
+        
+        """,
+    )
+    fun `shows an inspection when the query has an ineffective index usage`(
+        fixture: CodeInsightTestFixture,
+    ) {
+        val (dataSource, readModelProvider) = fixture.setupConnection()
+        fixture.specifyDialect(SpringCriteriaDialect)
+
+        `when`(readModelProvider.slice(eq(dataSource), any<ExplainQuery.Slice<Any>>())).thenReturn(
+            ExplainQuery(ExplainPlan.IneffectiveIndexUsage)
         )
 
         fixture.enableInspections(IndexCheckInspectionBridge::class.java)
