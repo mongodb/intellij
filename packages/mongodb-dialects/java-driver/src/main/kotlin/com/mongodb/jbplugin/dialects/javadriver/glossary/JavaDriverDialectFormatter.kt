@@ -33,7 +33,7 @@ object JavaDriverDialectFormatter : DialectFormatter {
                     .sorted()
                     .joinToString(" | ")
             }
-        is BsonEnum -> type.members.sorted().joinToString(" | ")
+        is BsonEnum -> type.name ?: (type.members.take(3).sorted().joinToString(" | ") + "...")
         else -> "any"
     }
 

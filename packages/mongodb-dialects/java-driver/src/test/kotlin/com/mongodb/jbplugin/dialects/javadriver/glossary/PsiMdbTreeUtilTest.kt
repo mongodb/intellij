@@ -3,10 +3,16 @@ package com.mongodb.jbplugin.dialects.javadriver.glossary
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.JavaPsiFacade
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiType
 import com.intellij.psi.PsiTypes
 import com.mongodb.jbplugin.dialects.javadriver.IntegrationTest
+import com.mongodb.jbplugin.dialects.javadriver.ParsingTest
+import com.mongodb.jbplugin.dialects.javadriver.getQueryAtMethod
 import com.mongodb.jbplugin.mql.*
+import com.mongodb.jbplugin.mql.components.HasFilter
+import com.mongodb.jbplugin.mql.components.HasValueReference
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -35,6 +41,94 @@ class PsiMdbTreeUtilTest {
         expected: BsonType,
     ) {
         assertEquals(expected, javaQualifiedName.toBsonType())
+    }
+
+    @ParsingTest(
+        fileName = "Repository.java",
+        value = """
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Filters;
+import java.util.ArrayList;
+
+public final class Repository {
+    public enum Language {
+        CATALAN,
+        ENGLISH,
+        FRENCH,
+        HINDI,
+        SPANISH
+    }
+
+    private final MongoCollection<Document> collection;
+    
+    public Repository(MongoClient client) {
+        this.collection = client.getDatabase("simple").getCollection("books");
+    }
+    
+    public List<Document> findBooksInCatalan() {
+        return this.collection.find(Filters.eq("language", Language.CATALAN));
+    }
+}
+      """
+    )
+    fun `should understand a java enum as a constant value`(psiFile: PsiFile) {
+        val query = psiFile.getQueryAtMethod("Repository", "findBooksInCatalan")
+        val parsedQuery = JavaDriverDialectParser.parse(query)
+        val filter = parsedQuery.component<HasFilter<PsiElement>>()!!
+        val eqOp = filter.children[0]
+        val value = eqOp.component<HasValueReference<PsiElement>>()!!
+        val valueRef = value.reference as HasValueReference.Constant<PsiElement>
+        val valueType = valueRef.type
+
+        assertEquals(
+            BsonEnum(setOf("CATALAN", "ENGLISH", "FRENCH", "HINDI", "SPANISH"), "Language"),
+            valueType
+        )
+    }
+
+    @ParsingTest(
+        fileName = "Repository.java",
+        value = """
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Filters;
+import java.util.ArrayList;
+
+public final class Repository {
+    public enum Language {
+        CATALAN,
+        ENGLISH,
+        FRENCH,
+        HINDI,
+        SPANISH
+    }
+
+    private final MongoCollection<Document> collection;
+    
+    public Repository(MongoClient client) {
+        this.collection = client.getDatabase("simple").getCollection("books");
+    }
+    
+    public List<Document> findBooksInCatalan(Language lang) {
+        return this.collection.find(Filters.eq("language", lang));
+    }
+}
+      """
+    )
+    fun `should understand a java enum as a runtime value`(psiFile: PsiFile) {
+        val query = psiFile.getQueryAtMethod("Repository", "findBooksInCatalan")
+        val parsedQuery = JavaDriverDialectParser.parse(query)
+        val filter = parsedQuery.component<HasFilter<PsiElement>>()!!
+        val eqOp = filter.children[0]
+        val value = eqOp.component<HasValueReference<PsiElement>>()!!
+        val valueRef = value.reference as HasValueReference.Runtime<PsiElement>
+        val valueType = valueRef.type
+
+        assertEquals(
+            BsonEnum(setOf("CATALAN", "ENGLISH", "FRENCH", "HINDI", "SPANISH"), "Language"),
+            valueType
+        )
     }
 
     companion object {

@@ -12,6 +12,14 @@ import org.bson.types.ObjectId;
 
 import java.util.*;
 
+enum Language {
+    CATALAN,
+    ENGLISH,
+    FRENCH,
+    HINDI,
+    SPANISH,
+
+}
 public class JavaDriverRepository {
     private static final String IMDB_VOTES = "imdb.votes";
     public static final String AWARDS_WINS = "awards.wins";
@@ -26,7 +34,7 @@ public class JavaDriverRepository {
         return client
             .getDatabase("sample_mflix")
             .getCollection("movies")
-            .find(Filters.eq("rated", "L"))
+            .find(Filters.eq("rated", Language.CATALAN))
             .first();
     }
 

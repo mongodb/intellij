@@ -825,21 +825,27 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
     private fun resolveValueFromExpression(expression: PsiExpression): HasValueReference.ValueReference<PsiElement> {
         val (wasResolvedAtCompileTime, resolvedValue) = expression.tryToResolveAsConstant()
 
+        val resolvedType = if (resolvedValue is PsiEnumConstant) {
+            resolvedValue.type.toBsonType()
+        } else if (resolvedValue is PsiType) {
+            resolvedValue.toBsonType()
+        } else if (wasResolvedAtCompileTime) {
+            resolvedValue?.javaClass.toBsonType()
+        } else {
+            expression.type?.toBsonType()
+        }
+
         val valueReference =
-            if (wasResolvedAtCompileTime) {
+            if (wasResolvedAtCompileTime && resolvedType != null) {
                 HasValueReference.Constant(
                     expression,
                     resolvedValue,
-                    resolvedValue?.javaClass.toBsonType()
+                    resolvedType
                 )
+            } else if (resolvedType != null) {
+                HasValueReference.Runtime(expression, resolvedType)
             } else {
-                val psiTypeOfValue =
-                    expression
-                        .type
-                        ?.toBsonType()
-                psiTypeOfValue?.let {
-                    HasValueReference.Runtime(expression, it)
-                } ?: HasValueReference.Unknown
+                HasValueReference.Unknown
             }
         return valueReference as HasValueReference.ValueReference<PsiElement>
     }
