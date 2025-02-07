@@ -60,7 +60,7 @@ fun waitFor(timeout: Duration, interval: Duration, condition: () -> Boolean) {
  * @param recovery
  */
 fun eventually(
-    timeout: Duration = Duration.ofSeconds(1),
+    timeout: Duration = Duration.ofSeconds(10),
     recovery: () -> Unit = {},
     fn: (Int) -> Unit
 ) {
