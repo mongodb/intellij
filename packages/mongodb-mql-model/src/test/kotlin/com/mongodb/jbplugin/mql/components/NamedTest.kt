@@ -223,33 +223,33 @@ class NamedTest {
     }
 
     @Test
-    fun `first operation should be sort`() {
-        assertThatOperationHasRoleForType(QueryRole.SORT, Name.FIRST, BsonAny)
+    fun `first operation should be irrelevant`() {
+        assertThatOperationHasRoleForType(QueryRole.IRRELEVANT, Name.FIRST, BsonAny)
     }
 
     @Test
-    fun `last operation should be sort`() {
-        assertThatOperationHasRoleForType(QueryRole.SORT, Name.LAST, BsonAny)
+    fun `last operation should be irrelevant`() {
+        assertThatOperationHasRoleForType(QueryRole.IRRELEVANT, Name.LAST, BsonAny)
     }
 
     @Test
-    fun `top operation should be sort`() {
-        assertThatOperationHasRoleForType(QueryRole.SORT, Name.TOP, BsonAny)
+    fun `top operation should be irrelevant`() {
+        assertThatOperationHasRoleForType(QueryRole.IRRELEVANT, Name.TOP, BsonAny)
     }
 
     @Test
-    fun `topN operation should be sort`() {
-        assertThatOperationHasRoleForType(QueryRole.SORT, Name.TOP_N, BsonAny)
+    fun `topN operation should be irrelevant`() {
+        assertThatOperationHasRoleForType(QueryRole.IRRELEVANT, Name.TOP_N, BsonAny)
     }
 
     @Test
-    fun `bottom operation should be sort`() {
-        assertThatOperationHasRoleForType(QueryRole.SORT, Name.BOTTOM, BsonAny)
+    fun `bottom operation should be irrelevant`() {
+        assertThatOperationHasRoleForType(QueryRole.IRRELEVANT, Name.BOTTOM, BsonAny)
     }
 
     @Test
-    fun `bottomN operation should be sort`() {
-        assertThatOperationHasRoleForType(QueryRole.SORT, Name.BOTTOM_N, BsonAny)
+    fun `bottomN operation should be irrelevant`() {
+        assertThatOperationHasRoleForType(QueryRole.IRRELEVANT, Name.BOTTOM_N, BsonAny)
     }
 
     @Test

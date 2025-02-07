@@ -161,22 +161,22 @@ enum class Name(val canonical: String) : HasQueryRole {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
     FIRST("first") {
-        override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.SORT
+        override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
     LAST("last") {
-        override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.SORT
+        override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
     TOP("top") {
-        override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.SORT
+        override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
     TOP_N("topN") {
-        override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.SORT
+        override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
     BOTTOM("bottom") {
-        override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.SORT
+        override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
     BOTTOM_N("bottomN") {
-        override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.SORT
+        override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
     MAX("max") {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.SORT
