@@ -154,7 +154,7 @@ class RunQueryModal(
     fun askForQueryContext(): QueryContext? {
         val allNodes = allRuntimeFieldNodes()
         if (allNodes.isEmpty()) {
-            return QueryContext.empty(prettyPrint = true)
+            return QueryContext.empty(prettyPrint = true, automaticallyRun = false)
         }
 
         init()
@@ -227,7 +227,7 @@ class RunQueryModal(
             )
         }
 
-        return QueryContext(localVariables, QueryContext.ExplainPlanType.NONE, prettyPrint = true)
+        return QueryContext(localVariables, prettyPrint = true, automaticallyRun = false)
     }
 
     private fun mapToLocalVariable(type: BsonType, value: String): QueryContext.LocalVariable {

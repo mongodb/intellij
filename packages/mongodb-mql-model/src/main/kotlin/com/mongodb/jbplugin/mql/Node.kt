@@ -58,6 +58,10 @@ data class Node<S>(
 
     inline fun <reified C : Component> components(): List<C> = components.filterIsInstance<C>()
 
+    fun with(component: Component): Node<S> {
+        return copy(components = components + component)
+    }
+
     fun componentsWithChildren(): List<HasChildren<S>> = components.filterIsInstance<HasChildren<S>>()
 
     inline fun <reified C : Component> hasComponent(): Boolean = component<C>() != null
@@ -69,6 +73,14 @@ data class Node<S>(
             it !is HasTargetCluster
         } + cluster
     )
+
+    fun queryWithInjectedCollectionSchema(collectionSchema: CollectionSchema) = copy { component ->
+        if (component is HasCollectionReference<*>) {
+            component.copy(collectionSchema = collectionSchema)
+        } else {
+            component
+        }
+    }
 
     /**
      * Creates a copy of the query and modifies the database reference in every HasCollectionReference component
@@ -94,6 +106,10 @@ data class Node<S>(
      */
     fun copy(componentModifier: (component: Component) -> Component): Node<S> =
         copy(source = source, components = components.map(componentModifier))
+
+    override fun toString(): String {
+        return "Node(components=$components)"
+    }
 }
 
 /**
@@ -102,22 +118,22 @@ data class Node<S>(
  */
 data class QueryContext(
     val expansions: Map<String, LocalVariable>,
-    val explainPlan: ExplainPlanType,
     val prettyPrint: Boolean,
+    // This boolean dictates whether the query to which this context will be attached is supposed
+    // to be run automatically or not. A query will run automatically where there is no user
+    // interactions involved like - sampling, explaining a query for indexes, etc.
+    val automaticallyRun: Boolean,
 ) {
     data class AsIs(val value: String) {
         val isEmpty = value.isBlank()
     }
 
     data class LocalVariable(val type: BsonType, val defaultValue: Any?)
-    enum class ExplainPlanType {
-        NONE,
-        SAFE,
-        FULL
-    }
+
+    fun willAutomaticallyRun() = copy(automaticallyRun = true)
 
     companion object {
-        fun empty(prettyPrint: Boolean = false): QueryContext =
-            QueryContext(emptyMap(), ExplainPlanType.NONE, prettyPrint)
+        fun empty(prettyPrint: Boolean = false, automaticallyRun: Boolean = false): QueryContext =
+            QueryContext(emptyMap(), prettyPrint, automaticallyRun)
     }
 }

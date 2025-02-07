@@ -13,9 +13,13 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
 import com.mongodb.jbplugin.accessadapter.slice.BuildInfo
+import com.mongodb.jbplugin.accessadapter.slice.GetCollectionSchema
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.mql.Node
+import com.mongodb.jbplugin.mql.components.HasCollectionReference
+import com.mongodb.jbplugin.mql.components.HasCollectionReference.Known
 import com.mongodb.jbplugin.mql.components.HasTargetCluster
+import com.mongodb.jbplugin.settings.pluginSetting
 import io.github.z4kn4fein.semver.Version
 import kotlinx.coroutines.CoroutineScope
 
@@ -77,6 +81,20 @@ class CachedQueryService(
                 queryWithDb.withTargetCluster(
                     HasTargetCluster(Version.parse(buildInfo.version))
                 )
+
+                val knownReference = queryWithDb.component<HasCollectionReference<*>>()?.reference as? Known<*>
+                if (knownReference != null) {
+                    val sampleSize by pluginSetting { ::sampleSize }
+                    val collectionSchema = readModel.slice(
+                        dataSource,
+                        GetCollectionSchema.Slice(knownReference.namespace, sampleSize)
+                    )
+                    queryWithDb.queryWithInjectedCollectionSchema(
+                        collectionSchema.schema
+                    )
+                } else {
+                    queryWithDb
+                }
             } else {
                 queryWithDb
             }

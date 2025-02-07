@@ -25,10 +25,10 @@ data class ListDatabases(
                             "listDatabases" to 1,
                         ),
                     ),
-                    Document::class,
+                    Map::class,
                 )
 
-            val databases = result.getList("databases", Map::class.java)
+            val databases = result["databases"] as List<Map<String, String>>
             return ListDatabases(
                 databases.map {
                     Database(it["name"].toString())

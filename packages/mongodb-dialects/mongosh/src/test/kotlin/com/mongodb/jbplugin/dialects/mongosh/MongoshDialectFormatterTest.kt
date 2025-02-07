@@ -1,10 +1,12 @@
 package com.mongodb.jbplugin.dialects.mongosh
 
+import com.mongodb.jbplugin.mql.BsonInt32
 import com.mongodb.jbplugin.mql.BsonString
 import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.QueryContext
 import com.mongodb.jbplugin.mql.components.*
+import com.mongodb.jbplugin.mql.components.HasExplain.ExplainPlanType
 import kotlinx.coroutines.test.runTest
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -54,13 +56,14 @@ class MongoshDialectFormatterTest {
             var collection = ""
             var database = ""
             
-            db.getSiblingDB(database).getCollection(collection).explain("queryPlanner").find({"myField": "myVal", })
+            db.getSiblingDB(database).getCollection(collection).find({"myField": "myVal", }).limit(50).explain("queryPlanner")
             """.trimIndent(),
-            explain = QueryContext.ExplainPlanType.SAFE
+            explain = ExplainPlanType.SAFE
         ) {
             Node(
                 Unit,
                 listOf(
+                    IsCommand(IsCommand.CommandType.FIND_MANY),
                     HasFilter(
                         listOf(
                             Node(
@@ -88,13 +91,14 @@ class MongoshDialectFormatterTest {
             var collection = ""
             var database = ""
             
-            db.getSiblingDB(database).getCollection(collection).explain("executionStats").find({"myField": "myVal", })
+            db.getSiblingDB(database).getCollection(collection).find({"myField": "myVal", }).limit(50).explain("executionStats")
             """.trimIndent(),
-            explain = QueryContext.ExplainPlanType.FULL
+            explain = ExplainPlanType.FULL
         ) {
             Node(
                 Unit,
                 listOf(
+                    IsCommand(IsCommand.CommandType.FIND_MANY),
                     HasFilter(
                         listOf(
                             Node(
@@ -110,6 +114,101 @@ class MongoshDialectFormatterTest {
                             )
                         )
                     )
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `can format an aggregate with a safe explain plan using queryPlanner`() = runTest {
+        assertGeneratedQuery(
+            """
+            var collection = ""
+            var database = ""
+            
+            db.getSiblingDB(database).getCollection(collection).explain("queryPlanner").aggregate([{"${'$'}sort": {"myField": 1, }}, ])
+            """.trimIndent(),
+            explain = ExplainPlanType.SAFE
+        ) {
+            Node(
+                Unit,
+                listOf(
+                    IsCommand(IsCommand.CommandType.AGGREGATE),
+                    HasAggregation(
+                        listOf(
+                            Node(
+                                Unit,
+                                listOf(
+                                    Named(Name.SORT),
+                                    HasSorts(
+                                        listOf(
+                                            Node(
+                                                Unit,
+                                                listOf(
+                                                    HasFieldReference(
+                                                        HasFieldReference.FromSchema(
+                                                            Unit,
+                                                            "myField"
+                                                        )
+                                                    ),
+                                                    HasValueReference(
+                                                        HasValueReference.Inferred(
+                                                            Unit,
+                                                            1,
+                                                            BsonInt32
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `can format an update with a safe explain plan using queryPlanner`() = runTest {
+        assertGeneratedQuery(
+            """
+            var collection = ""
+            var database = ""
+            
+            db.getSiblingDB(database).getCollection(collection).find({}).limit(50).explain("queryPlanner")
+            """.trimIndent(),
+            explain = ExplainPlanType.SAFE
+        ) {
+            Node(
+                Unit,
+                listOf(
+                    IsCommand(IsCommand.CommandType.UPDATE_MANY),
+                    HasUpdates<List<Node<Unit>>>(emptyList()),
+                    HasFilter<List<Node<Unit>>>(emptyList())
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `can format a delete query with a safe explain plan using queryPlanner`() = runTest {
+        assertGeneratedQuery(
+            """
+            var collection = ""
+            var database = ""
+            
+            db.getSiblingDB(database).getCollection(collection).find({}).limit(50).explain("queryPlanner")
+            """.trimIndent(),
+            explain = ExplainPlanType.SAFE
+        ) {
+            Node(
+                Unit,
+                listOf(
+                    IsCommand(IsCommand.CommandType.DELETE_MANY),
+                    HasFilter<List<Node<Unit>>>(emptyList())
                 )
             )
         }
@@ -165,12 +264,18 @@ class MongoshDialectFormatterTest {
 
 internal suspend fun assertGeneratedQuery(
     @Language("js") js: String,
-    explain: QueryContext.ExplainPlanType = QueryContext.ExplainPlanType.NONE,
+    explain: ExplainPlanType = ExplainPlanType.NONE,
     script: suspend () -> Node<Unit>
 ) {
     val generated = MongoshDialectFormatter.formatQuery(
-        script(),
-        QueryContext(emptyMap(), explain, false)
+        script().let {
+            if (explain != ExplainPlanType.NONE) {
+                it.with(HasExplain(explain))
+            } else {
+                it
+            }
+        },
+        QueryContext(emptyMap(), false, false)
     )
     assertEquals(js, generated.query)
 }

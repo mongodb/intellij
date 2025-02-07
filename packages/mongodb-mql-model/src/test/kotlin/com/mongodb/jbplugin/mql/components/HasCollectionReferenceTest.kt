@@ -1,5 +1,7 @@
 package com.mongodb.jbplugin.mql.components
 
+import com.mongodb.jbplugin.mql.BsonObject
+import com.mongodb.jbplugin.mql.CollectionSchema
 import com.mongodb.jbplugin.mql.Namespace
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -22,16 +24,49 @@ class HasCollectionReferenceTest {
         val modifiedReference = collectionReference.copy("goo")
         // original is not modified
         assertEquals(
+            dbRef,
             (collectionReference.reference as HasCollectionReference.Known).databaseSource,
-            dbRef
         )
         assertEquals(
+            collRef,
             (collectionReference.reference as HasCollectionReference.Known).collectionSource,
-            collRef
         )
         assertEquals(
+            "goo",
             (modifiedReference.reference as HasCollectionReference.Known).namespace.database,
-            "goo"
+        )
+    }
+
+    @Test
+    fun `when the underlying reference is Known, it creates a copy with the collection schema injected`() {
+        val dbRef = 1
+        val collRef = 2
+
+        val collectionReference = HasCollectionReference(
+            HasCollectionReference.Known(
+                dbRef,
+                collRef,
+                Namespace("foo", "bar"),
+            )
+        )
+
+        val schema = CollectionSchema(
+            Namespace("foo", "bar"),
+            BsonObject(emptyMap()),
+        )
+        val modifiedReference = collectionReference.copy(schema)
+        // original is not modified
+        assertEquals(
+            dbRef,
+            (collectionReference.reference as HasCollectionReference.Known).databaseSource,
+        )
+        assertEquals(
+            collRef,
+            (collectionReference.reference as HasCollectionReference.Known).collectionSource,
+        )
+        assertEquals(
+            schema,
+            (modifiedReference.reference as HasCollectionReference.Known).schema,
         )
     }
 
@@ -51,12 +86,12 @@ class HasCollectionReferenceTest {
 
         assertTrue(modifiedReference.reference is HasCollectionReference.Known)
         assertEquals(
+            "foo",
             (modifiedReference.reference as HasCollectionReference.Known).namespace.database,
-            "foo"
         )
         assertEquals(
+            collRef,
             (modifiedReference.reference as HasCollectionReference.Known).collectionSource,
-            collRef
         )
     }
 

@@ -688,6 +688,8 @@ private fun String.toName(): Name = when (this) {
  * We are not going to support mapReduce as they are deprecated in MongoDB.
  */
 private val INTERFACES_WITH_QUERY_METHODS = arrayOf(
+    "ReactiveMongoTemplate",
+    "ReactiveMongoOperations",
     "MongoTemplate",
     "MongoOperations",
     "ExecutableAggregationOperation",
@@ -702,4 +704,5 @@ private val INTERFACES_WITH_QUERY_METHODS = arrayOf(
     "ExecutableInsertOperation",
     "ExecutableRemoveOperation",
     "ExecutableUpdateOperation",
+    "TerminatingFind",
 )

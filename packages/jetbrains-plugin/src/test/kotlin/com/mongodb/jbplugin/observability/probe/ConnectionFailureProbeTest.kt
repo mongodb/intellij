@@ -4,20 +4,18 @@ import com.intellij.database.dataSource.DatabaseConnectionPoint
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.openapi.application.Application
 import com.intellij.openapi.project.Project
-import com.intellij.psi.util.CachedValuesManager
-import com.intellij.util.CachedValuesManagerImpl
+import com.mongodb.ConnectionString
+import com.mongodb.jbplugin.accessadapter.slice.BuildInfo
 import com.mongodb.jbplugin.fixtures.*
 import com.mongodb.jbplugin.fixtures.mockLogMessage
 import com.mongodb.jbplugin.observability.TelemetryProperty
 import com.mongodb.jbplugin.observability.TelemetryService
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.verify
-import java.rmi.server.RemoteObject
 import java.sql.SQLException
 
 @IntegrationTest
@@ -37,7 +35,6 @@ class ConnectionFailureProbeTest {
         application.withMockedService(logMessage)
 
         project.withMockedUnconnectedMongoDbConnection(MongoDbServerUrl("mongodb://localhost"))
-        project.withMockedService<Project, CachedValuesManager>(CachedValuesManagerImpl(project))
         val probe = ConnectionFailureProbe()
 
         probe.connectionFailed(project, connectionPoint, Throwable())
@@ -73,8 +70,6 @@ class ConnectionFailureProbeTest {
         project.withMockedUnconnectedMongoDbConnection(MongoDbServerUrl("mongodb://localhost"))
         val probe = ConnectionFailureProbe()
 
-        project.withMockedService<Project, CachedValuesManager>(CachedValuesManagerImpl(project))
-
         val innerException =
             Exception(
                 "com.mongodb.MongoCommandException: Command failed with error 18 (AuthenticationFailed):",
@@ -98,4 +93,21 @@ class ConnectionFailureProbeTest {
             },
         )
     }
+
+    private val buildInfo = BuildInfo(
+        version = "7.0.0",
+        gitVersion = null,
+        modules = emptyList(),
+        buildEnvironment = emptyMap(),
+        isLocalhost = true,
+        isEnterprise = true,
+        isAtlas = false,
+        isLocalAtlas = false,
+        isAtlasStream = false,
+        isDigitalOcean = false,
+        isGenuineMongoDb = true,
+        nonGenuineVariant = null,
+        isDataLake = false,
+        serverUrl = ConnectionString("mongodb://localhost:27017")
+    )
 }
