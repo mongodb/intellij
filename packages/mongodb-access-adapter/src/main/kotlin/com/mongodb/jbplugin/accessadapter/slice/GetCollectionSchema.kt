@@ -36,7 +36,14 @@ data class GetCollectionSchema(
             val query = Node(
                 Unit,
                 listOf(
-                    HasCollectionReference(HasCollectionReference.Known(Unit, Unit, namespace)),
+                    HasCollectionReference(
+                        HasCollectionReference.Known(
+                            databaseSource = Unit,
+                            collectionSource = Unit,
+                            namespace = namespace,
+                            schema = null,
+                        )
+                    ),
                     IsCommand(IsCommand.CommandType.FIND_MANY),
                     HasFilter(emptyList<Node<Unit>>()),
                     HasLimit(documentsSampleSize),

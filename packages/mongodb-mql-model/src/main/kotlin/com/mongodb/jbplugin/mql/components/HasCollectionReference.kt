@@ -1,5 +1,6 @@
 package com.mongodb.jbplugin.mql.components
 
+import com.mongodb.jbplugin.mql.CollectionSchema
 import com.mongodb.jbplugin.mql.Component
 import com.mongodb.jbplugin.mql.Namespace
 
@@ -25,7 +26,8 @@ data class HasCollectionReference<S>(
             reference = Known(
                 databaseSource = reference.databaseSource,
                 collectionSource = reference.collectionSource,
-                namespace = Namespace(database, reference.namespace.collection)
+                namespace = Namespace(database, reference.namespace.collection),
+                schema = reference.schema,
             )
         )
 
@@ -33,11 +35,25 @@ data class HasCollectionReference<S>(
             reference = Known(
                 databaseSource = null,
                 collectionSource = reference.collectionSource,
-                namespace = Namespace(database, reference.collection)
+                namespace = Namespace(database, reference.collection),
+                schema = null,
             )
         )
 
         is Unknown -> this
+    }
+
+    fun copy(collectionSchema: CollectionSchema) = when (reference) {
+        is Known -> copy(
+            reference = Known(
+                databaseSource = reference.databaseSource,
+                collectionSource = reference.collectionSource,
+                namespace = reference.namespace,
+                schema = collectionSchema,
+            )
+        )
+
+        else -> this
     }
 
     /**
@@ -47,17 +63,20 @@ data class HasCollectionReference<S>(
 
     /**
      * @param S
-     * @property namespace
-     * @property databaseSource
-     * @property collectionSource
+     * @property databaseSource - Source where database was parsed from
+     * @property collectionSource - Source where collection was parsed from
+     * @property namespace - Namespace derived from parsed database and collection
+     * @property schema - Generally injected after a query is parsed which is why the default is
+     * always null
      */
     data class Known<S>(
         val databaseSource: S?,
         val collectionSource: S,
         val namespace: Namespace,
+        val schema: CollectionSchema? = null
     ) : CollectionReference<S> {
         override fun toString(): String {
-            return "Known(namespace=$namespace)"
+            return "Known(namespace=$namespace,schema=$schema)"
         }
     }
 

@@ -74,6 +74,14 @@ data class Node<S>(
         } + cluster
     )
 
+    fun queryWithInjectedCollectionSchema(collectionSchema: CollectionSchema) = copy { component ->
+        if (component is HasCollectionReference<*>) {
+            component.copy(collectionSchema = collectionSchema)
+        } else {
+            component
+        }
+    }
+
     /**
      * Creates a copy of the query and modifies the database reference in every HasCollectionReference component
      * with the provided database
