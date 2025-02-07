@@ -11,6 +11,7 @@ import com.mongodb.jbplugin.fixtures.mockDataSource
 import com.mongodb.jbplugin.fixtures.mockReadModelProvider
 import com.mongodb.jbplugin.fixtures.parseJavaQuery
 import com.mongodb.jbplugin.mql.BsonBoolean
+import com.mongodb.jbplugin.mql.BsonEnum
 import com.mongodb.jbplugin.mql.BsonString
 import com.mongodb.jbplugin.mql.Node
 import kotlinx.coroutines.CoroutineScope
@@ -245,6 +246,43 @@ class RunQueryModalTest {
 
             assertEquals(true, idInput.defaultValue)
             assertEquals(BsonBoolean, idInput.type)
+        }
+    }
+
+    @Test
+    fun `should show enums as combo boxes`(
+        robot: Robot,
+        project: Project,
+        coroutineScope: CoroutineScope
+    ) {
+        val dataSource = mockDataSource()
+
+        val query = project.parseJavaQuery(
+            """
+            enum JavaScriptBoolean { TRUE, FALSE, UNDEFINED, NULL }
+
+            public Document find(JavaScriptBoolean el) {
+                return this.client.getDatabase("prod").getCollection("books").find(eq("bool", el)).first();
+            }
+        """
+        )
+
+        val (fixture, modal) = render(robot, query, dataSource, coroutineScope)
+
+        eventually {
+            fixture.comboBox("bool")
+                .requireVisible()
+                .requireItemCount(4)
+                .requireSelection("TRUE")
+
+            val queryContext = modal.buildQueryContextFromModal()
+            val boolInput = queryContext.expansions.getValue("bool")
+
+            assertEquals("TRUE", boolInput.defaultValue)
+            assertEquals(
+                BsonEnum(setOf("TRUE", "FALSE", "UNDEFINED", "NULL"), "JavaScriptBoolean"),
+                boolInput.type
+            )
         }
     }
 

@@ -18,33 +18,20 @@ enum Language {
     FRENCH,
     HINDI,
     SPANISH,
-
 }
-public class JavaDriverRepository {
-    private static final String IMDB_VOTES = "imdb.votes";
-    public static final String AWARDS_WINS = "awards.wins";
 
+public class JavaDriverRepository {
     private final MongoClient client;
 
     public JavaDriverRepository(MongoClient client) {
         this.client = client;
     }
 
-    public Document notIndexedQuery(String string) {
+    public Document notIndexedQuery(Language lang) {
         return client
             .getDatabase("sample_mflix")
             .getCollection("movies")
-            .find(Filters.eq("rated", Language.CATALAN))
-            .first();
-    }
-
-    public Document notIndexedAggregate(String string) {
-        return client
-            .getDatabase("sample_mflix")
-            .getCollection("movies")
-            .aggregate(Arrays.asList(
-                Aggregates.match(Filters.eq("rated", string))
-                ))
+            .find(Filters.eq("languages", lang))
             .first();
     }
 }
