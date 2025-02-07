@@ -1,6 +1,8 @@
 package com.mongodb.jbplugin.mql
 
 import com.mongodb.jbplugin.mql.components.*
+import com.mongodb.jbplugin.mql.components.HasCollectionReference.Known
+import com.mongodb.jbplugin.mql.components.HasCollectionReference.OnlyCollection
 import io.github.z4kn4fein.semver.Version
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -133,8 +135,8 @@ class NodeTest {
                 ?: false
         )
         assertEquals(
+            "foo",
             (nodeReference?.reference as HasCollectionReference.Known).namespace.database,
-            "foo"
         )
     }
 
@@ -170,6 +172,31 @@ class NodeTest {
         val query = Node(Unit, listOf(oldCluster)).withTargetCluster(targetCluster)
 
         assertEquals(targetCluster, query.component<HasTargetCluster>())
+    }
+
+    @Test
+    fun `on calling queryWithInjectedCollectionSchema it returns a Node with injected CollectionSchema if CollectionReference is Known`() {
+        val node = Node<Unit?>(
+            null,
+            listOf(
+                HasCollectionReference(
+                    HasCollectionReference.Known(
+                        1,
+                        2,
+                        Namespace("db", "coll"),
+                        null,
+                    )
+                ),
+            )
+        )
+
+        val schema = CollectionSchema(
+            Namespace("db", "coll"),
+            BsonObject(emptyMap()),
+        )
+        val modifiedNode = node.queryWithInjectedCollectionSchema(schema)
+        val nodeReference = modifiedNode.component<HasCollectionReference<*>>()
+        assertEquals(schema, (nodeReference?.reference as? Known<*>)?.schema)
     }
 
     companion object {

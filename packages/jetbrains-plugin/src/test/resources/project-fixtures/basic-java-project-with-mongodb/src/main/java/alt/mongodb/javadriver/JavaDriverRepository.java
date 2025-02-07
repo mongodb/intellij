@@ -35,7 +35,7 @@ public class JavaDriverRepository {
             .getDatabase("sample_mflix")
             .getCollection("movies")
             .aggregate(Arrays.asList(
-                Aggregates.match(Filters.eq("rated", string)),
+                Aggregates.match(Filters.eq("rated", string))
                 ))
             .first();
     }
