@@ -1,7 +1,7 @@
 package com.mongodb.jbplugin.linting
 
-import com.mongodb.jbplugin.accessadapter.ExplainPlan
 import com.mongodb.jbplugin.accessadapter.MongoDbReadModelProvider
+import com.mongodb.jbplugin.accessadapter.slice.ExplainPlan
 import com.mongodb.jbplugin.accessadapter.slice.ExplainQuery
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.QueryContext
@@ -21,6 +21,29 @@ class IndexCheckingLinterTest {
         `when`(readModelProvider.slice(any(), any<ExplainQuery.Slice<Unit>>())).thenReturn(
             ExplainQuery(
                 ExplainPlan.CollectionScan
+            )
+        )
+
+        val result =
+            IndexCheckingLinter.lintQuery(
+                Unit,
+                readModelProvider,
+                query,
+                QueryContext.empty()
+            )
+
+        assertEquals(1, result.warnings.size)
+        assertInstanceOf(IndexCheckWarning.QueryNotCoveredByIndex::class.java, result.warnings[0])
+    }
+
+    @Test
+    fun `warns query plans using an ineffective index`() {
+        val readModelProvider = mock<MongoDbReadModelProvider<Unit>>()
+        val query = Node(Unit, emptyList())
+
+        `when`(readModelProvider.slice(any(), any<ExplainQuery.Slice<Unit>>())).thenReturn(
+            ExplainQuery(
+                ExplainPlan.IneffectiveIndexUsage
             )
         )
 

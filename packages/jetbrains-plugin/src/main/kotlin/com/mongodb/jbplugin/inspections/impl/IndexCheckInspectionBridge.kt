@@ -86,6 +86,13 @@ internal object IndexCheckLinterInspection : MongoDbInspection {
             when (it) {
                 is IndexCheckWarning.QueryNotCoveredByIndex ->
                     registerQueryNotCoveredByIndex(coroutineScope, dataSource, problems, query)
+                is IndexCheckWarning.QueryNotUsingEffectiveIndex ->
+                    registerQueryNotUsingIndexEffectively(
+                        coroutineScope,
+                        dataSource,
+                        problems,
+                        query
+                    )
             }
         }
     }
@@ -98,6 +105,41 @@ internal object IndexCheckLinterInspection : MongoDbInspection {
     ) {
         val problemDescription = InspectionsAndInlaysMessages.message(
             "inspection.index.checking.error.query.not.covered.by.index",
+        )
+
+        val probe by service<InspectionStatusChangedProbe>()
+        probe.inspectionChanged(
+            TelemetryEvent.InspectionStatusChangeEvent.InspectionType.QUERY_NOT_COVERED_BY_INDEX,
+            query
+        )
+
+        problems.registerProblem(
+            query.source,
+            problemDescription,
+            ProblemHighlightType.WARNING,
+            OpenDataSourceConsoleAppendingCode(
+                coroutineScope,
+                InspectionsAndInlaysMessages.message(
+                    "inspection.index.checking.error.query.not.covered.by.index.quick.fix"
+                ),
+                localDataSource
+            ) {
+                val createIndexClicked by query.source.project.service<CreateIndexIntentionProbe>()
+                createIndexClicked.intentionClicked(query)
+
+                MongoshDialect.formatter.indexCommandForQuery(query)
+            }
+        )
+    }
+
+    private fun registerQueryNotUsingIndexEffectively(
+        coroutineScope: CoroutineScope,
+        localDataSource: LocalDataSource,
+        problems: ProblemsHolder,
+        query: Node<PsiElement>
+    ) {
+        val problemDescription = InspectionsAndInlaysMessages.message(
+            "inspection.index.checking.error.query.not.effectively.using.an.index",
         )
 
         val probe by service<InspectionStatusChangedProbe>()
