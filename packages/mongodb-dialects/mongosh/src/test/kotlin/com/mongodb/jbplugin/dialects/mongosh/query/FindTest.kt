@@ -30,12 +30,13 @@ class FindTest {
             var collection = ""
             var database = ""
 
-            db.getSiblingDB(database).getCollection(collection).find({"myField": "myVal", })
+            db.getSiblingDB(database).getCollection(collection).find({"myField": "myVal", }).limit(50)
             """.trimIndent()
         ) {
             Node(
                 Unit,
                 listOf(
+                    IsCommand(IsCommand.CommandType.FIND_MANY),
                     HasFilter(
                         listOf(
                             Node(
@@ -62,12 +63,13 @@ class FindTest {
 
         assertGeneratedQuery(
             """
-            db.getSiblingDB("myDb").getCollection("myColl").find({"myField": "myVal", })
+            db.getSiblingDB("myDb").getCollection("myColl").find({"myField": "myVal", }).limit(50)
             """.trimIndent()
         ) {
             Node(
                 Unit,
                 listOf(
+                    IsCommand(IsCommand.CommandType.FIND_MANY),
                     HasCollectionReference(HasCollectionReference.Known(Unit, Unit, namespace)),
                     HasFilter(
                         listOf(
@@ -98,12 +100,13 @@ class FindTest {
             var collection = ""
             var database = ""
 
-            db.getSiblingDB(database).getCollection(collection).find({"${"$"}$operator": [{"myField": "myVal"}, ]})
+            db.getSiblingDB(database).getCollection(collection).find({"${"$"}$operator": [{"myField": "myVal"}, ]}).limit(50)
             """.trimIndent()
         ) {
             Node(
                 Unit,
                 listOf(
+                    IsCommand(IsCommand.CommandType.FIND_MANY),
                     Named(Name.from(operator)),
                     HasFilter(
                         listOf(
@@ -131,12 +134,13 @@ class FindTest {
 
         assertGeneratedQuery(
             """
-            db.getSiblingDB("myDb").getCollection("myColl").find({"myField": {"${"$"}not": "myVal"}, })
+            db.getSiblingDB("myDb").getCollection("myColl").find({"myField": {"${"$"}not": "myVal"}, }).limit(50)
             """.trimIndent()
         ) {
             Node(
                 Unit,
                 listOf(
+                    IsCommand(IsCommand.CommandType.FIND_MANY),
                     HasCollectionReference(HasCollectionReference.Known(Unit, Unit, namespace)),
                     HasFilter(
                         listOf(
@@ -184,12 +188,13 @@ class FindTest {
             var collection = ""
             var database = ""
 
-            db.getSiblingDB(database).getCollection(collection).find({"myField": {"${"$"}$operator": "myVal"}, })
+            db.getSiblingDB(database).getCollection(collection).find({"myField": {"${"$"}$operator": "myVal"}, }).limit(50)
             """.trimIndent()
         ) {
             Node(
                 Unit,
                 listOf(
+                    IsCommand(IsCommand.CommandType.FIND_MANY),
                     HasFilter(
                         listOf(
                             Node(
@@ -219,12 +224,13 @@ class FindTest {
             var collection = ""
             var database = ""
 
-            db.getSiblingDB(database).getCollection(collection).find({"myField": {"${"$"}$operator": [1, 2]}, })
+            db.getSiblingDB(database).getCollection(collection).find({"myField": {"${"$"}$operator": [1, 2]}, }).limit(50)
             """.trimIndent()
         ) {
             Node(
                 Unit,
                 listOf(
+                    IsCommand(IsCommand.CommandType.FIND_MANY),
                     HasFilter(
                         listOf(
                             Node(
@@ -257,7 +263,7 @@ class FindTest {
             var collection = ""
             var database = ""
 
-            db.getSiblingDB(database).getCollection(collection).find({}).sort({"a": 1, })
+            db.getSiblingDB(database).getCollection(collection).find({}).sort({"a": 1, }).limit(50)
             """.trimIndent()
         ) {
             Node(

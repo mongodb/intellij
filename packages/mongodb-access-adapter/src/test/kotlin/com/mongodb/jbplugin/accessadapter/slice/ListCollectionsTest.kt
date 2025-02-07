@@ -32,13 +32,11 @@ class ListCollectionsTest {
         runBlocking {
             val driver = mock<MongoDbDriver>()
 
-            `when`(driver.runCommand("myDb", listCollections(), Document::class)).thenReturn(
-                Document(
-                    mapOf(
-                        "cursor" to mapOf(
-                            "firstBatch" to listOf(
-                                mapOf("name" to "myCollection", "type" to "collection")
-                            )
+            `when`(driver.runCommand("myDb", listCollections(), Map::class)).thenReturn(
+                mapOf(
+                    "cursor" to mapOf(
+                        "firstBatch" to listOf(
+                            mapOf("name" to "myCollection", "type" to "collection")
                         )
                     )
                 )

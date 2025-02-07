@@ -6,6 +6,7 @@
 package com.mongodb.jbplugin.mql
 
 import org.bson.types.Decimal128
+import org.bson.types.ObjectId
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.time.Instant
@@ -212,6 +213,7 @@ fun <T> Class<T>?.toBsonType(value: T? = null): BsonType {
         Date::class.java, Instant::class.java, LocalDate::class.java, LocalDateTime::class.java ->
             BsonAnyOf(BsonNull, BsonDate)
         UUID::class.java -> BsonAnyOf(BsonNull, BsonUUID)
+        ObjectId::class.java -> BsonAnyOf(BsonNull, BsonObjectId)
         BigInteger::class.java -> BsonAnyOf(BsonNull, BsonInt64)
         BigDecimal::class.java -> BsonAnyOf(BsonNull, BsonDecimal128)
         Decimal128::class.java -> BsonAnyOf(BsonNull, BsonDecimal128)

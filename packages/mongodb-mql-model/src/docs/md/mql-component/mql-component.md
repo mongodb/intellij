@@ -121,3 +121,22 @@ valid commands can be found in the IsCommand.kt file.
 
 References the name of the operation that is being referenced in the node. The list
 of valid names can be found in the Named.kt file.
+
+### HasExplain
+
+Defines that the query MAY not be meant to be run but to be sent to the server to retrieve its
+execution plan. There are 3 variants of the explain plan type and the actual implementation is
+left to the underlying driver:
+
+### ExplainPlanType.NONE
+
+The query is meant to be executed as is, without execution plan.
+
+### ExplainPlanType.SAFE
+
+The query is meant to not be executed. The server should send the execution plan for this query.
+
+### ExplainPlanType.FULL
+
+The query is meant to be executed and also the server is expected to send the execution plan with
+the execution stats of running the query.

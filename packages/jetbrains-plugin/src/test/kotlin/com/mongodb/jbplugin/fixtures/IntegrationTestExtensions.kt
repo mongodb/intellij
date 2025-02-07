@@ -75,6 +75,7 @@ import java.util.*
 import kotlin.io.path.Path
 import kotlin.io.path.absolutePathString
 import kotlin.jvm.optionals.getOrNull
+import kotlin.time.Duration.Companion.milliseconds
 
 enum class DefaultSetup(
     val imports: (String) -> String,
@@ -231,7 +232,15 @@ private class IntegrationTestExtension :
     }
 
     override fun beforeAll(context: ExtensionContext) {
+        val defaultTimeout = 2.milliseconds.inWholeMilliseconds.toInt()
+
         robot = BasicRobot.robotWithCurrentAwtHierarchyWithoutScreenLock()
+        robot.settings().idleTimeout(defaultTimeout)
+        robot.settings().timeoutToBeVisible(defaultTimeout)
+        robot.settings().timeoutToFindPopup(defaultTimeout)
+        robot.settings().timeoutToFindSubMenu(defaultTimeout)
+        robot.settings().delayBetweenEvents(defaultTimeout)
+        robot.settings().eventPostingDelay(defaultTimeout)
 
         if (!context.requiresProjectForEachTest()) {
             setupProject(context)

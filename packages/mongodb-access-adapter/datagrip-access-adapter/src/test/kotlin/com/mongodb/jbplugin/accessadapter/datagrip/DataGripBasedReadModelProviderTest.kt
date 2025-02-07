@@ -19,4 +19,34 @@ class DataGripBasedReadModelProviderTest {
 
         assertEquals(version.versionString, info.version)
     }
+
+    @Test
+    fun `can cache a query for the same slice if the data source did not change`(
+        project: Project,
+        dataSource: LocalDataSource,
+        version: MongoDbVersion
+    ) {
+        val service = project.getService(DataGripBasedReadModelProvider::class.java)
+
+        val info1 = service.slice(dataSource, BuildInfo.Slice)
+        val info2 = service.slice(dataSource, BuildInfo.Slice)
+
+        assertEquals(version.versionString, info1.version)
+        assertEquals(info1, info2)
+        assertEquals(service.wasCached, true)
+    }
+
+    @Test
+    fun `does not cache the query for the same slice if the data source changed`(
+        project: Project,
+        dataSource: LocalDataSource,
+    ) {
+        val service = project.getService(DataGripBasedReadModelProvider::class.java)
+
+        service.slice(dataSource, BuildInfo.Slice)
+        dataSource.incModificationCount()
+        service.slice(dataSource, BuildInfo.Slice)
+
+        assertEquals(service.wasCached, false)
+    }
 }

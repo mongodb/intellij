@@ -55,7 +55,11 @@ data class HasCollectionReference<S>(
         val databaseSource: S?,
         val collectionSource: S,
         val namespace: Namespace,
-    ) : CollectionReference<S>
+    ) : CollectionReference<S> {
+        override fun toString(): String {
+            return "Known(namespace=$namespace)"
+        }
+    }
 
     /**
      * @param S
@@ -65,5 +69,9 @@ data class HasCollectionReference<S>(
     data class OnlyCollection<S>(
         val collectionSource: S,
         val collection: String,
-    ) : CollectionReference<S>
+    ) : CollectionReference<S> {
+        override fun toString(): String {
+            return "Only(collection='$collection')"
+        }
+    }
 }

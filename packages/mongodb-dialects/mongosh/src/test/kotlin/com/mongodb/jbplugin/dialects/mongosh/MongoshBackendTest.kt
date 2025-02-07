@@ -26,6 +26,7 @@ class MongoshBackendTest {
             emitDbAccess()
             emitDatabaseAccess(registerConstant("myDb"))
             emitCollectionAccess(registerConstant("myColl"))
+            emitPropertyAccess()
             emitFunctionName("find")
             emitFunctionCall(long = false, {
                 emitObjectStart()
@@ -50,6 +51,7 @@ class MongoshBackendTest {
             emitDbAccess()
             emitDatabaseAccess(registerVariable("myDb", BsonString, null))
             emitCollectionAccess(registerVariable("myColl", BsonString, null))
+            emitPropertyAccess()
             emitFunctionName("find")
             emitFunctionCall(long = false, {
                 emitObjectStart()
@@ -74,6 +76,7 @@ class MongoshBackendTest {
             emitDbAccess()
             emitDatabaseAccess(registerVariable("myDb", BsonString, null))
             emitCollectionAccess(registerVariable("myColl", BsonString, null))
+            emitPropertyAccess()
             emitFunctionName("update")
             emitFunctionCall(long = false, {
                 emitObjectStart()
@@ -87,6 +90,36 @@ class MongoshBackendTest {
                 emitObjectEnd()
             })
         }
+    }
+
+    @Test
+    fun `generates valid scripts that can be run in an expression context`() = runTest {
+        val backend = MongoshBackend(DefaultContext(), automaticallyRun = true).apply {
+            emitDbAccess()
+            emitDatabaseAccess(registerVariable("myDb", BsonString, null))
+            emitCollectionAccess(registerVariable("myColl", BsonString, null))
+            emitPropertyAccess()
+            emitFunctionName("update")
+            emitFunctionCall(long = false, {
+                emitObjectStart()
+                emitObjectKey(registerConstant("field"))
+                emitContextValue(registerVariable("myValue", BsonString, null))
+                emitObjectEnd()
+            }, {
+                emitObjectStart()
+                emitObjectKey(registerConstant("myUpdate"))
+                emitContextValue(registerConstant(1))
+                emitObjectEnd()
+            })
+        }
+
+        val output = backend.computeOutput()
+        assertEquals(
+            """
+            (function () { var myColl = "";var myDb = "";var myValue = ""; return db.getSiblingDB(myDb).getCollection(myColl).update({"field": myValue}, {"myUpdate": 1}); })()
+            """.trimIndent(),
+            output
+        )
     }
 
     @ParameterizedTest
