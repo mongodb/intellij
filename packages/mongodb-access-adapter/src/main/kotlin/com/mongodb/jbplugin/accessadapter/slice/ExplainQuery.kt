@@ -111,6 +111,10 @@ data class ExplainQuery(
             val nReturned = executionStats["nReturned"].toString().toInt()
             val totalDocsExamined = executionStats["totalDocsExamined"].toString().toInt()
 
+            if (totalDocsExamined == 0 || nReturned == 0) {
+                return ExplainPlan.NotRun
+            }
+
             val ratio = totalDocsExamined / nReturned
             return if (ratio >= RATIO_FOR_INEFFECTIVE_INDEX_USAGE) {
                 ExplainPlan.IneffectiveIndexUsage
