@@ -1,6 +1,7 @@
 package com.mongodb.jbplugin.mql
 
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.math.BigDecimal
@@ -49,6 +50,33 @@ class BsonTypeTest {
             expectedToMatch,
             assertionFailureMessage
         )
+    }
+
+    @Test
+    fun `bson enum should be assignable to a string`() {
+        val bsonEnum = BsonEnum(setOf("A", "B"))
+        assertTrue(bsonEnum.isAssignableTo(BsonString))
+    }
+
+    @Test
+    fun `bson enum should be assignable to another bson enum if they are equals`() {
+        val bsonEnum = BsonEnum(setOf("A", "B"))
+        val otherBsonEnum = BsonEnum(setOf("A", "B"))
+        assertTrue(bsonEnum.isAssignableTo(otherBsonEnum))
+    }
+
+    @Test
+    fun `bson enum should be assignable to another bson enum if it is an strict subset`() {
+        val bsonEnum = BsonEnum(setOf("A"))
+        val otherBsonEnum = BsonEnum(setOf("A", "B"))
+        assertTrue(bsonEnum.isAssignableTo(otherBsonEnum))
+    }
+
+    @Test
+    fun `bson enum should not be assignable to another bson enum if it is not a subset`() {
+        val bsonEnum = BsonEnum(setOf("A", "C"))
+        val otherBsonEnum = BsonEnum(setOf("A", "B"))
+        assertFalse(bsonEnum.isAssignableTo(otherBsonEnum))
     }
 
     companion object {
@@ -240,7 +268,7 @@ class BsonTypeTest {
             arrayOf(simpleTypes.random(), BsonAny, true),
             arrayOf(BsonAnyOf(simpleTypes.random()), BsonAny, true),
             arrayOf(BsonAnyOf(simpleTypes.random(), BsonNull), BsonAny, true),
-
+            arrayOf(BsonEnum(setOf("A", "B")), BsonAny, true),
             arrayOf(BsonArray(simpleTypes.random()), BsonAny, true),
             arrayOf(BsonObject(mapOf("simpleTypeField" to simpleTypes.random())), BsonAny, true),
         )
@@ -396,10 +424,6 @@ class BsonTypeTest {
             )
 
         @JvmStatic
-        // ktlint complains about this method being too long but no real 
-        // benefit in splitting this up as that would make reading test
-        // cases difficult
-        @Suppress("ktlint")
         fun `BsonObject match assertions`(): Array<Array<Any>> =
             arrayOf(
                 // Matches when structurally similar
