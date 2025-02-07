@@ -121,3 +121,38 @@ valid commands can be found in the IsCommand.kt file.
 
 References the name of the operation that is being referenced in the node. The list
 of valid names can be found in the Named.kt file.
+
+#### QueryRole
+
+The QueryRole is the expected traversal behaviour of a specific operation given an index.
+
+##### Equality
+
+It's expected to check that the value is checked by equality based on the ESR guidelines.
+
+##### Range
+
+It's expected to check the value as a range query based on the ESR guidelines.
+
+##### Sort
+
+It's expected to be used for sorting based on the ESR guidelines.
+
+##### Union
+
+Each branch should be treated as a subquery. For example, in the following $or operation:
+
+```js
+{
+    $or: [
+        { a: 1 },
+        { b: 2 }
+    ]
+}
+```
+
+Each branch will be treated as a subquery.
+
+##### Irrelevant
+
+It does not affect index traversal.
