@@ -5,10 +5,20 @@
 package com.mongodb.jbplugin.accessadapter.slice
 
 import com.mongodb.ConnectionString
-import com.mongodb.client.model.Filters
 import com.mongodb.jbplugin.accessadapter.MongoDbDriver
+import com.mongodb.jbplugin.accessadapter.QueryResult
 import com.mongodb.jbplugin.accessadapter.toNs
+import com.mongodb.jbplugin.mql.BsonString
+import com.mongodb.jbplugin.mql.Node
+import com.mongodb.jbplugin.mql.QueryContext
+import com.mongodb.jbplugin.mql.components.HasCollectionReference
+import com.mongodb.jbplugin.mql.components.HasFieldReference
+import com.mongodb.jbplugin.mql.components.HasFilter
+import com.mongodb.jbplugin.mql.components.HasLimit
+import com.mongodb.jbplugin.mql.components.HasValueReference
+import com.mongodb.jbplugin.mql.components.IsCommand
 import org.bson.Document
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Slice to be used when querying the MongoDbReadModelProvider.
@@ -113,10 +123,47 @@ data class BuildInfo(
 
         private suspend fun checkIsAtlasCliIfConnected(from: MongoDbDriver) =
             if (from.connected) {
-                from.countAll(
-                    "admin.atlascli".toNs(),
-                    Filters.eq("managedClusterType", "atlasCliLocalDevCluster"),
-                ) > 0
+                val query = Node(
+                    Unit,
+                    listOf(
+                        HasCollectionReference(
+                            HasCollectionReference.Known(Unit, Unit, "admin.atlascli".toNs())
+                        ),
+                        HasLimit(1),
+                        IsCommand(IsCommand.CommandType.COUNT_DOCUMENTS),
+                        HasFilter(
+                            listOf(
+                                Node(
+                                    Unit,
+                                    listOf(
+                                        HasFieldReference(
+                                            HasFieldReference.FromSchema(Unit, "managedClusterType")
+                                        ),
+                                        HasValueReference(
+                                            HasValueReference.Constant(
+                                                Unit,
+                                                "atlasCliLocalDevCluster",
+                                                BsonString
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+
+                when (
+                    val countOfAdminCli = from.runQuery(
+                        query,
+                        Long::class,
+                        queryContext = QueryContext.empty(),
+                        timeout = 1.seconds
+                    )
+                ) {
+                    is QueryResult.Run -> countOfAdminCli.result > 0
+                    else -> false
+                }
             } else {
                 false
             }

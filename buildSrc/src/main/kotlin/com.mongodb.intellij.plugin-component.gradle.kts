@@ -62,8 +62,6 @@ dependencies {
 
     testImplementation(libs.mongodb.driver)
     testImplementation(libs.testing.spring.mongodb)
-    testImplementation(libs.testing.jsoup)
-    testImplementation(libs.testing.video.recorder)
     testImplementation(libs.testing.assertj.swing)
     testImplementation(libs.testing.testContainers.core)
     testImplementation(libs.testing.testContainers.mongodb)
@@ -132,9 +130,7 @@ tasks {
     }
 
     named("test", Test::class) {
-        useJUnitPlatform {
-            excludeTags("UI")
-        }
+        useJUnitPlatform()
 
         environment("TESTCONTAINERS_RYUK_DISABLED", "true")
         val homePath =

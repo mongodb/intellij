@@ -53,9 +53,10 @@ class NamespaceSelectorTest {
         )
 
         val (fixture, _) = render(robot, project, dataSource, coroutineScope)
-        val databaseComboBox = fixture.comboBox("DatabaseComboBox")
 
         eventually {
+            val databaseComboBox = fixture.comboBox("DatabaseComboBox")
+
             databaseComboBox.requireEnabled()
                 .requireItemCount(1)
                 .requireSelection("db1")
@@ -89,10 +90,11 @@ class NamespaceSelectorTest {
         )
 
         val (fixture, selector) = render(robot, project, dataSource, coroutineScope)
-        val databaseComboBox = fixture.comboBox("DatabaseComboBox")
-        val collectionComboBox = fixture.comboBox("CollectionComboBox")
 
         eventually {
+            val databaseComboBox = fixture.comboBox("DatabaseComboBox")
+            val collectionComboBox = fixture.comboBox("CollectionComboBox")
+
             databaseComboBox
                 .requireEnabled()
                 .requireItemCount(1)

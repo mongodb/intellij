@@ -12,7 +12,7 @@ suspend fun <S> MongoshBackend.emitSort(query: Node<S>): MongoshBackend {
         return this
     }
 
-    fun generateSortKeyVal(node: Node<S>): MongoshBackend {
+    fun MongoshBackend.generateSortKeyVal(node: Node<S>): MongoshBackend {
         val fieldRef = node.component<HasFieldReference<S>>() ?: return this
         val valueRef = node.component<HasValueReference<S>>() ?: return this
 
@@ -22,6 +22,7 @@ suspend fun <S> MongoshBackend.emitSort(query: Node<S>): MongoshBackend {
                 fieldUsedAsValue = false,
             )
         )
+
         emitContextValue(resolveValueReference(valueRef, fieldRef))
         return emitObjectValueEnd()
     }

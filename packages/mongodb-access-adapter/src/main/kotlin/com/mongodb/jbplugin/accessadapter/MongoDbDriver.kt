@@ -28,6 +28,15 @@ sealed interface ExplainPlan {
 }
 
 /**
+ * Represents the result of running a query.
+ */
+sealed interface QueryResult<S> {
+    class NotRun<S> : QueryResult<S>
+    class NoResult<S> : QueryResult<S>
+    data class Run<S>(val result: S) : QueryResult<S>
+}
+
+/**
  * Represents the MongoDB Driver facade that we will use internally.
  * Usually, we won't use this class directly, only in tests. What we
  * will use is the MongoDBReadModelProvider, that provides caching
@@ -40,7 +49,23 @@ interface MongoDbDriver {
 
     suspend fun connectionString(): ConnectionString
 
-    suspend fun <S> explain(query: Node<S>, queryContext: QueryContext): ExplainPlan
+    suspend fun <T : Any, S> runQuery(
+        query: Node<S>,
+        result: KClass<T>,
+        queryContext: QueryContext,
+        timeout: Duration
+    ): QueryResult<T>
+
+    suspend fun <T : Any, S> runQuery(
+        query: Node<S>,
+        result: KClass<T>,
+        queryContext: QueryContext
+    ): QueryResult<T> = runQuery(query, result, queryContext, 1.seconds)
+
+    suspend fun <T : Any, S> runQuery(
+        query: Node<S>,
+        result: KClass<T>
+    ): QueryResult<T> = runQuery(query, result, QueryContext.empty())
 
     suspend fun <T : Any> runCommand(
         database: String,
@@ -48,28 +73,6 @@ interface MongoDbDriver {
         result: KClass<T>,
         timeout: Duration = 1.seconds,
     ): T
-
-    suspend fun <T : Any> findOne(
-        namespace: Namespace,
-        query: Bson,
-        options: Bson,
-        result: KClass<T>,
-        timeout: Duration = 1.seconds,
-    ): T?
-
-    suspend fun <T : Any> findAll(
-        namespace: Namespace,
-        query: Bson,
-        result: KClass<T>,
-        limit: Int = 10,
-        timeout: Duration = 1.seconds,
-    ): List<T>
-
-    suspend fun countAll(
-        namespace: Namespace,
-        query: Bson,
-        timeout: Duration = 1.seconds,
-    ): Long
 }
 
 /**

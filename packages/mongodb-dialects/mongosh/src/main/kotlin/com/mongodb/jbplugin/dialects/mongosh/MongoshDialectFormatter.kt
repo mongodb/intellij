@@ -3,19 +3,20 @@ package com.mongodb.jbplugin.dialects.mongosh
 import com.mongodb.jbplugin.dialects.DialectFormatter
 import com.mongodb.jbplugin.dialects.OutputQuery
 import com.mongodb.jbplugin.dialects.mongosh.aggr.emitAggregateBody
-import com.mongodb.jbplugin.dialects.mongosh.aggr.isAggregate
 import com.mongodb.jbplugin.dialects.mongosh.backend.MongoshBackend
 import com.mongodb.jbplugin.dialects.mongosh.query.canUpdateDocuments
 import com.mongodb.jbplugin.dialects.mongosh.query.emitCollectionReference
+import com.mongodb.jbplugin.dialects.mongosh.query.emitLimit
 import com.mongodb.jbplugin.dialects.mongosh.query.emitQueryFilter
 import com.mongodb.jbplugin.dialects.mongosh.query.emitQueryUpdate
 import com.mongodb.jbplugin.dialects.mongosh.query.emitSort
-import com.mongodb.jbplugin.dialects.mongosh.query.returnsACursor
 import com.mongodb.jbplugin.indexing.IndexAnalyzer
 import com.mongodb.jbplugin.mql.BsonType
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.QueryContext
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
+import com.mongodb.jbplugin.mql.components.HasExplain
+import com.mongodb.jbplugin.mql.components.HasExplain.ExplainPlanType
 import com.mongodb.jbplugin.mql.components.HasTargetCluster
 import com.mongodb.jbplugin.mql.components.IsCommand
 import io.github.z4kn4fein.semver.Version
@@ -27,51 +28,65 @@ object MongoshDialectFormatter : DialectFormatter {
         query: Node<S>,
         queryContext: QueryContext,
     ): OutputQuery {
-        val isAggregate = query.isAggregate()
+        val explainPlan = query.component<HasExplain>()?.explainType ?: ExplainPlanType.NONE
+        val queryCommand = query.component<IsCommand>() ?: return OutputQuery.None
+        val isAggregate = queryCommand.type == IsCommand.CommandType.AGGREGATE
 
-        val outputString = MongoshBackend(prettyPrint = queryContext.prettyPrint)
+        // When the query is asking to be explained we simply disregard what the actual query is
+        // and assume that it is either aggregate (when mentioned to be as aggregate) otherwise a
+        // find because only on these two can we actually chain an explain. This is a limitation on
+        // the Java Shell.
+        val (isAFindQuery, functionName) = when (explainPlan) {
+            ExplainPlanType.NONE -> (queryCommand.type == IsCommand.CommandType.FIND_MANY) to
+                (queryCommand.type.canonical)
+            else -> if (isAggregate) false to "aggregate" else true to "find"
+        }
+
+        val usesSuffixExplainPlan = explainPlan != ExplainPlanType.NONE && isAFindQuery
+        val usesPrefixExplainPlan =
+            explainPlan != ExplainPlanType.NONE && isAggregate && !isAFindQuery
+
+        val outputString = MongoshBackend(
+            prettyPrint = queryContext.prettyPrint,
+            automaticallyRun = queryContext.automaticallyRun
+        )
             .applyQueryExpansions(queryContext)
             .apply {
                 emitDbAccess()
                 emitCollectionReference(query.component<HasCollectionReference<S>>())
-                if (queryContext.explainPlan != QueryContext.ExplainPlanType.NONE) {
-                    emitFunctionName("explain")
-                    emitFunctionCall(long = false, {
-                        // https://www.mongodb.com/docs/manual/reference/command/explain/#command-fields
-                        when (queryContext.explainPlan) {
-                            QueryContext.ExplainPlanType.FULL -> emitStringLiteral("executionStats")
-                            else -> emitStringLiteral("queryPlanner")
-                        }
-                    })
-                    emitPropertyAccess()
-                    if (isAggregate) {
-                        emitFunctionName("aggregate")
-                    } else {
-                        emitFunctionName("find")
-                    }
-                } else {
-                    emitFunctionName(query.component<IsCommand>()?.type?.canonical ?: "find")
-                }
-                if (query.canUpdateDocuments() &&
-                    queryContext.explainPlan == QueryContext.ExplainPlanType.NONE
-                ) {
-                    emitFunctionCall(long = true, {
-                        emitQueryFilter(query, firstCall = true)
-                    }, {
-                        emitQueryUpdate(query)
-                    })
-                } else {
-                    emitFunctionCall(long = true, {
-                        if (query.isAggregate()) {
-                            emitAggregateBody(query, queryContext)
-                        } else {
-                            emitQueryFilter(query, firstCall = true)
-                        }
-                    })
+                if (usesPrefixExplainPlan) {
+                    emitExplainPlan(explainPlan)
                 }
 
-                if (query.returnsACursor()) {
+                emitPropertyAccess()
+                emitFunctionName(functionName)
+                emitFunctionCall(long = false, {
+                    if (isAggregate) {
+                        emitAggregateBody(query, explainPlan)
+                    } else {
+                        emitQueryFilter(query, firstCall = true)
+                    }
+                }, {
+                    if (query.canUpdateDocuments() && !isAFindQuery) { // only if it was not converted for an explain plan
+                        emitQueryUpdate(query)
+                    } else {
+                        didNotEmit()
+                    }
+                })
+
+                if (isAFindQuery) {
                     emitSort(query)
+                    emitLimit(query)
+                }
+
+                if (usesSuffixExplainPlan) {
+                    emitExplainPlan(explainPlan)
+                }
+
+                if (isAFindQuery && explainPlan == ExplainPlanType.NONE && automaticallyRun) {
+                    emitPropertyAccess()
+                    emitFunctionName("toArray")
+                    emitFunctionCall(long = false)
                 }
             }.computeOutput()
 
@@ -126,4 +141,24 @@ object MongoshDialectFormatter : DialectFormatter {
     }
 
     override fun formatType(type: BsonType) = ""
+
+    private suspend fun MongoshBackend.emitExplainPlan(explainPlanType: ExplainPlanType): MongoshBackend {
+        emitPropertyAccess()
+        emitFunctionName("explain")
+        emitFunctionCall(long = false, {
+            emitContextValue(registerConstant(explainPlanType.serverName()))
+        })
+        return this
+    }
+
+    // https://www.mongodb.com/docs/manual/reference/command/explain/#command-fields
+    private fun ExplainPlanType.serverName(): String {
+        return when (this) {
+            ExplainPlanType.NONE -> throw IllegalStateException(
+                "Must not generate an explain plan when the type is NONE."
+            )
+            ExplainPlanType.SAFE -> "queryPlanner"
+            ExplainPlanType.FULL -> "executionStats"
+        }
+    }
 }

@@ -4,8 +4,8 @@ import com.mongodb.jbplugin.dialects.mongosh.assertGeneratedQuery
 import com.mongodb.jbplugin.mql.BsonInt32
 import com.mongodb.jbplugin.mql.BsonString
 import com.mongodb.jbplugin.mql.Node
-import com.mongodb.jbplugin.mql.QueryContext
 import com.mongodb.jbplugin.mql.components.HasAggregation
+import com.mongodb.jbplugin.mql.components.HasExplain.ExplainPlanType
 import com.mongodb.jbplugin.mql.components.HasFieldReference
 import com.mongodb.jbplugin.mql.components.HasFilter
 import com.mongodb.jbplugin.mql.components.HasProjections
@@ -26,7 +26,7 @@ class AggregateTest {
             
             db.getSiblingDB(database).getCollection(collection).explain("queryPlanner").aggregate([{"${'$'}match": {"myField": "myVal"}}, ])
             """.trimIndent(),
-            explain = QueryContext.ExplainPlanType.SAFE
+            explain = ExplainPlanType.SAFE
         ) {
             Node(
                 Unit,
@@ -78,7 +78,7 @@ class AggregateTest {
             
             db.getSiblingDB(database).getCollection(collection).explain("executionStats").aggregate([{"${'$'}match": {"myField": "myVal"}}, ])
             """.trimIndent(),
-            explain = QueryContext.ExplainPlanType.FULL
+            explain = ExplainPlanType.FULL
         ) {
             Node(
                 Unit,
@@ -130,7 +130,7 @@ class AggregateTest {
             
             db.getSiblingDB(database).getCollection(collection).aggregate([{"${'$'}match": {"myField": "myVal"}}, {"${'$'}project": {"myField": 1, }}, ])
             """.trimIndent(),
-            explain = QueryContext.ExplainPlanType.NONE
+            explain = ExplainPlanType.NONE
         ) {
             Node(
                 Unit,
@@ -210,7 +210,7 @@ class AggregateTest {
             
             db.getSiblingDB(database).getCollection(collection).explain("executionStats").aggregate([{"${'$'}match": {"myField": "myVal"}}, ])
             """.trimIndent(),
-            explain = QueryContext.ExplainPlanType.FULL
+            explain = ExplainPlanType.FULL
         ) {
             Node(
                 Unit,

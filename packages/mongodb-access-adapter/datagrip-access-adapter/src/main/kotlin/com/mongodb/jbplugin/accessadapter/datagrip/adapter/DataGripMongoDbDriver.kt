@@ -5,38 +5,42 @@
 
 package com.mongodb.jbplugin.accessadapter.datagrip.adapter
 
-import com.google.gson.GsonBuilder
 import com.intellij.database.dataSource.DatabaseConnection
 import com.intellij.database.dataSource.DatabaseConnectionManager
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.database.dataSource.connection.ConnectionRequestor
 import com.intellij.database.run.ConsoleRunConfiguration
-import com.intellij.openapi.application.readAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.mongodb.ConnectionString
 import com.mongodb.MongoClientSettings
-import com.mongodb.jbplugin.accessadapter.ExplainPlan
 import com.mongodb.jbplugin.accessadapter.MongoDbDriver
+import com.mongodb.jbplugin.accessadapter.QueryResult
 import com.mongodb.jbplugin.dialects.OutputQuery
 import com.mongodb.jbplugin.dialects.mongosh.MongoshDialect
-import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.QueryContext
-import kotlinx.coroutines.*
-import org.bson.Document
-import org.bson.codecs.DecoderContext
+import com.mongodb.jbplugin.mql.components.HasLimit
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import org.bson.codecs.configuration.CodecRegistries.fromRegistries
 import org.bson.codecs.configuration.CodecRegistry
 import org.bson.conversions.Bson
 import org.bson.json.JsonMode
 import org.bson.json.JsonWriterSettings
+import org.bson.types.ObjectId
 import org.jetbrains.annotations.VisibleForTesting
 import org.owasp.encoder.Encode
+import java.math.BigDecimal
+import java.time.Instant
+import java.util.*
 import kotlin.reflect.KClass
+import kotlin.reflect.cast
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
 
 private const val TIMEOUT = 5
 
@@ -46,7 +50,6 @@ private const val TIMEOUT = 5
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 private val mongosh = Dispatchers.IO.limitedParallelism(1)
-
 private val logger: Logger = logger<DataGripMongoDbDriver>()
 
 /**
@@ -58,7 +61,7 @@ private val logger: Logger = logger<DataGripMongoDbDriver>()
  * @param project
  * @param dataSource
  */
-internal class DataGripMongoDbDriver(
+class DataGripMongoDbDriver(
     private val project: Project,
     private val dataSource: LocalDataSource,
 ) : MongoDbDriver {
@@ -89,39 +92,43 @@ internal class DataGripMongoDbDriver(
 
     override suspend fun connectionString(): ConnectionString = ConnectionString(dataSource.url!!)
 
-    override suspend fun <S> explain(query: Node<S>, queryContext: QueryContext): ExplainPlan = withContext(
-        Dispatchers.IO
-    ) {
-
-        val queryScript = readAction {
-            runBlocking { MongoshDialect.formatter.formatQuery(query, queryContext) }
+    override suspend fun <T : Any, S> runQuery(
+        query: Node<S>,
+        result: KClass<T>,
+        queryContext: QueryContext,
+        timeout: Duration
+    ): QueryResult<T> = withContext(Dispatchers.IO) {
+        val limit = query.component<HasLimit>()?.limit
+        if (limit == null && queryContext.automaticallyRun) {
+            logger.error(
+                "Could not run query $query because it's meant to be automatically run but it doesn't have a limit. This is likely a bug."
+            )
+            return@withContext QueryResult.NotRun()
         }
+
+        val queryScript = MongoshDialect.formatter.formatQuery(
+            query,
+            queryContext.willAutomaticallyRun()
+        )
 
         if (queryScript !is OutputQuery.CanBeRun) {
-            return@withContext ExplainPlan.NotRun
+            return@withContext QueryResult.NotRun()
         }
 
-        val explainPlanBson = runQuery(
-            queryScript.query,
-            Document::class,
-            timeout = 1.seconds
-        ).firstOrNull()
+        val wrappedScriptInEJson = """
+            EJSON.serialize(${queryScript.query}, { relaxed: false })
+        """.trimIndent()
 
-        explainPlanBson ?: return@withContext ExplainPlan.NotRun
-
-        val queryPlanner = explainPlanBson.get("queryPlanner", Document::class.java)
-        val winningPlan = queryPlanner?.get("winningPlan", Document::class.java)
-
-        winningPlan ?: return@withContext ExplainPlan.NotRun
-
-        planByMappingStage(
-            winningPlan,
-            mapOf(
-                "COLLSCAN" to ExplainPlan.CollectionScan,
-                "IXSCAN" to ExplainPlan.IndexScan,
-                "IDHACK" to ExplainPlan.IndexScan
-            )
-        ) ?: ExplainPlan.NotRun
+        val result = runQueryScript(wrappedScriptInEJson, result, timeout)
+        if (limit == 1) {
+            if (result.isEmpty()) {
+                QueryResult.NoResult()
+            } else {
+                QueryResult.Run(result[0])
+            }
+        } else {
+            QueryResult.Run(result as T)
+        }
     }
 
     override suspend fun <T : Any> runCommand(
@@ -133,7 +140,7 @@ internal class DataGripMongoDbDriver(
         withContext(
             mongosh,
         ) {
-            runQuery(
+            runQueryScript(
                 """
                 EJSON.serialize(
                     db.getSiblingDB("${database.encodeForJs()}")
@@ -145,64 +152,8 @@ internal class DataGripMongoDbDriver(
             )[0]
         }
 
-    override suspend fun <T : Any> findOne(
-        namespace: Namespace,
-        query: Bson,
-        options: Bson,
-        result: KClass<T>,
-        timeout: Duration,
-    ): T? =
-        withContext(mongosh) {
-            runQuery(
-                """EJSON.serialize(
-                      db.getSiblingDB("${namespace.database.encodeForJs()}")
-                     .getCollection("${namespace.collection.encodeForJs()}")
-                     .findOne(EJSON.parse("${query.toJson()}"), EJSON.parse("${options.toJson()}"))
-                , { relaxed: false })
-                """.trimMargin(),
-                result,
-                timeout,
-            ).getOrNull(0)
-        }
-
-    override suspend fun <T : Any> findAll(
-        namespace: Namespace,
-        query: Bson,
-        result: KClass<T>,
-        limit: Int,
-        timeout: Duration,
-    ) = withContext(mongosh) {
-        runQuery(
-            """
-                EJSON.serialize(
-                    db.getSiblingDB("${namespace.database.encodeForJs()}")
-                     .getCollection("${namespace.collection.encodeForJs()}")
-                     .find(EJSON.parse("${query.toJson()}")).limit($limit).toArray()
-                , { relaxed: false })
-            """.trimMargin(),
-            result,
-            timeout,
-        )
-    }
-
-    override suspend fun countAll(
-        namespace: Namespace,
-        query: Bson,
-        timeout: Duration,
-    ) = withContext(mongosh) {
-        runQuery(
-            """
-            db.getSiblingDB("${namespace.database.encodeForJs()}")
-                 .getCollection("${namespace.collection.encodeForJs()}")
-                 .countDocuments(EJSON.parse("${query.toJson()}"))
-            """.trimIndent(),
-            Long::class,
-            timeout,
-        )[0]
-    }
-
     @VisibleForTesting
-    internal suspend fun <T : Any> runQuery(
+    internal suspend fun <T : Any> runQueryScript(
         queryString: String,
         resultClass: KClass<T>,
         timeout: Duration,
@@ -229,24 +180,11 @@ internal class DataGripMongoDbDriver(
                     return@withTimeout listOfResults
                 }
 
-                if (resultClass.java.isPrimitive || resultClass == String::class.java) {
-                    while (resultSet.next()) {
-                        listOfResults.add(resultSet.getObject(1) as T)
-                    }
-                } else {
-                    val decoderContext = DecoderContext.builder().build()
-                    val outputCodec = codecRegistry.get(resultClass.java)
-                    val gson = GsonBuilder().serializeNulls().create()
-
-                    while (resultSet.next()) {
-                        val hashMap = resultSet.getObject(1) as Map<String, Any>
-                        val mdbDocument = Document.parse(gson.toJson(hashMap))
-                        val bsonDocument = mdbDocument.toBsonDocument(
-                            resultClass.java,
-                            codecRegistry
-                        )
-
-                        val result = outputCodec.decode(bsonDocument.asBsonReader(), decoderContext)
+                while (resultSet.next()) {
+                    val hashMap = resultSet.getObject(1) as Map<String, Any>
+                    val parsedEJson = deserializeEJson(hashMap)
+                    val result = mapToClass<T>(parsedEJson, resultClass)
+                    if (result != null) {
                         listOfResults.add(result)
                     }
                 }
@@ -255,7 +193,83 @@ internal class DataGripMongoDbDriver(
             }
         }
 
-    private suspend fun getConnection(): DatabaseConnection {
+    companion object {
+        /**
+         * See https://www.mongodb.com/docs/manual/reference/mongodb-extended-json/#bson-data-types-and-associated-representations
+         * for the actual mappings.
+         */
+        @VisibleForTesting
+        fun deserializeEJson(doc: Any?): Any? {
+            if (doc is Map<*, *>) {
+                val mappings = doc.map { (key, value) ->
+                    when (key) {
+                        "${'$'}binary" -> null
+                        "${'$'}date" -> Instant.ofEpochMilli(deserializeEJson(value) as Long)
+                        "${'$'}numberDecimal" -> BigDecimal(value.toString())
+                        "${'$'}numberDouble" -> value.toString().toDouble()
+                        "${'$'}numberLong" -> value.toString().toLong()
+                        "${'$'}numberInt" -> value.toString().toInt()
+                        "${'$'}maxKey" -> null
+                        "${'$'}minKey" -> null
+                        "${'$'}oid" -> ObjectId(value.toString())
+                        "${'$'}regularExpression" -> null
+                        "${'$'}timestamp" -> null
+                        "${'$'}uuid" -> UUID.fromString(value.toString())
+                        "_id" -> if (value is Map<*, *> && value.isEmpty()) {
+                            key to ObjectId()
+                        } else {
+                            key to deserializeEJson(value)
+                        }
+                        else -> key to deserializeEJson(value)
+                    }
+                }
+
+                val isAllPairs = mappings.all { it is Pair<*, *> }
+                val isMixed = mappings.any { it is Pair<*, *> } && !isAllPairs
+
+                return if (isAllPairs) {
+                    (mappings as List<Pair<String, Any?>>).toMap()
+                } else if (!isMixed) {
+                    if (mappings.size == 1) {
+                        mappings[0]
+                    } else {
+                        mappings
+                    }
+                } else {
+                    throw IllegalStateException("Can not parse a mix of pairs and values")
+                }
+            } else if (doc is Iterable<*>) {
+                return doc.map { deserializeEJson(it) }
+            } else {
+                return doc
+            }
+        }
+
+        @VisibleForTesting
+        fun <T : Any> mapToClass(value: Any?, kClass: KClass<T>): T? {
+            if (value == null) {
+                return null
+            }
+
+            if (value is Iterable<*>) {
+                return kClass.java.cast(value.toList())
+            } else if (value is Map<*, *> && kClass.java.isAssignableFrom(Map::class.java)) {
+                return value as T
+            } else if (value is Map<*, *>) {
+                val constructor = kClass.constructors.first()
+                val sortedArgs = constructor.parameters.associate {
+                    it to mapToClass(value[it.name], it.type.classifier as KClass<*>)
+                }
+
+                return constructor.callBy(sortedArgs)
+            } else {
+                return kClass.cast(value)
+            }
+        }
+    }
+
+    @VisibleForTesting
+    suspend fun getConnection(): DatabaseConnection {
         val connections = DatabaseConnectionManager.getInstance().activeConnections
         val connectionHandler =
             DatabaseConnectionManager
@@ -293,7 +307,7 @@ internal class DataGripMongoDbDriver(
     }
 
     @VisibleForTesting
-    private fun withActiveConnectionList(fn: (MutableSet<DatabaseConnection>) -> Unit) {
+    fun withActiveConnectionList(fn: (MutableSet<DatabaseConnection>) -> Unit) {
         runBlocking {
             val connectionsManager = DatabaseConnectionManager.getInstance()
             val myConnectionsField =
@@ -308,13 +322,6 @@ internal class DataGripMongoDbDriver(
             fn(myConnections)
             myConnectionsField.isAccessible = false
         }
-    }
-
-    private fun planByMappingStage(stage: Document, mapping: Map<String, ExplainPlan>): ExplainPlan? {
-        val inputStage = stage.get("inputStage", Document::class.java)
-            ?: return mapping.getOrDefault(stage["stage"], null)
-
-        return mapping.getOrDefault(inputStage["stage"], null)
     }
 }
 
