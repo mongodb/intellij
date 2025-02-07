@@ -186,6 +186,18 @@ data class BsonArray(
     }
 }
 
+/**
+ * Represents an enumeration of values. This is not a BSON type per se, but it's useful to understand
+ * the impact of index compression, as an enum has lower cardinality than a String.
+ */
+data class BsonEnum(val members: Set<String>) : BsonType {
+    override fun isAssignableTo(otherType: BsonType): Boolean = when (otherType) {
+        is BsonEnum -> otherType.members.containsAll(members)
+        is BsonAny, is BsonString -> true
+        else -> false
+    }
+}
+
 data class ComputedBsonType<S>(val baseType: BsonType, val expression: Node<S>) :
     BsonType by baseType // for now it will behave as baseType
 
