@@ -56,7 +56,10 @@ class IndexCheckingLinterTest {
             )
 
         assertEquals(1, result.warnings.size)
-        assertInstanceOf(IndexCheckWarning.QueryNotCoveredByIndex::class.java, result.warnings[0])
+        assertInstanceOf(
+            IndexCheckWarning.QueryNotUsingEffectiveIndex::class.java,
+            result.warnings[0]
+        )
     }
 
     @Test
