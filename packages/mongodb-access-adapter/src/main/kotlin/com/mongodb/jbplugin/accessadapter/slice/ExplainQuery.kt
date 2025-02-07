@@ -38,6 +38,8 @@ sealed interface ExplainPlan : Comparable<ExplainPlan> {
     }
 }
 
+private const val RATIO_FOR_INEFFECTIVE_INDEX_USAGE = 50
+
 /**
  * Runs the explain plan of a query.
  *
@@ -71,6 +73,8 @@ data class ExplainQuery(
                 (explainPlanQueryResult as? QueryResult.Run)?.result
                     ?: return ExplainQuery(ExplainPlan.NotRun)
 
+            val executionStats = explainPlanDoc["executionStats"] as? Map<String, Any>
+
             val queryPlanner =
                 explainPlanDoc["queryPlanner"] as? Map<String, Any>
                     ?: return ExplainQuery(ExplainPlan.NotRun)
@@ -78,8 +82,9 @@ data class ExplainQuery(
                 queryPlanner["winningPlan"] as? Map<String, Any>
                     ?: return ExplainQuery(ExplainPlan.NotRun)
 
+            val resultFromExecutionStats = checkExecutionStatsEffectiveness(executionStats)
             // https://www.mongodb.com/docs/manual/reference/explain-results/#explain-output-structure
-            val result = planByMappingStage(
+            val resultFromQueryPlanner = planByMappingStage(
                 winningPlan,
                 mapOf(
                     "COLLSCAN" to ExplainPlan.CollectionScan,
@@ -95,7 +100,27 @@ data class ExplainQuery(
                 )
             )
 
-            return ExplainQuery(result)
+            return ExplainQuery(maxOf(resultFromQueryPlanner, resultFromExecutionStats))
+        }
+
+        private fun checkExecutionStatsEffectiveness(executionStats: Map<String, Any>?): ExplainPlan {
+            if (executionStats == null) {
+                return ExplainPlan.NotRun
+            }
+
+            val nReturned = executionStats["nReturned"].toString().toInt()
+            val totalDocsExamined = executionStats["totalDocsExamined"].toString().toInt()
+
+            if (totalDocsExamined == 0 || nReturned == 0) {
+                return ExplainPlan.NotRun
+            }
+
+            val ratio = totalDocsExamined / nReturned
+            return if (ratio >= RATIO_FOR_INEFFECTIVE_INDEX_USAGE) {
+                ExplainPlan.IneffectiveIndexUsage
+            } else {
+                ExplainPlan.NotRun
+            }
         }
 
         private fun planByMappingStage(stage: Map<String, Any>, mapping: Map<String, ExplainPlan>): ExplainPlan {
