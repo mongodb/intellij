@@ -82,7 +82,7 @@ class Repository {
         this.template = template;
     }
     
-    public AggregationResults<Book> allReleasedBooks() {
+    public Flow.Publisher<Book> allReleasedBooks() {
         return template.aggregate(
             Aggregation.newAggregation(),
             "booksAsString",
@@ -129,7 +129,7 @@ class Repository {
         this.template = template;
     }
     
-    public AggregationResults<Book> allReleasedBooks() {
+    public Flow.Publisher<Book> allReleasedBooks() {
         Aggregation aggregation = Aggregation.newAggregation();
         return template.aggregate(
             aggregation,
@@ -181,7 +181,7 @@ class Repository {
         return Aggregation.newAggregation();
     }
     
-    public AggregationResults<Book> allReleasedBooks() {
+    public Flow.Publisher<Book> allReleasedBooks() {
         return template.aggregate(
             getAggregation(),
             Book.class,
