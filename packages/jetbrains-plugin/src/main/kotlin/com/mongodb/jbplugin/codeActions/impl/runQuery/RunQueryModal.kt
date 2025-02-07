@@ -31,7 +31,6 @@ import com.mongodb.jbplugin.mql.toNonNullableType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
 import org.bson.types.ObjectId
-import org.jetbrains.letsPlot.commons.intern.filterNotNullValues
 import java.awt.event.ActionEvent
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -213,8 +212,9 @@ class RunQueryModal(
                     )
                     else -> null
                 }
-            }.filterNotNullValues()
-            .toMutableMap()
+            }.filter {
+                it.value != null
+            }.toMutableMap() as MutableMap<String, QueryContext.LocalVariable>
 
         namespaceSelector?.let {
             localVariables.put(
