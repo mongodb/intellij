@@ -106,12 +106,7 @@ data class ExplainQuery(
             }
 
             val currentStage = mapping.getOrDefault(stage["stage"], null) ?: ExplainPlan.NotRun
-
-            return if (parentStage >= currentStage) {
-                parentStage
-            } else {
-                currentStage
-            }
+            return maxOf(parentStage, currentStage)
         }
     }
 }
