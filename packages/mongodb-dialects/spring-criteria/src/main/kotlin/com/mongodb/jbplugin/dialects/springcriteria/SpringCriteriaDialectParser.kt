@@ -698,7 +698,6 @@ private val INTERFACES_WITH_QUERY_METHODS = arrayOf(
     "ExecutableMapReduceOperation",
     "ExecutableRemoveOperation",
     "ExecutableUpdateOperation",
-    "ReactiveMongoOperations",
     "FluentMongoOperations",
     "ExecutableAggregationOperation",
     "ExecutableFindOperation",
