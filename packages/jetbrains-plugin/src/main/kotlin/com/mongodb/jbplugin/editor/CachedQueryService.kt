@@ -83,7 +83,7 @@ class CachedQueryService(
                     for (entry in cachedQueriesByNamespace.entries) {
                         val queries = entry.value
                         entry.setValue(
-                            queries.filter { it.get() == null }.toSet()
+                            queries.filter { it.get() != null }.toSet()
                         )
                     }
 
@@ -106,6 +106,7 @@ class CachedQueryService(
             query.component<HasCollectionReference<PsiElement>>()?.reference as? Known
                 ?: return emptyArray()
 
+        val psiManager = PsiManager.getInstance(query.source.project)
         // Request a read lock. In this case, we don't block other reader threads, but we will get blocked
         // when someone else requests this lock in write mode. This will only happen when there is a change
         // in a query from the editor and IntelliJs parser kicks in.
@@ -117,10 +118,13 @@ class CachedQueryService(
 
             // filter out all stale references and then decorate with whatever metadata is relevant
             // from the query source file. Return a copy of the set as an array so further modifications
-            // do not affect the returned value
-            allQueriesForNamespace.mapNotNull {
-                it.get()?.let { decorateWithMetadata(it.source.containingFile.dataSource, it) }
-            }.toTypedArray()
+            // do not affect the returned value.
+            // In addition, filter out ourselves from the array, as we don't need to handle the query twice.
+            allQueriesForNamespace
+                .mapNotNull { it.get() }
+                .filter { !psiManager.areElementsEquivalent(it.source, query.source) }
+                .map { decorateWithMetadata(it.source.containingFile.dataSource, it) }
+                .toTypedArray()
         }
     }
 
