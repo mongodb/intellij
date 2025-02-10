@@ -14,7 +14,13 @@ import java.util.*
  */
 object BuildInformation {
     private val properties: Properties = Properties().also {
-        it.load(BuildInformation::class.java.getResourceAsStream("/build.properties"))
+        val buildProps = BuildInformation::class.java.getResourceAsStream("/build.properties")
+        if (buildProps != null) {
+            it.load(buildProps)
+        } else {
+            it.put("pluginVersion", "<unk>")
+            it.put("segmentApiKey", "<unk>")
+        }
     }
     val pluginVersion: String by properties
     val segmentApiKey: String by properties
