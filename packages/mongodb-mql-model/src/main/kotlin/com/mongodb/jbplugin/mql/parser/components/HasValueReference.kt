@@ -22,10 +22,12 @@ inline fun <reified T : HasValueReference.ValueReference<S>, S> valueReference()
 
 fun <S> constantValueReference() = valueReference<HasValueReference.Constant<S>, S>()
 fun <S> runtimeValueReference() = valueReference<HasValueReference.Runtime<S>, S>()
+fun <S> inferredValueReference() = valueReference<HasValueReference.Inferred<S>, S>()
 
 data class ParsedValueReference<S, V>(val source: S, val type: BsonType, val value: V?)
 
 fun <S> extractValueReference() = first(
     constantValueReference<S>().map { ParsedValueReference(it.source, it.type, it.value) },
-    runtimeValueReference<S>().map { ParsedValueReference(it.source, it.type, null) }
+    runtimeValueReference<S>().map { ParsedValueReference(it.source, it.type, null) },
+    inferredValueReference<S>().map { ParsedValueReference(it.source, it.type, null) }
 )

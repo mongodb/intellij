@@ -1,14 +1,18 @@
 package com.mongodb.jbplugin.indexing
 
+import com.mongodb.jbplugin.mql.BsonType
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
+import com.mongodb.jbplugin.mql.components.HasFieldReference
 import com.mongodb.jbplugin.mql.components.Name
+import com.mongodb.jbplugin.mql.components.QueryRole
 import com.mongodb.jbplugin.mql.parser.*
-import com.mongodb.jbplugin.mql.parser.components.NoFieldReference
 import com.mongodb.jbplugin.mql.parser.components.aggregationStages
 import com.mongodb.jbplugin.mql.parser.components.allNodesWithSchemaFieldReferences
+import com.mongodb.jbplugin.mql.parser.components.extractOperation
+import com.mongodb.jbplugin.mql.parser.components.extractValueReference
+import com.mongodb.jbplugin.mql.parser.components.fieldReference
 import com.mongodb.jbplugin.mql.parser.components.hasName
-import com.mongodb.jbplugin.mql.parser.components.schemaFieldReference
 
 /**
  * The index analyzer is responsible for processing a query and return an index
@@ -36,19 +40,56 @@ object IndexAnalyzer {
     suspend fun <S> analyze(query: Node<S>): SuggestedIndex<S> {
         val collectionRef =
             query.component<HasCollectionReference<S>>() ?: return SuggestedIndex.NoIndex.cast()
-        val fields = query.allFieldReferences().distinctBy { it.first }
-        val indexFields = fields.map { SuggestedIndex.MongoDbIndexField(it.first, it.second) }
+
+        val allFieldUsages = query.allFieldReferences().groupBy {
+            it.fieldName
+        }
+
+        val promotedFieldUsages = allFieldUsages.mapValues { (_, usages) ->
+            usages.sortedBy { it.role.ordinal }
+        }
+
+        val contextInferredFieldUsages = promotedFieldUsages.mapValues { (_, usages) ->
+            usages.first().copy(
+                value = usages.fold(usages.first().value) { acc, usage ->
+                    if (usage.value == null) {
+                        usage
+                    } else {
+                        acc
+                    }
+                }
+            )
+        }
+
+        val indexFields = contextInferredFieldUsages.values
+            .sortedWith(compareBy({ it.role.ordinal }, { it.type.cardinality }))
+            .map { SuggestedIndex.MongoDbIndexField(it.fieldName, it.source) }
+            .toList()
 
         return SuggestedIndex.MongoDbIndex(collectionRef, indexFields)
     }
 
-    private suspend fun <S> Node<S>.allFieldReferences(): List<Pair<String, S>> {
-        val extractFieldReference = schemaFieldReference<S>()
-            .map { it.fieldName to it.source }
-            .mapError { NoFieldReference }
+    private suspend fun <S> Node<S>.allFieldReferences(): List<QueryFieldUsage<S>> {
+        val nodeQueryUsage = requireNonNull<Node<S>, NoConditionFulfilled>(NoConditionFulfilled)
+            .zip(extractOperation<S>())
+            .zip(extractValueReference<S>())
+            .zip(fieldReference<HasFieldReference.FromSchema<S>, S>())
+            .map { context ->
+                val named = context.first.first.second
+                val valueRef = context.first.second
+                val fieldRef = context.second
+
+                QueryFieldUsage(
+                    fieldRef.source,
+                    fieldRef.fieldName,
+                    valueRef.type,
+                    valueRef.value,
+                    named.queryRole(valueRef.type)
+                )
+            }.anyError()
 
         val extractAllFieldReferencesWithValues = allNodesWithSchemaFieldReferences<S>()
-            .mapMany(extractFieldReference)
+            .mapMany(nodeQueryUsage)
 
         val extractFromFirstMatchStage = aggregationStages<S>()
             .nth(0)
@@ -70,6 +111,14 @@ object IndexAnalyzer {
             .parse(this)
             .orElse { emptyList() }
     }
+
+    private data class QueryFieldUsage<S>(
+        val source: S,
+        val fieldName: String,
+        val type: BsonType,
+        val value: Any?,
+        val role: QueryRole
+    )
 
     /**
      * @param S

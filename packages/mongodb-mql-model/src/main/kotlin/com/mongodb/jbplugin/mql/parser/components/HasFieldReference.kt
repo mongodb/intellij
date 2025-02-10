@@ -19,6 +19,7 @@ inline fun <reified T : HasFieldReference.FieldReference<S>, S> fieldReference()
         }
     }
 }
+
 inline fun <reified T : HasFieldReference.FieldReference<S>, S> fieldReferences(): Parser<Node<S>, NoFieldReference, List<T>> {
     return { input ->
         val refs = input.components<HasFieldReference<S>>().filter {

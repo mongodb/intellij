@@ -1,21 +1,22 @@
 package alt.mongodb.javadriver;
 
 import com.mongodb.client.MongoClient;
-import com.mongodb.client.model.*;
-import com.mongodb.client.model.Accumulators;
-import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.Projections;
 import com.mongodb.client.model.Sorts;
 import org.bson.Document;
-import org.bson.types.ObjectId;
 
-import java.util.*;
-
+enum Rate {
+    UNRATED,
+    PASSED,
+    APPROVED,
+    TV_14,
+    TV_PG
+}
 enum Language {
     CATALAN,
     ENGLISH,
     FRENCH,
+    GERMAN,
     HINDI,
     SPANISH,
 }
@@ -31,7 +32,14 @@ public class JavaDriverRepository {
         return client
             .getDatabase("sample_mflix")
             .getCollection("movies")
-            .find(Filters.eq("languages", lang))
+            .find(
+                Filters.and(
+                    Filters.gt("tomatoes.critic.numReviews", 123),
+                    Filters.eq("rated", Rate.PASSED),
+                    Filters.eq("languages", lang),
+                    Filters.eq("visible", true)
+                )
+            ).sort(Sorts.ascending("year"))
             .first();
     }
 }
