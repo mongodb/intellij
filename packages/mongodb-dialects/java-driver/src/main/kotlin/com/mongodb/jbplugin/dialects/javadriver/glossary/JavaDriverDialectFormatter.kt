@@ -11,32 +11,31 @@ object JavaDriverDialectFormatter : DialectFormatter {
     override fun <S> indexCommandForQuery(query: Node<S>) =
         throw UnsupportedOperationException()
 
-    override fun formatType(type: BsonType): String =
-        when (type) {
-            is BsonDouble -> "double"
-            is BsonString -> "String"
-            is BsonObject -> "Object"
-            is BsonArray -> "List<${formatTypeNullable(type.schema)}>"
-            is BsonObjectId -> "ObjectId"
-            is BsonBoolean -> "boolean"
-            is BsonDate -> "Date"
-            is BsonNull -> "null"
-            is BsonInt32 -> "int"
-            is BsonInt64 -> "long"
-            is BsonDecimal128 -> "BigDecimal"
-            is BsonUUID -> "UUID"
-            is BsonAnyOf ->
-                if (type.types.contains(BsonNull)) {
-                    formatTypeNullable(BsonAnyOf(type.types - BsonNull))
-                } else {
-                    type.types
-                        .map { formatType(it) }
-                        .sorted()
-                        .joinToString(" | ")
-                }
-
-            else -> "any"
-        }
+    override fun formatType(type: BsonType): String = when (type) {
+        is BsonDouble -> "double"
+        is BsonString -> "String"
+        is BsonObject -> "Object"
+        is BsonArray -> "List<${formatTypeNullable(type.schema)}>"
+        is BsonObjectId -> "ObjectId"
+        is BsonBoolean -> "boolean"
+        is BsonDate -> "Date"
+        is BsonNull -> "null"
+        is BsonInt32 -> "int"
+        is BsonInt64 -> "long"
+        is BsonDecimal128 -> "BigDecimal"
+        is BsonUUID -> "UUID"
+        is BsonAnyOf ->
+            if (type.types.contains(BsonNull)) {
+                formatTypeNullable(BsonAnyOf(type.types - BsonNull))
+            } else {
+                type.types
+                    .map { formatType(it) }
+                    .sorted()
+                    .joinToString(" | ")
+            }
+        is BsonEnum -> type.name ?: (type.members.take(3).sorted().joinToString(" | ") + "...")
+        else -> "any"
+    }
 
     private fun formatTypeNullable(type: BsonType): String =
         when (type) {

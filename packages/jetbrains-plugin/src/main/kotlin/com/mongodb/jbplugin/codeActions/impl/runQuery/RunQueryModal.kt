@@ -1,6 +1,7 @@
 package com.mongodb.jbplugin.codeActions.impl.runQuery
 
 import com.intellij.database.dataSource.LocalDataSource
+import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.psi.PsiElement
 import com.intellij.ui.components.JBCheckBox
@@ -14,6 +15,7 @@ import com.mongodb.jbplugin.mql.BsonBoolean
 import com.mongodb.jbplugin.mql.BsonDate
 import com.mongodb.jbplugin.mql.BsonDecimal128
 import com.mongodb.jbplugin.mql.BsonDouble
+import com.mongodb.jbplugin.mql.BsonEnum
 import com.mongodb.jbplugin.mql.BsonInt32
 import com.mongodb.jbplugin.mql.BsonInt64
 import com.mongodb.jbplugin.mql.BsonObjectId
@@ -37,6 +39,7 @@ import java.time.format.DateTimeFormatter
 import java.util.*
 import javax.swing.Action
 import javax.swing.BorderFactory
+import javax.swing.DefaultComboBoxModel
 import javax.swing.JComponent
 import javax.swing.JDialog
 import javax.swing.JPanel
@@ -175,10 +178,12 @@ class RunQueryModal(
         }
 
     private fun toInput(type: BsonType): Pair<JComponent, String?>? {
-        return when (type.toNonNullableType()) {
+        return when (val nonNullType = type.toNonNullableType()) {
             BsonInt32, BsonInt64, BsonDouble, BsonDecimal128, BsonString -> JBTextField() to null
             BsonBoolean -> JBCheckBox() to null
             BsonUUID -> JBTextField(sampleUuid()) to null
+            is BsonEnum -> ComboBox(DefaultComboBoxModel(nonNullType.members.toTypedArray())) to
+                null
             BsonObjectId ->
                 JBTextField(sampleObjectId()) to
                     CodeActionsMessages.message("code.action.run.query.modal.insight.objectid")
@@ -209,6 +214,10 @@ class RunQueryModal(
                     is JBCheckBox -> QueryContext.LocalVariable(
                         value.first,
                         (value.second as JBCheckBox).isSelected
+                    )
+                    is ComboBox<*> -> QueryContext.LocalVariable(
+                        value.first,
+                        (value.second as? ComboBox<String>)?.selectedItem
                     )
                     else -> null
                 }

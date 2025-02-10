@@ -183,6 +183,8 @@ class MongoshBackendTest {
             BsonObject(emptyMap()) to "{}",
             BsonObjectId to "ObjectId(\"000000000000000000000000\")",
             BsonString to "\"\"",
+            BsonEnum(setOf("A", "B")) to "\"A\"",
+            BsonEnum(setOf()) to "\"\"",
         )
 
         private data class SomeObject(val exampleInt: Int, val exampleString: String)

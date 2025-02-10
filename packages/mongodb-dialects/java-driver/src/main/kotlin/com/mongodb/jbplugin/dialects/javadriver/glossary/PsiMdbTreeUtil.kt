@@ -9,6 +9,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiEnumConstant
 import com.intellij.psi.PsiExpression
 import com.intellij.psi.PsiField
 import com.intellij.psi.PsiLiteralExpression
@@ -23,6 +24,8 @@ import com.intellij.psi.PsiReturnStatement
 import com.intellij.psi.PsiSuperExpression
 import com.intellij.psi.PsiThisExpression
 import com.intellij.psi.PsiType
+import com.intellij.psi.impl.source.PsiClassReferenceType
+import com.intellij.psi.impl.source.PsiImmediateClassType
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.util.PsiTypesUtil
@@ -35,6 +38,7 @@ import com.mongodb.jbplugin.mql.BsonBoolean
 import com.mongodb.jbplugin.mql.BsonDate
 import com.mongodb.jbplugin.mql.BsonDecimal128
 import com.mongodb.jbplugin.mql.BsonDouble
+import com.mongodb.jbplugin.mql.BsonEnum
 import com.mongodb.jbplugin.mql.BsonInt32
 import com.mongodb.jbplugin.mql.BsonInt64
 import com.mongodb.jbplugin.mql.BsonNull
@@ -336,7 +340,9 @@ fun PsiElement.findMongoDbCollectionReference(): PsiExpression? {
 fun PsiElement.tryToResolveAsConstant(): Pair<Boolean, Any?> {
     val meaningfulThis = meaningfulExpression()
 
-    if (meaningfulThis is PsiReferenceExpression) {
+    if (meaningfulThis is PsiEnumConstant) {
+        return true to meaningfulThis
+    } else if (meaningfulThis is PsiReferenceExpression) {
         val varRef = meaningfulThis.resolve()
         if (varRef == null) {
             return false to null
@@ -386,9 +392,22 @@ fun PsiElement.tryToResolveAsConstantString(): String? =
 
 /**
  * Maps a PsiType to its BSON counterpart.
- *
+ * PsiClassReferenceType
  */
 fun PsiType.toBsonType(): BsonType {
+    val javaClass = if (this is PsiClassReferenceType) {
+        resolve() ?: return BsonAny
+    } else if (this is PsiImmediateClassType) {
+        resolve() ?: return BsonAny
+    } else {
+        null
+    }
+
+    if (javaClass?.isEnum == true) {
+        val enumConstants = javaClass.findAllChildrenOfType(PsiEnumConstant::class.java)
+        return BsonEnum(enumConstants.map { it.name }.toSet(), javaClass.name)
+    }
+
     return this.canonicalText.toBsonType()
 }
 

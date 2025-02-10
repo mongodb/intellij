@@ -186,6 +186,19 @@ data class BsonArray(
     }
 }
 
+/**
+ * Represents an enumeration of values. This is not a BSON type per se, but it's useful to understand
+ * the impact of index compression, as an enum has lower cardinality than a String.
+ */
+data class BsonEnum(val members: Set<String>, val name: String? = null) : BsonType {
+    override fun isAssignableTo(otherType: BsonType): Boolean = when (otherType) {
+        is BsonEnum -> otherType.members.containsAll(members)
+        is BsonAny, is BsonString -> true
+        is BsonAnyOf -> otherType.types.any { this.isAssignableTo(it) }
+        else -> super.isAssignableTo(otherType)
+    }
+}
+
 data class ComputedBsonType<S>(val baseType: BsonType, val expression: Node<S>) :
     BsonType by baseType // for now it will behave as baseType
 
@@ -218,7 +231,10 @@ fun <T> Class<T>?.toBsonType(value: T? = null): BsonType {
         BigDecimal::class.java -> BsonAnyOf(BsonNull, BsonDecimal128)
         Decimal128::class.java -> BsonAnyOf(BsonNull, BsonDecimal128)
         else ->
-            if (Collection::class.java.isAssignableFrom(this) ||
+            if (isEnum) {
+                val variants = this.enumConstants.map { it.toString() }.toSet()
+                BsonEnum(variants)
+            } else if (Collection::class.java.isAssignableFrom(this) ||
                 Array::class.java.isAssignableFrom(this)
             ) {
                 return BsonAnyOf(BsonNull, BsonArray(BsonAny)) // types are lost at runtime

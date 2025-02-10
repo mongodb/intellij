@@ -287,4 +287,5 @@ private fun defaultValueOfBsonType(type: BsonType): Any? = when (type) {
     BsonObjectId -> ObjectId("000000000000000000000000")
     BsonString -> ""
     is ComputedBsonType<*> -> defaultValueOfBsonType(type.baseType)
+    is BsonEnum -> type.members.firstOrNull() ?: ""
 }
