@@ -5,6 +5,7 @@ MongoDB plugin for IntelliJ IDEA.
 ## [Unreleased]
 
 ### Added
+* [INTELLIJ-221](https://jira.mongodb.org/browse/INTELLIJ-221) Add a new setting for a soft maximum number of indexes per collection for index suggestions.
 * [INTELLIJ-230](https://jira.mongodb.org/browse/INTELLIJ-230) Officially introduce support for Reactive Spring Data. Syntax was similar, so it was already partially working, now we have a fully-fledged test suite to ensure we don't break it.
 * [INTELLIJ-211](https://jira.mongodb.org/browse/INTELLIJ-211) Introduce a new configurable plugin setting `sampleSize` which dictates how many documents to be fetched and used for analysing a collection's schema.
 * [INTELLIJ-199](https://jira.mongodb.org/browse/INTELLIJ-199) Add support for parsing, inspecting and autocompleting in method call used for chaining a `Sort` object on top of a Criteria chain in Spring data MongoDB using `Query.with()` call.
