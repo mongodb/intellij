@@ -49,12 +49,14 @@ object IndexAnalyzer {
         }
 
         val contextInferredFieldUsages = promotedFieldUsages.mapValues { (_, usages) ->
-            usages.first().copy(value = usages.reduce(QueryFieldUsage<S>::lessSpecificUsage))
+            usages.first().copy(value = usages.reduce(QueryFieldUsage<S>::leastSpecificUsageOf))
         }
 
         val indexFields = contextInferredFieldUsages.values
             .sortedWith(QueryFieldUsage.byRoleAndCardinality())
-            .map { SuggestedIndex.MongoDbIndexField(it.fieldName, it.source) }
+            .map {
+                SuggestedIndex.MongoDbIndexField(it.fieldName, it.source, reasonOfSuggestion(it))
+            }
             .toList()
 
         return SuggestedIndex.MongoDbIndex(collectionRef, indexFields)
@@ -103,6 +105,15 @@ object IndexAnalyzer {
             .orElse { emptyList() }
     }
 
+    private fun <S> reasonOfSuggestion(it: QueryFieldUsage<S>): IndexSuggestionFieldReason {
+        return when (it.role) {
+            QueryRole.EQUALITY -> IndexSuggestionFieldReason.RoleEquality
+            QueryRole.SORT -> IndexSuggestionFieldReason.RoleSort
+            QueryRole.RANGE -> IndexSuggestionFieldReason.RoleRange
+            else -> IndexSuggestionFieldReason.RoleEquality
+        }
+    }
+
     private data class QueryFieldUsage<S>(
         val source: S,
         val fieldName: String,
@@ -115,7 +126,7 @@ object IndexAnalyzer {
                 compareBy<QueryFieldUsage<S>>({ it.role.ordinal }, { it.type.cardinality })
         }
 
-        fun lessSpecificUsage(other: QueryFieldUsage<S>): QueryFieldUsage<S> {
+        fun leastSpecificUsageOf(other: QueryFieldUsage<S>): QueryFieldUsage<S> {
             return if (other.value == null && this.value == null) {
                 if (this.type.cardinality > other.type.cardinality) {
                     this
@@ -130,29 +141,26 @@ object IndexAnalyzer {
         }
     }
 
-    /**
-     * @param S
-     */
     sealed interface SuggestedIndex<S> {
         data object NoIndex : SuggestedIndex<Any> {
             fun <S> cast(): SuggestedIndex<S> = this as SuggestedIndex<S>
         }
 
-        /**
-         * @param S
-         * @property fieldName
-         * @property source
-         */
-        data class MongoDbIndexField<S>(val fieldName: String, val source: S)
+        data class MongoDbIndexField<S>(
+            val fieldName: String,
+            val source: S,
+            val reason: IndexSuggestionFieldReason
+        )
 
-        /**
-         * @param S
-         * @property collectionReference
-         * @property fields
-         */
         data class MongoDbIndex<S>(
             val collectionReference: HasCollectionReference<S>,
             val fields: List<MongoDbIndexField<S>>
         ) : SuggestedIndex<S>
+    }
+
+    sealed interface IndexSuggestionFieldReason {
+        data object RoleEquality : IndexSuggestionFieldReason
+        data object RoleSort : IndexSuggestionFieldReason
+        data object RoleRange : IndexSuggestionFieldReason
     }
 }

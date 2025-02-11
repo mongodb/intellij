@@ -34,10 +34,10 @@ public class JavaDriverRepository {
             .getCollection("movies")
             .find(
                 Filters.and(
-                    Filters.gt("tomatoes.critic.numReviews", 123),
-                    Filters.eq("rated", Rate.PASSED),
+                    Filters.gt("tomatoes.critic.numReviews", 1),
+                    Filters.eq("rated", Rate.TV_PG),
                     Filters.eq("languages", lang),
-                    Filters.gt("year", 1993)
+                    Filters.gt("delivered", 1993)
                 )
             ).sort(Sorts.ascending("year"))
             .first();

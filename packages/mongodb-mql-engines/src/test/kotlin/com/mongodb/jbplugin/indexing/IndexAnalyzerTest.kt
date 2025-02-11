@@ -54,7 +54,11 @@ class IndexAnalyzerTest {
         assertEquals(1, result.fields.size)
         assertEquals(collectionReference, result.collectionReference)
         assertEquals(
-            IndexAnalyzer.SuggestedIndex.MongoDbIndexField("myField", Unit),
+            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
+                "myField",
+                Unit,
+                IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
+            ),
             result.fields[0]
         )
     }
@@ -101,11 +105,19 @@ class IndexAnalyzerTest {
         assertEquals(2, result.fields.size)
         assertEquals(collectionReference, result.collectionReference)
         assertEquals(
-            IndexAnalyzer.SuggestedIndex.MongoDbIndexField("lowCardinality", Unit),
+            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
+                "lowCardinality",
+                Unit,
+                IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
+            ),
             result.fields[0]
         )
         assertEquals(
-            IndexAnalyzer.SuggestedIndex.MongoDbIndexField("highCardinality", Unit),
+            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
+                "highCardinality",
+                Unit,
+                IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
+            ),
             result.fields[1]
         )
     }
@@ -162,15 +174,27 @@ class IndexAnalyzerTest {
         assertEquals(3, result.fields.size)
         assertEquals(collectionReference, result.collectionReference)
         assertEquals(
-            IndexAnalyzer.SuggestedIndex.MongoDbIndexField("myField", Unit),
+            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
+                "myField",
+                Unit,
+                IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
+            ),
             result.fields[0]
         )
         assertEquals(
-            IndexAnalyzer.SuggestedIndex.MongoDbIndexField("mySortField", Unit),
+            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
+                "mySortField",
+                Unit,
+                IndexAnalyzer.IndexSuggestionFieldReason.RoleSort
+            ),
             result.fields[1]
         )
         assertEquals(
-            IndexAnalyzer.SuggestedIndex.MongoDbIndexField("myRangeField", Unit),
+            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
+                "myRangeField",
+                Unit,
+                IndexAnalyzer.IndexSuggestionFieldReason.RoleRange
+            ),
             result.fields[2]
         )
     }
@@ -221,11 +245,19 @@ class IndexAnalyzerTest {
         assertEquals(2, result.fields.size)
         assertEquals(collectionReference, result.collectionReference)
         assertEquals(
-            IndexAnalyzer.SuggestedIndex.MongoDbIndexField("myField", Unit),
+            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
+                "myField",
+                Unit,
+                IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
+            ),
             result.fields[0]
         )
         assertEquals(
-            IndexAnalyzer.SuggestedIndex.MongoDbIndexField("mySecondField", Unit),
+            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
+                "mySecondField",
+                Unit,
+                IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
+            ),
             result.fields[1]
         )
     }
@@ -284,11 +316,19 @@ class IndexAnalyzerTest {
         assertEquals(2, result.fields.size)
         assertEquals(collectionReference, result.collectionReference)
         assertEquals(
-            IndexAnalyzer.SuggestedIndex.MongoDbIndexField("myField", Unit),
+            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
+                "myField",
+                Unit,
+                IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
+            ),
             result.fields[0]
         )
         assertEquals(
-            IndexAnalyzer.SuggestedIndex.MongoDbIndexField("mySecondField", Unit),
+            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
+                "mySecondField",
+                Unit,
+                IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
+            ),
             result.fields[1]
         )
     }
@@ -362,11 +402,19 @@ class IndexAnalyzerTest {
         assertEquals(2, result.fields.size)
         assertEquals(collectionReference, result.collectionReference)
         assertEquals(
-            IndexAnalyzer.SuggestedIndex.MongoDbIndexField("myField", Unit),
+            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
+                "myField",
+                Unit,
+                IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
+            ),
             result.fields[0]
         )
         assertEquals(
-            IndexAnalyzer.SuggestedIndex.MongoDbIndexField("mySecondField", Unit),
+            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
+                "mySecondField",
+                Unit,
+                IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
+            ),
             result.fields[1]
         )
     }
