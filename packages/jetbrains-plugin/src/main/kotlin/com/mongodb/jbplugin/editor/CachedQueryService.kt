@@ -15,13 +15,19 @@ import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
 import com.mongodb.jbplugin.accessadapter.slice.BuildInfo
 import com.mongodb.jbplugin.accessadapter.slice.GetCollectionSchema
 import com.mongodb.jbplugin.meta.service
+import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.Node
+import com.mongodb.jbplugin.mql.SiblingQueriesFinder
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasCollectionReference.Known
 import com.mongodb.jbplugin.mql.components.HasTargetCluster
 import com.mongodb.jbplugin.settings.pluginSetting
 import io.github.z4kn4fein.semver.Version
 import kotlinx.coroutines.CoroutineScope
+import java.lang.ref.WeakReference
+import java.util.concurrent.locks.ReentrantReadWriteLock
+import kotlin.concurrent.read
+import kotlin.concurrent.write
 
 /**
  * Attempts to parse a query for a PsiElement if there is one, given the dialect of the current
@@ -35,8 +41,11 @@ import kotlinx.coroutines.CoroutineScope
 @Service(Service.Level.PROJECT)
 class CachedQueryService(
     val coroutineScope: CoroutineScope
-) {
+) : SiblingQueriesFinder<PsiElement> {
     private val queryCacheKey = Key.create<CachedValue<Node<PsiElement>>>("QueryCache")
+    private val cachedQueriesByNamespace:
+        MutableMap<Namespace, Set<WeakReference<Node<PsiElement>>>> = mutableMapOf()
+    private val rwLock: ReentrantReadWriteLock = ReentrantReadWriteLock(true)
 
     fun queryAt(expression: PsiElement): Node<PsiElement>? {
         val fileInExpression =
@@ -61,11 +70,62 @@ class CachedQueryService(
 
         val cachedValue = cacheManager.createCachedValue {
             val parsedAst = dialect.parser.parse(expression)
+            val collRef = parsedAst.component<HasCollectionReference<PsiElement>>()?.reference as? Known
+
+            if (collRef != null) {
+                // we get an exclusive lock because we are in IntelliJ's parser thread. Essentially,
+                // this is the only thread who should update the cached queries.
+                // We do this in the cached value because we want to update the cached queries
+                // every time a query goes stale.
+                rwLock.write {
+                    // here we have an exclusive lock, let's first do some housekeeping.
+                    // clear all stale references (queries that do not exist anymore)
+                    for (entry in cachedQueriesByNamespace.entries) {
+                        val queries = entry.value
+                        entry.setValue(
+                            queries.filter { it.get() != null }.toSet()
+                        )
+                    }
+
+                    // now add the current query to the cache
+                    cachedQueriesByNamespace.compute(collRef.namespace) { ns, queries ->
+                        (queries ?: emptySet()) + WeakReference(parsedAst)
+                    }
+                }
+            }
+
             CachedValueProvider.Result.create(parsedAst, attachment)
         }
 
         attachment.putUserData(queryCacheKey, cachedValue)
         return decorateWithMetadata(dataSource, attachment.getUserData(queryCacheKey)!!.value)
+    }
+
+    override fun allSiblingsOf(query: Node<PsiElement>): Array<Node<PsiElement>> {
+        val collRef =
+            query.component<HasCollectionReference<PsiElement>>()?.reference as? Known
+                ?: return emptyArray()
+
+        val psiManager = PsiManager.getInstance(query.source.project)
+        // Request a read lock. In this case, we don't block other reader threads, but we will get blocked
+        // when someone else requests this lock in write mode. This will only happen when there is a change
+        // in a query from the editor and IntelliJs parser kicks in.
+        return rwLock.read<Array<Node<PsiElement>>> {
+            val allQueriesForNamespace = cachedQueriesByNamespace.getOrDefault(
+                collRef.namespace,
+                emptySet()
+            )
+
+            // filter out all stale references and then decorate with whatever metadata is relevant
+            // from the query source file. Return a copy of the set as an array so further modifications
+            // do not affect the returned value.
+            // In addition, filter out ourselves from the array, as we don't need to handle the query twice.
+            allQueriesForNamespace
+                .mapNotNull { it.get() }
+                .filter { !psiManager.areElementsEquivalent(it.source, query.source) }
+                .map { decorateWithMetadata(it.source.containingFile.dataSource, it) }
+                .toTypedArray()
+        }
     }
 
     private fun decorateWithMetadata(dataSource: LocalDataSource?, query: Node<PsiElement>): Node<PsiElement> {

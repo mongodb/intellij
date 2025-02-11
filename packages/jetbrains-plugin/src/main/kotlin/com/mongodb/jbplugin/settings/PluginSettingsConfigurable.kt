@@ -41,11 +41,15 @@ class PluginSettingsConfigurable : Configurable {
         val savedSettings by service<PluginSettingsStateComponent>()
         val sampleSizeInComponent = settingsComponent.sampleSize.text.ifEmpty { "0" }
         val sampleSizeSavedOnDisk = savedSettings.state.sampleSize.toString()
+        val softIndexLimitInComponent = settingsComponent.softIndexesLimit.text.ifEmpty { "0" }
+        val softIndexLimitSavedOnDisk = savedSettings.state.softIndexesLimit.toString()
+
         return settingsComponent.isTelemetryEnabledCheckBox.isSelected !=
             savedSettings.state.isTelemetryEnabled ||
             settingsComponent.enableFullExplainPlan.isSelected !=
             savedSettings.state.isFullExplainPlanEnabled ||
-            sampleSizeInComponent != sampleSizeSavedOnDisk
+            sampleSizeInComponent != sampleSizeSavedOnDisk ||
+            softIndexLimitInComponent != softIndexLimitSavedOnDisk
     }
 
     override fun apply() {
@@ -53,11 +57,10 @@ class PluginSettingsConfigurable : Configurable {
         savedSettings.state.apply {
             isTelemetryEnabled = settingsComponent.isTelemetryEnabledCheckBox.isSelected
             isFullExplainPlanEnabled = settingsComponent.enableFullExplainPlan.isSelected
-            sampleSize = try {
-                settingsComponent.sampleSize.text.toInt()
-            } catch (e: Exception) {
-                DEFAULT_SAMPLE_SIZE
-            }
+            sampleSize = settingsComponent.sampleSize.text.toIntOrNull() ?: DEFAULT_SAMPLE_SIZE
+            softIndexesLimit =
+                settingsComponent.softIndexesLimit.text.toIntOrNull()
+                    ?: DEFAULT_INDEXES_AMOUNT_SOFT_LIMIT
         }
     }
 
@@ -68,6 +71,7 @@ class PluginSettingsConfigurable : Configurable {
         settingsComponent.enableFullExplainPlan.isSelected =
             savedSettings.state.isFullExplainPlanEnabled
         settingsComponent.sampleSize.text = savedSettings.state.sampleSize.toString()
+        settingsComponent.softIndexesLimit.text = savedSettings.state.softIndexesLimit.toString()
     }
 
     override fun getDisplayName() = SettingsMessages.message("settings.display-name")
@@ -76,7 +80,7 @@ class PluginSettingsConfigurable : Configurable {
 /**
  * The panel that is shown in the settings section for MongoDB.
  */
-private class PluginSettingsComponent {
+internal class PluginSettingsComponent {
     val root: JPanel
     val isTelemetryEnabledCheckBox =
         JBCheckBox(TelemetryMessages.message("settings.telemetry-collection-checkbox"))
@@ -87,6 +91,7 @@ private class PluginSettingsComponent {
         JButton(TelemetryMessages.message("settings.view-full-explain-plan-documentation"))
 
     lateinit var sampleSize: JTextField
+    lateinit var softIndexesLimit: JTextField
 
     init {
         privacyPolicyButton.addActionListener {
@@ -105,6 +110,8 @@ private class PluginSettingsComponent {
                 .addSeparator()
                 .addComponent(enableFullExplainPlan)
                 .addTooltip(TelemetryMessages.message("settings.full-explain-plan-tooltip"))
+                .addComponent(getIndexSoftLimitField())
+                .addTooltip(SettingsMessages.message("settings.indexes-soft-limit.sub-label"))
                 .addComponent(evaluateOperationPerformanceButton)
                 .addSeparator()
                 .addComponent(isTelemetryEnabledCheckBox)
@@ -114,9 +121,23 @@ private class PluginSettingsComponent {
                 .panel
 
         root.accessibleContext.accessibleName = "MongoDB Settings"
+        evaluateOperationPerformanceButton.accessibleContext.accessibleName =
+            "MongoDB Analyze Query Performance"
+        privacyPolicyButton.accessibleContext.accessibleName = "MongoDB Privacy Policy"
         isTelemetryEnabledCheckBox.accessibleContext.accessibleName = "MongoDB Enable Telemetry"
         enableFullExplainPlan.accessibleContext.accessibleName = "MongoDB Enable Full Explain Plan"
         sampleSize.accessibleContext.accessibleName = "MongoDB Sample Size"
+        softIndexesLimit.accessibleContext.accessibleName = "MongoDB Soft Index Limit"
+
+        root.name = root.accessibleContext.accessibleName
+        evaluateOperationPerformanceButton.name =
+            evaluateOperationPerformanceButton.accessibleContext.accessibleName
+        privacyPolicyButton.name = privacyPolicyButton.accessibleContext.accessibleName
+        isTelemetryEnabledCheckBox.name =
+            isTelemetryEnabledCheckBox.accessibleContext.accessibleName
+        enableFullExplainPlan.name = enableFullExplainPlan.accessibleContext.accessibleName
+        sampleSize.name = sampleSize.accessibleContext.accessibleName
+        softIndexesLimit.name = softIndexesLimit.accessibleContext.accessibleName
     }
 
     fun getSampleSizeField(): JComponent {
@@ -134,24 +155,7 @@ private class PluginSettingsComponent {
             add(subtextLabel)
         }
 
-        val format = NumberFormat.getIntegerInstance().apply {
-            isGroupingUsed = false
-        }
-
-        val numberFormatter = object : NumberFormatter(format) {
-            @Throws(ParseException::class)
-            override fun stringToValue(text: String?): Any? {
-                return if (text.isNullOrEmpty()) null else super.stringToValue(text)
-            }
-        }.apply {
-            valueClass = Integer::class.java
-            minimum = 0
-            maximum = Integer.MAX_VALUE
-            allowsInvalid = false
-            commitsOnValidEdit = true
-        }
-
-        sampleSize = JFormattedTextField(numberFormatter).apply {
+        sampleSize = JFormattedTextField(defaultNumberFormatter).apply {
             focusLostBehavior = JFormattedTextField.PERSIST
             addPropertyChangeListener("value") { evt ->
                 if (evt.newValue == null) {
@@ -165,6 +169,50 @@ private class PluginSettingsComponent {
             add(label)
             add(Box.createHorizontalStrut(20))
             add(sampleSize)
+        }
+    }
+
+    fun getIndexSoftLimitField(): JComponent {
+        val mainLabel = JLabel(SettingsMessages.message("settings.indexes-soft-limit.label"))
+
+        val label = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            add(mainLabel)
+        }
+
+        softIndexesLimit = JFormattedTextField(defaultNumberFormatter).apply {
+            focusLostBehavior = JFormattedTextField.PERSIST
+            addPropertyChangeListener("value") { evt ->
+                if (evt.newValue == null) {
+                    this.text = ""
+                }
+            }
+        }
+
+        return JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.X_AXIS)
+            add(label)
+            add(Box.createHorizontalStrut(20))
+            add(softIndexesLimit)
+        }
+    }
+
+    companion object {
+        private val defaultNumberFormatter = object : NumberFormatter(
+            NumberFormat.getIntegerInstance().apply {
+                isGroupingUsed = false
+            }
+        ) {
+            @Throws(ParseException::class)
+            override fun stringToValue(text: String?): Any? {
+                return if (text.isNullOrEmpty()) null else super.stringToValue(text)
+            }
+        }.apply {
+            valueClass = Integer::class.java
+            minimum = 0
+            maximum = Integer.MAX_VALUE
+            allowsInvalid = false
+            commitsOnValidEdit = true
         }
     }
 }
