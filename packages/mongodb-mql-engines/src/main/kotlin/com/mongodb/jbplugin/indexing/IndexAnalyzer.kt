@@ -41,28 +41,19 @@ object IndexAnalyzer {
         val collectionRef =
             query.component<HasCollectionReference<S>>() ?: return SuggestedIndex.NoIndex.cast()
 
-        val allFieldUsages = query.allFieldReferences().groupBy {
-            it.fieldName
-        }
+        val allFieldUsages = query.allFieldReferences().groupBy(QueryFieldUsage<S>::fieldName)
+            .mapValues { (_, usages) -> usages.sortedBy { it.role.ordinal } }
 
         val promotedFieldUsages = allFieldUsages.mapValues { (_, usages) ->
             usages.sortedBy { it.role.ordinal }
         }
 
         val contextInferredFieldUsages = promotedFieldUsages.mapValues { (_, usages) ->
-            usages.first().copy(
-                value = usages.fold(usages.first().value) { acc, usage ->
-                    if (usage.value == null) {
-                        usage
-                    } else {
-                        acc
-                    }
-                }
-            )
+            usages.first().copy(value = usages.reduce(QueryFieldUsage<S>::lessSpecificUsage))
         }
 
         val indexFields = contextInferredFieldUsages.values
-            .sortedWith(compareBy({ it.role.ordinal }, { it.type.cardinality }))
+            .sortedWith(QueryFieldUsage.byRoleAndCardinality())
             .map { SuggestedIndex.MongoDbIndexField(it.fieldName, it.source) }
             .toList()
 
@@ -118,7 +109,26 @@ object IndexAnalyzer {
         val type: BsonType,
         val value: Any?,
         val role: QueryRole
-    )
+    ) {
+        companion object {
+            fun <S> byRoleAndCardinality() =
+                compareBy<QueryFieldUsage<S>>({ it.role.ordinal }, { it.type.cardinality })
+        }
+
+        fun lessSpecificUsage(other: QueryFieldUsage<S>): QueryFieldUsage<S> {
+            return if (other.value == null && this.value == null) {
+                if (this.type.cardinality > other.type.cardinality) {
+                    this
+                } else {
+                    other
+                }
+            } else if (other.value == null) {
+                other
+            } else {
+                this
+            }
+        }
+    }
 
     /**
      * @param S

@@ -231,6 +231,69 @@ class IndexAnalyzerTest {
     }
 
     @Test
+    fun `promotes repeated field references into the most important stage`() = runTest {
+        val collectionReference =
+            HasCollectionReference(Known(Unit, Unit, Namespace("myDb", "myColl")))
+        val query = Node(
+            Unit,
+            listOf(
+                collectionReference,
+                HasFilter(
+                    listOf(
+                        Node(
+                            Unit,
+                            listOf(
+                                Named(Name.EQ),
+                                HasFieldReference(HasFieldReference.FromSchema(Unit, "myField")),
+                                HasValueReference(
+                                    HasValueReference.Constant(Unit, true, BsonBoolean)
+                                )
+                            )
+                        ),
+                        Node(
+                            Unit,
+                            listOf(
+                                Named(Name.EQ),
+                                HasFieldReference(
+                                    HasFieldReference.FromSchema(Unit, "mySecondField")
+                                ),
+                                HasValueReference(HasValueReference.Constant(Unit, 52, BsonInt32))
+                            )
+                        )
+                    )
+                ),
+                HasSorts(
+                    listOf(
+                        Node(
+                            Unit,
+                            listOf(
+                                Named(Name.ASCENDING),
+                                HasFieldReference(
+                                    HasFieldReference.FromSchema(Unit, "myField")
+                                ),
+                                HasValueReference(HasValueReference.Inferred(Unit, 1, BsonInt32))
+                            )
+                        )
+                    )
+                )
+            )
+        )
+
+        val result = IndexAnalyzer.analyze(query) as IndexAnalyzer.SuggestedIndex.MongoDbIndex
+
+        assertEquals(2, result.fields.size)
+        assertEquals(collectionReference, result.collectionReference)
+        assertEquals(
+            IndexAnalyzer.SuggestedIndex.MongoDbIndexField("myField", Unit),
+            result.fields[0]
+        )
+        assertEquals(
+            IndexAnalyzer.SuggestedIndex.MongoDbIndexField("mySecondField", Unit),
+            result.fields[1]
+        )
+    }
+
+    @Test
     fun `considers aggregation pipelines match stages`() = runTest {
         val collectionReference =
             HasCollectionReference(Known(Unit, Unit, Namespace("myDb", "myColl")))
