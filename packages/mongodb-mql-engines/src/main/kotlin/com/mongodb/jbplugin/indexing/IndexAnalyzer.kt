@@ -44,11 +44,7 @@ object IndexAnalyzer {
         val allFieldUsages = query.allFieldReferences().groupBy(QueryFieldUsage<S>::fieldName)
             .mapValues { (_, usages) -> usages.sortedBy { it.role.ordinal } }
 
-        val promotedFieldUsages = allFieldUsages.mapValues { (_, usages) ->
-            usages.sortedBy { it.role.ordinal }
-        }
-
-        val contextInferredFieldUsages = promotedFieldUsages.mapValues { (_, usages) ->
+        val contextInferredFieldUsages = allFieldUsages.mapValues { (_, usages) ->
             usages.first().copy(value = usages.reduce(QueryFieldUsage<S>::leastSpecificUsageOf))
         }
 
