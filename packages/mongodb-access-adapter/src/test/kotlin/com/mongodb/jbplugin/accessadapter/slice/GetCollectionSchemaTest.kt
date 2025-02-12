@@ -187,4 +187,46 @@ class GetCollectionSchemaTest {
             )
         }
     }
+
+    @Test
+    fun `should hold data distribution based on the samples collected`() {
+        runBlocking {
+            val namespace = Namespace("myDb", "myColl")
+            val driver = mock<MongoDbDriver>()
+
+            whenever(driver.runQuery<List<Map<String, Any>>, Any>(any(), any()))
+                .thenReturn(
+                    QueryResult.Run(
+                        listOf(
+                            mapOf("string" to "myString"),
+                            mapOf("integer" to 52, "string" to "anotherString"),
+                        )
+                    )
+                )
+
+            val result = GetCollectionSchema.Slice(namespace, 50).queryUsingDriver(driver)
+
+            assertEquals(namespace, result.schema.namespace)
+            assertEquals(
+                BsonObject(
+                    mapOf(
+                        "string" to BsonAnyOf(BsonNull, BsonString),
+                        "integer" to BsonInt32,
+                    ),
+                ),
+                result.schema.schema,
+            )
+            assertEquals(
+                mapOf(
+                    "myString" to 50,
+                    "anotherString" to 50,
+                ),
+                result.schema.dataDistribution.getDistributionForPath("string")
+            )
+            assertEquals(
+                50,
+                result.schema.dataDistribution.getDistributionForPath("integer")?.get(52)
+            )
+        }
+    }
 }
