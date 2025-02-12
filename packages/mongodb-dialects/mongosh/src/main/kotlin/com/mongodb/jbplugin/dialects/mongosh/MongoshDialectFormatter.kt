@@ -122,7 +122,7 @@ object MongoshDialectFormatter : DialectFormatter {
             val otherCoveredQueries = index.coveredQueries.mapNotNull { toQueryReference(it) }
             var prelude = ""
             if (otherCoveredQueries.isNotEmpty()) {
-                prelude += "// region Other covered queries by this index \n"
+                prelude += "// region Other queries covered by this index \n"
                 prelude += otherCoveredQueries.joinToString("") { "// $it\n" }
                 prelude += "// endregion \n"
             }

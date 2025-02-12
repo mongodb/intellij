@@ -270,7 +270,7 @@ class MongoshDialectFormatterTest {
     fun `generates an index suggestion with references to other covered queries`() = runTest {
         assertGeneratedIndexWithReferences(
             """
-                // region Other covered queries by this index 
+                // region Other queries covered by this index 
                 // myRef exists
                 // endregion 
                 // Learn about creating an index: https://www.mongodb.com/docs/v7.0/core/data-model-operations/#indexes
