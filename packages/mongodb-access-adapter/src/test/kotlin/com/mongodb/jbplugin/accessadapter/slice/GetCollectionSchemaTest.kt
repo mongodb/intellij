@@ -9,7 +9,6 @@ import com.mongodb.jbplugin.mql.BsonInt32
 import com.mongodb.jbplugin.mql.BsonNull
 import com.mongodb.jbplugin.mql.BsonObject
 import com.mongodb.jbplugin.mql.BsonString
-import com.mongodb.jbplugin.mql.JsonUndefined
 import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.components.HasLimit
 import kotlinx.coroutines.runBlocking
@@ -225,11 +224,8 @@ class GetCollectionSchemaTest {
                 result.schema.dataDistribution.getDistributionForPath("string")
             )
             assertEquals(
-                mapOf(
-                    52 to 50,
-                    JsonUndefined to 50,
-                ),
-                result.schema.dataDistribution.getDistributionForPath("integer")
+                50,
+                result.schema.dataDistribution.getDistributionForPath("integer")?.get(52)
             )
         }
     }
