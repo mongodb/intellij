@@ -285,6 +285,6 @@ internal fun assertGeneratedIndex(
     @Language("js") js: String,
     script: () -> Node<Unit>
 ) {
-    val generated = MongoshDialectFormatter.indexCommandForQuery(script())
+    val generated = MongoshDialectFormatter.indexCommand(script())
     assertEquals(js, generated)
 }

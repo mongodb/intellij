@@ -13,7 +13,10 @@ import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvide
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
 import com.mongodb.jbplugin.dialects.DialectFormatter
 import com.mongodb.jbplugin.dialects.mongosh.MongoshDialect
+import com.mongodb.jbplugin.editor.CachedQueryService
 import com.mongodb.jbplugin.i18n.InspectionsAndInlaysMessages
+import com.mongodb.jbplugin.indexing.CollectionIndexConsolidationOptions
+import com.mongodb.jbplugin.indexing.IndexAnalyzer
 import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionBridge
 import com.mongodb.jbplugin.inspections.MongoDbInspection
 import com.mongodb.jbplugin.inspections.quickfixes.OpenDataSourceConsoleAppendingCode
@@ -29,6 +32,7 @@ import com.mongodb.jbplugin.observability.probe.CreateIndexIntentionProbe
 import com.mongodb.jbplugin.observability.probe.InspectionStatusChangedProbe
 import com.mongodb.jbplugin.settings.pluginSetting
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.runBlocking
 
 class IndexCheckInspectionBridge(coroutineScope: CoroutineScope) :
     AbstractMongoDbInspectionBridge(
@@ -127,7 +131,16 @@ internal object IndexCheckLinterInspection : MongoDbInspection {
                 val createIndexClicked by query.source.project.service<CreateIndexIntentionProbe>()
                 createIndexClicked.intentionClicked(query)
 
-                MongoshDialect.formatter.indexCommandForQuery(query)
+                val cachedQueryService by query.source.project.service<CachedQueryService>()
+                val index = runBlocking {
+                    IndexAnalyzer.analyze(
+                        query,
+                        cachedQueryService,
+                        CollectionIndexConsolidationOptions(10)
+                    )
+                }
+
+                MongoshDialect.formatter.indexCommand(query, index)
             }
         )
     }
@@ -162,7 +175,16 @@ internal object IndexCheckLinterInspection : MongoDbInspection {
                 val createIndexClicked by query.source.project.service<CreateIndexIntentionProbe>()
                 createIndexClicked.intentionClicked(query)
 
-                MongoshDialect.formatter.indexCommandForQuery(query)
+                val cachedQueryService by query.source.project.service<CachedQueryService>()
+                val index = runBlocking {
+                    IndexAnalyzer.analyze(
+                        query,
+                        cachedQueryService,
+                        CollectionIndexConsolidationOptions(10)
+                    )
+                }
+
+                MongoshDialect.formatter.indexCommand(query, index)
             }
         )
     }

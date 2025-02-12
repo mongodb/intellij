@@ -6,6 +6,7 @@
 
 package com.mongodb.jbplugin.dialects
 
+import com.mongodb.jbplugin.indexing.IndexAnalyzer
 import com.mongodb.jbplugin.mql.BsonType
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.QueryContext
@@ -104,7 +105,7 @@ sealed interface OutputQuery {
  */
 interface DialectFormatter {
     suspend fun <S> formatQuery(query: Node<S>, queryContext: QueryContext): OutputQuery
-    fun <S> indexCommandForQuery(query: Node<S>): String
+    fun <S> indexCommand(query: Node<S>, index: IndexAnalyzer.SuggestedIndex<S>): String
     fun formatType(type: BsonType): String
 }
 

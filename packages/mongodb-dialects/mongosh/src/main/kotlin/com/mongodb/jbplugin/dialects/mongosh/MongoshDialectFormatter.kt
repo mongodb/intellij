@@ -20,7 +20,6 @@ import com.mongodb.jbplugin.mql.components.HasExplain.ExplainPlanType
 import com.mongodb.jbplugin.mql.components.HasTargetCluster
 import com.mongodb.jbplugin.mql.components.IsCommand
 import io.github.z4kn4fein.semver.Version
-import kotlinx.coroutines.runBlocking
 import org.owasp.encoder.Encode
 
 object MongoshDialectFormatter : DialectFormatter {
@@ -101,9 +100,7 @@ object MongoshDialectFormatter : DialectFormatter {
         }
     }
 
-    override fun <S> indexCommandForQuery(query: Node<S>): String = when (
-        val index = runBlocking { IndexAnalyzer.analyze(query) }
-    ) {
+    override fun <S> indexCommand(query: Node<S>, index: IndexAnalyzer.SuggestedIndex<S>): String = when (index) {
         is IndexAnalyzer.SuggestedIndex.NoIndex -> ""
         is IndexAnalyzer.SuggestedIndex.MongoDbIndex -> {
             val targetCluster = query.component<HasTargetCluster>()
