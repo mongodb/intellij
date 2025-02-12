@@ -326,5 +326,49 @@ class IndexAnalyzerTest {
         )
     }
 
+    @Test
+    fun `finds the index with more fields that matches the current query from sibling queries even if they are aggregates`() = runTest {
+        val predefinedSiblingQueries = PredefinedSiblingQueriesFinder(
+            arrayOf(
+                aggregate("myDb.myColl".toNs()) {
+                    match {
+                        predicate(Name.EQ) {
+                            schema("myField")
+                            constant(52)
+                        }
+                        predicate(Name.GT) {
+                            schema("mySecondField")
+                            constant(12)
+                        }
+                    }
+                }
+            )
+        )
+
+        val query = findMany("myDb.myColl".toNs()) {
+            filterBy {
+                predicate(Name.EQ) {
+                    schema("myField")
+                    constant(52)
+                }
+            }
+        }
+
+        val result = IndexAnalyzer.analyze(
+            query,
+            predefinedSiblingQueries,
+            emptyOptions()
+        )
+
+        assertIndexCollectionIs("myDb.myColl".toNs(), result)
+        assertMongoDbIndexIs(
+            arrayOf(
+                "myField" to 1,
+                "mySecondField" to 1
+            ),
+            result
+        )
+    }
+
     private fun emptyOptions() = CollectionIndexConsolidationOptions(10)
 }
