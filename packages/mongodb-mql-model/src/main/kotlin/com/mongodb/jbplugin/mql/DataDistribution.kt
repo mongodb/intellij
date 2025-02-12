@@ -1,8 +1,12 @@
 package com.mongodb.jbplugin.mql
 
-data object JsonArray
-data object JsonObject
-data object JsonUndefined
+/**
+ * These are just placeholder values to represent the corresponding distribution of a field and for that reason
+ * not really meant to be used outside of this module, at the best in test.
+ */
+internal data object JsonArray
+internal data object JsonObject
+internal data object JsonUndefined
 
 typealias Field = String
 typealias Value = Any?
