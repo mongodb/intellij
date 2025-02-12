@@ -9,6 +9,7 @@ import com.mongodb.jbplugin.mql.BsonInt32
 import com.mongodb.jbplugin.mql.BsonNull
 import com.mongodb.jbplugin.mql.BsonObject
 import com.mongodb.jbplugin.mql.BsonString
+import com.mongodb.jbplugin.mql.JsonUndefined
 import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.components.HasLimit
 import kotlinx.coroutines.runBlocking
@@ -184,6 +185,51 @@ class GetCollectionSchemaTest {
                     component<HasLimit>()?.limit == 1
                 },
                 any()
+            )
+        }
+    }
+
+    @Test
+    fun `should hold data distribution based on the samples collected`() {
+        runBlocking {
+            val namespace = Namespace("myDb", "myColl")
+            val driver = mock<MongoDbDriver>()
+
+            whenever(driver.runQuery<List<Map<String, Any>>, Any>(any(), any()))
+                .thenReturn(
+                    QueryResult.Run(
+                        listOf(
+                            mapOf("string" to "myString"),
+                            mapOf("integer" to 52, "string" to "anotherString"),
+                        )
+                    )
+                )
+
+            val result = GetCollectionSchema.Slice(namespace, 50).queryUsingDriver(driver)
+
+            assertEquals(namespace, result.schema.namespace)
+            assertEquals(
+                BsonObject(
+                    mapOf(
+                        "string" to BsonAnyOf(BsonNull, BsonString),
+                        "integer" to BsonInt32,
+                    ),
+                ),
+                result.schema.schema,
+            )
+            assertEquals(
+                mapOf(
+                    "myString" to 50,
+                    "anotherString" to 50,
+                ),
+                result.schema.dataDistribution.getDistributionForPath("string")
+            )
+            assertEquals(
+                mapOf(
+                    52 to 50,
+                    JsonUndefined to 50,
+                ),
+                result.schema.dataDistribution.getDistributionForPath("integer")
             )
         }
     }

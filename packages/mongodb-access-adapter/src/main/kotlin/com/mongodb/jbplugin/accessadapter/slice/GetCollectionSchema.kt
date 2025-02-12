@@ -28,7 +28,7 @@ data class GetCollectionSchema(
                 return GetCollectionSchema(
                     CollectionSchema(
                         namespace,
-                        BsonObject(emptyMap())
+                        BsonObject(emptyMap()),
                     )
                 )
             }
@@ -68,8 +68,9 @@ data class GetCollectionSchema(
             val schema = flattenAnyOfReferences(consolidatedSchema) as BsonObject
             return GetCollectionSchema(
                 CollectionSchema(
-                    namespace,
-                    schema,
+                    namespace = namespace,
+                    schema = schema,
+                    dataDistribution = DataDistribution.generate(sampleSomeDocs)
                 ),
             )
         }
