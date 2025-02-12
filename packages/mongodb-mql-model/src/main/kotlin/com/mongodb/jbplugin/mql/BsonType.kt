@@ -18,6 +18,9 @@ import java.util.*
  * Represents any of the valid BSON types.
  */
 sealed interface BsonType {
+    val cardinality: Long
+        get() = Long.MAX_VALUE
+
     /**
      * Checks whether the underlying type is assignable to the provided type
      * Example usage:
@@ -61,7 +64,9 @@ data object BsonString : BsonType
 /**
  * Boolean
  */
-data object BsonBoolean : BsonType
+data object BsonBoolean : BsonType {
+    override val cardinality = 2L
+}
 
 /**
  * Date
@@ -87,7 +92,9 @@ data object BsonInt32 : BsonType {
 /**
  * 64-bit integer
  */
-data object BsonInt64 : BsonType
+data object BsonInt64 : BsonType {
+    override val cardinality = Long.MAX_VALUE
+}
 
 /**
  * A double (64 bit floating point)
@@ -102,13 +109,17 @@ data object BsonDouble : BsonType {
 /**
  * Decimal128 (128 bit floating point)
  */
-data object BsonDecimal128 : BsonType
+data object BsonDecimal128 : BsonType {
+    override val cardinality = Long.MAX_VALUE
+}
 
 /**
  * null / non existing field
  */
 
 data object BsonNull : BsonType {
+    override val cardinality = 1L
+
     override fun isAssignableTo(otherType: BsonType): Boolean = when (otherType) {
         is BsonNull -> true
         is BsonAny -> true
@@ -133,6 +144,8 @@ data object BsonAny : BsonType
 data class BsonAnyOf(
     val types: Set<BsonType>,
 ) : BsonType {
+    override val cardinality = types.maxOf { it.cardinality }
+
     constructor(vararg types: BsonType) : this(types.toSet())
 
     override fun isAssignableTo(otherType: BsonType): Boolean = when (otherType) {
@@ -191,6 +204,8 @@ data class BsonArray(
  * the impact of index compression, as an enum has lower cardinality than a String.
  */
 data class BsonEnum(val members: Set<String>, val name: String? = null) : BsonType {
+    override val cardinality = members.size.toLong()
+
     override fun isAssignableTo(otherType: BsonType): Boolean = when (otherType) {
         is BsonEnum -> otherType.members.containsAll(members)
         is BsonAny, is BsonString -> true
