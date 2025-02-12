@@ -12,18 +12,18 @@ object CollectionIndexConsolidation {
             return IndexAnalyzer.SuggestedIndex.NoIndex.cast()
         }
 
-        val partition = indexes
+        val bestIndex = indexes
             .filterIsInstance<IndexAnalyzer.SuggestedIndex.MongoDbIndex<S>>()
-            .fold(IndexPartitions<S>()) { acc, it -> acc.addIndex(it) }
+            .fold(IndexPartitions<S>(), IndexPartitions<S>::addIndex)
             .addIndex(baseIndex)
             .partitionOfIndex(baseIndex)
+            ?.maxBy(::numberOfFields)
 
-        val bestIndexForPartition = partition?.maxBy { it.cardinality() }
-        return bestIndexForPartition ?: IndexAnalyzer.SuggestedIndex.NoIndex.cast()
+        return bestIndex ?: IndexAnalyzer.SuggestedIndex.NoIndex.cast()
     }
 
-    private fun <S> IndexAnalyzer.SuggestedIndex.MongoDbIndex<S>.cardinality(): Int {
-        return fields.size
+    private fun <S> numberOfFields(index: IndexAnalyzer.SuggestedIndex.MongoDbIndex<S>): Int {
+        return index.fields.size
     }
 }
 

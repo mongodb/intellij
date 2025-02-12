@@ -17,6 +17,16 @@ object ModelAssertions {
         assertEquals(expected, ref.namespace)
     }
 
+    fun assertIndexCollectionIs(expected: Namespace, actual: IndexAnalyzer.SuggestedIndex<Unit>) {
+        if (actual !is IndexAnalyzer.SuggestedIndex.MongoDbIndex<Unit>) {
+            throw AssertionError(
+                "Collection is not equals to $expected because index is not a MongoDbIndex, but ${actual.javaClass.name}"
+            )
+        }
+
+        assertCollectionIs(expected, actual.collectionReference)
+    }
+
     fun assertMongoDbIndexIs(
         expected: Array<Pair<String, Int>>,
         actual: IndexAnalyzer.SuggestedIndex<Unit>,

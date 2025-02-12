@@ -4,7 +4,7 @@ import com.mongodb.jbplugin.accessadapter.toNs
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.SiblingQueriesFinder
 import com.mongodb.jbplugin.mql.components.Name
-import com.mongodb.jbplugin.utils.ModelAssertions.assertCollectionIs
+import com.mongodb.jbplugin.utils.ModelAssertions.assertIndexCollectionIs
 import com.mongodb.jbplugin.utils.ModelAssertions.assertMongoDbIndexIs
 import com.mongodb.jbplugin.utils.ModelDsl.aggregate
 import com.mongodb.jbplugin.utils.ModelDsl.ascending
@@ -57,9 +57,9 @@ class IndexAnalyzerTest {
             query,
             EmptySiblingQueriesFinder(),
             emptyOptions()
-        ) as IndexAnalyzer.SuggestedIndex.MongoDbIndex
+        )
 
-        assertCollectionIs("myDb.myColl".toNs(), result.collectionReference)
+        assertIndexCollectionIs("myDb.myColl".toNs(), result)
         assertMongoDbIndexIs(arrayOf("myField" to 1), result)
     }
 
@@ -82,9 +82,9 @@ class IndexAnalyzerTest {
             query,
             EmptySiblingQueriesFinder(),
             emptyOptions()
-        ) as IndexAnalyzer.SuggestedIndex.MongoDbIndex
+        )
 
-        assertCollectionIs("myDb.myColl".toNs(), result.collectionReference)
+        assertIndexCollectionIs("myDb.myColl".toNs(), result)
         assertMongoDbIndexIs(arrayOf("lowCardinality" to 1, "highCardinality" to 1), result)
     }
 
@@ -110,9 +110,9 @@ class IndexAnalyzerTest {
             query,
             EmptySiblingQueriesFinder(),
             emptyOptions()
-        ) as IndexAnalyzer.SuggestedIndex.MongoDbIndex
+        )
 
-        assertCollectionIs("myDb.myColl".toNs(), result.collectionReference)
+        assertIndexCollectionIs("myDb.myColl".toNs(), result)
         assertMongoDbIndexIs(
             arrayOf(
                 "myField" to 1,
@@ -146,9 +146,9 @@ class IndexAnalyzerTest {
             query,
             EmptySiblingQueriesFinder(),
             emptyOptions()
-        ) as IndexAnalyzer.SuggestedIndex.MongoDbIndex
+        )
 
-        assertCollectionIs("myDb.myColl".toNs(), result.collectionReference)
+        assertIndexCollectionIs("myDb.myColl".toNs(), result)
         assertMongoDbIndexIs(
             arrayOf(
                 "mySecondField" to 1,
@@ -181,9 +181,9 @@ class IndexAnalyzerTest {
             query,
             EmptySiblingQueriesFinder(),
             emptyOptions()
-        ) as IndexAnalyzer.SuggestedIndex.MongoDbIndex
+        )
 
-        assertCollectionIs("myDb.myColl".toNs(), result.collectionReference)
+        assertIndexCollectionIs("myDb.myColl".toNs(), result)
         assertMongoDbIndexIs(
             arrayOf(
                 "myField" to 1,
@@ -212,8 +212,9 @@ class IndexAnalyzerTest {
             query,
             EmptySiblingQueriesFinder(),
             emptyOptions()
-        ) as IndexAnalyzer.SuggestedIndex.MongoDbIndex
-        assertCollectionIs("myDb.myColl".toNs(), result.collectionReference)
+        )
+
+        assertIndexCollectionIs("myDb.myColl".toNs(), result)
         assertMongoDbIndexIs(
             arrayOf(
                 "myField" to 1,
@@ -245,8 +246,9 @@ class IndexAnalyzerTest {
             query,
             EmptySiblingQueriesFinder(),
             emptyOptions()
-        ) as IndexAnalyzer.SuggestedIndex.MongoDbIndex
-        assertCollectionIs("myDb.myColl".toNs(), result.collectionReference)
+        )
+
+        assertIndexCollectionIs("myDb.myColl".toNs(), result)
         assertMongoDbIndexIs(
             arrayOf(
                 "myField" to 1,
@@ -269,10 +271,59 @@ class IndexAnalyzerTest {
             query,
             EmptySiblingQueriesFinder(),
             emptyOptions()
-        ) as IndexAnalyzer.SuggestedIndex.MongoDbIndex
+        )
 
-        assertCollectionIs("myDb.myColl".toNs(), result.collectionReference)
+        assertIndexCollectionIs("myDb.myColl".toNs(), result)
         assertMongoDbIndexIs(emptyArray(), result)
+    }
+
+    @Test
+    fun `finds the index with more fields that matches the current query from sibling queries`() = runTest {
+        val predefinedSiblingQueries = PredefinedSiblingQueriesFinder(
+            arrayOf(
+                findMany("myDb.myColl".toNs()) {
+                    filterBy {
+                        predicate(Name.EQ) {
+                            schema("myField")
+                            constant(52)
+                        }
+                        predicate(Name.GT) {
+                            schema("mySecondField")
+                            constant(12)
+                        }
+                    }
+
+                    sortBy {
+                        ascending { schema("mySortField") }
+                    }
+                }
+            )
+        )
+
+        val query = findMany("myDb.myColl".toNs()) {
+            filterBy {
+                predicate(Name.EQ) {
+                    schema("myField")
+                    constant(52)
+                }
+            }
+        }
+
+        val result = IndexAnalyzer.analyze(
+            query,
+            predefinedSiblingQueries,
+            emptyOptions()
+        )
+
+        assertIndexCollectionIs("myDb.myColl".toNs(), result)
+        assertMongoDbIndexIs(
+            arrayOf(
+                "myField" to 1,
+                "mySortField" to 1,
+                "mySecondField" to 1,
+            ),
+            result
+        )
     }
 
     private fun emptyOptions() = CollectionIndexConsolidationOptions(10)
