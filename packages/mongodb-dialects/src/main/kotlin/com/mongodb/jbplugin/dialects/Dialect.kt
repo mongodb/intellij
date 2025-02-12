@@ -105,7 +105,11 @@ sealed interface OutputQuery {
  */
 interface DialectFormatter {
     suspend fun <S> formatQuery(query: Node<S>, queryContext: QueryContext): OutputQuery
-    fun <S> indexCommand(query: Node<S>, index: IndexAnalyzer.SuggestedIndex<S>): String
+    fun <S> indexCommand(
+        query: Node<S>,
+        index: IndexAnalyzer.SuggestedIndex<S>,
+        toQueryReference: (Node<S>) -> String?
+    ): String
     fun formatType(type: BsonType): String
 }
 

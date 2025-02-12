@@ -27,6 +27,16 @@ object ModelAssertions {
         assertCollectionIs(expected, actual.collectionReference)
     }
 
+    fun assertNumberOfCoveredQueriesForIndex(expected: Int, actual: IndexAnalyzer.SuggestedIndex<Unit>) {
+        if (actual !is IndexAnalyzer.SuggestedIndex.MongoDbIndex<Unit>) {
+            throw AssertionError(
+                "Could find number of covered queries because index is not a MongoDbIndex, but ${actual.javaClass.name}"
+            )
+        }
+
+        assertEquals(expected, actual.coveredQueries.size)
+    }
+
     fun assertMongoDbIndexIs(
         expected: Array<Pair<String, Int>>,
         actual: IndexAnalyzer.SuggestedIndex<Unit>,

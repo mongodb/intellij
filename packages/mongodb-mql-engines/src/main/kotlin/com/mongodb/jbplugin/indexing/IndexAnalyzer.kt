@@ -67,7 +67,7 @@ object IndexAnalyzer {
             }
             .toList()
 
-        return SuggestedIndex.MongoDbIndex(collectionRef, indexFields)
+        return SuggestedIndex.MongoDbIndex(collectionRef, indexFields, listOf(query))
     }
 
     private suspend fun <S> Node<S>.allFieldReferences(): List<QueryFieldUsage<S>> {
@@ -162,7 +162,8 @@ object IndexAnalyzer {
 
         data class MongoDbIndex<S>(
             val collectionReference: HasCollectionReference<S>,
-            val fields: List<MongoDbIndexField<S>>
+            val fields: List<MongoDbIndexField<S>>,
+            val coveredQueries: List<Node<S>>
         ) : SuggestedIndex<S>
     }
 

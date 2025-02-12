@@ -8,7 +8,10 @@ package com.mongodb.jbplugin.inspections.impl
 import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.database.dataSource.LocalDataSource
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiMethod
+import com.intellij.psi.util.findParentOfType
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
 import com.mongodb.jbplugin.dialects.DialectFormatter
@@ -140,7 +143,7 @@ internal object IndexCheckLinterInspection : MongoDbInspection {
                     )
                 }
 
-                MongoshDialect.formatter.indexCommand(query, index)
+                MongoshDialect.formatter.indexCommand(query, index, ::queryReferenceString)
             }
         )
     }
@@ -184,8 +187,20 @@ internal object IndexCheckLinterInspection : MongoDbInspection {
                     )
                 }
 
-                MongoshDialect.formatter.indexCommand(query, index)
+                MongoshDialect.formatter.indexCommand(query, index, ::queryReferenceString)
             }
         )
+    }
+
+    private fun queryReferenceString(query: Node<PsiElement>): String? {
+        return ApplicationManager.getApplication().runReadAction<String?> {
+            val method = query.source.findParentOfType<PsiMethod>() ?: return@runReadAction null
+            val containingClass = method.containingClass ?: return@runReadAction null
+            val lineNumber = query.source.containingFile.fileDocument.getLineNumber(
+                query.source.textOffset
+            ) + 1
+
+            "${containingClass.qualifiedName}#${method.name} at line $lineNumber"
+        }
     }
 }

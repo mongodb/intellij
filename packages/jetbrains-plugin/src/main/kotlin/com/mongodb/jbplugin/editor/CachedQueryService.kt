@@ -83,7 +83,8 @@ class CachedQueryService(
                     for (entry in cachedQueriesByNamespace.entries) {
                         val queries = entry.value
                         entry.setValue(
-                            queries.filter { it.get() != null }.toSet()
+                            queries.filter { it.get() != null }
+                                .distinctBy { it.get()?.source?.textOffset }.toSet()
                         )
                     }
 
@@ -116,12 +117,23 @@ class CachedQueryService(
                 emptySet()
             )
 
+            class EquivalenceBasedQuery(val query: Node<PsiElement>) {
+                override fun equals(other: Any?): Boolean {
+                    return psiManager.areElementsEquivalent(
+                        query.source,
+                        other as? PsiElement
+                    )
+                }
+            }
             // filter out all stale references and then decorate with whatever metadata is relevant
             // from the query source file. Return a copy of the set as an array so further modifications
             // do not affect the returned value.
             // In addition, filter out ourselves from the array, as we don't need to handle the query twice.
             allQueriesForNamespace
                 .mapNotNull { it.get() }
+                .map { EquivalenceBasedQuery(it) }
+                .distinct()
+                .map { it.query }
                 .filter { !psiManager.areElementsEquivalent(it.source, query.source) }
                 .map { decorateWithMetadata(it.source.containingFile.dataSource, it) }
                 .toTypedArray()

@@ -28,7 +28,8 @@ object JavaDriverDialectFormatter : DialectFormatter {
 
     override fun <S> indexCommand(
         query: Node<S>,
-        index: IndexAnalyzer.SuggestedIndex<S>
+        index: IndexAnalyzer.SuggestedIndex<S>,
+        toQueryReference: (Node<S>) -> String?
     ): String {
         throw UnsupportedOperationException()
     }

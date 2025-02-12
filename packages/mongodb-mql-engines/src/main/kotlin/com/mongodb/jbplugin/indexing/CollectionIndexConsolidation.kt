@@ -12,14 +12,30 @@ object CollectionIndexConsolidation {
             return IndexAnalyzer.SuggestedIndex.NoIndex.cast()
         }
 
-        val bestIndex = indexes
+        val partitionOfIndex = indexes
             .filterIsInstance<IndexAnalyzer.SuggestedIndex.MongoDbIndex<S>>()
             .fold(IndexPartitions<S>(), IndexPartitions<S>::addIndex)
             .addIndex(baseIndex)
-            .partitionOfIndex(baseIndex)
-            ?.maxBy(::numberOfFields)
+            .partitionOfIndex(baseIndex) ?: return IndexAnalyzer.SuggestedIndex.NoIndex.cast()
 
-        return bestIndex ?: IndexAnalyzer.SuggestedIndex.NoIndex.cast()
+        val coveredQueries = (
+            baseIndex.coveredQueries +
+                partitionOfIndex.flatMap { it.coveredQueries }
+            )
+            .distinctBy { it.components }
+            .filter { coveredQuery ->
+                baseIndex.coveredQueries.firstOrNull {
+                    it.components !=
+                        coveredQuery.components
+                } !=
+                    null
+            }
+
+        val bestIndex = partitionOfIndex.maxBy(::numberOfFields).copy(
+            coveredQueries = coveredQueries
+        )
+
+        return bestIndex
     }
 
     private fun <S> numberOfFields(index: IndexAnalyzer.SuggestedIndex.MongoDbIndex<S>): Int {
@@ -51,9 +67,12 @@ private class IndexPartitions<S> {
 
         return this
     }
+}
 
-    private fun <S> IndexAnalyzer.SuggestedIndex.MongoDbIndex<S>.isPrefixOf(other: IndexAnalyzer.SuggestedIndex.MongoDbIndex<S>): Boolean {
-        return fields.zip(other.fields)
-            .all { (first, second) -> first == second }
+internal fun <S> IndexAnalyzer.SuggestedIndex.MongoDbIndex<S>.isPrefixOf(other: IndexAnalyzer.SuggestedIndex.MongoDbIndex<S>): Boolean {
+    if (fields.size > other.fields.size) {
+        return false
     }
+
+    return fields.zip(other.fields).all { (first, second) -> first.fieldName == second.fieldName }
 }

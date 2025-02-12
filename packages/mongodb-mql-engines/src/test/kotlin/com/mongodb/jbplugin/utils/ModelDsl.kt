@@ -1,5 +1,7 @@
 package com.mongodb.jbplugin.utils
 
+import com.mongodb.jbplugin.accessadapter.toNs
+import com.mongodb.jbplugin.indexing.IndexAnalyzer
 import com.mongodb.jbplugin.mql.BsonInt32
 import com.mongodb.jbplugin.mql.CollectionSchema
 import com.mongodb.jbplugin.mql.Component
@@ -38,6 +40,10 @@ object ModelDsl {
         val holder = ComponentHolder(mutableListOf())
         configuration(holder)
         return node.copy(components = node.components + holder.components)
+    }
+
+    fun NodeHolder.query(supplier: () -> Node<Unit>) {
+        nodes.add(supplier())
     }
 
     fun aggregate(ns: Namespace, schema: CollectionSchema? = null, configuration: NodeHolder.() -> Unit): Node<Unit> {
@@ -133,5 +139,28 @@ object ModelDsl {
         val includeOp = Named(Name.INCLUDE)
         val inferredSortValue = HasValueReference(HasValueReference.Inferred(Unit, 1, BsonInt32))
         nodes.add(Node(Unit, componentHolder.components + includeOp + inferredSortValue))
+    }
+
+    fun indexOf(
+        vararg fields: Pair<String, Int>,
+        coveredQueries: NodeHolder.() -> Unit = {
+        }
+    ): IndexAnalyzer.SuggestedIndex.MongoDbIndex<Unit> {
+        val nodeHolder = NodeHolder(mutableListOf())
+        coveredQueries(nodeHolder)
+
+        return IndexAnalyzer.SuggestedIndex.MongoDbIndex(
+            HasCollectionReference(
+                HasCollectionReference.Known(Unit, Unit, "myDb.myColl".toNs(), null)
+            ),
+            fields.map {
+                IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
+                    it.first,
+                    Unit,
+                    IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
+                )
+            },
+            coveredQueries = nodeHolder.nodes
+        )
     }
 }
