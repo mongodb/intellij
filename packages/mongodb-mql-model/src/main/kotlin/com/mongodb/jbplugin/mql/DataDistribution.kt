@@ -43,7 +43,7 @@ data class DataDistribution(private val distribution: Map<Field, Map<Value, Occu
                         is Document -> {
                             fieldDistribution[JsonObject] =
                                 fieldDistribution.getOrDefault(JsonObject, 0) + 1
-                            val mappedValue = value.map { it.key.toString() to it.value }.toMap()
+                            val mappedValue = value.toMap()
                             populateDistributionForList(
                                 listOf(mappedValue),
                                 distribution,
@@ -110,7 +110,7 @@ data class DataDistribution(private val distribution: Map<Field, Map<Value, Occu
 
                 when (value) {
                     is Document -> {
-                        val mappedValue = value.map { it.key.toString() to it.value }.toMap()
+                        val mappedValue = value.toMap()
                         getAllFieldPathsFromDocument(mappedValue, paths, fieldPath)
                     }
 
