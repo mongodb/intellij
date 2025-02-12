@@ -218,10 +218,9 @@ class MongoshDialectFormatterTest {
     fun `generates an index suggestion for a query given its fields`() = runTest {
         assertGeneratedIndex(
             """
-                // Potential fields to consider indexing: myField, myField2
                 // Learn about creating an index: https://www.mongodb.com/docs/v7.0/core/data-model-operations/#indexes
                 db.getSiblingDB("myDb").getCollection("myCollection")
-                  .createIndex({ "<your_field_1>": 1, "<your_field_2>": 1 })
+                  .createIndex({ "myField": 1, "myField2": 1 })
             """.trimIndent()
         ) {
             Node(
@@ -235,6 +234,7 @@ class MongoshDialectFormatterTest {
                             Node(
                                 Unit,
                                 listOf(
+                                    Named(Name.EQ),
                                     HasFieldReference(
                                         HasFieldReference.FromSchema(Unit, "myField")
                                     ),
@@ -246,6 +246,7 @@ class MongoshDialectFormatterTest {
                             Node(
                                 Unit,
                                 listOf(
+                                    Named(Name.EQ),
                                     HasFieldReference(
                                         HasFieldReference.FromSchema(Unit, "myField2")
                                     ),

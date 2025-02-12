@@ -110,7 +110,6 @@ object MongoshDialectFormatter : DialectFormatter {
             val version = targetCluster?.majorVersion ?: Version(7)
             val docPrefix = "https://www.mongodb.com/docs/v${version.major}.${version.minor}"
 
-            val fieldList = index.fields.joinToString { Encode.forJavaScript(it.fieldName) }
             val (dbName, collName) = when (val collRef = index.collectionReference.reference) {
                 is HasCollectionReference.Unknown -> ("<database>" to "<collection>")
                 is HasCollectionReference.OnlyCollection -> ("<database>" to collRef.collection)
@@ -123,16 +122,14 @@ object MongoshDialectFormatter : DialectFormatter {
             val encodedDbName = Encode.forJavaScript(dbName)
             val encodedColl = Encode.forJavaScript(collName)
 
-            val indexTemplate = index.fields.withIndex().joinToString(
+            val indexTemplate = index.fields.joinToString(
                 separator = ", ",
                 prefix = "{ ",
                 postfix = " }"
             ) {
-                """ "<your_field_${it.index + 1}>": 1 """.trim()
+                """"${Encode.forJavaScript(it.fieldName)}": 1 """.trim()
             }
-
             """
-                    // Potential fields to consider indexing: $fieldList
                     // Learn about creating an index: $docPrefix/core/data-model-operations/#indexes
                     db.getSiblingDB("$encodedDbName").getCollection("$encodedColl")
                       .createIndex($indexTemplate)

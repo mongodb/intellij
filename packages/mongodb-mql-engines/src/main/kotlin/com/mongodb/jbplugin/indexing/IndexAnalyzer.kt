@@ -1,14 +1,18 @@
 package com.mongodb.jbplugin.indexing
 
+import com.mongodb.jbplugin.mql.BsonType
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
+import com.mongodb.jbplugin.mql.components.HasFieldReference
 import com.mongodb.jbplugin.mql.components.Name
+import com.mongodb.jbplugin.mql.components.QueryRole
 import com.mongodb.jbplugin.mql.parser.*
-import com.mongodb.jbplugin.mql.parser.components.NoFieldReference
 import com.mongodb.jbplugin.mql.parser.components.aggregationStages
 import com.mongodb.jbplugin.mql.parser.components.allNodesWithSchemaFieldReferences
+import com.mongodb.jbplugin.mql.parser.components.extractOperation
+import com.mongodb.jbplugin.mql.parser.components.extractValueReferencesRelevantForIndexing
+import com.mongodb.jbplugin.mql.parser.components.fieldReference
 import com.mongodb.jbplugin.mql.parser.components.hasName
-import com.mongodb.jbplugin.mql.parser.components.schemaFieldReference
 
 /**
  * The index analyzer is responsible for processing a query and return an index
@@ -36,19 +40,45 @@ object IndexAnalyzer {
     suspend fun <S> analyze(query: Node<S>): SuggestedIndex<S> {
         val collectionRef =
             query.component<HasCollectionReference<S>>() ?: return SuggestedIndex.NoIndex.cast()
-        val fields = query.allFieldReferences().distinctBy { it.first }
-        val indexFields = fields.map { SuggestedIndex.MongoDbIndexField(it.first, it.second) }
+
+        val allFieldUsages = query.allFieldReferences().groupBy(QueryFieldUsage<S>::fieldName)
+            .mapValues { (_, usages) -> usages.sortedBy { it.role.ordinal } }
+
+        val contextInferredFieldUsages = allFieldUsages.mapValues { (_, usages) ->
+            usages.first().copy(value = usages.reduce(QueryFieldUsage<S>::leastSpecificUsageOf))
+        }
+
+        val indexFields = contextInferredFieldUsages.values
+            .sortedWith(QueryFieldUsage.byRoleAndCardinality())
+            .map {
+                SuggestedIndex.MongoDbIndexField(it.fieldName, it.source, reasonOfSuggestion(it))
+            }
+            .toList()
 
         return SuggestedIndex.MongoDbIndex(collectionRef, indexFields)
     }
 
-    private suspend fun <S> Node<S>.allFieldReferences(): List<Pair<String, S>> {
-        val extractFieldReference = schemaFieldReference<S>()
-            .map { it.fieldName to it.source }
-            .mapError { NoFieldReference }
+    private suspend fun <S> Node<S>.allFieldReferences(): List<QueryFieldUsage<S>> {
+        val nodeQueryUsage = requireNonNull<Node<S>, NoConditionFulfilled>(NoConditionFulfilled)
+            .zip(extractOperation<S>())
+            .zip(extractValueReferencesRelevantForIndexing<S>())
+            .zip(fieldReference<HasFieldReference.FromSchema<S>, S>())
+            .map { context ->
+                val named = context.first.first.second
+                val valueRef = context.first.second
+                val fieldRef = context.second
+
+                QueryFieldUsage(
+                    fieldRef.source,
+                    fieldRef.fieldName,
+                    valueRef.type,
+                    valueRef.value,
+                    named.queryRole(valueRef.type)
+                )
+            }.anyError()
 
         val extractAllFieldReferencesWithValues = allNodesWithSchemaFieldReferences<S>()
-            .mapMany(extractFieldReference)
+            .mapMany(nodeQueryUsage)
 
         val extractFromFirstMatchStage = aggregationStages<S>()
             .nth(0)
@@ -71,29 +101,62 @@ object IndexAnalyzer {
             .orElse { emptyList() }
     }
 
-    /**
-     * @param S
-     */
+    private fun <S> reasonOfSuggestion(it: QueryFieldUsage<S>): IndexSuggestionFieldReason {
+        return when (it.role) {
+            QueryRole.EQUALITY -> IndexSuggestionFieldReason.RoleEquality
+            QueryRole.SORT -> IndexSuggestionFieldReason.RoleSort
+            QueryRole.RANGE -> IndexSuggestionFieldReason.RoleRange
+            else -> IndexSuggestionFieldReason.RoleEquality
+        }
+    }
+
+    private data class QueryFieldUsage<S>(
+        val source: S,
+        val fieldName: String,
+        val type: BsonType,
+        val value: Any?,
+        val role: QueryRole
+    ) {
+        companion object {
+            fun <S> byRoleAndCardinality() =
+                compareBy<QueryFieldUsage<S>>({ it.role.ordinal }, { it.type.cardinality })
+        }
+
+        fun leastSpecificUsageOf(other: QueryFieldUsage<S>): QueryFieldUsage<S> {
+            return if (other.value == null && this.value == null) {
+                if (this.type.cardinality > other.type.cardinality) {
+                    this
+                } else {
+                    other
+                }
+            } else if (other.value == null) {
+                other
+            } else {
+                this
+            }
+        }
+    }
+
     sealed interface SuggestedIndex<S> {
         data object NoIndex : SuggestedIndex<Any> {
             fun <S> cast(): SuggestedIndex<S> = this as SuggestedIndex<S>
         }
 
-        /**
-         * @param S
-         * @property fieldName
-         * @property source
-         */
-        data class MongoDbIndexField<S>(val fieldName: String, val source: S)
+        data class MongoDbIndexField<S>(
+            val fieldName: String,
+            val source: S,
+            val reason: IndexSuggestionFieldReason
+        )
 
-        /**
-         * @param S
-         * @property collectionReference
-         * @property fields
-         */
         data class MongoDbIndex<S>(
             val collectionReference: HasCollectionReference<S>,
             val fields: List<MongoDbIndexField<S>>
         ) : SuggestedIndex<S>
+    }
+
+    sealed interface IndexSuggestionFieldReason {
+        data object RoleEquality : IndexSuggestionFieldReason
+        data object RoleSort : IndexSuggestionFieldReason
+        data object RoleRange : IndexSuggestionFieldReason
     }
 }

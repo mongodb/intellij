@@ -14,8 +14,8 @@ import com.mongodb.jbplugin.mql.Component
  */
 enum class QueryRole {
     EQUALITY,
-    RANGE,
     SORT,
+    RANGE,
     UNION,
     IRRELEVANT
 }

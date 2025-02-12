@@ -1,5 +1,7 @@
 package com.mongodb.jbplugin.indexing
 
+import com.mongodb.jbplugin.mql.BsonBoolean
+import com.mongodb.jbplugin.mql.BsonInt32
 import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.components.HasAggregation
@@ -7,6 +9,8 @@ import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasCollectionReference.Known
 import com.mongodb.jbplugin.mql.components.HasFieldReference
 import com.mongodb.jbplugin.mql.components.HasFilter
+import com.mongodb.jbplugin.mql.components.HasSorts
+import com.mongodb.jbplugin.mql.components.HasValueReference
 import com.mongodb.jbplugin.mql.components.Name
 import com.mongodb.jbplugin.mql.components.Named
 import kotlinx.coroutines.test.runTest
@@ -35,7 +39,9 @@ class IndexAnalyzerTest {
                         Node(
                             Unit,
                             listOf(
-                                HasFieldReference(HasFieldReference.FromSchema(Unit, "myField"))
+                                Named(Name.EQ),
+                                HasFieldReference(HasFieldReference.FromSchema(Unit, "myField")),
+                                HasValueReference(HasValueReference.Constant(Unit, 52, BsonInt32))
                             )
                         )
                     )
@@ -48,8 +54,148 @@ class IndexAnalyzerTest {
         assertEquals(1, result.fields.size)
         assertEquals(collectionReference, result.collectionReference)
         assertEquals(
-            IndexAnalyzer.SuggestedIndex.MongoDbIndexField("myField", Unit),
+            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
+                "myField",
+                Unit,
+                IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
+            ),
             result.fields[0]
+        )
+    }
+
+    @Test
+    fun `places low cardinality types earlier into the index for prefix compression`() = runTest {
+        val collectionReference =
+            HasCollectionReference(Known(Unit, Unit, Namespace("myDb", "myColl")))
+        val query = Node(
+            Unit,
+            listOf(
+                collectionReference,
+                HasFilter(
+                    listOf(
+                        Node(
+                            Unit,
+                            listOf(
+                                Named(Name.EQ),
+                                HasFieldReference(
+                                    HasFieldReference.FromSchema(Unit, "highCardinality")
+                                ),
+                                HasValueReference(HasValueReference.Constant(Unit, 52, BsonInt32))
+                            )
+                        ),
+                        Node(
+                            Unit,
+                            listOf(
+                                Named(Name.EQ),
+                                HasFieldReference(
+                                    HasFieldReference.FromSchema(Unit, "lowCardinality")
+                                ),
+                                HasValueReference(
+                                    HasValueReference.Constant(Unit, false, BsonBoolean)
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+
+        val result = IndexAnalyzer.analyze(query) as IndexAnalyzer.SuggestedIndex.MongoDbIndex
+
+        assertEquals(2, result.fields.size)
+        assertEquals(collectionReference, result.collectionReference)
+        assertEquals(
+            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
+                "lowCardinality",
+                Unit,
+                IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
+            ),
+            result.fields[0]
+        )
+        assertEquals(
+            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
+                "highCardinality",
+                Unit,
+                IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
+            ),
+            result.fields[1]
+        )
+    }
+
+    @Test
+    fun `puts equality fields before sorting fields and them before range fields`() = runTest {
+        val collectionReference =
+            HasCollectionReference(Known(Unit, Unit, Namespace("myDb", "myColl")))
+        val query = Node(
+            Unit,
+            listOf(
+                collectionReference,
+                HasFilter(
+                    listOf(
+                        Node(
+                            Unit,
+                            listOf(
+                                Named(Name.EQ),
+                                HasFieldReference(HasFieldReference.FromSchema(Unit, "myField")),
+                                HasValueReference(HasValueReference.Constant(Unit, 52, BsonInt32))
+                            )
+                        ),
+                        Node(
+                            Unit,
+                            listOf(
+                                Named(Name.GT),
+                                HasFieldReference(
+                                    HasFieldReference.FromSchema(Unit, "myRangeField")
+                                ),
+                                HasValueReference(HasValueReference.Constant(Unit, 52, BsonInt32))
+                            )
+                        )
+                    )
+                ),
+                HasSorts(
+                    listOf(
+                        Node(
+                            Unit,
+                            listOf(
+                                Named(Name.ASCENDING),
+                                HasFieldReference(
+                                    HasFieldReference.FromSchema(Unit, "mySortField")
+                                ),
+                                HasValueReference(HasValueReference.Inferred(Unit, 1, BsonInt32))
+                            )
+                        )
+                    )
+                )
+            )
+        )
+
+        val result = IndexAnalyzer.analyze(query) as IndexAnalyzer.SuggestedIndex.MongoDbIndex
+
+        assertEquals(3, result.fields.size)
+        assertEquals(collectionReference, result.collectionReference)
+        assertEquals(
+            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
+                "myField",
+                Unit,
+                IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
+            ),
+            result.fields[0]
+        )
+        assertEquals(
+            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
+                "mySortField",
+                Unit,
+                IndexAnalyzer.IndexSuggestionFieldReason.RoleSort
+            ),
+            result.fields[1]
+        )
+        assertEquals(
+            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
+                "myRangeField",
+                Unit,
+                IndexAnalyzer.IndexSuggestionFieldReason.RoleRange
+            ),
+            result.fields[2]
         )
     }
 
@@ -66,21 +212,27 @@ class IndexAnalyzerTest {
                         Node(
                             Unit,
                             listOf(
-                                HasFieldReference(HasFieldReference.FromSchema(Unit, "myField"))
+                                Named(Name.EQ),
+                                HasFieldReference(HasFieldReference.FromSchema(Unit, "myField")),
+                                HasValueReference(HasValueReference.Constant(Unit, 52, BsonInt32))
                             )
                         ),
                         Node(
                             Unit,
                             listOf(
+                                Named(Name.EQ),
                                 HasFieldReference(
                                     HasFieldReference.FromSchema(Unit, "mySecondField")
-                                )
+                                ),
+                                HasValueReference(HasValueReference.Constant(Unit, 52, BsonInt32))
                             )
                         ),
                         Node(
                             Unit,
                             listOf(
-                                HasFieldReference(HasFieldReference.FromSchema(Unit, "myField"))
+                                Named(Name.EQ),
+                                HasFieldReference(HasFieldReference.FromSchema(Unit, "myField")),
+                                HasValueReference(HasValueReference.Constant(Unit, 52, BsonInt32))
                             )
                         )
                     )
@@ -93,11 +245,90 @@ class IndexAnalyzerTest {
         assertEquals(2, result.fields.size)
         assertEquals(collectionReference, result.collectionReference)
         assertEquals(
-            IndexAnalyzer.SuggestedIndex.MongoDbIndexField("myField", Unit),
+            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
+                "myField",
+                Unit,
+                IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
+            ),
             result.fields[0]
         )
         assertEquals(
-            IndexAnalyzer.SuggestedIndex.MongoDbIndexField("mySecondField", Unit),
+            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
+                "mySecondField",
+                Unit,
+                IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
+            ),
+            result.fields[1]
+        )
+    }
+
+    @Test
+    fun `promotes repeated field references into the most important stage`() = runTest {
+        val collectionReference =
+            HasCollectionReference(Known(Unit, Unit, Namespace("myDb", "myColl")))
+        val query = Node(
+            Unit,
+            listOf(
+                collectionReference,
+                HasFilter(
+                    listOf(
+                        Node(
+                            Unit,
+                            listOf(
+                                Named(Name.EQ),
+                                HasFieldReference(HasFieldReference.FromSchema(Unit, "myField")),
+                                HasValueReference(
+                                    HasValueReference.Constant(Unit, true, BsonBoolean)
+                                )
+                            )
+                        ),
+                        Node(
+                            Unit,
+                            listOf(
+                                Named(Name.EQ),
+                                HasFieldReference(
+                                    HasFieldReference.FromSchema(Unit, "mySecondField")
+                                ),
+                                HasValueReference(HasValueReference.Constant(Unit, 52, BsonInt32))
+                            )
+                        )
+                    )
+                ),
+                HasSorts(
+                    listOf(
+                        Node(
+                            Unit,
+                            listOf(
+                                Named(Name.ASCENDING),
+                                HasFieldReference(
+                                    HasFieldReference.FromSchema(Unit, "myField")
+                                ),
+                                HasValueReference(HasValueReference.Inferred(Unit, 1, BsonInt32))
+                            )
+                        )
+                    )
+                )
+            )
+        )
+
+        val result = IndexAnalyzer.analyze(query) as IndexAnalyzer.SuggestedIndex.MongoDbIndex
+
+        assertEquals(2, result.fields.size)
+        assertEquals(collectionReference, result.collectionReference)
+        assertEquals(
+            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
+                "myField",
+                Unit,
+                IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
+            ),
+            result.fields[0]
+        )
+        assertEquals(
+            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
+                "mySecondField",
+                Unit,
+                IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
+            ),
             result.fields[1]
         )
     }
@@ -121,27 +352,39 @@ class IndexAnalyzerTest {
                                         Node(
                                             Unit,
                                             listOf(
+                                                Named(Name.EQ),
                                                 HasFieldReference(
                                                     HasFieldReference.FromSchema(Unit, "myField")
+                                                ),
+                                                HasValueReference(
+                                                    HasValueReference.Constant(Unit, 52, BsonInt32)
                                                 )
                                             )
                                         ),
                                         Node(
                                             Unit,
                                             listOf(
+                                                Named(Name.EQ),
                                                 HasFieldReference(
                                                     HasFieldReference.FromSchema(
                                                         Unit,
                                                         "mySecondField"
                                                     )
+                                                ),
+                                                HasValueReference(
+                                                    HasValueReference.Constant(Unit, 52, BsonInt32)
                                                 )
                                             )
                                         ),
                                         Node(
                                             Unit,
                                             listOf(
+                                                Named(Name.EQ),
                                                 HasFieldReference(
                                                     HasFieldReference.FromSchema(Unit, "myField")
+                                                ),
+                                                HasValueReference(
+                                                    HasValueReference.Constant(Unit, 52, BsonInt32)
                                                 )
                                             )
                                         )
@@ -159,11 +402,19 @@ class IndexAnalyzerTest {
         assertEquals(2, result.fields.size)
         assertEquals(collectionReference, result.collectionReference)
         assertEquals(
-            IndexAnalyzer.SuggestedIndex.MongoDbIndexField("myField", Unit),
+            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
+                "myField",
+                Unit,
+                IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
+            ),
             result.fields[0]
         )
         assertEquals(
-            IndexAnalyzer.SuggestedIndex.MongoDbIndexField("mySecondField", Unit),
+            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
+                "mySecondField",
+                Unit,
+                IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
+            ),
             result.fields[1]
         )
     }
