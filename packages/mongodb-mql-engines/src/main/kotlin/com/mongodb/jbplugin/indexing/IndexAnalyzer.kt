@@ -10,7 +10,7 @@ import com.mongodb.jbplugin.mql.parser.*
 import com.mongodb.jbplugin.mql.parser.components.aggregationStages
 import com.mongodb.jbplugin.mql.parser.components.allNodesWithSchemaFieldReferences
 import com.mongodb.jbplugin.mql.parser.components.extractOperation
-import com.mongodb.jbplugin.mql.parser.components.extractValueReference
+import com.mongodb.jbplugin.mql.parser.components.extractValueReferencesRelevantForIndexing
 import com.mongodb.jbplugin.mql.parser.components.fieldReference
 import com.mongodb.jbplugin.mql.parser.components.hasName
 
@@ -61,7 +61,7 @@ object IndexAnalyzer {
     private suspend fun <S> Node<S>.allFieldReferences(): List<QueryFieldUsage<S>> {
         val nodeQueryUsage = requireNonNull<Node<S>, NoConditionFulfilled>(NoConditionFulfilled)
             .zip(extractOperation<S>())
-            .zip(extractValueReference<S>())
+            .zip(extractValueReferencesRelevantForIndexing<S>())
             .zip(fieldReference<HasFieldReference.FromSchema<S>, S>())
             .map { context ->
                 val named = context.first.first.second

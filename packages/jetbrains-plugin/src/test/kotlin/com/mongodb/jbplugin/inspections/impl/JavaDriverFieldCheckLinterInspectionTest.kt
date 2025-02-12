@@ -514,7 +514,7 @@ public AggregateIterable<Document> badGroupAggregate1() {
                     getAvgCountAcc(),
                     Accumulators.topN(
                         "totalCount",
-                        Sorts.ascending(<warning descr="A \"int\"(type of provided value) cannot be assigned to \"String\"(type of \"otherField\")">"otherField"</warning>),
+                        Sorts.ascending("otherField"),
                         <warning descr="Field \"nonExistentField\" does not exist in collection \"myDatabase.myCollection\"">getBadFieldName()</warning>,
                         3
                     )
