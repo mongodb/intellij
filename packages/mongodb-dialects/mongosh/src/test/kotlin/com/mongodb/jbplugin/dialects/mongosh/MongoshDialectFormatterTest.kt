@@ -1,12 +1,16 @@
 package com.mongodb.jbplugin.dialects.mongosh
 
+import com.mongodb.jbplugin.indexing.CollectionIndexConsolidationOptions
+import com.mongodb.jbplugin.indexing.IndexAnalyzer
 import com.mongodb.jbplugin.mql.BsonInt32
 import com.mongodb.jbplugin.mql.BsonString
 import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.QueryContext
+import com.mongodb.jbplugin.mql.SiblingQueriesFinder
 import com.mongodb.jbplugin.mql.components.*
 import com.mongodb.jbplugin.mql.components.HasExplain.ExplainPlanType
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -285,6 +289,19 @@ internal fun assertGeneratedIndex(
     @Language("js") js: String,
     script: () -> Node<Unit>
 ) {
-    val generated = MongoshDialectFormatter.indexCommand(script())
+    val query = script()
+    val index = runBlocking {
+        IndexAnalyzer.analyze(
+            query,
+            object : SiblingQueriesFinder<Unit> {
+                override fun allSiblingsOf(query: Node<Unit>): Array<Node<Unit>> {
+                    return emptyArray()
+                }
+            },
+            CollectionIndexConsolidationOptions(10)
+        )
+    }
+
+    val generated = MongoshDialectFormatter.indexCommand(query, index)
     assertEquals(js, generated)
 }
