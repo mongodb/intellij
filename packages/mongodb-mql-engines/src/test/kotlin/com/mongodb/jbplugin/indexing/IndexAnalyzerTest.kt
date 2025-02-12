@@ -1,537 +1,279 @@
 package com.mongodb.jbplugin.indexing
 
-import com.mongodb.jbplugin.mql.BsonBoolean
-import com.mongodb.jbplugin.mql.BsonInt32
-import com.mongodb.jbplugin.mql.Namespace
+import com.mongodb.jbplugin.accessadapter.toNs
 import com.mongodb.jbplugin.mql.Node
-import com.mongodb.jbplugin.mql.components.HasAggregation
-import com.mongodb.jbplugin.mql.components.HasCollectionReference
-import com.mongodb.jbplugin.mql.components.HasCollectionReference.Known
-import com.mongodb.jbplugin.mql.components.HasFieldReference
-import com.mongodb.jbplugin.mql.components.HasFilter
-import com.mongodb.jbplugin.mql.components.HasSorts
-import com.mongodb.jbplugin.mql.components.HasValueReference
+import com.mongodb.jbplugin.mql.SiblingQueriesFinder
 import com.mongodb.jbplugin.mql.components.Name
-import com.mongodb.jbplugin.mql.components.Named
+import com.mongodb.jbplugin.utils.ModelAssertions.assertCollectionIs
+import com.mongodb.jbplugin.utils.ModelAssertions.assertMongoDbIndexIs
+import com.mongodb.jbplugin.utils.ModelDsl.aggregate
+import com.mongodb.jbplugin.utils.ModelDsl.ascending
+import com.mongodb.jbplugin.utils.ModelDsl.constant
+import com.mongodb.jbplugin.utils.ModelDsl.filterBy
+import com.mongodb.jbplugin.utils.ModelDsl.findMany
+import com.mongodb.jbplugin.utils.ModelDsl.include
+import com.mongodb.jbplugin.utils.ModelDsl.match
+import com.mongodb.jbplugin.utils.ModelDsl.predicate
+import com.mongodb.jbplugin.utils.ModelDsl.project
+import com.mongodb.jbplugin.utils.ModelDsl.schema
+import com.mongodb.jbplugin.utils.ModelDsl.sortBy
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class IndexAnalyzerTest {
+    class EmptySiblingQueriesFinder<S> : SiblingQueriesFinder<S> {
+        override fun allSiblingsOf(query: Node<S>): Array<Node<S>> {
+            return emptyArray()
+        }
+    }
+
+    class PredefinedSiblingQueriesFinder<S>(private val other: Array<Node<S>>) : SiblingQueriesFinder<S> {
+        override fun allSiblingsOf(query: Node<S>): Array<Node<S>> {
+            return other
+        }
+    }
+
     @Test
     fun `queries without a collection reference component are not supported`() = runTest {
         val query = Node(Unit, emptyList())
-        val result = IndexAnalyzer.analyze(query)
+        val result = IndexAnalyzer.analyze(query, EmptySiblingQueriesFinder(), emptyOptions())
 
         assertEquals(IndexAnalyzer.SuggestedIndex.NoIndex, result)
     }
 
     @Test
     fun `returns the suggested list of fields for a mongodb query`() = runTest {
-        val collectionReference =
-            HasCollectionReference(Known(Unit, Unit, Namespace("myDb", "myColl")))
-        val query = Node(
-            Unit,
-            listOf(
-                collectionReference,
-                HasFilter(
-                    listOf(
-                        Node(
-                            Unit,
-                            listOf(
-                                Named(Name.EQ),
-                                HasFieldReference(HasFieldReference.FromSchema(Unit, "myField")),
-                                HasValueReference(HasValueReference.Constant(Unit, 52, BsonInt32))
-                            )
-                        )
-                    )
-                )
-            )
-        )
+        val query = findMany("myDb.myColl".toNs()) {
+            filterBy {
+                predicate(Name.EQ) {
+                    schema("myField")
+                    constant(52)
+                }
+            }
+        }
 
-        val result = IndexAnalyzer.analyze(query) as IndexAnalyzer.SuggestedIndex.MongoDbIndex
+        val result = IndexAnalyzer.analyze(
+            query,
+            EmptySiblingQueriesFinder(),
+            emptyOptions()
+        ) as IndexAnalyzer.SuggestedIndex.MongoDbIndex
 
-        assertEquals(1, result.fields.size)
-        assertEquals(collectionReference, result.collectionReference)
-        assertEquals(
-            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
-                "myField",
-                Unit,
-                IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
-            ),
-            result.fields[0]
-        )
+        assertCollectionIs("myDb.myColl".toNs(), result.collectionReference)
+        assertMongoDbIndexIs(arrayOf("myField" to 1), result)
     }
 
     @Test
     fun `places low cardinality types earlier into the index for prefix compression`() = runTest {
-        val collectionReference =
-            HasCollectionReference(Known(Unit, Unit, Namespace("myDb", "myColl")))
-        val query = Node(
-            Unit,
-            listOf(
-                collectionReference,
-                HasFilter(
-                    listOf(
-                        Node(
-                            Unit,
-                            listOf(
-                                Named(Name.EQ),
-                                HasFieldReference(
-                                    HasFieldReference.FromSchema(Unit, "highCardinality")
-                                ),
-                                HasValueReference(HasValueReference.Constant(Unit, 52, BsonInt32))
-                            )
-                        ),
-                        Node(
-                            Unit,
-                            listOf(
-                                Named(Name.EQ),
-                                HasFieldReference(
-                                    HasFieldReference.FromSchema(Unit, "lowCardinality")
-                                ),
-                                HasValueReference(
-                                    HasValueReference.Constant(Unit, false, BsonBoolean)
-                                )
-                            )
-                        )
-                    )
-                )
-            )
-        )
+        val query = findMany("myDb.myColl".toNs()) {
+            filterBy {
+                predicate(Name.EQ) {
+                    schema("highCardinality")
+                    constant(52)
+                }
+                predicate(Name.EQ) {
+                    schema("lowCardinality")
+                    constant(true)
+                }
+            }
+        }
 
-        val result = IndexAnalyzer.analyze(query) as IndexAnalyzer.SuggestedIndex.MongoDbIndex
+        val result = IndexAnalyzer.analyze(
+            query,
+            EmptySiblingQueriesFinder(),
+            emptyOptions()
+        ) as IndexAnalyzer.SuggestedIndex.MongoDbIndex
 
-        assertEquals(2, result.fields.size)
-        assertEquals(collectionReference, result.collectionReference)
-        assertEquals(
-            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
-                "lowCardinality",
-                Unit,
-                IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
-            ),
-            result.fields[0]
-        )
-        assertEquals(
-            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
-                "highCardinality",
-                Unit,
-                IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
-            ),
-            result.fields[1]
-        )
+        assertCollectionIs("myDb.myColl".toNs(), result.collectionReference)
+        assertMongoDbIndexIs(arrayOf("lowCardinality" to 1, "highCardinality" to 1), result)
     }
 
     @Test
     fun `puts equality fields before sorting fields and them before range fields`() = runTest {
-        val collectionReference =
-            HasCollectionReference(Known(Unit, Unit, Namespace("myDb", "myColl")))
-        val query = Node(
-            Unit,
-            listOf(
-                collectionReference,
-                HasFilter(
-                    listOf(
-                        Node(
-                            Unit,
-                            listOf(
-                                Named(Name.EQ),
-                                HasFieldReference(HasFieldReference.FromSchema(Unit, "myField")),
-                                HasValueReference(HasValueReference.Constant(Unit, 52, BsonInt32))
-                            )
-                        ),
-                        Node(
-                            Unit,
-                            listOf(
-                                Named(Name.GT),
-                                HasFieldReference(
-                                    HasFieldReference.FromSchema(Unit, "myRangeField")
-                                ),
-                                HasValueReference(HasValueReference.Constant(Unit, 52, BsonInt32))
-                            )
-                        )
-                    )
-                ),
-                HasSorts(
-                    listOf(
-                        Node(
-                            Unit,
-                            listOf(
-                                Named(Name.ASCENDING),
-                                HasFieldReference(
-                                    HasFieldReference.FromSchema(Unit, "mySortField")
-                                ),
-                                HasValueReference(HasValueReference.Inferred(Unit, 1, BsonInt32))
-                            )
-                        )
-                    )
-                )
-            )
-        )
+        val query = findMany("myDb.myColl".toNs()) {
+            filterBy {
+                predicate(Name.EQ) {
+                    schema("myField")
+                    constant(52)
+                }
+                predicate(Name.GT) {
+                    schema("myRangeField")
+                    constant(true)
+                }
+            }
+            sortBy {
+                ascending { schema("mySortField") }
+            }
+        }
 
-        val result = IndexAnalyzer.analyze(query) as IndexAnalyzer.SuggestedIndex.MongoDbIndex
+        val result = IndexAnalyzer.analyze(
+            query,
+            EmptySiblingQueriesFinder(),
+            emptyOptions()
+        ) as IndexAnalyzer.SuggestedIndex.MongoDbIndex
 
-        assertEquals(3, result.fields.size)
-        assertEquals(collectionReference, result.collectionReference)
-        assertEquals(
-            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
-                "myField",
-                Unit,
-                IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
+        assertCollectionIs("myDb.myColl".toNs(), result.collectionReference)
+        assertMongoDbIndexIs(
+            arrayOf(
+                "myField" to 1,
+                "mySortField" to 1,
+                "myRangeField" to 1
             ),
-            result.fields[0]
-        )
-        assertEquals(
-            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
-                "mySortField",
-                Unit,
-                IndexAnalyzer.IndexSuggestionFieldReason.RoleSort
-            ),
-            result.fields[1]
-        )
-        assertEquals(
-            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
-                "myRangeField",
-                Unit,
-                IndexAnalyzer.IndexSuggestionFieldReason.RoleRange
-            ),
-            result.fields[2]
+            result
         )
     }
 
     @Test
     fun `removes repeated field references`() = runTest {
-        val collectionReference =
-            HasCollectionReference(Known(Unit, Unit, Namespace("myDb", "myColl")))
-        val query = Node(
-            Unit,
-            listOf(
-                collectionReference,
-                HasFilter(
-                    listOf(
-                        Node(
-                            Unit,
-                            listOf(
-                                Named(Name.EQ),
-                                HasFieldReference(HasFieldReference.FromSchema(Unit, "myField")),
-                                HasValueReference(HasValueReference.Constant(Unit, 52, BsonInt32))
-                            )
-                        ),
-                        Node(
-                            Unit,
-                            listOf(
-                                Named(Name.EQ),
-                                HasFieldReference(
-                                    HasFieldReference.FromSchema(Unit, "mySecondField")
-                                ),
-                                HasValueReference(HasValueReference.Constant(Unit, 52, BsonInt32))
-                            )
-                        ),
-                        Node(
-                            Unit,
-                            listOf(
-                                Named(Name.EQ),
-                                HasFieldReference(HasFieldReference.FromSchema(Unit, "myField")),
-                                HasValueReference(HasValueReference.Constant(Unit, 52, BsonInt32))
-                            )
-                        )
-                    )
-                )
-            )
-        )
+        val query = findMany("myDb.myColl".toNs()) {
+            filterBy {
+                predicate(Name.EQ) {
+                    schema("myField")
+                    constant(52)
+                }
+                predicate(Name.EQ) {
+                    schema("mySecondField")
+                    constant(true)
+                }
+                predicate(Name.EQ) {
+                    schema("myField")
+                    constant(55)
+                }
+            }
+        }
 
-        val result = IndexAnalyzer.analyze(query) as IndexAnalyzer.SuggestedIndex.MongoDbIndex
+        val result = IndexAnalyzer.analyze(
+            query,
+            EmptySiblingQueriesFinder(),
+            emptyOptions()
+        ) as IndexAnalyzer.SuggestedIndex.MongoDbIndex
 
-        assertEquals(2, result.fields.size)
-        assertEquals(collectionReference, result.collectionReference)
-        assertEquals(
-            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
-                "myField",
-                Unit,
-                IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
+        assertCollectionIs("myDb.myColl".toNs(), result.collectionReference)
+        assertMongoDbIndexIs(
+            arrayOf(
+                "mySecondField" to 1,
+                "myField" to 1,
             ),
-            result.fields[0]
-        )
-        assertEquals(
-            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
-                "mySecondField",
-                Unit,
-                IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
-            ),
-            result.fields[1]
+            result
         )
     }
 
     @Test
     fun `promotes repeated field references into the most important stage`() = runTest {
-        val collectionReference =
-            HasCollectionReference(Known(Unit, Unit, Namespace("myDb", "myColl")))
-        val query = Node(
-            Unit,
-            listOf(
-                collectionReference,
-                HasFilter(
-                    listOf(
-                        Node(
-                            Unit,
-                            listOf(
-                                Named(Name.EQ),
-                                HasFieldReference(HasFieldReference.FromSchema(Unit, "myField")),
-                                HasValueReference(
-                                    HasValueReference.Constant(Unit, true, BsonBoolean)
-                                )
-                            )
-                        ),
-                        Node(
-                            Unit,
-                            listOf(
-                                Named(Name.EQ),
-                                HasFieldReference(
-                                    HasFieldReference.FromSchema(Unit, "mySecondField")
-                                ),
-                                HasValueReference(HasValueReference.Constant(Unit, 52, BsonInt32))
-                            )
-                        )
-                    )
-                ),
-                HasSorts(
-                    listOf(
-                        Node(
-                            Unit,
-                            listOf(
-                                Named(Name.ASCENDING),
-                                HasFieldReference(
-                                    HasFieldReference.FromSchema(Unit, "myField")
-                                ),
-                                HasValueReference(HasValueReference.Inferred(Unit, 1, BsonInt32))
-                            )
-                        )
-                    )
-                )
-            )
-        )
+        val query = findMany("myDb.myColl".toNs()) {
+            filterBy {
+                predicate(Name.EQ) {
+                    schema("myField")
+                    constant(52)
+                }
+                predicate(Name.GT) {
+                    schema("mySecondField")
+                    constant(12)
+                }
+            }
 
-        val result = IndexAnalyzer.analyze(query) as IndexAnalyzer.SuggestedIndex.MongoDbIndex
+            sortBy {
+                ascending { schema("mySecondField") }
+            }
+        }
 
-        assertEquals(2, result.fields.size)
-        assertEquals(collectionReference, result.collectionReference)
-        assertEquals(
-            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
-                "myField",
-                Unit,
-                IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
+        val result = IndexAnalyzer.analyze(
+            query,
+            EmptySiblingQueriesFinder(),
+            emptyOptions()
+        ) as IndexAnalyzer.SuggestedIndex.MongoDbIndex
+
+        assertCollectionIs("myDb.myColl".toNs(), result.collectionReference)
+        assertMongoDbIndexIs(
+            arrayOf(
+                "myField" to 1,
+                "mySecondField" to 1,
             ),
-            result.fields[0]
-        )
-        assertEquals(
-            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
-                "mySecondField",
-                Unit,
-                IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
-            ),
-            result.fields[1]
+            result
         )
     }
 
     @Test
     fun `considers aggregation pipelines match stages`() = runTest {
-        val collectionReference =
-            HasCollectionReference(Known(Unit, Unit, Namespace("myDb", "myColl")))
-        val query = Node(
-            Unit,
-            listOf(
-                collectionReference,
-                HasAggregation(
-                    listOf(
-                        Node(
-                            Unit,
-                            listOf(
-                                Named(Name.MATCH),
-                                HasFilter(
-                                    listOf(
-                                        Node(
-                                            Unit,
-                                            listOf(
-                                                Named(Name.EQ),
-                                                HasFieldReference(
-                                                    HasFieldReference.FromSchema(Unit, "myField")
-                                                ),
-                                                HasValueReference(
-                                                    HasValueReference.Constant(Unit, 52, BsonInt32)
-                                                )
-                                            )
-                                        ),
-                                        Node(
-                                            Unit,
-                                            listOf(
-                                                Named(Name.EQ),
-                                                HasFieldReference(
-                                                    HasFieldReference.FromSchema(
-                                                        Unit,
-                                                        "mySecondField"
-                                                    )
-                                                ),
-                                                HasValueReference(
-                                                    HasValueReference.Constant(Unit, 52, BsonInt32)
-                                                )
-                                            )
-                                        ),
-                                        Node(
-                                            Unit,
-                                            listOf(
-                                                Named(Name.EQ),
-                                                HasFieldReference(
-                                                    HasFieldReference.FromSchema(Unit, "myField")
-                                                ),
-                                                HasValueReference(
-                                                    HasValueReference.Constant(Unit, 52, BsonInt32)
-                                                )
-                                            )
-                                        )
-                                    )
-                                )
-                            )
-                        )
-                    )
-                )
-            )
-        )
+        val query = aggregate("myDb.myColl".toNs()) {
+            match {
+                predicate(Name.EQ) {
+                    schema("myField")
+                    constant(52)
+                }
+                predicate(Name.GT) {
+                    schema("mySecondField")
+                    constant(12)
+                }
+            }
+        }
 
-        val result = IndexAnalyzer.analyze(query) as IndexAnalyzer.SuggestedIndex.MongoDbIndex
-
-        assertEquals(2, result.fields.size)
-        assertEquals(collectionReference, result.collectionReference)
-        assertEquals(
-            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
-                "myField",
-                Unit,
-                IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
+        val result = IndexAnalyzer.analyze(
+            query,
+            EmptySiblingQueriesFinder(),
+            emptyOptions()
+        ) as IndexAnalyzer.SuggestedIndex.MongoDbIndex
+        assertCollectionIs("myDb.myColl".toNs(), result.collectionReference)
+        assertMongoDbIndexIs(
+            arrayOf(
+                "myField" to 1,
+                "mySecondField" to 1,
             ),
-            result.fields[0]
-        )
-        assertEquals(
-            IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
-                "mySecondField",
-                Unit,
-                IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
-            ),
-            result.fields[1]
+            result
         )
     }
 
     @Test
     fun `does not consider aggregation pipelines match stages in the second position`() = runTest {
-        val collectionReference =
-            HasCollectionReference(Known(Unit, Unit, Namespace("myDb", "myColl")))
-        val query = Node(
-            Unit,
-            listOf(
-                collectionReference,
-                HasAggregation(
-                    listOf(
-                        Node(Unit, listOf()),
-                        Node(
-                            Unit,
-                            listOf(
-                                Named(Name.MATCH),
-                                HasFilter(
-                                    listOf(
-                                        Node(
-                                            Unit,
-                                            listOf(
-                                                HasFieldReference(
-                                                    HasFieldReference.FromSchema(Unit, "myField")
-                                                )
-                                            )
-                                        ),
-                                        Node(
-                                            Unit,
-                                            listOf(
-                                                HasFieldReference(
-                                                    HasFieldReference.FromSchema(
-                                                        Unit,
-                                                        "mySecondField"
-                                                    )
-                                                )
-                                            )
-                                        ),
-                                        Node(
-                                            Unit,
-                                            listOf(
-                                                HasFieldReference(
-                                                    HasFieldReference.FromSchema(Unit, "myField")
-                                                )
-                                            )
-                                        )
-                                    )
-                                )
-                            )
-                        )
-                    )
-                )
-            )
+        val query = aggregate("myDb.myColl".toNs()) {
+            match {
+                predicate(Name.EQ) {
+                    schema("myField")
+                    constant(52)
+                }
+            }
+
+            match {
+                predicate(Name.EQ) {
+                    schema("myIgnoredField")
+                    constant(52)
+                }
+            }
+        }
+
+        val result = IndexAnalyzer.analyze(
+            query,
+            EmptySiblingQueriesFinder(),
+            emptyOptions()
+        ) as IndexAnalyzer.SuggestedIndex.MongoDbIndex
+        assertCollectionIs("myDb.myColl".toNs(), result.collectionReference)
+        assertMongoDbIndexIs(
+            arrayOf(
+                "myField" to 1,
+            ),
+            result
         )
-
-        val result = IndexAnalyzer.analyze(query) as IndexAnalyzer.SuggestedIndex.MongoDbIndex
-
-        assertEquals(0, result.fields.size)
     }
 
     @Test
     fun `does not consider aggregation pipelines stages that are not match`() = runTest {
-        val collectionReference =
-            HasCollectionReference(Known(Unit, Unit, Namespace("myDb", "myColl")))
-        val query = Node(
-            Unit,
-            listOf(
-                collectionReference,
-                HasAggregation(
-                    listOf(
-                        Node(
-                            Unit,
-                            listOf(
-                                Named(Name.GROUP),
-                                HasFilter(
-                                    listOf(
-                                        Node(
-                                            Unit,
-                                            listOf(
-                                                HasFieldReference(
-                                                    HasFieldReference.FromSchema(Unit, "myField")
-                                                )
-                                            )
-                                        ),
-                                        Node(
-                                            Unit,
-                                            listOf(
-                                                HasFieldReference(
-                                                    HasFieldReference.FromSchema(
-                                                        Unit,
-                                                        "mySecondField"
-                                                    )
-                                                )
-                                            )
-                                        ),
-                                        Node(
-                                            Unit,
-                                            listOf(
-                                                HasFieldReference(
-                                                    HasFieldReference.FromSchema(Unit, "myField")
-                                                )
-                                            )
-                                        )
-                                    )
-                                )
-                            )
-                        )
-                    )
-                )
-            )
-        )
+        val query = aggregate("myDb.myColl".toNs()) {
+            project {
+                include {
+                    schema("projectedField")
+                }
+            }
+        }
 
-        val result = IndexAnalyzer.analyze(query) as IndexAnalyzer.SuggestedIndex.MongoDbIndex
+        val result = IndexAnalyzer.analyze(
+            query,
+            EmptySiblingQueriesFinder(),
+            emptyOptions()
+        ) as IndexAnalyzer.SuggestedIndex.MongoDbIndex
 
-        assertEquals(0, result.fields.size)
-        assertEquals(collectionReference, result.collectionReference)
+        assertCollectionIs("myDb.myColl".toNs(), result.collectionReference)
+        assertMongoDbIndexIs(emptyArray(), result)
     }
+
+    private fun emptyOptions() = CollectionIndexConsolidationOptions(10)
 }

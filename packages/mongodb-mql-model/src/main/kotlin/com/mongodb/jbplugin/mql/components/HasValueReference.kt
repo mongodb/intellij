@@ -50,7 +50,7 @@ data class HasValueReference<S>(
         val type: BsonType,
     ) : ValueReference<S> {
         override fun toString(): String {
-            return "Constant(value=$value, type=$type)"
+            return "Inferred(value=$value, type=$type)"
         }
     }
 
