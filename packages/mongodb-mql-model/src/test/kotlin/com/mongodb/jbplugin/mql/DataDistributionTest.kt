@@ -1,6 +1,5 @@
 package com.mongodb.jbplugin.mql
 
-import org.bson.Document
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -145,11 +144,9 @@ class DataDistributionTest {
                     )
                 ),
                 mapOf(
-                    "name" to Document(
-                        mapOf(
-                            "firstName" to "Bongo",
-                            "lastName" to "DB",
-                        )
+                    "name" to mapOf(
+                        "firstName" to "Bongo",
+                        "lastName" to "DB",
                     )
                 ),
                 mapOf()
@@ -199,11 +196,9 @@ class DataDistributionTest {
                     ),
                 ),
                 mapOf(
-                    "name" to Document(
-                        mapOf(
-                            "firstName" to "Bingo",
-                            "lastName" to "Normo",
-                        )
+                    "name" to mapOf(
+                        "firstName" to "Bingo",
+                        "lastName" to "Normo",
                     ),
                 )
             )

@@ -7,7 +7,6 @@ import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasFilter
 import com.mongodb.jbplugin.mql.components.HasLimit
 import com.mongodb.jbplugin.mql.components.IsCommand
-import org.bson.Document
 
 /**
  * Slice to be used when querying the schema of a given collection.
@@ -78,11 +77,6 @@ data class GetCollectionSchema(
         private fun recursivelyBuildSchema(value: Any?): BsonType =
             when (value) {
                 null -> BsonNull
-                is Document -> BsonObject(
-                    value.map {
-                        it.key to recursivelyBuildSchema(it.value)
-                    }.toMap()
-                )
                 is Map<*, *> -> BsonObject(
                     value.map {
                         it.key.toString() to

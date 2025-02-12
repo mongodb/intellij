@@ -1,7 +1,5 @@
 package com.mongodb.jbplugin.mql
 
-import org.bson.Document
-
 data object JsonArray
 data object JsonObject
 data object JsonUndefined
@@ -40,17 +38,6 @@ data class DataDistribution(private val distribution: Map<Field, Map<Value, Occu
                     val fieldPath = if (parentPath.isEmpty()) field else "$parentPath.$field"
                     val fieldDistribution = distribution.getOrPut(fieldPath) { mutableMapOf() }
                     when (value) {
-                        is Document -> {
-                            fieldDistribution[JsonObject] =
-                                fieldDistribution.getOrDefault(JsonObject, 0) + 1
-                            val mappedValue = value.toMap()
-                            populateDistributionForList(
-                                listOf(mappedValue),
-                                distribution,
-                                fieldPath
-                            )
-                        }
-
                         is Map<*, *> -> {
                             fieldDistribution[JsonObject] =
                                 fieldDistribution.getOrDefault(JsonObject, 0) + 1
@@ -109,11 +96,6 @@ data class DataDistribution(private val distribution: Map<Field, Map<Value, Occu
                 paths.add(fieldPath)
 
                 when (value) {
-                    is Document -> {
-                        val mappedValue = value.toMap()
-                        getAllFieldPathsFromDocument(mappedValue, paths, fieldPath)
-                    }
-
                     is Map<*, *> -> {
                         val mappedValue = value.map { it.key.toString() to it.value }.toMap()
                         getAllFieldPathsFromDocument(mappedValue, paths, fieldPath)
