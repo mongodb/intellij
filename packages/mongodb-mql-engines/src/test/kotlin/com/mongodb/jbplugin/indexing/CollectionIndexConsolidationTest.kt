@@ -102,7 +102,7 @@ class CollectionIndexConsolidationTest {
             options = emptyOptions()
         )
 
-        assertNumberOfCoveredQueriesForIndex(1, index)
+        assertNumberOfCoveredQueriesForIndex(2, index)
         assertMongoDbIndexIs(arrayOf("f1" to 1, "f2" to 1), index)
     }
 

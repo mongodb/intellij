@@ -14,6 +14,7 @@ import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvide
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
 import com.mongodb.jbplugin.accessadapter.slice.BuildInfo
 import com.mongodb.jbplugin.accessadapter.slice.GetCollectionSchema
+import com.mongodb.jbplugin.editor.models.getToolbarModel
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.Node
@@ -68,11 +69,12 @@ class CachedQueryService(
             return decorateWithMetadata(dataSource, attachment.getUserData(queryCacheKey)!!.value)
         }
 
+        val toolbar = attachment.project.getToolbarModel()
         val cachedValue = cacheManager.createCachedValue {
             val parsedAst = dialect.parser.parse(expression)
-            val collRef = parsedAst.component<HasCollectionReference<PsiElement>>()?.reference as? Known
+            val namespaceOfQuery = extractNamespaceOfQuery(parsedAst)
 
-            if (collRef != null) {
+            if (namespaceOfQuery != null) {
                 // we get an exclusive lock because we are in IntelliJ's parser thread. Essentially,
                 // this is the only thread who should update the cached queries.
                 // We do this in the cached value because we want to update the cached queries
@@ -84,18 +86,21 @@ class CachedQueryService(
                         val queries = entry.value
                         entry.setValue(
                             queries.filter { it.get() != null }
+                                .filter {
+                                    runCatching { it.get()?.source?.containingFile }.isSuccess
+                                }
                                 .distinctBy { it.get()?.source?.textOffset }.toSet()
                         )
                     }
 
                     // now add the current query to the cache
-                    cachedQueriesByNamespace.compute(collRef.namespace) { ns, queries ->
+                    cachedQueriesByNamespace.compute(namespaceOfQuery) { ns, queries ->
                         (queries ?: emptySet()) + WeakReference(parsedAst)
                     }
                 }
             }
 
-            CachedValueProvider.Result.create(parsedAst, attachment)
+            CachedValueProvider.Result.create(parsedAst, attachment, toolbar)
         }
 
         attachment.putUserData(queryCacheKey, cachedValue)
@@ -140,7 +145,26 @@ class CachedQueryService(
         }
     }
 
-    private fun decorateWithMetadata(dataSource: LocalDataSource?, query: Node<PsiElement>): Node<PsiElement> {
+    /**
+     * We need this because in Spring Data we need the context of the project to get the actual
+     * namespace (the database is either in the application.yaml or in the toolbar).
+     */
+    private fun extractNamespaceOfQuery(query: Node<PsiElement>): Namespace? {
+        val ref = query.component<HasCollectionReference<PsiElement>>()?.reference as? Known
+        if (ref == null && query.source.containingFile.database != null) {
+            val decoratedQuery = query.queryWithOverwrittenDatabase(
+                query.source.containingFile.database!!
+            )
+            val collRef = decoratedQuery.component<HasCollectionReference<PsiElement>>()?.reference as? Known
+            return collRef?.namespace
+        } else {
+            return ref?.namespace
+        }
+    }
+    private fun decorateWithMetadata(
+        dataSource: LocalDataSource?,
+        query: Node<PsiElement>
+    ): Node<PsiElement> {
         val queryWithDb = query.source.containingFile.database?.let {
             query.queryWithOverwrittenDatabase(it)
         } ?: query

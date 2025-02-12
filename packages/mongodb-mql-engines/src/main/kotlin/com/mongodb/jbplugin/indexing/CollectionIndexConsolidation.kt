@@ -23,13 +23,6 @@ object CollectionIndexConsolidation {
                 partitionOfIndex.flatMap { it.coveredQueries }
             )
             .distinctBy { it.components }
-            .filter { coveredQuery ->
-                baseIndex.coveredQueries.firstOrNull {
-                    it.components !=
-                        coveredQuery.components
-                } !=
-                    null
-            }
 
         val bestIndex = partitionOfIndex.maxBy(::numberOfFields).copy(
             coveredQueries = coveredQueries
