@@ -13,6 +13,41 @@ permissions:
   checks: write
 
 jobs:
+  spec-check:
+    name: "MQL Specification Check"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
+        with:
+          gradle-home-cache-cleanup: true
+
+      - name: Check if PR has "skip-spec-check" label
+        id: check-label
+        if: github.event_name == 'pull_request'  # Only check labels in PRs
+        run: |
+          if gh pr view ${{ github.event.pull_request.number }} --json labels --repo ${{ github.repository }} | jq -e '.labels | any(.name == "skip-spec-check")' > /dev/null; then
+            echo "SKIP=true" >> $GITHUB_ENV
+          else
+            echo "SKIP=false" >> $GITHUB_ENV
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run Spec Update Check
+        if: github.ref != 'refs/heads/main' && env.SKIP != 'true'
+        run: |
+          /gradlew --quiet --console=plain checkSpecUpdates
+
   catalog-check:
     name: "Catalog Updates Check"
     runs-on: ubuntu-latest
@@ -71,6 +106,7 @@ jobs:
     needs:
       - catalog-check
       - style-check
+      - spec-check
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -137,6 +173,7 @@ jobs:
     needs:
       - catalog-check
       - style-check
+      - spec-check
     steps:
       - name: Checkout
         uses: actions/checkout@v4

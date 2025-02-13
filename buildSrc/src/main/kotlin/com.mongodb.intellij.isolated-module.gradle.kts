@@ -4,6 +4,7 @@ import org.gradle.kotlin.dsl.support.delegates.TaskContainerDelegate.*
 import org.jlleitschuh.gradle.ktlint.KtlintExtension
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import java.io.ByteArrayOutputStream
 
 plugins {
     id("java")
@@ -96,3 +97,36 @@ configure<KtlintExtension> {
     }
 }
 
+tasks.register("checkSpecUpdates") {
+    group = "verification"
+    description = "Fails if a Kotlin file changed but no specification file was updated"
+
+    doLast {
+        val rootDir = "${rootDir.absolutePath}"
+        val baseDir = "${project.projectDir.path}"
+        val specsDir = "$baseDir/src/docs/"
+
+        if (!File(specsDir).exists()) {
+            logger.lifecycle("Skipping checkSpecUpdates: Spec folder does not exist.")
+            return@doLast
+        }
+
+        // Get list of changed files
+        val outputStream = ByteArrayOutputStream()
+        exec {
+            commandLine("git", "fetch", "origin", "main", "--depth=1")
+        }
+        exec {
+            commandLine("git", "diff", "--name-only", "origin/main")
+            standardOutput = outputStream
+        }
+
+        val changedFiles = outputStream.toString().trim().lines().map { "$rootDir/$it" }
+        val codeChanged = changedFiles.any { it.contains("$baseDir/src/main/kotlin/") && it.endsWith(".kt") }
+        val specChanged = changedFiles.any { it.contains(specsDir) }
+
+        if (codeChanged && !specChanged) {
+            throw GradleException("Code changed but no spec file was updated!")
+        }
+    }
+}
