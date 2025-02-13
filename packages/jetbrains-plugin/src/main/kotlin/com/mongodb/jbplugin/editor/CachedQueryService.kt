@@ -87,6 +87,10 @@ class CachedQueryService(
                         val queries = entry.value
                         entry.setValue(
                             queries.filter { it.get() != null }
+                                // Sometimes weak reference are not garbage collected yet, but
+                                // they are removed from the containingFile. In this situation,
+                                // requesting the containingFile throws an exception, so in addition
+                                // to the first check, we also verify if the source is in a file.
                                 .filter {
                                     runCatching { it.get()?.source?.containingFile }.isSuccess
                                 }
