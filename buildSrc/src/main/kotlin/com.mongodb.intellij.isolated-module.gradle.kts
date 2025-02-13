@@ -107,8 +107,10 @@ tasks.register("checkSpecUpdates") {
         val specsDir = "$baseDir/src/docs/"
 
         if (!File(specsDir).exists()) {
-            logger.lifecycle("Skipping checkSpecUpdates: Spec folder does not exist.")
+            logger.lifecycle("Skipping checkSpecUpdates: $specsDir does not exist.")
             return@doLast
+        } else {
+            logger.lifecycle("Verifying specifications.")
         }
 
         // Get list of changed files
@@ -122,11 +124,19 @@ tasks.register("checkSpecUpdates") {
         }
 
         val changedFiles = outputStream.toString().trim().lines().map { "$rootDir/$it" }
+
+        logger.quiet("List of changed files: $changedFiles")
+        changedFiles.forEach { file ->
+            logger.quiet(file)
+        }
+
         val codeChanged = changedFiles.any { it.contains("$baseDir/src/main/kotlin/") && it.endsWith(".kt") }
         val specChanged = changedFiles.any { it.contains(specsDir) }
 
         if (codeChanged && !specChanged) {
-            throw GradleException("Code changed but no spec file was updated!")
+            logger.error("The specification is not up to date with the latest code changes.")
+            logger.error("Please update the relevant files in $specsDir or add the 'skip-spec-check' lable to the PR.")
+            throw GradleException()
         }
     }
 }
