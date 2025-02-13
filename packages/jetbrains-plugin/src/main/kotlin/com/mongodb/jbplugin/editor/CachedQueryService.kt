@@ -26,6 +26,7 @@ import com.mongodb.jbplugin.settings.pluginSetting
 import io.github.z4kn4fein.semver.Version
 import kotlinx.coroutines.CoroutineScope
 import java.lang.ref.WeakReference
+import java.util.Objects
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
@@ -122,6 +123,9 @@ class CachedQueryService(
                 emptySet()
             )
 
+            // Sometimes we can have a query twice because the old psi element is not
+            // deleted. This class uses Psi element equivalence to get rid of
+            // duplicates.
             class EquivalenceBasedQuery(val query: Node<PsiElement>) {
                 override fun equals(other: Any?): Boolean {
                     return psiManager.areElementsEquivalent(
@@ -129,7 +133,12 @@ class CachedQueryService(
                         other as? PsiElement
                     )
                 }
+
+                override fun hashCode(): Int {
+                    return Objects.hash(query.components)
+                }
             }
+
             // filter out all stale references and then decorate with whatever metadata is relevant
             // from the query source file. Return a copy of the set as an array so further modifications
             // do not affect the returned value.
