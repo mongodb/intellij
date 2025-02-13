@@ -2,6 +2,7 @@ package com.mongodb.jbplugin.indexing
 
 import com.mongodb.jbplugin.mql.BsonType
 import com.mongodb.jbplugin.mql.Node
+import com.mongodb.jbplugin.mql.SiblingQueriesFinder
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasFieldReference
 import com.mongodb.jbplugin.mql.components.Name
@@ -37,7 +38,18 @@ object IndexAnalyzer {
      * @param query
      * @return
      */
-    suspend fun <S> analyze(query: Node<S>): SuggestedIndex<S> {
+    suspend fun <S> analyze(
+        query: Node<S>,
+        siblingQueriesFinder: SiblingQueriesFinder<S>,
+        options: CollectionIndexConsolidationOptions
+    ): SuggestedIndex<S> {
+        val baseIndex = guessIndexForQuery(query)
+        val otherIndexes = siblingQueriesFinder.allSiblingsOf(query).map { guessIndexForQuery(it) }
+
+        return CollectionIndexConsolidation.apply(baseIndex, otherIndexes, options)
+    }
+
+    private suspend fun <S> guessIndexForQuery(query: Node<S>): SuggestedIndex<S> {
         val collectionRef =
             query.component<HasCollectionReference<S>>() ?: return SuggestedIndex.NoIndex.cast()
 
@@ -55,7 +67,7 @@ object IndexAnalyzer {
             }
             .toList()
 
-        return SuggestedIndex.MongoDbIndex(collectionRef, indexFields)
+        return SuggestedIndex.MongoDbIndex(collectionRef, indexFields, listOf(query))
     }
 
     private suspend fun <S> Node<S>.allFieldReferences(): List<QueryFieldUsage<S>> {
@@ -150,7 +162,8 @@ object IndexAnalyzer {
 
         data class MongoDbIndex<S>(
             val collectionReference: HasCollectionReference<S>,
-            val fields: List<MongoDbIndexField<S>>
+            val fields: List<MongoDbIndexField<S>>,
+            val coveredQueries: List<Node<S>>
         ) : SuggestedIndex<S>
     }
 

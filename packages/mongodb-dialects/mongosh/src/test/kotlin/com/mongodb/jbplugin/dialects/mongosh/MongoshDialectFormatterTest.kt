@@ -1,12 +1,16 @@
 package com.mongodb.jbplugin.dialects.mongosh
 
+import com.mongodb.jbplugin.indexing.CollectionIndexConsolidationOptions
+import com.mongodb.jbplugin.indexing.IndexAnalyzer
 import com.mongodb.jbplugin.mql.BsonInt32
 import com.mongodb.jbplugin.mql.BsonString
 import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.QueryContext
+import com.mongodb.jbplugin.mql.SiblingQueriesFinder
 import com.mongodb.jbplugin.mql.components.*
 import com.mongodb.jbplugin.mql.components.HasExplain.ExplainPlanType
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -261,6 +265,91 @@ class MongoshDialectFormatterTest {
             )
         }
     }
+
+    @Test
+    fun `generates an index suggestion with references to other covered queries`() = runTest {
+        assertGeneratedIndexWithReferences(
+            """
+                // region Queries covered by this index 
+                // myRef exists
+                // myRef exists
+                // endregion 
+                // Learn about creating an index: https://www.mongodb.com/docs/v7.0/core/data-model-operations/#indexes
+                db.getSiblingDB("myDb").getCollection("myCollection")
+                  .createIndex({ "myField": 1, "myField2": 1 })
+            """.trimIndent(),
+            siblingQueries = arrayOf(
+                Node(
+                    Unit,
+                    listOf(
+                        HasCollectionReference(
+                            HasCollectionReference.Known(
+                                Unit,
+                                Unit,
+                                Namespace("myDb", "myCollection")
+                            )
+                        ),
+                        HasFilter(
+                            listOf(
+                                Node(
+                                    Unit,
+                                    listOf(
+                                        Named(Name.EQ),
+                                        HasFieldReference(
+                                            HasFieldReference.FromSchema(Unit, "myField")
+                                        ),
+                                        HasValueReference(
+                                            HasValueReference.Constant(Unit, "myVal", BsonString)
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            ),
+            toQueryReference = {
+                "myRef exists"
+            }
+        ) {
+            Node(
+                Unit,
+                listOf(
+                    HasCollectionReference(
+                        HasCollectionReference.Known(Unit, Unit, Namespace("myDb", "myCollection"))
+                    ),
+                    HasFilter(
+                        listOf(
+                            Node(
+                                Unit,
+                                listOf(
+                                    Named(Name.EQ),
+                                    HasFieldReference(
+                                        HasFieldReference.FromSchema(Unit, "myField")
+                                    ),
+                                    HasValueReference(
+                                        HasValueReference.Constant(Unit, "myVal", BsonString)
+                                    )
+                                )
+                            ),
+                            Node(
+                                Unit,
+                                listOf(
+                                    Named(Name.EQ),
+                                    HasFieldReference(
+                                        HasFieldReference.FromSchema(Unit, "myField2")
+                                    ),
+                                    HasValueReference(
+                                        HasValueReference.Constant(Unit, "myVal2", BsonString)
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        }
+    }
 }
 
 internal suspend fun assertGeneratedQuery(
@@ -283,8 +372,44 @@ internal suspend fun assertGeneratedQuery(
 
 internal fun assertGeneratedIndex(
     @Language("js") js: String,
-    script: () -> Node<Unit>
+    script: () -> Node<Unit>,
 ) {
-    val generated = MongoshDialectFormatter.indexCommandForQuery(script())
+    val query = script()
+    val index = runBlocking {
+        IndexAnalyzer.analyze(
+            query,
+            object : SiblingQueriesFinder<Unit> {
+                override fun allSiblingsOf(query: Node<Unit>): Array<Node<Unit>> {
+                    return emptyArray()
+                }
+            },
+            CollectionIndexConsolidationOptions(10)
+        )
+    }
+
+    val generated = MongoshDialectFormatter.indexCommand(query, index) { null }
+    assertEquals(js, generated)
+}
+
+internal fun assertGeneratedIndexWithReferences(
+    @Language("js") js: String,
+    siblingQueries: Array<Node<Unit>>,
+    toQueryReference: (Node<Unit>) -> String?,
+    script: () -> Node<Unit>,
+) {
+    val query = script()
+    val index = runBlocking {
+        IndexAnalyzer.analyze(
+            query,
+            object : SiblingQueriesFinder<Unit> {
+                override fun allSiblingsOf(query: Node<Unit>): Array<Node<Unit>> {
+                    return siblingQueries
+                }
+            },
+            CollectionIndexConsolidationOptions(10)
+        )
+    }
+
+    val generated = MongoshDialectFormatter.indexCommand(query, index, toQueryReference)
     assertEquals(js, generated)
 }
