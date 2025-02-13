@@ -46,7 +46,7 @@ jobs:
       - name: Run Spec Update Check
         if: github.ref != 'refs/heads/main' && env.SKIP != 'true'
         run: |
-          /gradlew --quiet --console=plain checkSpecUpdates
+          ./gradlew --quiet --console=plain checkSpecUpdates
 
   catalog-check:
     name: "Catalog Updates Check"
