@@ -1,6 +1,13 @@
 package com.mongodb.jbplugin.indexing
 
 import com.mongodb.jbplugin.accessadapter.toNs
+import com.mongodb.jbplugin.indexing.IndexAnalyzer.SuggestedIndex.MongoDbIndex
+import com.mongodb.jbplugin.mql.BsonBoolean
+import com.mongodb.jbplugin.mql.BsonInt32
+import com.mongodb.jbplugin.mql.BsonObject
+import com.mongodb.jbplugin.mql.BsonString
+import com.mongodb.jbplugin.mql.CollectionSchema
+import com.mongodb.jbplugin.mql.DataDistribution
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.SiblingQueriesFinder
 import com.mongodb.jbplugin.mql.components.Name
@@ -19,6 +26,7 @@ import com.mongodb.jbplugin.utils.ModelDsl.schema
 import com.mongodb.jbplugin.utils.ModelDsl.sortBy
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 class IndexAnalyzerTest {
@@ -368,6 +376,283 @@ class IndexAnalyzerTest {
             ),
             result
         )
+    }
+
+    @Nested
+    inner class WhenDataDistributionIsAvailable {
+        private val ns = "myDb.myColl".toNs()
+
+        @Test
+        fun `places fields with low selectivity earlier in the index definition for prefix compression`() = runTest {
+            val schema = CollectionSchema(
+                namespace = ns,
+                schema = BsonObject(
+                    mapOf(
+                        "highSelectivityHighCardinality" to BsonInt32,
+                        "highSelectivityLowCardinality" to BsonBoolean,
+                        "lowSelectivityHighCardinality" to BsonString,
+                        "lowSelectivityLowCardinality" to BsonBoolean,
+                    )
+                ),
+                dataDistribution = DataDistribution.generate(
+                    listOf(
+                        mapOf(
+                            "highSelectivityHighCardinality" to 2,
+                            "highSelectivityLowCardinality" to true,
+                            "lowSelectivityHighCardinality" to "US",
+                            "lowSelectivityLowCardinality" to true
+                        ),
+                        mapOf(
+                            "highSelectivityHighCardinality" to 3,
+                            "highSelectivityLowCardinality" to false,
+                            "lowSelectivityHighCardinality" to "US",
+                            "lowSelectivityLowCardinality" to true
+                        ),
+                        mapOf(
+                            "highSelectivityHighCardinality" to 4,
+                            "highSelectivityLowCardinality" to false,
+                            "lowSelectivityHighCardinality" to "US",
+                            "lowSelectivityLowCardinality" to true
+                        ),
+                        mapOf(
+                            "highSelectivityHighCardinality" to 5,
+                            "highSelectivityLowCardinality" to false,
+                            "lowSelectivityHighCardinality" to "US",
+                            "lowSelectivityLowCardinality" to true
+                        ),
+                    )
+                )
+            )
+
+            val query = findMany(ns, schema) {
+                filterBy {
+                    predicate(Name.EQ) {
+                        schema("highSelectivityHighCardinality")
+                        constant(2)
+                    }
+                    predicate(Name.EQ) {
+                        schema("highSelectivityLowCardinality")
+                        constant(true)
+                    }
+                    predicate(Name.EQ) {
+                        schema("lowSelectivityHighCardinality")
+                        constant("US")
+                    }
+                    predicate(Name.EQ) {
+                        schema("lowSelectivityLowCardinality")
+                        constant(true)
+                    }
+                }
+            }
+
+            val result = IndexAnalyzer.analyze(
+                query,
+                EmptySiblingQueriesFinder(),
+                emptyOptions()
+            )
+
+            assertMongoDbIndexIs(
+                arrayOf(
+                    "lowSelectivityLowCardinality" to 1,
+                    "lowSelectivityHighCardinality" to 1,
+                    "highSelectivityLowCardinality" to 1,
+                    "highSelectivityHighCardinality" to 1,
+                ),
+                result
+            )
+        }
+
+        @Test
+        fun `when all fields have same selectivity orders by cardinality`() = runTest {
+            val schema = CollectionSchema(
+                namespace = ns,
+                schema = BsonObject(
+                    mapOf(
+                        "highCardinality" to BsonInt32,
+                        "lowCardinality" to BsonBoolean,
+                    )
+                ),
+                dataDistribution = DataDistribution.generate(
+                    listOf(
+                        mapOf("highCardinality" to 1, "lowCardinality" to true),
+                        mapOf("highCardinality" to 2, "lowCardinality" to false)
+                    )
+                )
+            )
+
+            val query = findMany(ns, schema) {
+                filterBy {
+                    predicate(Name.EQ) {
+                        schema("highCardinality")
+                        constant(1)
+                    }
+                    predicate(Name.EQ) {
+                        schema("lowCardinality")
+                        constant(true)
+                    }
+                }
+            }
+
+            val result = IndexAnalyzer.analyze(query, EmptySiblingQueriesFinder(), emptyOptions())
+            assertMongoDbIndexIs(arrayOf("lowCardinality" to 1, "highCardinality" to 1), result)
+        }
+
+        @Test
+        fun `when selectivity is not known for a value, it places fields with low cardinality first in the index definition`() = runTest {
+            val schema = CollectionSchema(
+                namespace = ns,
+                schema = BsonObject(
+                    mapOf(
+                        "highSelectivityHighCardinality" to BsonInt32,
+                        "highSelectivityLowCardinality" to BsonBoolean,
+                        "unknownSelectivityHighCardinality" to BsonString,
+                        "lowSelectivityLowCardinality" to BsonBoolean,
+                    )
+                ),
+                dataDistribution = DataDistribution.generate(
+                    listOf(
+                        mapOf(
+                            "highSelectivityHighCardinality" to 2,
+                            "highSelectivityLowCardinality" to true,
+                            "lowSelectivityLowCardinality" to true
+                        ),
+                        mapOf(
+                            "highSelectivityHighCardinality" to 3,
+                            "highSelectivityLowCardinality" to false,
+                            "lowSelectivityLowCardinality" to true
+                        ),
+                        mapOf(
+                            "highSelectivityHighCardinality" to 4,
+                            "highSelectivityLowCardinality" to false,
+                            "lowSelectivityLowCardinality" to true
+                        ),
+                        mapOf(
+                            "highSelectivityHighCardinality" to 5,
+                            "highSelectivityLowCardinality" to false,
+                            "lowSelectivityLowCardinality" to true
+                        ),
+                    )
+                )
+            )
+
+            val query = findMany(ns, schema) {
+                filterBy {
+                    predicate(Name.EQ) {
+                        schema("highSelectivityHighCardinality")
+                        constant(2)
+                    }
+                    predicate(Name.EQ) {
+                        schema("highSelectivityLowCardinality")
+                        constant(true)
+                    }
+                    predicate(Name.EQ) {
+                        schema("unknownSelectivityHighCardinality")
+                        constant("US")
+                    }
+                    predicate(Name.EQ) {
+                        schema("lowSelectivityLowCardinality")
+                        constant(true)
+                    }
+                }
+            }
+
+            val result = IndexAnalyzer.analyze(
+                query,
+                EmptySiblingQueriesFinder(),
+                emptyOptions()
+            )
+
+            assertMongoDbIndexIs(
+                arrayOf(
+                    "lowSelectivityLowCardinality" to 1,
+                    "highSelectivityLowCardinality" to 1,
+                    "highSelectivityHighCardinality" to 1,
+                    "unknownSelectivityHighCardinality" to 1,
+                ),
+                result
+            )
+        }
+
+        @Test
+        fun `maintains ESR order even when lower selectivity fields exist in different roles`() = runTest {
+            val schema = CollectionSchema(
+                namespace = ns,
+                schema = BsonObject(
+                    mapOf(
+                        "highSelectivityEquality" to BsonString,
+                        "lowSelectivityEquality" to BsonBoolean,
+                        "highSelectivitySort" to BsonString,
+                        "lowSelectivitySort" to BsonBoolean,
+                        "highSelectivityRange" to BsonString,
+                        "lowSelectivityRange" to BsonBoolean
+                    )
+                ),
+                dataDistribution = DataDistribution.generate(
+                    listOf(
+                        mapOf(
+                            "highSelectivityEquality" to "rare",
+                            "lowSelectivityEquality" to true,
+                            "highSelectivitySort" to "rare",
+                            "lowSelectivitySort" to true,
+                            "highSelectivityRange" to "rare",
+                            "lowSelectivityRange" to true,
+                        ),
+                        mapOf(
+                            "highSelectivityEquality" to "common",
+                            "lowSelectivityEquality" to true,
+                            "highSelectivitySort" to "common",
+                            "lowSelectivitySort" to true,
+                            "highSelectivityRange" to "common",
+                            "lowSelectivityRange" to true
+                        )
+                    )
+                )
+            )
+
+            val query = findMany(ns, schema) {
+                filterBy {
+                    predicate(Name.EQ) {
+                        schema("highSelectivityEquality")
+                        constant("rare")
+                    }
+                    predicate(Name.EQ) {
+                        schema("lowSelectivityEquality")
+                        constant(true)
+                    }
+                    predicate(Name.GT) {
+                        schema("highSelectivityRange")
+                        constant("rare")
+                    }
+                    predicate(Name.GT) {
+                        schema("lowSelectivityRange")
+                        constant(true)
+                    }
+                }
+                sortBy {
+                    ascending {
+                        schema("highSelectivitySort")
+                    }
+                    ascending {
+                        schema("lowSelectivitySort")
+                    }
+                }
+            }
+
+            val result = IndexAnalyzer.analyze(query, EmptySiblingQueriesFinder(), emptyOptions())
+            println((result as MongoDbIndex).fields.map { it.fieldName })
+
+            assertMongoDbIndexIs(
+                arrayOf(
+                    "lowSelectivityEquality" to 1,
+                    "highSelectivityEquality" to 1,
+                    "lowSelectivitySort" to 1,
+                    "highSelectivitySort" to 1,
+                    "lowSelectivityRange" to 1,
+                    "highSelectivityRange" to 1
+                ),
+                result
+            )
+        }
     }
 
     private fun emptyOptions() = CollectionIndexConsolidationOptions(10)
