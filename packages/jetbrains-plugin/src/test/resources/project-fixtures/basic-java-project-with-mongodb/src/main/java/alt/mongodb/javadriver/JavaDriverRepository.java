@@ -42,4 +42,14 @@ public class JavaDriverRepository {
             ).sort(Sorts.ascending("year"))
             .first();
     }
+
+    public Document notIndexedAnotherQuery(Language lang) {
+        return client
+            .getDatabase("sample_mflix")
+            .getCollection("movies")
+            .find(
+                Filters.eq("rated", Rate.TV_PG)
+            )
+            .first();
+    }
 }

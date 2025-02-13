@@ -8,12 +8,18 @@ package com.mongodb.jbplugin.inspections.impl
 import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.database.dataSource.LocalDataSource
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiMethod
+import com.intellij.psi.util.findParentOfType
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
 import com.mongodb.jbplugin.dialects.DialectFormatter
 import com.mongodb.jbplugin.dialects.mongosh.MongoshDialect
+import com.mongodb.jbplugin.editor.CachedQueryService
 import com.mongodb.jbplugin.i18n.InspectionsAndInlaysMessages
+import com.mongodb.jbplugin.indexing.CollectionIndexConsolidationOptions
+import com.mongodb.jbplugin.indexing.IndexAnalyzer
 import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionBridge
 import com.mongodb.jbplugin.inspections.MongoDbInspection
 import com.mongodb.jbplugin.inspections.quickfixes.OpenDataSourceConsoleAppendingCode
@@ -29,6 +35,7 @@ import com.mongodb.jbplugin.observability.probe.CreateIndexIntentionProbe
 import com.mongodb.jbplugin.observability.probe.InspectionStatusChangedProbe
 import com.mongodb.jbplugin.settings.pluginSetting
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.runBlocking
 
 class IndexCheckInspectionBridge(coroutineScope: CoroutineScope) :
     AbstractMongoDbInspectionBridge(
@@ -127,7 +134,16 @@ internal object IndexCheckLinterInspection : MongoDbInspection {
                 val createIndexClicked by query.source.project.service<CreateIndexIntentionProbe>()
                 createIndexClicked.intentionClicked(query)
 
-                MongoshDialect.formatter.indexCommandForQuery(query)
+                val cachedQueryService by query.source.project.service<CachedQueryService>()
+                val index = runBlocking {
+                    IndexAnalyzer.analyze(
+                        query,
+                        cachedQueryService,
+                        CollectionIndexConsolidationOptions(10)
+                    )
+                }
+
+                MongoshDialect.formatter.indexCommand(query, index, ::queryReferenceString)
             }
         )
     }
@@ -162,8 +178,29 @@ internal object IndexCheckLinterInspection : MongoDbInspection {
                 val createIndexClicked by query.source.project.service<CreateIndexIntentionProbe>()
                 createIndexClicked.intentionClicked(query)
 
-                MongoshDialect.formatter.indexCommandForQuery(query)
+                val cachedQueryService by query.source.project.service<CachedQueryService>()
+                val index = runBlocking {
+                    IndexAnalyzer.analyze(
+                        query,
+                        cachedQueryService,
+                        CollectionIndexConsolidationOptions(10)
+                    )
+                }
+
+                MongoshDialect.formatter.indexCommand(query, index, ::queryReferenceString)
             }
         )
+    }
+
+    private fun queryReferenceString(query: Node<PsiElement>): String? {
+        return ApplicationManager.getApplication().runReadAction<String?> {
+            val method = query.source.findParentOfType<PsiMethod>() ?: return@runReadAction null
+            val containingClass = method.containingClass ?: return@runReadAction null
+            val lineNumber = query.source.containingFile.fileDocument.getLineNumber(
+                query.source.textOffset
+            ) + 1
+
+            "${containingClass.qualifiedName}#${method.name} at line $lineNumber"
+        }
     }
 }

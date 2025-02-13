@@ -20,7 +20,6 @@ import com.mongodb.jbplugin.mql.components.HasExplain.ExplainPlanType
 import com.mongodb.jbplugin.mql.components.HasTargetCluster
 import com.mongodb.jbplugin.mql.components.IsCommand
 import io.github.z4kn4fein.semver.Version
-import kotlinx.coroutines.runBlocking
 import org.owasp.encoder.Encode
 
 object MongoshDialectFormatter : DialectFormatter {
@@ -101,9 +100,7 @@ object MongoshDialectFormatter : DialectFormatter {
         }
     }
 
-    override fun <S> indexCommandForQuery(query: Node<S>): String = when (
-        val index = runBlocking { IndexAnalyzer.analyze(query) }
-    ) {
+    override fun <S> indexCommand(query: Node<S>, index: IndexAnalyzer.SuggestedIndex<S>, toQueryReference: (Node<S>) -> String?): String = when (index) {
         is IndexAnalyzer.SuggestedIndex.NoIndex -> ""
         is IndexAnalyzer.SuggestedIndex.MongoDbIndex -> {
             val targetCluster = query.component<HasTargetCluster>()
@@ -122,6 +119,16 @@ object MongoshDialectFormatter : DialectFormatter {
             val encodedDbName = Encode.forJavaScript(dbName)
             val encodedColl = Encode.forJavaScript(collName)
 
+            val otherCoveredQueries = index.coveredQueries.mapNotNull { toQueryReference(it) }
+            var prelude = ""
+            if (otherCoveredQueries.isNotEmpty()) {
+                prelude += "// region Queries covered by this index \n"
+                prelude += otherCoveredQueries.joinToString("") { "// $it\n" }
+                prelude += "// endregion \n"
+            }
+            prelude +=
+                "// Learn about creating an index: $docPrefix/core/data-model-operations/#indexes"
+
             val indexTemplate = index.fields.joinToString(
                 separator = ", ",
                 prefix = "{ ",
@@ -130,9 +137,9 @@ object MongoshDialectFormatter : DialectFormatter {
                 """"${Encode.forJavaScript(it.fieldName)}": 1 """.trim()
             }
             """
-                    // Learn about creating an index: $docPrefix/core/data-model-operations/#indexes
-                    db.getSiblingDB("$encodedDbName").getCollection("$encodedColl")
-                      .createIndex($indexTemplate)
+$prelude
+db.getSiblingDB("$encodedDbName").getCollection("$encodedColl")
+  .createIndex($indexTemplate)
             """.trimIndent()
         }
     }

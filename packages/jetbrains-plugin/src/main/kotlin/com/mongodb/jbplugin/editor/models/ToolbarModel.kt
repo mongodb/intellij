@@ -5,6 +5,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.rd.util.launchChildBackground
+import com.intellij.openapi.util.ModificationTracker
 import com.mongodb.jbplugin.editor.MdbJavaEditorToolbar
 import com.mongodb.jbplugin.editor.models.ToolbarEvent.DataSourceConnectionFailed
 import com.mongodb.jbplugin.editor.models.ToolbarEvent.DataSourceConnectionStarted
@@ -27,6 +28,7 @@ import com.mongodb.jbplugin.editor.services.ToolbarSettings.Companion.UNINITIALI
 import com.mongodb.jbplugin.editor.services.implementations.getDataSourceService
 import com.mongodb.jbplugin.editor.services.implementations.getEditorService
 import com.mongodb.jbplugin.editor.services.implementations.getToolbarSettings
+import com.mongodb.jbplugin.meta.eventCount
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -100,19 +102,26 @@ sealed interface ToolbarEvent {
 class ToolbarModel(
     private val project: Project,
     private val coroutineScope: CoroutineScope,
-) {
+) : ModificationTracker {
     private val _toolbarState = MutableStateFlow(
         ToolbarState(project = project)
     )
 
     val toolbarState: StateFlow<ToolbarState> = _toolbarState
+    private val modificationCountTracker by toolbarState.eventCount()
+    private val toolbarEvents = MutableSharedFlow<ToolbarEvent>(replay = 1)
 
-    private val toolbarEvents = MutableSharedFlow<ToolbarEvent>(
-        replay = 1
-    )
+    /**
+     * We need this because the query parser for Spring Criteria depends on the toolbar,
+     * so the cached value on QueryCacheService needs to track modifications here to refresh
+     * the cache.
+     */
+    @Deprecated("We are getting rid of the toolbar model.")
+    override fun getModificationCount(): Long {
+        return modificationCountTracker
+    }
 
     private val areEventsSubscribed = AtomicBoolean(false)
-
     private val initialDataLoaded = AtomicBoolean(false)
 
     fun setupEventsSubscription() {
