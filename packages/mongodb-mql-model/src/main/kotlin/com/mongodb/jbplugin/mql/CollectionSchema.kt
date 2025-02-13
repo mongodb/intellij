@@ -10,6 +10,7 @@ import java.lang.Integer.parseInt
 data class CollectionSchema(
     val namespace: Namespace,
     val schema: BsonObject,
+    val dataDistribution: DataDistribution = DataDistribution.generate(emptyList()),
 ) {
     fun typeOf(
         @Language("JSONPath") jsonPath: String,
