@@ -113,29 +113,26 @@ tasks.register("checkSpecUpdates") {
             logger.lifecycle("Verifying specifications.")
         }
 
-        // Get list of changed files
         val outputStream = ByteArrayOutputStream()
         exec {
-            commandLine("git", "fetch", "origin", "main", "--depth=1")
-        }
-        exec {
-            commandLine("git", "diff", "--name-only", "origin/main")
+            workingDir = project.rootDir
             standardOutput = outputStream
+            commandLine("git", "diff", "--name-only", "origin/main")
         }
 
         val changedFiles = outputStream.toString().trim().lines().map { "$rootDir/$it" }
 
-        logger.quiet("List of changed files: $changedFiles")
+        logger.quiet("List of changed files:")
         changedFiles.forEach { file ->
             logger.quiet(file)
         }
 
-        val codeChanged = changedFiles.any { it.contains("$baseDir/src/main/kotlin/") && it.endsWith(".kt") }
-        val specChanged = changedFiles.any { it.contains(specsDir) }
+        val codeChanged = changedFiles.any { it.startsWith("$baseDir/src/main/kotlin/") && it.endsWith(".kt") }
+        val specChanged = changedFiles.any { it.startsWith(specsDir) }
 
         if (codeChanged && !specChanged) {
             logger.error("The specification is not up to date with the latest code changes.")
-            logger.error("Please update the relevant files in $specsDir or add the 'skip-spec-check' lable to the PR.")
+            logger.error("Please update the relevant files in $specsDir or add the 'skip-spec-check' label to the PR.")
             throw GradleException()
         }
     }
