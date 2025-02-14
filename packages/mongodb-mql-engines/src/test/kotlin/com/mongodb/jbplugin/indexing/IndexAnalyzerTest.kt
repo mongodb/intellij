@@ -1,7 +1,6 @@
 package com.mongodb.jbplugin.indexing
 
 import com.mongodb.jbplugin.accessadapter.toNs
-import com.mongodb.jbplugin.indexing.IndexAnalyzer.SuggestedIndex.MongoDbIndex
 import com.mongodb.jbplugin.mql.BsonBoolean
 import com.mongodb.jbplugin.mql.BsonInt32
 import com.mongodb.jbplugin.mql.BsonObject
@@ -639,7 +638,6 @@ class IndexAnalyzerTest {
             }
 
             val result = IndexAnalyzer.analyze(query, EmptySiblingQueriesFinder(), emptyOptions())
-            println((result as MongoDbIndex).fields.map { it.fieldName })
 
             assertMongoDbIndexIs(
                 arrayOf(
