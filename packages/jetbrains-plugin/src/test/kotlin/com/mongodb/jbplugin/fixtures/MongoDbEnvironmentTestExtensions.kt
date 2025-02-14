@@ -17,7 +17,6 @@ import com.mongodb.client.MongoClients
 import com.mongodb.jbplugin.accessadapter.ConnectionString
 import com.mongodb.jbplugin.accessadapter.MongoDbDriver
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
-import com.mongodb.jbplugin.accessadapter.datagrip.adapter.DataGripMongoDbDriver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.bson.Document
@@ -162,18 +161,12 @@ private fun Project.createDataSource(serverUrl: MongoDbServerUrl) =
         dataSource
     }
 
-internal fun Project.createDriver(
-    dataSource: LocalDataSource,
-): DataGripMongoDbDriver {
-    val driver = DataGripMongoDbDriver(this, dataSource)
-    driver.forceConnectForTesting()
-    return driver
-}
-
 suspend fun Project.withMockedUnconnectedMongoDbConnection(url: MongoDbServerUrl): Project {
     val driver = mock<MongoDbDriver>()
     `when`(driver.connected).thenReturn(false)
-    `when`(driver.connectionString()).thenReturn(ConnectionString(listOf(url.value)))
+    `when`(
+        driver.connectionString()
+    ).thenReturn(ConnectionString(listOf(url.value.replace("mongodb://", ""))))
 
     val readModelProvider =
         DataGripBasedReadModelProvider(
