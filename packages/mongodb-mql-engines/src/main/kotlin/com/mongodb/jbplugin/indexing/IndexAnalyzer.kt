@@ -1,6 +1,7 @@
 package com.mongodb.jbplugin.indexing
 
 import com.mongodb.jbplugin.mql.BsonType
+import com.mongodb.jbplugin.mql.CollectionSchema
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.SiblingQueriesFinder
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
@@ -53,7 +54,9 @@ object IndexAnalyzer {
         val collectionRef =
             query.component<HasCollectionReference<S>>() ?: return SuggestedIndex.NoIndex.cast()
 
-        val allFieldUsages = query.allFieldReferences().groupBy(QueryFieldUsage<S>::fieldName)
+        val schema = (collectionRef.reference as? HasCollectionReference.Known<S>)?.schema
+
+        val allFieldUsages = query.allFieldReferences(schema).groupBy(QueryFieldUsage<S>::fieldName)
             .mapValues { (_, usages) -> usages.sortedBy { it.role.ordinal } }
 
         val contextInferredFieldUsages = allFieldUsages.mapValues { (_, usages) ->
@@ -61,7 +64,7 @@ object IndexAnalyzer {
         }
 
         val indexFields = contextInferredFieldUsages.values
-            .sortedWith(QueryFieldUsage.byRoleAndCardinality())
+            .sortedWith(QueryFieldUsage.byRoleSelectivityAndCardinality())
             .map {
                 SuggestedIndex.MongoDbIndexField(it.fieldName, it.source, reasonOfSuggestion(it))
             }
@@ -70,7 +73,9 @@ object IndexAnalyzer {
         return SuggestedIndex.MongoDbIndex(collectionRef, indexFields, listOf(query))
     }
 
-    private suspend fun <S> Node<S>.allFieldReferences(): List<QueryFieldUsage<S>> {
+    private suspend fun <S> Node<S>.allFieldReferences(
+        collectionSchema: CollectionSchema?
+    ): List<QueryFieldUsage<S>> {
         val nodeQueryUsage = requireNonNull<Node<S>, NoConditionFulfilled>(NoConditionFulfilled)
             .zip(extractOperation<S>())
             .zip(extractValueReferencesRelevantForIndexing<S>())
@@ -79,13 +84,37 @@ object IndexAnalyzer {
                 val named = context.first.first.second
                 val valueRef = context.first.second
                 val fieldRef = context.second
+                val role = named.queryRole(valueRef.type)
+                val selectivityOfField = collectionSchema?.dataDistribution?.getSelectivityForPath(
+                    fieldRef.fieldName,
+                    valueRef.value,
+                )
+
+                val selectivity = if (role == QueryRole.SORT) {
+                    // In case of sort the value is always null as it is an inferred value
+                    // and for that reason we consider this field as highly selective to move
+                    // it all the way back in the index definition so we can safely use cardinality
+                    // comparison
+                    1.0
+                } else {
+                    selectivityOfField
+                }
+
+                val valueType = if (role == QueryRole.SORT && collectionSchema != null) {
+                    // In case of sort we do not rely on the value of the type as it is always
+                    // Inferred and instead use the type of the field for the best guess.
+                    collectionSchema.typeOf(fieldRef.fieldName)
+                } else {
+                    valueRef.type
+                }
 
                 QueryFieldUsage(
-                    fieldRef.source,
-                    fieldRef.fieldName,
-                    valueRef.type,
-                    valueRef.value,
-                    named.queryRole(valueRef.type)
+                    source = fieldRef.source,
+                    fieldName = fieldRef.fieldName,
+                    type = valueType,
+                    value = valueRef.value,
+                    role = role,
+                    selectivity = selectivity
                 )
             }.anyError()
 
@@ -127,13 +156,30 @@ object IndexAnalyzer {
         val fieldName: String,
         val type: BsonType,
         val value: Any?,
-        val role: QueryRole
+        val role: QueryRole,
+        val selectivity: Double?,
     ) {
         companion object {
-            fun <S> byRoleAndCardinality() =
-                compareBy<QueryFieldUsage<S>>({ it.role.ordinal }, { it.type.cardinality })
+            fun <S> byRoleSelectivityAndCardinality() = Comparator<QueryFieldUsage<S>> { a, b ->
+                val roleComparison = a.role.ordinal.compareTo(b.role.ordinal)
+                if (roleComparison != 0) return@Comparator roleComparison
+
+                if (a.selectivity != null && b.selectivity != null) {
+                    val selectivityComparison = b.selectivity.compareTo(a.selectivity)
+                    if (selectivityComparison != 0) return@Comparator selectivityComparison
+                }
+
+                return@Comparator a.type.cardinality.compareTo(b.type.cardinality)
+            }
         }
 
+        /**
+         * For index suggestion, we want to promote a value that is least specific.
+         * This applies for cases when we have different values provided for a field (generally
+         * in an OR condition) in a query. If multiple values tie on specificity then we promote
+         * the one with high cardinality so we can ultimately force the field towards the end of
+         * the index definition.
+         */
         fun leastSpecificUsageOf(other: QueryFieldUsage<S>): QueryFieldUsage<S> {
             return if (other.value == null && this.value == null) {
                 if (this.type.cardinality > other.type.cardinality) {

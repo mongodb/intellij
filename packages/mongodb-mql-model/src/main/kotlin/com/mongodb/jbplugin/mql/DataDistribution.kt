@@ -10,10 +10,21 @@ internal data object JsonUndefined
 
 typealias Field = String
 typealias Value = Any?
-typealias OccurrencePercentage = Int
+typealias OccurrencePercentage = Double
 typealias OccurrenceCount = Int
 
 data class DataDistribution(private val distribution: Map<Field, Map<Value, OccurrencePercentage>>) {
+
+    /**
+     * Returns selectivity for a particular field path.
+     * Lower number for a given field and value means the field has a lower distribution for tha value and hence higher
+     * selectivity when a query asks for that particular value.
+     */
+    fun getSelectivityForPath(fieldPath: Field, value: Value): Double? {
+        val fieldDistribution = getDistributionForPath(fieldPath) ?: return null
+        val valueDistribution = fieldDistribution[value] ?: return null
+        return valueDistribution
+    }
 
     fun getDistributionForPath(fieldPath: Field): Map<Value, OccurrencePercentage>? {
         return distribution.getOrDefault(fieldPath, null)
@@ -132,7 +143,7 @@ data class DataDistribution(private val distribution: Map<Field, Map<Value, Occu
                     mutableMapOf()
                 for ((value, occurrenceCount) in fieldDistribution) {
                     percentFieldDistribution[value] =
-                        occurrenceCount.times(100).div(totalDocsExamined)
+                        occurrenceCount.toDouble().times(100).div(totalDocsExamined.toDouble())
                 }
                 percentDistribution[field] = percentFieldDistribution
             }
