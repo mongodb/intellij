@@ -153,7 +153,9 @@ object MongoshDialectFormatter : DialectFormatter {
             val encodedDbName = Encode.forJavaScript(dbName)
             val encodedColl = Encode.forJavaScript(collName)
 
-            val otherCoveredQueries = index.coveredQueries.mapNotNull { toQueryReference(it) }
+            val otherCoveredQueries = index.coveredQueries.mapNotNull {
+                toQueryReference(it)
+            }.distinct()
             var prelude = ""
             if (otherCoveredQueries.isNotEmpty()) {
                 prelude += "// region Queries covered by this index \n"
