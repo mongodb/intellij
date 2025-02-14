@@ -15,8 +15,11 @@ jobs:
   qodana-check:
     name: "Qodana Static Analysis"
     runs-on: ubuntu-latest
-    #    needs:
-    #      - unit-tests
+    permissions:
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
     steps:
       - name: Maximize Build Space
         uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # 1.3.1

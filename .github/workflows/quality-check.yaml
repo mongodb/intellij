@@ -210,6 +210,11 @@ jobs:
   qodana-check:
     name: "Qodana Static Analysis"
     runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
 #    needs:
 #      - unit-tests
     steps:
