@@ -13,8 +13,8 @@ import com.intellij.openapi.application.EDT
 import com.intellij.openapi.progress.EmptyProgressIndicator
 import com.intellij.openapi.project.Project
 import com.intellij.util.ui.EDT
-import com.mongodb.ConnectionString
 import com.mongodb.client.MongoClients
+import com.mongodb.jbplugin.accessadapter.ConnectionString
 import com.mongodb.jbplugin.accessadapter.MongoDbDriver
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.DataGripMongoDbDriver
@@ -173,7 +173,7 @@ internal fun Project.createDriver(
 suspend fun Project.withMockedUnconnectedMongoDbConnection(url: MongoDbServerUrl): Project {
     val driver = mock<MongoDbDriver>()
     `when`(driver.connected).thenReturn(false)
-    `when`(driver.connectionString()).thenReturn(ConnectionString(url.value))
+    `when`(driver.connectionString()).thenReturn(ConnectionString(listOf(url.value)))
 
     val readModelProvider =
         DataGripBasedReadModelProvider(

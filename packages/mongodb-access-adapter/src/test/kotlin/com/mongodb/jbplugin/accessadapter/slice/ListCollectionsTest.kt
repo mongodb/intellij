@@ -1,19 +1,16 @@
 package com.mongodb.jbplugin.accessadapter.slice
 
 import com.mongodb.jbplugin.accessadapter.MongoDbDriver
+import com.mongodb.jbplugin.accessadapter.QueryResult
 import kotlinx.coroutines.runBlocking
-import org.bson.Document
-import org.bson.conversions.Bson
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
-import org.mockito.kotlin.eq
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
-import kotlin.time.Duration.Companion.seconds
 
 class ListCollectionsTest {
     @Test
@@ -23,7 +20,7 @@ class ListCollectionsTest {
             val result = ListCollections.Slice("").queryUsingDriver(driver)
 
             assertTrue(result.collections.isEmpty())
-            verify(driver, never()).runCommand(eq(""), any(), eq(Document::class), eq(1.seconds))
+            verify(driver, never()).runQuery<Any, Unit>(any(), any())
         }
     }
 
@@ -32,11 +29,13 @@ class ListCollectionsTest {
         runBlocking {
             val driver = mock<MongoDbDriver>()
 
-            `when`(driver.runCommand("myDb", listCollections(), Map::class)).thenReturn(
-                mapOf(
-                    "cursor" to mapOf(
-                        "firstBatch" to listOf(
-                            mapOf("name" to "myCollection", "type" to "collection")
+            `when`(driver.runQuery<Map<String, Any>, Unit>(any(), any())).thenReturn(
+                QueryResult.Run(
+                    mapOf(
+                        "cursor" to mapOf(
+                            "firstBatch" to listOf(
+                                mapOf("name" to "myCollection", "type" to "collection")
+                            )
                         )
                     )
                 )
@@ -52,11 +51,4 @@ class ListCollectionsTest {
             )
         }
     }
-
-    private fun listCollections(): Bson = Document(
-        mapOf(
-            "listCollections" to 1,
-            "authorizedCollections" to true,
-        ),
-    )
 }

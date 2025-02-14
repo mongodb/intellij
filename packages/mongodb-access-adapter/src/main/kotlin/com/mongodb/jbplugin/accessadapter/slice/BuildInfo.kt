@@ -4,7 +4,7 @@
 
 package com.mongodb.jbplugin.accessadapter.slice
 
-import com.mongodb.ConnectionString
+import com.mongodb.jbplugin.accessadapter.ConnectionString
 import com.mongodb.jbplugin.accessadapter.MongoDbDriver
 import com.mongodb.jbplugin.accessadapter.QueryResult
 import com.mongodb.jbplugin.accessadapter.toNs
@@ -15,9 +15,9 @@ import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasFieldReference
 import com.mongodb.jbplugin.mql.components.HasFilter
 import com.mongodb.jbplugin.mql.components.HasLimit
+import com.mongodb.jbplugin.mql.components.HasRunCommand
 import com.mongodb.jbplugin.mql.components.HasValueReference
 import com.mongodb.jbplugin.mql.components.IsCommand
-import org.bson.Document
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -170,15 +170,29 @@ data class BuildInfo(
 
         private suspend fun runBuildInfoCommandIfConnected(from: MongoDbDriver) =
             if (from.connected) {
-                from.runCommand(
-                    "admin",
-                    Document(
-                        mapOf(
-                            "buildInfo" to 1,
+                when (
+                    val result = from.runQuery(
+                        Node(
+                            Unit,
+                            listOf(
+                                IsCommand(IsCommand.CommandType.RUN_COMMAND),
+                                HasRunCommand(
+                                    database = HasValueReference(
+                                        HasValueReference.Constant(Unit, "admin", BsonString)
+                                    ),
+                                    commandName = HasValueReference(
+                                        HasValueReference.Constant(Unit, "buildInfo", BsonString)
+                                    ),
+                                ),
+                                HasLimit(1)
+                            )
                         ),
-                    ),
-                    BuildInfoFromMongoDb::class,
-                )
+                        BuildInfoFromMongoDb::class
+                    )
+                ) {
+                    is QueryResult.Run -> result.result
+                    else -> empty()
+                }
             } else {
                 empty()
             }

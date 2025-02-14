@@ -10,6 +10,8 @@ import com.mongodb.jbplugin.dialects.mongosh.query.emitLimit
 import com.mongodb.jbplugin.dialects.mongosh.query.emitQueryFilter
 import com.mongodb.jbplugin.dialects.mongosh.query.emitQueryUpdate
 import com.mongodb.jbplugin.dialects.mongosh.query.emitSort
+import com.mongodb.jbplugin.dialects.mongosh.query.resolveFieldReference
+import com.mongodb.jbplugin.dialects.mongosh.query.resolveValueReference
 import com.mongodb.jbplugin.indexing.IndexAnalyzer
 import com.mongodb.jbplugin.mql.BsonType
 import com.mongodb.jbplugin.mql.Node
@@ -17,6 +19,7 @@ import com.mongodb.jbplugin.mql.QueryContext
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasExplain
 import com.mongodb.jbplugin.mql.components.HasExplain.ExplainPlanType
+import com.mongodb.jbplugin.mql.components.HasRunCommand
 import com.mongodb.jbplugin.mql.components.HasTargetCluster
 import com.mongodb.jbplugin.mql.components.IsCommand
 import io.github.z4kn4fein.semver.Version
@@ -27,9 +30,13 @@ object MongoshDialectFormatter : DialectFormatter {
         query: Node<S>,
         queryContext: QueryContext,
     ): OutputQuery {
-        val explainPlan = query.component<HasExplain>()?.explainType ?: ExplainPlanType.NONE
         val queryCommand = query.component<IsCommand>() ?: return OutputQuery.None
+        val explainPlan = query.component<HasExplain>()?.explainType ?: ExplainPlanType.NONE
         val isAggregate = queryCommand.type == IsCommand.CommandType.AGGREGATE
+
+        if (queryCommand.type == IsCommand.CommandType.RUN_COMMAND) {
+            return generateRunCommand(query, queryContext)
+        }
 
         // When the query is asking to be explained we simply disregard what the actual query is
         // and assume that it is either aggregate (when mentioned to be as aggregate) otherwise a
@@ -98,6 +105,33 @@ object MongoshDialectFormatter : DialectFormatter {
             }
             else -> OutputQuery.Incomplete(outputString)
         }
+    }
+
+    private suspend fun <S> generateRunCommand(query: Node<S>, queryContext: QueryContext): OutputQuery {
+        val runCommand = query.component<HasRunCommand<S>>() ?: return OutputQuery.None
+        val outputString = MongoshBackend(
+            prettyPrint = queryContext.prettyPrint,
+            automaticallyRun = true
+        )
+            .applyQueryExpansions(queryContext)
+            .apply {
+                emitDbAccess()
+                emitDatabaseAccess(resolveValueReference(runCommand.database, null))
+                emitFunctionName("runCommand")
+                emitFunctionCall(long = false, {
+                    emitObjectStart()
+                    emitObjectKey(resolveValueReference(runCommand.commandName, null))
+                    emitContextValue(registerConstant(1))
+                    for ((field, value) in runCommand.additionalArguments) {
+                        emitObjectValueEnd()
+                        emitObjectKey(resolveFieldReference(field, false))
+                        emitContextValue(resolveValueReference(value, field))
+                    }
+                    emitObjectEnd()
+                })
+            }.computeOutput()
+
+        return OutputQuery.CanBeRun(outputString)
     }
 
     override fun <S> indexCommand(query: Node<S>, index: IndexAnalyzer.SuggestedIndex<S>, toQueryReference: (Node<S>) -> String?): String = when (index) {

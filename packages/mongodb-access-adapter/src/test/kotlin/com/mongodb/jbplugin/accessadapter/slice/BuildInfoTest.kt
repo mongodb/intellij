@@ -1,11 +1,10 @@
 package com.mongodb.jbplugin.accessadapter.slice
 
-import com.mongodb.ConnectionString
+import com.mongodb.jbplugin.accessadapter.ConnectionString
 import com.mongodb.jbplugin.accessadapter.MongoDbDriver
 import com.mongodb.jbplugin.accessadapter.QueryResult
 import com.mongodb.jbplugin.mql.QueryContext
 import kotlinx.coroutines.runBlocking
-import org.bson.Document
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -21,15 +20,16 @@ class BuildInfoTest {
     @Test
     fun `returns a valid build info`(): Unit =
         runBlocking {
-            val command = Document(mapOf("buildInfo" to 1))
             val driver = mock<MongoDbDriver>()
             `when`(driver.connected).thenReturn(true)
-            `when`(driver.connectionString()).thenReturn(ConnectionString("mongodb://localhost/"))
+            `when`(
+                driver.connectionString()
+            ).thenReturn(ConnectionString(listOf("mongodb://localhost/")))
             `when`(
                 driver.runQuery<Long, Unit>(any(), eq(Long::class), any(), eq(1.seconds))
             ).thenReturn(QueryResult.Run(1L))
-            `when`(driver.runCommand("admin", command, BuildInfoFromMongoDb::class)).thenReturn(
-                defaultBuildInfo(),
+            `when`(driver.runQuery<BuildInfoFromMongoDb, Unit>(any(), any())).thenReturn(
+                QueryResult.Run(defaultBuildInfo()),
             )
 
             val data = BuildInfo.Slice.queryUsingDriver(driver)
@@ -40,14 +40,15 @@ class BuildInfoTest {
     @Test
     fun `when not connected do not run queries`(): Unit =
         runBlocking {
-            val command = Document(mapOf("buildInfo" to 1))
             val driver = mock<MongoDbDriver>()
             `when`(driver.connected).thenReturn(false)
-            `when`(driver.connectionString()).thenReturn(ConnectionString("mongodb://localhost/"))
+            `when`(
+                driver.connectionString()
+            ).thenReturn(ConnectionString(listOf("mongodb://localhost/")))
             `when`(
                 driver.runQuery<Long, Unit>(any(), eq(Long::class), any(), eq(1.seconds))
             ).doThrow(NotImplementedError())
-            `when`(driver.runCommand("admin", command, BuildInfo::class)).doThrow(
+            `when`(driver.runQuery<Any, Unit>(any(), any())).doThrow(
                 NotImplementedError(),
             )
 
@@ -58,16 +59,16 @@ class BuildInfoTest {
     @CsvSource(
         value = [
             "URL;;isLocalhost;;isAtlas;;isAtlasStream;;isDigitalOcean;;isGenuineMongoDb;;mongodbVariant",
-            "mongodb://localhost;;true;;false;;false;;false;;true;;",
-            "mongodb://localhost,another-server;;false;;false;;false;;false;;true;;",
-            "mongodb+srv://example-atlas-cluster.e06cc.mongodb.net;;false;;true;;false;;false;;true;;",
-            "mongodb://example-atlas-cluster.e06cc.mongodb.net,another-server;;false;;false;;false;;false;;true;;",
-            "mongodb+srv://atlas-stream-example-atlas-stream.e06cc.mongodb.net;;false;;true;;true;;false;;true;;",
-            "mongodb://[::1];;true;;false;;false;;false;;true;;",
-            "mongodb://my-cluster.mongo.ondigitalocean.com;;false;;false;;false;;true;;true;;",
-            "mongodb://my-cluster.cosmos.azure.com;;false;;false;;false;;false;;false;;cosmosdb",
-            "mongodb://my-cluster.docdb.amazonaws.com;;false;;false;;false;;false;;false;;documentdb",
-            "mongodb://my-cluster.docdb-elastic.amazonaws.com;;false;;false;;false;;false;;false;;documentdb",
+            "localhost;;true;;false;;false;;false;;true;;",
+            "localhost,another-server;;false;;false;;false;;false;;true;;",
+            "example-atlas-cluster.e06cc.mongodb.net;;false;;true;;false;;false;;true;;",
+            "example-atlas-cluster.e06cc.mongodb.net,another-server;;false;;false;;false;;false;;true;;",
+            "atlas-stream-example-atlas-stream.e06cc.mongodb.net;;false;;true;;true;;false;;true;;",
+            "[::1];;true;;false;;false;;false;;true;;",
+            "my-cluster.mongo.ondigitalocean.com;;false;;false;;false;;true;;true;;",
+            "my-cluster.cosmos.azure.com;;false;;false;;false;;false;;false;;cosmosdb",
+            "my-cluster.docdb.amazonaws.com;;false;;false;;false;;false;;false;;documentdb",
+            "my-cluster.docdb-elastic.amazonaws.com;;false;;false;;false;;false;;false;;documentdb",
         ],
         delimiterString = ";;",
         useHeadersInDisplayName = true,
@@ -82,10 +83,9 @@ class BuildInfoTest {
         mongodbVariant: String?,
     ): Unit =
         runBlocking {
-            val command = Document(mapOf("buildInfo" to 1))
             val driver = mock<MongoDbDriver>()
             `when`(driver.connected).thenReturn(true)
-            `when`(driver.connectionString()).thenReturn(ConnectionString(url))
+            `when`(driver.connectionString()).thenReturn(ConnectionString(listOf(url)))
             `when`(
                 driver.runQuery<Long, Unit>(
                     any(),
@@ -94,8 +94,8 @@ class BuildInfoTest {
                     eq(1.seconds)
                 )
             ).thenReturn(QueryResult.Run(1L))
-            `when`(driver.runCommand("admin", command, BuildInfoFromMongoDb::class)).thenReturn(
-                defaultBuildInfo(),
+            `when`(driver.runQuery<BuildInfoFromMongoDb, Unit>(any(), any())).thenReturn(
+                QueryResult.Run(defaultBuildInfo()),
             )
 
             val data = BuildInfo.Slice.queryUsingDriver(driver)
@@ -111,15 +111,15 @@ class BuildInfoTest {
     @CsvSource(
         value = [
             "URL;;atlasHost",
-            "mongodb+srv://example-atlas-cluster.e06cc.mongodb.net;;example-atlas-cluster.e06cc.mongodb.net",
-            "mongodb://example-atlas-cluster-00.e06cc.mongodb.net:27107;;example-atlas-cluster-00.e06cc.mongodb.net",
-            "mongodb://localhost,another-server;;",
-            "mongodb+srv://ex-atlas-stream.e06cc.mongodb.net;;ex-atlas-stream.e06cc.mongodb.net",
-            "mongodb://[::1];;",
-            "mongodb://my-cluster.mongo.ondigitalocean.com;;",
-            "mongodb://my-cluster.cosmos.azure.com;;",
-            "mongodb://my-cluster.docdb.amazonaws.com;;",
-            "mongodb://my-cluster.docdb-elastic.amazonaws.com;;",
+            "example-atlas-cluster.e06cc.mongodb.net;;example-atlas-cluster.e06cc.mongodb.net",
+            "example-atlas-cluster-00.e06cc.mongodb.net:27107;;example-atlas-cluster-00.e06cc.mongodb.net",
+            "localhost,another-server;;",
+            "ex-atlas-stream.e06cc.mongodb.net;;ex-atlas-stream.e06cc.mongodb.net",
+            "[::1];;",
+            "my-cluster.mongo.ondigitalocean.com;;",
+            "my-cluster.cosmos.azure.com;;",
+            "my-cluster.docdb.amazonaws.com;;",
+            "my-cluster.docdb-elastic.amazonaws.com;;",
         ],
         delimiterString = ";;",
         useHeadersInDisplayName = true,
@@ -129,15 +129,14 @@ class BuildInfoTest {
         atlasHost: String?,
     ): Unit =
         runBlocking {
-            val command = Document(mapOf("buildInfo" to 1))
             val driver = mock<MongoDbDriver>()
             `when`(driver.connected).thenReturn(true)
-            `when`(driver.connectionString()).thenReturn(ConnectionString(url))
+            `when`(driver.connectionString()).thenReturn(ConnectionString(listOf(url)))
             `when`(
                 driver.runQuery<Long, Unit>(any(), eq(Long::class), any(), eq(1.seconds))
             ).thenReturn(QueryResult.Run(1L))
-            `when`(driver.runCommand("admin", command, BuildInfoFromMongoDb::class)).thenReturn(
-                defaultBuildInfo(),
+            `when`(driver.runQuery<BuildInfoFromMongoDb, Unit>(any(), any())).thenReturn(
+                QueryResult.Run(defaultBuildInfo()),
             )
 
             val data = BuildInfo.Slice.queryUsingDriver(driver)

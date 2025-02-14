@@ -2,6 +2,7 @@ package com.mongodb.jbplugin.dialects.mongosh
 
 import com.mongodb.jbplugin.indexing.CollectionIndexConsolidationOptions
 import com.mongodb.jbplugin.indexing.IndexAnalyzer
+import com.mongodb.jbplugin.mql.BsonBoolean
 import com.mongodb.jbplugin.mql.BsonInt32
 import com.mongodb.jbplugin.mql.BsonString
 import com.mongodb.jbplugin.mql.Namespace
@@ -346,6 +347,63 @@ class MongoshDialectFormatterTest {
                             )
                         )
                     )
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `can format a buildInfo run command`() = runTest {
+        assertGeneratedQuery(
+            """
+            (function () {  return db.getSiblingDB("myDb").runCommand({"buildInfo": 1}); })()
+            """.trimIndent()
+        ) {
+            Node(
+                Unit,
+                listOf(
+                    IsCommand(IsCommand.CommandType.RUN_COMMAND),
+                    HasRunCommand(
+                        database = HasValueReference(
+                            HasValueReference.Constant(Unit, "myDb", BsonString)
+                        ),
+                        commandName = HasValueReference(
+                            HasValueReference.Constant(Unit, "buildInfo", BsonString)
+                        )
+                    )
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `can format a listCollections run command`() = runTest {
+        assertGeneratedQuery(
+            """
+            (function () {  return db.getSiblingDB("myDb").runCommand({"listCollections": 1, "authorizedCollections": true}); })()
+            """.trimIndent()
+        ) {
+            Node(
+                Unit,
+                listOf(
+                    IsCommand(IsCommand.CommandType.RUN_COMMAND),
+                    HasRunCommand(
+                        database = HasValueReference(
+                            HasValueReference.Constant(Unit, "myDb", BsonString)
+                        ),
+                        commandName = HasValueReference(
+                            HasValueReference.Constant(Unit, "listCollections", BsonString)
+                        ),
+                        additionalArguments = listOf(
+                            HasFieldReference(
+                                HasFieldReference.FromSchema(Unit, "authorizedCollections")
+                            ) to
+                                HasValueReference(
+                                    HasValueReference.Constant(Unit, true, BsonBoolean)
+                                )
+                        )
+                    ),
+                    HasLimit(1)
                 )
             )
         }

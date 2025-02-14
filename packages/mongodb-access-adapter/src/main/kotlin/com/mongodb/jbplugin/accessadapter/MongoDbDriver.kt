@@ -9,11 +9,9 @@
 
 package com.mongodb.jbplugin.accessadapter
 
-import com.mongodb.ConnectionString
 import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.QueryContext
-import org.bson.conversions.Bson
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -26,6 +24,8 @@ sealed interface QueryResult<S> {
     class NoResult<S> : QueryResult<S>
     data class Run<S>(val result: S) : QueryResult<S>
 }
+
+data class ConnectionString(val hosts: List<String>)
 
 /**
  * Represents the MongoDB Driver facade that we will use internally.
@@ -57,13 +57,6 @@ interface MongoDbDriver {
         query: Node<S>,
         result: KClass<T>
     ): QueryResult<T> = runQuery(query, result, QueryContext.empty())
-
-    suspend fun <T : Any> runCommand(
-        database: String,
-        command: Bson,
-        result: KClass<T>,
-        timeout: Duration = 1.seconds,
-    ): T
 }
 
 /**

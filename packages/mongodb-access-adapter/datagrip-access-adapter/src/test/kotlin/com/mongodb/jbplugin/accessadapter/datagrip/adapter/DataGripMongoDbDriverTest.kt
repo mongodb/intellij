@@ -3,11 +3,7 @@ package com.mongodb.jbplugin.accessadapter.datagrip.adapter
 import com.google.gson.Gson
 import com.intellij.database.dataSource.DatabaseDriver
 import com.intellij.database.dataSource.LocalDataSource
-import com.mongodb.jbplugin.accessadapter.MongoDbDriver
 import com.mongodb.jbplugin.accessadapter.datagrip.IntegrationTest
-import com.mongodb.jbplugin.accessadapter.datagrip.MongoDbVersion
-import kotlinx.coroutines.test.runTest
-import org.bson.Document
 import org.bson.types.ObjectId
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -66,48 +62,6 @@ class DataGripMongoDbDriverTest {
         Mockito.`when`(dataSource.databaseDriver).thenReturn(driver)
 
         assertFalse(dataSource.isMongoDbDataSource())
-    }
-
-    @Test
-    fun `can connect and run a command`(
-        version: MongoDbVersion,
-        driver: MongoDbDriver,
-    ) = runTest {
-        val result =
-            driver.runCommand(
-                "admin",
-                Document(
-                    mapOf(
-                        "buildInfo" to 1,
-                    ),
-                ),
-                Map::class,
-            )
-
-        assertEquals(result["version"], version.versionString)
-    }
-
-    @Test
-    fun `is able to map the result to a class`(
-        version: MongoDbVersion,
-        driver: MongoDbDriver,
-    ) = runTest {
-        data class MyBuildInfo(
-            val version: String,
-        )
-
-        val result =
-            driver.runCommand(
-                "admin",
-                Document(
-                    mapOf(
-                        "buildInfo" to 1,
-                    ),
-                ),
-                MyBuildInfo::class,
-            )
-
-        assertEquals(result.version, version.versionString)
     }
 
     @ParameterizedTest

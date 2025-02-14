@@ -12,7 +12,6 @@ import com.mongodb.jbplugin.mql.BsonString
 import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.components.HasLimit
 import kotlinx.coroutines.runBlocking
-import org.bson.Document
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
@@ -105,7 +104,7 @@ class GetCollectionSchemaTest {
             `when`(driver.runQuery<List<Map<String, Any>>, Any>(any(), any())).thenReturn(
                 QueryResult.Run(
                     listOf(
-                        mapOf("book" to Document(mapOf("author" to "Someone"))),
+                        mapOf("book" to mapOf("author" to "Someone")),
                         mapOf("book" to mapOf("author" to "Someone Else", "isbn" to "XXXXXXXX"))
                     )
                 )
