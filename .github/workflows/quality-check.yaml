@@ -240,11 +240,37 @@ jobs:
         with:
           cache-default-branch-only: true
 
+
+  verify-plugin:
+    name: "Verify Plugin"
+    runs-on: ubuntu-latest
+    needs:
+      - unit-tests
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
+        with:
+          gradle-home-cache-cleanup: true
+
+      - name: Verify Plugin
+        run: |
+          ./gradlew ":packages:jetbrains-plugin:verifyPlugin"
+
   fitness-check:
     name: "Fitness Check"
     runs-on: ubuntu-latest
     needs:
       - qodana-check
+      - verify-plugin
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -272,27 +298,3 @@ jobs:
           fail-on-regression: true
           # the typo is on purpose, it's like this in the plugin
           failue-threshold: -5
-
-  verify-plugin:
-    name: "Verify Plugin"
-    runs-on: ubuntu-latest
-    needs:
-      - qodana-check
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: "temurin"
-          java-version: "21"
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
-        with:
-          gradle-home-cache-cleanup: true
-
-      - name: Verify Plugin
-        run: |
-          ./gradlew ":packages:jetbrains-plugin:verifyPlugin"
