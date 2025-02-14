@@ -11,6 +11,7 @@ plugins {
     id("com.github.ben-manes.versions")
     id("jacoco-report-aggregation")
     id("org.jetbrains.changelog")
+    id("org.jetbrains.qodana")
 }
 
 repositories {
