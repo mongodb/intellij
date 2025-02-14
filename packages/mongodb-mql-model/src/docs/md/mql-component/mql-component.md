@@ -175,3 +175,8 @@ The query is meant to not be executed. The server should send the execution plan
 
 The query is meant to be executed and also the server is expected to send the execution plan with
 the execution stats of running the query.
+
+### HasRunCommand
+
+Defines what run command is going to be executed in the server. Currently, it only supports simple
+commands that do not require nested parameters.
