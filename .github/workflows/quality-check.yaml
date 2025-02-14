@@ -211,6 +211,8 @@ jobs:
     name: "Qodana Static Analysis"
     runs-on: ubuntu-latest
     permissions:
+      checks: write
+      pull-requests: write
       security-events: write
       packages: read
       actions: read
@@ -245,10 +247,6 @@ jobs:
           post-pr-comment: 'false'
           github-token: ${{ secrets.GITHUB_TOKEN }}
           upload-result: 'true'
-
-      - name: Qodana - Push Changes
-        run: |
-          git push
 
       - uses: github/codeql-action/upload-sarif@v3
         with:
