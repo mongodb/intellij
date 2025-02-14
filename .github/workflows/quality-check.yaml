@@ -234,7 +234,12 @@ jobs:
       - name: Qodana - Code Inspection
         uses: JetBrains/qodana-action@b60a4b9259f448dd00f2ca4763db5677d69ba868 # v2024.3.4
         with:
+          push-fixes: 'branch'
           cache-default-branch-only: true
+
+      - uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: ${{ runner.temp }}/qodana/results/qodana.sarif.json
 #  verify-plugin:
 #    name: "Verify Plugin"
 #    runs-on: ubuntu-latest
