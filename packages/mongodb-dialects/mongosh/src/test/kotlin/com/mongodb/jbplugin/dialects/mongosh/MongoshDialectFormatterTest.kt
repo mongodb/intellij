@@ -273,7 +273,6 @@ class MongoshDialectFormatterTest {
             """
                 // region Queries covered by this index 
                 // myRef exists
-                // myRef exists
                 // endregion 
                 // Learn about creating an index: https://www.mongodb.com/docs/v7.0/core/data-model-operations/#indexes
                 db.getSiblingDB("myDb").getCollection("myCollection")
