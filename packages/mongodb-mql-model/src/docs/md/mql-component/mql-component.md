@@ -1,8 +1,6 @@
 # MQL Component
 ---------------
 
-this is changed
-
 ## Abstract
 
 This specification documents the structure of an MQL Component from a mixed perspective of both
