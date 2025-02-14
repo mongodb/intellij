@@ -44,18 +44,6 @@ tasks.check {
 }
 
 tasks {
-    register("unitTest") {
-        group = "verification"
-        dependsOn(
-            subprojects.filter {
-                it.project.name != "jetbrains-plugin" &&
-                        it.project.name != "packages"
-            }.map {
-                it.tasks["test"]
-            }
-        )
-    }
-
     register("versionBump") {
         group = "versioning"
         description = "Increments the version of the plugin."

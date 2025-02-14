@@ -206,11 +206,11 @@ tasks {
         useJUnitPlatform()
 
         environment("TESTCONTAINERS_RYUK_DISABLED", "true")
-        // val homePath =
-        //     project.layout.buildDirectory
-        //         .dir("idea-sandbox/config-test")
-        //         .get()
-        //         .asFile.absolutePath
+        val homePath =
+            project.layout.buildDirectory
+                .dir("idea-sandbox/config-test")
+                .get()
+                .asFile.absolutePath
 
         jvmArgs(
             listOf(
@@ -218,9 +218,9 @@ tasks {
                 "--add-opens=java.desktop/java.awt=ALL-UNNAMED",
                 "--add-opens=java.desktop/javax.swing=ALL-UNNAMED",
                 "--add-opens=java.desktop/sun.awt=ALL-UNNAMED",
-                // "-Dpolyglot.engine.WarnInterpreterOnly=false",
-                // "-Dpolyglot.log.level=OFF",
-                // "-Didea.home.path=$homePath",
+                "-Dpolyglot.engine.WarnInterpreterOnly=false",
+                "-Dpolyglot.log.level=OFF",
+                "-Didea.home.path=$homePath",
             ),
         )
     }
