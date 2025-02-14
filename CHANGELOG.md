@@ -5,6 +5,7 @@ MongoDB plugin for IntelliJ IDEA.
 ## [Unreleased]
 
 ### Added
+* [INTELLIJ-232](https://jira.mongodb.org/browse/INTELLIJ-219) Consider selectivity of a field over cardinality when suggesting indexes.
 * [INTELLIJ-219](https://jira.mongodb.org/browse/INTELLIJ-219) Implement index consolidation of a query and it's siblings.
 * [INTELLIJ-222](https://jira.mongodb.org/browse/INTELLIJ-222) Implement the ESR guideline for index suggestions.
 * [INTELLIJ-221](https://jira.mongodb.org/browse/INTELLIJ-221) Add a new setting for a soft maximum number of indexes per collection for index suggestions.
