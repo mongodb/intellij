@@ -3,6 +3,7 @@ import org.gradle.accessors.dm.LibrariesForLibs
 import org.jetbrains.changelog.Changelog
 import org.jetbrains.changelog.date
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
 
 plugins {
     id("com.mongodb.intellij.isolated-module")
@@ -34,6 +35,8 @@ val pluginBundle: IntelliJPluginBundle =
 pluginBundle.enableBundle.convention(false)
 
 intellijPlatform {
+    buildSearchableOptions = false
+
     pluginConfiguration {
         version = rootProject.version.toString()
         description =
@@ -72,6 +75,11 @@ intellijPlatform {
     }
 
     pluginVerification {
+        failureLevel = listOf(
+          VerifyPluginTask.FailureLevel.NOT_DYNAMIC,
+          VerifyPluginTask.FailureLevel.SCHEDULED_FOR_REMOVAL_API_USAGES,
+        )
+
         ides {
             recommended()
         }

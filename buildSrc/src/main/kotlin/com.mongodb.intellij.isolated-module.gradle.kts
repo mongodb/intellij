@@ -41,10 +41,6 @@ tasks {
         targetCompatibility = libs.versions.java.target.get()
     }
 
-    withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-        kotlinOptions.jvmTarget = libs.versions.java.target.get()
-    }
-
     withType<Test> {
         useJUnitPlatform()
 

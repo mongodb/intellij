@@ -4,7 +4,7 @@ intellij-min = "2024.3.1.1"
 intellij-minBuild = "243.22562.218"
 intellij-minRelease = "243"
 intellij-type = "IU"
-java-target="17"
+java-target="21"
 # Other plugin dependencies
 versions-plugin = "0.51.0"
 jacoco = "0.8.12"
