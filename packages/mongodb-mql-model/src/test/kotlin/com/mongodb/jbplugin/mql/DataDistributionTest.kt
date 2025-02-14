@@ -22,8 +22,8 @@ class DataDistributionTest {
 
         assertEquals(
             mapOf(
-                "MongoDB" to 66,
-                "BongoDB" to 33,
+                "MongoDB" to 66.66666666666667,
+                "BongoDB" to 33.333333333333336,
             ),
             distribution.getDistributionForPath("name")
         )
@@ -66,13 +66,13 @@ class DataDistributionTest {
 
         assertEquals(
             mapOf(
-                "MongoDB" to 20,
-                10 to 20,
-                0 to 10,
-                true to 10,
-                false to 20,
-                null to 10,
-                JsonUndefined to 10,
+                "MongoDB" to 20.0,
+                10 to 20.0,
+                0 to 10.0,
+                true to 10.0,
+                false to 20.0,
+                null to 10.0,
+                JsonUndefined to 10.0,
             ),
             distribution.getDistributionForPath("name")
         )
@@ -110,24 +110,24 @@ class DataDistributionTest {
 
         assertEquals(
             mapOf(
-                JsonArray to 100
+                JsonArray to 100.0
             ),
             distribution.getDistributionForPath("name")
         )
 
         assertEquals(
             mapOf(
-                "Mongo" to 33,
-                "Bongo" to 33,
-                JsonUndefined to 33,
+                "Mongo" to 33.333333333333336,
+                "Bongo" to 33.333333333333336,
+                JsonUndefined to 33.333333333333336,
             ),
             distribution.getDistributionForPath("name.firstName")
         )
 
         assertEquals(
             mapOf(
-                "DB" to 66,
-                JsonUndefined to 33,
+                "DB" to 66.66666666666667,
+                JsonUndefined to 33.333333333333336,
             ),
             distribution.getDistributionForPath("name.lastName")
         )
@@ -155,25 +155,25 @@ class DataDistributionTest {
 
         assertEquals(
             mapOf(
-                JsonObject to 66,
-                JsonUndefined to 33
+                JsonObject to 66.66666666666667,
+                JsonUndefined to 33.333333333333336
             ),
             distribution.getDistributionForPath("name")
         )
 
         assertEquals(
             mapOf(
-                "Mongo" to 33,
-                "Bongo" to 33,
-                JsonUndefined to 33
+                "Mongo" to 33.333333333333336,
+                "Bongo" to 33.333333333333336,
+                JsonUndefined to 33.333333333333336
             ),
             distribution.getDistributionForPath("name.firstName")
         )
 
         assertEquals(
             mapOf(
-                "DB" to 66,
-                JsonUndefined to 33
+                "DB" to 66.66666666666667,
+                JsonUndefined to 33.333333333333336
             ),
             distribution.getDistributionForPath("name.lastName")
         )
@@ -206,26 +206,26 @@ class DataDistributionTest {
 
         assertEquals(
             mapOf(
-                "MongoDB" to 50,
-                JsonObject to 50,
+                "MongoDB" to 50.0,
+                JsonObject to 50.0,
             ),
             distribution.getDistributionForPath("name")
         )
 
         assertEquals(
             mapOf(
-                "BongoDB" to 25,
-                "Bingo" to 25,
-                JsonUndefined to 50
+                "BongoDB" to 25.0,
+                "Bingo" to 25.0,
+                JsonUndefined to 50.0
             ),
             distribution.getDistributionForPath("name.firstName")
         )
 
         assertEquals(
             mapOf(
-                "MongoDB" to 25,
-                "Normo" to 25,
-                JsonUndefined to 50
+                "MongoDB" to 25.0,
+                "Normo" to 25.0,
+                JsonUndefined to 50.0
             ),
             distribution.getDistributionForPath("name.lastName")
         )
@@ -256,8 +256,8 @@ class DataDistributionTest {
 
         assertEquals(
             mapOf(
-                "MongoDB" to 50,
-                JsonArray to 50,
+                "MongoDB" to 50.0,
+                JsonArray to 50.0,
             ),
             distribution.getDistributionForPath("name")
         )

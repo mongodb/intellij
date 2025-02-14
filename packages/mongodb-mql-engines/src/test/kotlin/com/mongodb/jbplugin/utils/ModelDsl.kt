@@ -118,7 +118,7 @@ object ModelDsl {
     fun <T : Any> ComponentHolder.constant(value: T) {
         components.add(
             HasValueReference(
-                HasValueReference.Constant(Unit, this, value.javaClass.toBsonType(value))
+                HasValueReference.Constant(Unit, value, value.javaClass.toBsonType(value))
             )
         )
     }

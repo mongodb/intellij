@@ -218,13 +218,13 @@ class GetCollectionSchemaTest {
             )
             assertEquals(
                 mapOf(
-                    "myString" to 50,
-                    "anotherString" to 50,
+                    "myString" to 50.0,
+                    "anotherString" to 50.0,
                 ),
                 result.schema.dataDistribution.getDistributionForPath("string")
             )
             assertEquals(
-                50,
+                50.0,
                 result.schema.dataDistribution.getDistributionForPath("integer")?.get(52)
             )
         }

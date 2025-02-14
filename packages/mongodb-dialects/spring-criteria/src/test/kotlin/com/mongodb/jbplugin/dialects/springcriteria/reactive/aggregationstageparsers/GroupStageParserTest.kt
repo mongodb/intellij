@@ -145,7 +145,6 @@ class Repository {
         psiFile: PsiFile
     ) {
         val query = psiFile.getQueryAtMethod("Repository", "allReleasedBooks")
-        println(SpringCriteriaDialectParser.parse(query))
         parseAndAssertForGroupStage(
             query,
             6,

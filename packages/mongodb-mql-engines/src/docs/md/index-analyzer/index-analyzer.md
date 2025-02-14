@@ -55,8 +55,10 @@ The algorithm **SHOULD** prioritize fields for index creation based on:
     - `equality` fields first
     - Followed by `sort` fields
     - Lastly, `range` fields
-2. **Cardinality**:
-    - Fields with lower cardinality **SHOULD** be prioritized to enhance prefix compression.
+2. **Selectivity**:
+    - Fields with lower selectivity **SHOULD** be prioritized to enhance prefix compression.
+3. **Cardinality**
+    - If for a given field and value in the query, the selectivity cannot be determined then the cardinality of the field should be taken into consideration. Fields with lower cardinality **SHOULD** be prioritized to enhance prefix compression. 
 
 ### Step 6: Index Consolidation
 
@@ -73,6 +75,7 @@ them into the most effective index for use across sibling queries and the main q
 * **SiblingQueriesFinder**: A component that identifies and returns queries that share the same namespace as an existing query.
 * **Operation**: The type of comparison applied to a field, which can be `equality`, `sorting`, or `range`.
 * **Usage**: An instance of a field, an operator, and a value in a given query.
+* **Selectivity**: A parameter that defines how efficiently a query can narrow down the result set. Selectivity is highly contextual, depends heavily on the value the query is filtering on and the data distribution of that value for the queried field. In general, values that are less common in collection leads to more selective query.
 * **Cardinality**: The number of distinct values a specific [BSON type](/packages/mongodb-mql-model/src/docs/md/bson-type/bson-type.md) can take.
 * **Redundant Indexes**: An index $A$ is redundant if there exists an index $B$ where $A$ is a prefix of $B$.
     - For example, given the indexes:
