@@ -136,10 +136,7 @@ fun <E : Any, T : Any> SharedFlow<E>.latest(
         defaultValue
     )
 
-fun <E : Any> SharedFlow<E>.eventCount(
-    parent: Disposable = ProjectManager.getInstance().openProjects.firstOrNull()
-        ?: ApplicationManager.getApplication(),
-): AsyncState<E, Long> =
+fun <E : Any> SharedFlow<E>.eventCount(parent: Disposable): AsyncState<E, Long> =
     AsyncState(
         parent,
         this,

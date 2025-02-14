@@ -108,7 +108,7 @@ class ToolbarModel(
     )
 
     val toolbarState: StateFlow<ToolbarState> = _toolbarState
-    private val modificationCountTracker by toolbarState.eventCount()
+    private val modificationCountTracker by toolbarState.eventCount(project)
     private val toolbarEvents = MutableSharedFlow<ToolbarEvent>(replay = 1)
 
     /**
