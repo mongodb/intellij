@@ -25,7 +25,9 @@ sealed interface QueryResult<S> {
     data class Run<S>(val result: S) : QueryResult<S>
 }
 
-data class ConnectionString(val hosts: List<String>)
+class ConnectionString(hostInfo: List<String>) {
+    val hosts = hostInfo.map { it.replace("mongodb://", "").replace("mongodb+srv://", "") }
+}
 
 /**
  * Represents the MongoDB Driver facade that we will use internally.

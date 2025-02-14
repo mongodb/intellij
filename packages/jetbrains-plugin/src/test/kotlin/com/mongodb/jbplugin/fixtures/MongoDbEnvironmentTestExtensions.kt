@@ -128,7 +128,7 @@ suspend fun Project.withMockedUnconnectedMongoDbConnection(url: MongoDbServerUrl
     `when`(driver.connected).thenReturn(false)
     `when`(
         driver.connectionString()
-    ).thenReturn(ConnectionString(listOf(url.value.replace("mongodb://", ""))))
+    ).thenReturn(ConnectionString(listOf(url.value)))
 
     val readModelProvider =
         DataGripBasedReadModelProvider(

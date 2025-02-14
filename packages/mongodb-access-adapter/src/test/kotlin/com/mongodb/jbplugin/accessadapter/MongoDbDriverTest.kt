@@ -6,6 +6,18 @@ import org.junit.jupiter.api.Test
 
 class MongoDbDriverTest {
     @Test
+    fun `cleans up the url schema for mongodb`() {
+        val conn = ConnectionString(listOf("mongodb://localhost"))
+        assertEquals("localhost", conn.hosts[0])
+    }
+
+    @Test
+    fun `cleans up the url schema for mongodb+srv`() {
+        val conn = ConnectionString(listOf("mongodb+srv://localhost"))
+        assertEquals("localhost", conn.hosts[0])
+    }
+
+    @Test
     fun `parses a namespace`() {
         val namespace = "mydb.mycoll".toNs()
         assertEquals("mydb", namespace.database)
