@@ -173,6 +173,13 @@ object IndexAnalyzer {
             }
         }
 
+        /**
+         * For index suggestion, we want to promote a value that is least specific.
+         * This applies for cases when we have different values provided for a field (generally
+         * in an OR condition) in a query. If multiple values tie on specificity then we promote
+         * the one with high cardinality so we can ultimately force the field towards the end of
+         * the index definition.
+         */
         fun leastSpecificUsageOf(other: QueryFieldUsage<S>): QueryFieldUsage<S> {
             return if (other.value == null && this.value == null) {
                 if (this.type.cardinality > other.type.cardinality) {
