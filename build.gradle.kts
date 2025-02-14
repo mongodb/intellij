@@ -10,6 +10,7 @@ plugins {
     base
     id("com.github.ben-manes.versions")
     id("jacoco-report-aggregation")
+    id("org.jetbrains.changelog")
 }
 
 repositories {

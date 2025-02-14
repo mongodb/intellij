@@ -45,3 +45,6 @@ FAKE_BROWSER_OUTPUT
 
 /.idea/dataSources
 *.iml
+
+/.idea/artifacts
+/.intellijPlatform
