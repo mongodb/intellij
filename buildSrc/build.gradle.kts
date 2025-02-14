@@ -19,4 +19,5 @@ dependencies {
     api(libs.buildScript.plugin.jmh)
     api(libs.buildScript.plugin.jmhreport)
     api(libs.buildScript.plugin.ktlint)
+    api(libs.buildScript.plugin.qodana)
 }
