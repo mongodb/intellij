@@ -44,7 +44,7 @@ intellijPlatform {
 
         ideaVersion {
             sinceBuild = libs.versions.intellij.minRelease
-            untilBuild = ""
+            untilBuild = "${libs.versions.intellij.minRelease.get()}.*"
         }
 
         val changelog = rootProject.changelog
