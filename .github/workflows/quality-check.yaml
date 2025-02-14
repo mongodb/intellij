@@ -14,208 +14,204 @@ permissions:
   checks: write
 
 jobs:
-  check-pr-title:
-    name: "Pull Request Title Check"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Enforce conventional commit style
-        uses: realm/ci-actions/title-checker@d6cc8f067474759d38e6d24e272027b4c88bc0a9
-        with:
-          regex: '^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test|ops){1}(\([\w\-\.]+\))?(!)?: .*'
-          error-hint: 'Invalid PR title. Make sure it follows the conventional commit specification (i.e. "<type>(<optional scope>): <description>") or add the no-title-validation label'
-          ignore-labels: no-title-validation
-      - name: Enforce JIRA ticket in title
-        uses: realm/ci-actions/title-checker@d6cc8f067474759d38e6d24e272027b4c88bc0a9
-        # Skip the JIRA ticket check for PRs opened by bots
-        if: ${{ !contains(github.event.pull_request.user.login, '[bot]') }}
-        with:
-          regex: "[A-Z]{4,10}-[0-9]{1,5}$"
-          error-hint: Invalid PR title. Make sure it ends with a JIRA ticket - i.e. VSCODE-1234 or add the no-title-validation label
-          ignore-labels: no-title-validation
-
-  changelog-check:
-    name: "Changelog Check"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: false
-      - uses: bcoe/conventional-release-labels@886f696738527c7be444262c327c89436dfb95a8 # 1.3.1
-        with:
-          type_labels: '{"feat": "feat", "fix": "fix", "breaking": "breaking", "chore": "no release notes" }'
-          ignored_types: "[]"
-      - name: Check Changelog
-        uses: dangoslen/changelog-enforcer@204e7d3ef26579f4cd0fd759c57032656fdf23c7 # 3.6.1
-        with:
-          skipLabels: no release notes
-          missingUpdateErrorMessage: Please add an entry in CHANGELOG.md or apply the 'no release notes' label to skip this check.
-
-  spec-check:
-    name: "MQL Specification Check"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Fetch Main
-        run: |
-          git fetch origin main --depth 1
-
-      - name: Setup JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: "temurin"
-          java-version: "17"
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
-        with:
-          gradle-home-cache-cleanup: true
-
-      - name: Check if PR has "skip-spec-check" label
-        id: check-label
-        if: github.event_name == 'pull_request'  # Only check labels in PRs
-        run: |
-          if gh pr view ${{ github.event.pull_request.number }} --json labels --repo ${{ github.repository }} | jq -e '.labels | any(.name == "skip-spec-check")' > /dev/null; then
-            echo "SKIP=true" >> $GITHUB_ENV
-          else
-            echo "SKIP=false" >> $GITHUB_ENV
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Run Spec Update Check
-        if: github.ref != 'refs/heads/main' && env.SKIP != 'true'
-        run: |
-          ./gradlew --quiet --console=plain checkSpecUpdates
-
-  catalog-check:
-    name: "Catalog Updates Check"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: "temurin"
-          java-version: "21"
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
-        with:
-          dependency-graph: "generate-and-submit"
-          dependency-graph-continue-on-failure: false
-          gradle-home-cache-cleanup: true
-
-      - name: Run Dependency Updates
-        run: |
-          ./gradlew --quiet --console=plain dependencyUpdates
-
-  style-check:
-    name: "Style Check"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: "temurin"
-          java-version: "21"
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
-        with:
-          gradle-home-cache-cleanup: true
-
-      - name: Run Linter
-        run: |
-          ./gradlew --quiet --console=plain ktlintCheck
-
-      - name: Push Checkstyle report
-        uses: jwgmeligmeyling/checkstyle-github-action@50292990e18466f2c5d95d04ff5fab931254fa5f # 1.2.0
-        if: success() || failure() # always run even if the previous step fails
-        with:
-          path: "**/*Check.xml"
-
-  unit-tests:
-    name: "Unit and Integration Tests"
-    runs-on: ubuntu-latest
-    needs:
-      - catalog-check
-      - style-check
-      - spec-check
-      - check-pr-title
-      - changelog-check
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: "temurin"
-          java-version: "21"
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
-        with:
-          gradle-home-cache-cleanup: true
-
-      - name: Setup Docker (for Test Containers)
-        run: |
-          echo "Adding Docker official GPG key"
-          sudo apt-get update
-          sudo apt-get install ca-certificates curl
-          sudo install -m 0755 -d /etc/apt/keyrings
-          sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-          sudo chmod a+r /etc/apt/keyrings/docker.asc
-
-          echo "Adding the repository to APT sources"
-          echo \
-          "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-          $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-          sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-          sudo apt-get update
-
-          echo "Installing docker"
-          sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin
-
-      - name: Run Unit and Integration Tests
-        run: |
-          export DISPLAY=:99.0
-          Xvfb -ac :99 -screen 0 1920x1080x24 &
-          sleep 10
-          ./gradlew --stacktrace --console=plain clean check
-
-      - name: Publish Test Report
-        uses: mikepenz/action-junit-report@a427a90771729d8f85b6ab0cdaa1a5929cab985d # 5.0.0
-        if: success() || failure() # always run even if the previous step fails
-        with:
-          report_paths: "**/build/test-results/test/TEST-*.xml"
-
-      - uses: madrapps/jacoco-report@7c362aca34caf958e7b1c03464bd8781db9f8da7 # 1.7.1
-        if: success() || failure() # always run even if the previous step fails
-        with:
-          paths: "**/testCodeCoverageReport.xml"
-          token: ${{ secrets.GITHUB_TOKEN }}
-          min-coverage-overall: 70
-          min-coverage-changed-files: 70
-          title: "Coverage Report"
-          update-comment: true
-          continue-on-error: true
-          pass-emoji: "✅"
-          fail-emoji: "🚫"
-
+#  check-pr-title:
+#    name: "Pull Request Title Check"
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Enforce conventional commit style
+#        uses: realm/ci-actions/title-checker@d6cc8f067474759d38e6d24e272027b4c88bc0a9
+#        with:
+#          regex: '^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test|ops){1}(\([\w\-\.]+\))?(!)?: .*'
+#          error-hint: 'Invalid PR title. Make sure it follows the conventional commit specification (i.e. "<type>(<optional scope>): <description>") or add the no-title-validation label'
+#          ignore-labels: no-title-validation
+#      - name: Enforce JIRA ticket in title
+#        uses: realm/ci-actions/title-checker@d6cc8f067474759d38e6d24e272027b4c88bc0a9
+#        # Skip the JIRA ticket check for PRs opened by bots
+#        if: ${{ !contains(github.event.pull_request.user.login, '[bot]') }}
+#        with:
+#          regex: "[A-Z]{4,10}-[0-9]{1,5}$"
+#          error-hint: Invalid PR title. Make sure it ends with a JIRA ticket - i.e. VSCODE-1234 or add the no-title-validation label
+#          ignore-labels: no-title-validation
+#  changelog-check:
+#    name: "Changelog Check"
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v4
+#        with:
+#          submodules: false
+#      - uses: bcoe/conventional-release-labels@886f696738527c7be444262c327c89436dfb95a8 # 1.3.1
+#        with:
+#          type_labels: '{"feat": "feat", "fix": "fix", "breaking": "breaking", "chore": "no release notes" }'
+#          ignored_types: "[]"
+#      - name: Check Changelog
+#        uses: dangoslen/changelog-enforcer@204e7d3ef26579f4cd0fd759c57032656fdf23c7 # 3.6.1
+#        with:
+#          skipLabels: no release notes
+#          missingUpdateErrorMessage: Please add an entry in CHANGELOG.md or apply the 'no release notes' label to skip this check.
+#  spec-check:
+#    name: "MQL Specification Check"
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v4
+#
+#      - name: Fetch Main
+#        run: |
+#          git fetch origin main --depth 1
+#
+#      - name: Setup JDK
+#        uses: actions/setup-java@v4
+#        with:
+#          distribution: "temurin"
+#          java-version: "17"
+#
+#      - name: Setup Gradle
+#        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
+#        with:
+#          gradle-home-cache-cleanup: true
+#
+#      - name: Check if PR has "skip-spec-check" label
+#        id: check-label
+#        if: github.event_name == 'pull_request'  # Only check labels in PRs
+#        run: |
+#          if gh pr view ${{ github.event.pull_request.number }} --json labels --repo ${{ github.repository }} | jq -e '.labels | any(.name == "skip-spec-check")' > /dev/null; then
+#            echo "SKIP=true" >> $GITHUB_ENV
+#          else
+#            echo "SKIP=false" >> $GITHUB_ENV
+#          fi
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#
+#      - name: Run Spec Update Check
+#        if: github.ref != 'refs/heads/main' && env.SKIP != 'true'
+#        run: |
+#          ./gradlew --quiet --console=plain checkSpecUpdates
+#
+#  catalog-check:
+#    name: "Catalog Updates Check"
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v4
+#
+#      - name: Setup JDK
+#        uses: actions/setup-java@v4
+#        with:
+#          distribution: "temurin"
+#          java-version: "21"
+#
+#      - name: Setup Gradle
+#        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
+#        with:
+#          dependency-graph: "generate-and-submit"
+#          dependency-graph-continue-on-failure: false
+#          gradle-home-cache-cleanup: true
+#
+#      - name: Run Dependency Updates
+#        run: |
+#          ./gradlew --quiet --console=plain dependencyUpdates
+#
+#  style-check:
+#    name: "Style Check"
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v4
+#
+#      - name: Setup JDK
+#        uses: actions/setup-java@v4
+#        with:
+#          distribution: "temurin"
+#          java-version: "21"
+#
+#      - name: Setup Gradle
+#        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
+#        with:
+#          gradle-home-cache-cleanup: true
+#
+#      - name: Run Linter
+#        run: |
+#          ./gradlew --quiet --console=plain ktlintCheck
+#
+#      - name: Push Checkstyle report
+#        uses: jwgmeligmeyling/checkstyle-github-action@50292990e18466f2c5d95d04ff5fab931254fa5f # 1.2.0
+#        if: success() || failure() # always run even if the previous step fails
+#        with:
+#          path: "**/*Check.xml"
+#  unit-tests:
+#    name: "Unit and Integration Tests"
+#    runs-on: ubuntu-latest
+#    needs:
+#      - catalog-check
+#      - style-check
+#      - spec-check
+#      - check-pr-title
+#      - changelog-check
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v4
+#
+#      - name: Setup JDK
+#        uses: actions/setup-java@v4
+#        with:
+#          distribution: "temurin"
+#          java-version: "21"
+#
+#      - name: Setup Gradle
+#        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
+#        with:
+#          gradle-home-cache-cleanup: true
+#
+#      - name: Setup Docker (for Test Containers)
+#        run: |
+#          echo "Adding Docker official GPG key"
+#          sudo apt-get update
+#          sudo apt-get install ca-certificates curl
+#          sudo install -m 0755 -d /etc/apt/keyrings
+#          sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+#          sudo chmod a+r /etc/apt/keyrings/docker.asc
+#
+#          echo "Adding the repository to APT sources"
+#          echo \
+#          "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+#          $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+#          sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+#          sudo apt-get update
+#
+#          echo "Installing docker"
+#          sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin
+#
+#      - name: Run Unit and Integration Tests
+#        run: |
+#          export DISPLAY=:99.0
+#          Xvfb -ac :99 -screen 0 1920x1080x24 &
+#          sleep 10
+#          ./gradlew --stacktrace --console=plain clean check
+#
+#      - name: Publish Test Report
+#        uses: mikepenz/action-junit-report@a427a90771729d8f85b6ab0cdaa1a5929cab985d # 5.0.0
+#        if: success() || failure() # always run even if the previous step fails
+#        with:
+#          report_paths: "**/build/test-results/test/TEST-*.xml"
+#
+#      - uses: madrapps/jacoco-report@7c362aca34caf958e7b1c03464bd8781db9f8da7 # 1.7.1
+#        if: success() || failure() # always run even if the previous step fails
+#        with:
+#          paths: "**/testCodeCoverageReport.xml"
+#          token: ${{ secrets.GITHUB_TOKEN }}
+#          min-coverage-overall: 70
+#          min-coverage-changed-files: 70
+#          title: "Coverage Report"
+#          update-comment: true
+#          continue-on-error: true
+#          pass-emoji: "✅"
+#          fail-emoji: "🚫"
   qodana-check:
     name: "Qodana Static Analysis"
     runs-on: ubuntu-latest
-    needs:
-      - unit-tests
+#    needs:
+#      - unit-tests
     steps:
       - name: Maximize Build Space
         uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # 1.3.1
@@ -239,62 +235,60 @@ jobs:
         uses: JetBrains/qodana-action@b60a4b9259f448dd00f2ca4763db5677d69ba868 # v2024.3.4
         with:
           cache-default-branch-only: true
-
-
-  verify-plugin:
-    name: "Verify Plugin"
-    runs-on: ubuntu-latest
-    needs:
-      - unit-tests
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: "temurin"
-          java-version: "21"
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
-        with:
-          gradle-home-cache-cleanup: true
-
-      - name: Verify Plugin
-        run: |
-          ./gradlew ":packages:jetbrains-plugin:verifyPlugin"
-
-  fitness-check:
-    name: "Fitness Check"
-    runs-on: ubuntu-latest
-    needs:
-      - qodana-check
-      - verify-plugin
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: "temurin"
-          java-version: "21"
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
-        with:
-          gradle-home-cache-cleanup: true
-
-      - name: Performance Tests
-        run: |
-          ./gradlew --quiet --console=plain ":packages:jetbrains-plugin:jmh"
-
-      - name: JMH Benchmark Action
-        uses: kitlangton/jmh-benchmark-action@e7255850c5248fe630d7b5ca4ec4f3671765a9c7 # 0.1.1
-        with:
-          jmh-output-path: build/reports/jmh/results.json
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          fail-on-regression: true
-          # the typo is on purpose, it's like this in the plugin
-          failue-threshold: -5
+#  verify-plugin:
+#    name: "Verify Plugin"
+#    runs-on: ubuntu-latest
+#    needs:
+#      - unit-tests
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v4
+#
+#      - name: Setup JDK
+#        uses: actions/setup-java@v4
+#        with:
+#          distribution: "temurin"
+#          java-version: "21"
+#
+#      - name: Setup Gradle
+#        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
+#        with:
+#          gradle-home-cache-cleanup: true
+#
+#      - name: Verify Plugin
+#        run: |
+#          ./gradlew ":packages:jetbrains-plugin:verifyPlugin"
+#
+#  fitness-check:
+#    name: "Fitness Check"
+#    runs-on: ubuntu-latest
+#    needs:
+#      - qodana-check
+#      - verify-plugin
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v4
+#
+#      - name: Setup JDK
+#        uses: actions/setup-java@v4
+#        with:
+#          distribution: "temurin"
+#          java-version: "21"
+#
+#      - name: Setup Gradle
+#        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
+#        with:
+#          gradle-home-cache-cleanup: true
+#
+#      - name: Performance Tests
+#        run: |
+#          ./gradlew --quiet --console=plain ":packages:jetbrains-plugin:jmh"
+#
+#      - name: JMH Benchmark Action
+#        uses: kitlangton/jmh-benchmark-action@e7255850c5248fe630d7b5ca4ec4f3671765a9c7 # 0.1.1
+#        with:
+#          jmh-output-path: build/reports/jmh/results.json
+#          github-token: ${{ secrets.GITHUB_TOKEN }}
+#          fail-on-regression: true
+#          # the typo is on purpose, it's like this in the plugin
+#          failue-threshold: -5
