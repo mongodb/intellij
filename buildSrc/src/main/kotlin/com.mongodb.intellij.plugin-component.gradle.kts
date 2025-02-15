@@ -118,20 +118,13 @@ dependencies {
         bundledPlugin("com.intellij.java")
         bundledPlugin("com.intellij.database")
 
-        testFramework(TestFrameworkType.JUnit5)
-        testFramework(TestFrameworkType.Platform)
         testFramework(TestFrameworkType.Plugin.Java)
-        testFramework(TestFrameworkType.Bundled)
-        testFramework(TestFrameworkType.Starter)
     }
 
     jmh(libs.kotlin.stdlib)
     jmh(libs.testing.jmh.core)
     jmh(libs.testing.jmh.annotationProcessor)
     jmh(libs.testing.jmh.generatorByteCode)
-
-    testImplementation(libs.testing.intellij.ideImpl)
-    testImplementation(libs.testing.intellij.coreUi)
 
     testImplementation(libs.mongodb.driver)
     testImplementation(libs.testing.spring.mongodb)
