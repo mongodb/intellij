@@ -9,12 +9,14 @@ import java.util.*
  * 2. Go to the task "buildProperties"
  * 3. Add the new property there. Use an existing one as a sample.
  * 4. Add the new property here. Use an existing one as a sample.
- * 5. Add a fake value into packages/jetbrains-plugin/src/test/resources/build.properties
+ * 5. Add a fake value into packages/jetbrains-plugin/src/test/resources/META-INF/build.properties
  * 6. Add the new property to the test in BuildInformationTest.kt
  */
 object BuildInformation {
     private val properties: Properties = Properties().also {
-        val buildProps = BuildInformation::class.java.getResourceAsStream("/build.properties")
+        val buildProps = BuildInformation::class.java.getResourceAsStream(
+            "/META-INF/build.properties"
+        )
         if (buildProps != null) {
             it.load(buildProps)
         } else {

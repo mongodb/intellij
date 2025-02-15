@@ -213,7 +213,7 @@ private class IntegrationTestExtension :
         application = ApplicationManager.getApplication() as ApplicationEx
     }
 
-    private fun tearDownProject(context: ExtensionContext) {
+    private fun tearDownProject() {
         application.invokeAndWait {
             runCatching {
                 val fileEditorManager = FileEditorManager.getInstance(testFixture.project)
@@ -232,7 +232,7 @@ private class IntegrationTestExtension :
     }
 
     override fun beforeAll(context: ExtensionContext) {
-        val defaultTimeout = 2.milliseconds.inWholeMilliseconds.toInt()
+        val defaultTimeout = 50.milliseconds.inWholeMilliseconds.toInt()
 
         robot = BasicRobot.robotWithCurrentAwtHierarchyWithoutScreenLock()
         robot.settings().idleTimeout(defaultTimeout)

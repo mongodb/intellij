@@ -192,19 +192,6 @@ jmhReport {
 
 tasks {
     if (pluginBundle.enableBundle.get() == true) {
-        register("buildProperties", WriteProperties::class) {
-            group = "build"
-
-            val segmentApiKey = System.getenv("BUILD_SEGMENT_API_KEY")
-            if (segmentApiKey == null) {
-                throw GradleException("Environment variable 'BUILD_SEGMENT_API_KEY' is not set. For local builds set it to empty.")
-            }
-
-            destinationFile.set(project.layout.projectDirectory.file("src/main/resources/build.properties"))
-            property("pluginVersion", rootProject.version)
-            property("segmentApiKey", segmentApiKey)
-        }
-
         publishPlugin {
             dependsOn(patchChangelog)
         }
