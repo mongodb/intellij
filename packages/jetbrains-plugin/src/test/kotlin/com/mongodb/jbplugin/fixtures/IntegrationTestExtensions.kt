@@ -234,7 +234,7 @@ private class IntegrationTestExtension :
     override fun beforeAll(context: ExtensionContext) {
         val defaultTimeout = 50.milliseconds.inWholeMilliseconds.toInt()
 
-        robot = BasicRobot.robotWithCurrentAwtHierarchyWithoutScreenLock()
+        robot = BasicRobot.robotWithNewAwtHierarchy()
         robot.settings().idleTimeout(defaultTimeout)
         robot.settings().timeoutToBeVisible(defaultTimeout)
         robot.settings().timeoutToFindPopup(defaultTimeout)
