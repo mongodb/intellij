@@ -21,7 +21,15 @@ private val logger: Logger = logger<TelemetryService>()
 internal class TelemetryService : AppLifecycleListener {
     internal var analytics: Analytics =
         Analytics
-            .builder(BuildInformation.segmentApiKey)
+            .builder(
+                BuildInformation.run {
+                    if (segmentApiKey.isEmpty()) {
+                        "<invalid>"
+                    } else {
+                        segmentApiKey
+                    }
+                }
+            )
             .build()
 
     init {
