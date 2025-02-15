@@ -296,7 +296,7 @@ public class $className {
 
     override fun afterTestExecution(context: ExtensionContext) {
         if (context.requiresProjectForEachTest()) {
-            tearDownProject(context)
+            tearDownProject()
         }
 
         runInEdtAndWait {
@@ -308,7 +308,7 @@ public class $className {
 
     override fun afterAll(context: ExtensionContext) {
         if (!context.requiresProjectForEachTest()) {
-            tearDownProject(context)
+            tearDownProject()
         }
 
         application.cleanApplicationState()
