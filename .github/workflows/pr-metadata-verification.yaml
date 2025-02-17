@@ -1,0 +1,135 @@
+name: "Metadata Verification"
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: write
+
+env:
+  BUILD_SEGMENT_API_KEY: ""
+
+jobs:
+  check-pr-title:
+    name: "Pull Request Title Check"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enforce conventional commit style
+        uses: realm/ci-actions/title-checker@d6cc8f067474759d38e6d24e272027b4c88bc0a9
+        with:
+          regex: '^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test|ops){1}(\([\w\-\.]+\))?(!)?: .*'
+          error-hint: 'Invalid PR title. Make sure it follows the conventional commit specification (i.e. "<type>(<optional scope>): <description>") or add the no-title-validation label'
+          ignore-labels: no-title-validation
+      - name: Enforce JIRA ticket in title
+        uses: realm/ci-actions/title-checker@d6cc8f067474759d38e6d24e272027b4c88bc0a9
+        # Skip the JIRA ticket check for PRs opened by bots
+        if: ${{ !contains(github.event.pull_request.user.login, '[bot]') }}
+        with:
+          regex: "[A-Z]{4,10}-[0-9]{1,5}$"
+          error-hint: Invalid PR title. Make sure it ends with a JIRA ticket - i.e. VSCODE-1234 or add the no-title-validation label
+          ignore-labels: no-title-validation
+  changelog-check:
+    name: "Changelog Check"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+      - name: Check Changelog
+        uses: dangoslen/changelog-enforcer@204e7d3ef26579f4cd0fd759c57032656fdf23c7 # 3.6.1
+        with:
+          skipLabels: no release notes
+          missingUpdateErrorMessage: Please add an entry in CHANGELOG.md or apply the 'no release notes' label to skip this check.
+  spec-check:
+    name: "MQL Specification Check"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch Main
+        run: |
+          git fetch origin main --depth 1
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
+        with:
+          gradle-home-cache-cleanup: true
+
+      - name: Check if PR has "skip-spec-check" label
+        id: check-label
+        if: github.event_name == 'pull_request'  # Only check labels in PRs
+        run: |
+          if gh pr view ${{ github.event.pull_request.number }} --json labels --repo ${{ github.repository }} | jq -e '.labels | any(.name == "skip-spec-check")' > /dev/null; then
+            echo "SKIP=true" >> $GITHUB_ENV
+          else
+            echo "SKIP=false" >> $GITHUB_ENV
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run Spec Update Check
+        if: github.ref != 'refs/heads/main' && env.SKIP != 'true'
+        run: |
+          ./gradlew --quiet --console=plain checkSpecUpdates
+  catalog-check:
+    name: "Catalog Updates Check"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
+        with:
+          dependency-graph: "generate-and-submit"
+          dependency-graph-continue-on-failure: false
+          gradle-home-cache-cleanup: true
+
+      - name: Run Dependency Updates
+        run: |
+          ./gradlew --quiet --console=plain dependencyUpdates
+  style-check:
+    name: "Style Check"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
+        with:
+          gradle-home-cache-cleanup: true
+
+      - name: Run Linter
+        run: |
+          ./gradlew --quiet --console=plain ktlintCheck
+
+      - name: Push Checkstyle report
+        uses: jwgmeligmeyling/checkstyle-github-action@50292990e18466f2c5d95d04ff5fab931254fa5f # 1.2.0
+        if: success() || failure() # always run even if the previous step fails
+        with:
+          path: "**/*Check.xml"
