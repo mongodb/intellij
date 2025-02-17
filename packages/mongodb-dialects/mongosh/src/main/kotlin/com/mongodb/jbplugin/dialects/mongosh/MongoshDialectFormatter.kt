@@ -177,7 +177,7 @@ object MongoshDialectFormatter : DialectFormatter {
                 }
                 """"${Encode.forJavaScript(
                     it.fieldName
-                )}": ${Encode.forJavaScript(indexDirection)} """.trim()
+                )}": $indexDirection """.trim()
             }
             """
 $prelude

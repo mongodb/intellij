@@ -273,7 +273,7 @@ class MongoshDialectFormatterTest {
             """
                 // Learn about creating an index: https://www.mongodb.com/docs/v7.0/core/data-model-operations/#indexes
                 db.getSiblingDB("myDb").getCollection("myCollection")
-                  .createIndex({ "myField": 1, "myField2": 1 })
+                  .createIndex({ "myField": -1, "myField2": 1 })
             """.trimIndent()
         ) {
             Node(
@@ -315,12 +315,12 @@ class MongoshDialectFormatterTest {
                             Node(
                                 Unit,
                                 listOf(
-                                    Named(Name.ASCENDING),
+                                    Named(Name.DESCENDING),
                                     HasFieldReference(
                                         HasFieldReference.FromSchema(Unit, "myField")
                                     ),
                                     HasValueReference(
-                                        HasValueReference.Inferred(Unit, 1, BsonInt32)
+                                        HasValueReference.Inferred(Unit, -1, BsonInt32)
                                     ),
                                 )
                             )
