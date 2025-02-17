@@ -15,6 +15,7 @@ import com.mongodb.jbplugin.utils.ModelAssertions.assertMongoDbIndexIs
 import com.mongodb.jbplugin.utils.ModelDsl.aggregate
 import com.mongodb.jbplugin.utils.ModelDsl.ascending
 import com.mongodb.jbplugin.utils.ModelDsl.constant
+import com.mongodb.jbplugin.utils.ModelDsl.descending
 import com.mongodb.jbplugin.utils.ModelDsl.filterBy
 import com.mongodb.jbplugin.utils.ModelDsl.findMany
 import com.mongodb.jbplugin.utils.ModelDsl.include
@@ -110,6 +111,7 @@ class IndexAnalyzerTest {
             }
             sortBy {
                 ascending { schema("mySortField") }
+                descending { schema("myField") }
             }
         }
 
@@ -122,7 +124,7 @@ class IndexAnalyzerTest {
         assertIndexCollectionIs("myDb.myColl".toNs(), result)
         assertMongoDbIndexIs(
             arrayOf(
-                "myField" to 1,
+                "myField" to -1,
                 "mySortField" to 1,
                 "myRangeField" to 1
             ),
@@ -580,8 +582,8 @@ class IndexAnalyzerTest {
                     mapOf(
                         "highSelectivityEquality" to BsonString,
                         "lowSelectivityEquality" to BsonBoolean,
-                        "highSelectivitySort" to BsonString,
-                        "lowSelectivitySort" to BsonBoolean,
+                        "highCardinalitySort" to BsonString,
+                        "lowCardinalitySort" to BsonBoolean,
                         "highSelectivityRange" to BsonString,
                         "lowSelectivityRange" to BsonBoolean
                     )
@@ -591,16 +593,16 @@ class IndexAnalyzerTest {
                         mapOf(
                             "highSelectivityEquality" to "rare",
                             "lowSelectivityEquality" to true,
-                            "highSelectivitySort" to "rare",
-                            "lowSelectivitySort" to true,
+                            "highCardinalitySort" to "rare",
+                            "lowCardinalitySort" to true,
                             "highSelectivityRange" to "rare",
                             "lowSelectivityRange" to true,
                         ),
                         mapOf(
                             "highSelectivityEquality" to "common",
                             "lowSelectivityEquality" to true,
-                            "highSelectivitySort" to "common",
-                            "lowSelectivitySort" to true,
+                            "highCardinalitySort" to "common",
+                            "lowCardinalitySort" to true,
                             "highSelectivityRange" to "common",
                             "lowSelectivityRange" to true
                         )
@@ -629,10 +631,10 @@ class IndexAnalyzerTest {
                 }
                 sortBy {
                     ascending {
-                        schema("highSelectivitySort")
+                        schema("highCardinalitySort")
                     }
                     ascending {
-                        schema("lowSelectivitySort")
+                        schema("lowCardinalitySort")
                     }
                 }
             }
@@ -643,10 +645,83 @@ class IndexAnalyzerTest {
                 arrayOf(
                     "lowSelectivityEquality" to 1,
                     "highSelectivityEquality" to 1,
-                    "lowSelectivitySort" to 1,
-                    "highSelectivitySort" to 1,
+                    "lowCardinalitySort" to 1,
+                    "highCardinalitySort" to 1,
                     "lowSelectivityRange" to 1,
                     "highSelectivityRange" to 1
+                ),
+                result
+            )
+        }
+
+        @Test
+        fun `maintains sort direction specified in the user code alongside the ESR order`() = runTest {
+            val schema = CollectionSchema(
+                namespace = ns,
+                schema = BsonObject(
+                    mapOf(
+                        "highSelectivityEquality" to BsonString,
+                        "lowSelectivityEquality" to BsonBoolean,
+                        "highSelectivityRange" to BsonString,
+                        "lowSelectivityRange" to BsonBoolean
+                    )
+                ),
+                dataDistribution = DataDistribution.generate(
+                    listOf(
+                        mapOf(
+                            "highSelectivityEquality" to "rare",
+                            "lowSelectivityEquality" to true,
+                            "highSelectivityRangeAndSort" to "rare",
+                            "lowSelectivityRange" to true,
+                        ),
+                        mapOf(
+                            "highSelectivityEquality" to "common",
+                            "lowSelectivityEquality" to true,
+                            "highSelectivityRangeAndSort" to "common",
+                            "lowSelectivityRange" to true
+                        )
+                    )
+                )
+            )
+
+            val query = findMany(ns, schema) {
+                filterBy {
+                    predicate(Name.EQ) {
+                        schema("highSelectivityEquality")
+                        constant("rare")
+                    }
+                    predicate(Name.EQ) {
+                        schema("lowSelectivityEquality")
+                        constant(true)
+                    }
+                    predicate(Name.GT) {
+                        schema("highSelectivityRangeAndSort")
+                        constant("rare")
+                    }
+                    predicate(Name.GT) {
+                        schema("lowSelectivityRange")
+                        constant(true)
+                    }
+                }
+                sortBy {
+                    descending {
+                        schema("lowSelectivityEquality")
+                    }
+                    ascending {
+                        // We are essentially promoting the range to a sort
+                        schema("highSelectivityRangeAndSort")
+                    }
+                }
+            }
+
+            val result = IndexAnalyzer.analyze(query, EmptySiblingQueriesFinder(), emptyOptions())
+
+            assertMongoDbIndexIs(
+                arrayOf(
+                    "lowSelectivityEquality" to -1,
+                    "highSelectivityEquality" to 1,
+                    "highSelectivityRangeAndSort" to 1,
+                    "lowSelectivityRange" to 1,
                 ),
                 result
             )

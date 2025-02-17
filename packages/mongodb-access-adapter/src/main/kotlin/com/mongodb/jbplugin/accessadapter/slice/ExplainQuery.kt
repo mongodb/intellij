@@ -78,14 +78,18 @@ data class ExplainQuery(
             val queryPlanner =
                 explainPlanDoc["queryPlanner"] as? Map<String, Any>
                     ?: return ExplainQuery(ExplainPlan.NotRun)
+
             val winningPlan =
                 queryPlanner["winningPlan"] as? Map<String, Any>
                     ?: return ExplainQuery(ExplainPlan.NotRun)
 
+            val stages = winningPlan.getOrDefault("queryPlan", winningPlan) as? Map<String, Any>
+                ?: return ExplainQuery(ExplainPlan.NotRun)
+
             val resultFromExecutionStats = checkExecutionStatsEffectiveness(executionStats)
             // https://www.mongodb.com/docs/manual/reference/explain-results/#explain-output-structure
             val resultFromQueryPlanner = planByMappingStage(
-                winningPlan,
+                stages,
                 mapOf(
                     "COLLSCAN" to ExplainPlan.CollectionScan,
                     "IXSCAN" to ExplainPlan.IndexScan,
