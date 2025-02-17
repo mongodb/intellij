@@ -13,7 +13,7 @@ Gradle task, that will set up the required git hooks for this project:
 ./gradlew gitHooks
 ```
 
-Also, ensure unit tests are working by running the following command:
+Also, ensure our current set of tests pass by running the following command:
 
 ```sh
 ./gradlew test
