@@ -5,30 +5,24 @@
 
 package com.mongodb.jbplugin.fixtures
 
-import com.intellij.database.dataSource.DatabaseDriverManager
-import com.intellij.database.dataSource.LocalDataSource
-import com.intellij.database.dataSource.LocalDataSourceManager
-import com.intellij.database.dataSource.validation.DatabaseDriverValidator.createDownloaderTask
-import com.intellij.openapi.application.EDT
-import com.intellij.openapi.progress.EmptyProgressIndicator
 import com.intellij.openapi.project.Project
-import com.intellij.util.ui.EDT
-import com.mongodb.ConnectionString
 import com.mongodb.client.MongoClients
+import com.mongodb.jbplugin.accessadapter.ConnectionString
 import com.mongodb.jbplugin.accessadapter.MongoDbDriver
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
-import com.mongodb.jbplugin.accessadapter.datagrip.adapter.DataGripMongoDbDriver
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
 import org.bson.Document
-import org.junit.jupiter.api.extension.*
+import org.junit.jupiter.api.extension.AfterAllCallback
+import org.junit.jupiter.api.extension.BeforeAllCallback
+import org.junit.jupiter.api.extension.ExtendWith
+import org.junit.jupiter.api.extension.ExtensionContext
+import org.junit.jupiter.api.extension.ParameterContext
+import org.junit.jupiter.api.extension.ParameterResolver
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.mock
 import org.testcontainers.containers.DockerComposeContainer
 import org.testcontainers.containers.MongoDBContainer
 import org.testcontainers.lifecycle.Startable
 import java.io.File
-import java.util.UUID
 
 /**
  * Test environment.
@@ -129,51 +123,12 @@ class MongoDbEnvironmentTestExtensions :
     ): Any = serverUrl!!
 }
 
-internal fun Project.connectTo(url: MongoDbServerUrl): LocalDataSource {
-    val dataSource = createDataSource(url)
-    createDownloaderTask(dataSource, null).run(EmptyProgressIndicator())
-    runBlocking(Dispatchers.EDT) {
-        EDT.dispatchAllInvocationEvents()
-    }
-
-    return dataSource
-}
-
-private fun Project.createDataSource(serverUrl: MongoDbServerUrl) =
-    runBlocking {
-        val dataSourceManager = LocalDataSourceManager.byDataSource(
-            this@createDataSource,
-            LocalDataSource::class.java
-        )!!
-        val instance = DatabaseDriverManager.getInstance()
-        val jdbcDriver = instance.getDriver("mongo")
-
-        val dataSource =
-            LocalDataSource().apply {
-                name = UUID.randomUUID().toString()
-                url = serverUrl.value
-                isConfiguredByUrl = true
-                username = ""
-                passwordStorage = LocalDataSource.Storage.PERSIST
-                databaseDriver = jdbcDriver
-            }
-
-        dataSourceManager.addDataSource(dataSource)
-        dataSource
-    }
-
-internal fun Project.createDriver(
-    dataSource: LocalDataSource,
-): DataGripMongoDbDriver {
-    val driver = DataGripMongoDbDriver(this, dataSource)
-    driver.forceConnectForTesting()
-    return driver
-}
-
 suspend fun Project.withMockedUnconnectedMongoDbConnection(url: MongoDbServerUrl): Project {
     val driver = mock<MongoDbDriver>()
     `when`(driver.connected).thenReturn(false)
-    `when`(driver.connectionString()).thenReturn(ConnectionString(url.value))
+    `when`(
+        driver.connectionString()
+    ).thenReturn(ConnectionString(listOf(url.value)))
 
     val readModelProvider =
         DataGripBasedReadModelProvider(

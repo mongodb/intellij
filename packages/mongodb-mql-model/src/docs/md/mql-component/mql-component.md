@@ -163,15 +163,20 @@ Defines that the query MAY not be meant to be run but to be sent to the server t
 execution plan. There are 3 variants of the explain plan type and the actual implementation is
 left to the underlying driver:
 
-### ExplainPlanType.NONE
+#### ExplainPlanType.NONE
 
 The query is meant to be executed as is, without execution plan.
 
-### ExplainPlanType.SAFE
+#### ExplainPlanType.SAFE
 
 The query is meant to not be executed. The server should send the execution plan for this query.
 
-### ExplainPlanType.FULL
+#### ExplainPlanType.FULL
 
 The query is meant to be executed and also the server is expected to send the execution plan with
 the execution stats of running the query.
+
+### HasRunCommand
+
+Defines what run command is going to be executed in the server. Currently, it only supports simple
+commands that do not require nested parameters.

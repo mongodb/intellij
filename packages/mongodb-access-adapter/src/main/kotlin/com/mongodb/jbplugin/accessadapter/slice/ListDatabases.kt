@@ -5,7 +5,13 @@
 package com.mongodb.jbplugin.accessadapter.slice
 
 import com.mongodb.jbplugin.accessadapter.MongoDbDriver
-import org.bson.Document
+import com.mongodb.jbplugin.accessadapter.QueryResult
+import com.mongodb.jbplugin.mql.BsonString
+import com.mongodb.jbplugin.mql.Node
+import com.mongodb.jbplugin.mql.components.HasLimit
+import com.mongodb.jbplugin.mql.components.HasRunCommand
+import com.mongodb.jbplugin.mql.components.HasValueReference
+import com.mongodb.jbplugin.mql.components.IsCommand
 
 /**
  * @property databases
@@ -17,18 +23,26 @@ data class ListDatabases(
         override val id = javaClass.canonicalName
 
         override suspend fun queryUsingDriver(from: MongoDbDriver): ListDatabases {
-            val result =
-                from.runCommand(
-                    "admin",
-                    Document(
-                        mapOf(
-                            "listDatabases" to 1,
+            val query = Node(
+                Unit,
+                listOf(
+                    IsCommand(IsCommand.CommandType.RUN_COMMAND),
+                    HasRunCommand(
+                        database = HasValueReference(
+                            HasValueReference.Constant(Unit, "admin", BsonString)
+                        ),
+                        commandName = HasValueReference(
+                            HasValueReference.Constant(Unit, "listDatabases", BsonString)
                         ),
                     ),
-                    Map::class,
+                    HasLimit(1)
                 )
+            )
 
-            val databases = result["databases"] as List<Map<String, String>>
+            val queryResult =
+                from.runQuery(query, Map::class) as? QueryResult.Run<Map<String, Any>>
+                    ?: return ListDatabases(emptyList())
+            val databases = queryResult.result["databases"] as List<Map<String, String>>
             return ListDatabases(
                 databases.map {
                     Database(it["name"].toString())

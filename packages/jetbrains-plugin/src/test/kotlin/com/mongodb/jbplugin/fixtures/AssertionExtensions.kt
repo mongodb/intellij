@@ -62,19 +62,20 @@ fun waitFor(timeout: Duration, interval: Duration, condition: () -> Boolean) {
 fun eventually(
     timeout: Duration = Duration.ofSeconds(10),
     recovery: () -> Unit = {},
-    fn: (Int) -> Unit
+    fn: (Int) -> Unit,
 ) {
     var attempt = 1
     waitFor(timeout, Duration.ofMillis(50)) {
         val result = runCatching {
             fn(attempt++)
-            true
-        }.getOrDefault(false)
+        }
 
-        if (!result) {
+        result.exceptionOrNull()?.printStackTrace(System.err)
+
+        if (result.isFailure) {
             recovery()
         }
 
-        result
+        result.isSuccess
     }
 }
