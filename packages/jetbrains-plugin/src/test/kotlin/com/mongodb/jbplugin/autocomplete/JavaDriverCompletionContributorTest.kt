@@ -1,6 +1,5 @@
 package com.mongodb.jbplugin.autocomplete
 
-import com.intellij.database.util.common.containsElements
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.mongodb.jbplugin.accessadapter.slice.GetCollectionSchema
 import com.mongodb.jbplugin.accessadapter.slice.ListCollections
@@ -42,13 +41,13 @@ class JavaDriverCompletionContributorTest {
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myDatabase1"
             },
         )
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myDatabase2"
             },
         )
@@ -80,8 +79,8 @@ class JavaDriverCompletionContributorTest {
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myCollection"
             },
         )
@@ -121,8 +120,8 @@ class JavaDriverCompletionContributorTest {
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
@@ -161,8 +160,8 @@ class JavaDriverCompletionContributorTest {
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
@@ -201,8 +200,8 @@ class JavaDriverCompletionContributorTest {
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
@@ -246,8 +245,8 @@ class JavaDriverCompletionContributorTest {
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
@@ -291,8 +290,8 @@ class JavaDriverCompletionContributorTest {
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
@@ -338,8 +337,8 @@ class JavaDriverCompletionContributorTest {
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
@@ -384,8 +383,8 @@ class JavaDriverCompletionContributorTest {
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
@@ -428,8 +427,8 @@ class JavaDriverCompletionContributorTest {
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
@@ -474,8 +473,8 @@ class JavaDriverCompletionContributorTest {
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
@@ -520,8 +519,8 @@ class JavaDriverCompletionContributorTest {
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
@@ -566,8 +565,8 @@ class JavaDriverCompletionContributorTest {
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
@@ -614,8 +613,8 @@ class JavaDriverCompletionContributorTest {
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
@@ -663,8 +662,8 @@ class JavaDriverCompletionContributorTest {
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
@@ -707,8 +706,8 @@ class JavaDriverCompletionContributorTest {
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
@@ -751,8 +750,8 @@ class JavaDriverCompletionContributorTest {
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
@@ -797,8 +796,8 @@ class JavaDriverCompletionContributorTest {
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
@@ -841,8 +840,8 @@ class JavaDriverCompletionContributorTest {
 
         val elements = fixture.completeBasic()
 
-        assertFalse(
-            elements.containsElements {
+        assertNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
@@ -885,8 +884,8 @@ class JavaDriverCompletionContributorTest {
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
@@ -930,8 +929,8 @@ class JavaDriverCompletionContributorTest {
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
@@ -972,8 +971,8 @@ class JavaDriverCompletionContributorTest {
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )

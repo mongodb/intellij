@@ -6,6 +6,26 @@ pluginBundle {
     enableBundle = true
 }
 
+tasks {
+    register("buildProperties", WriteProperties::class) {
+        group = "build"
+
+        val segmentApiKey = System.getenv("BUILD_SEGMENT_API_KEY") ?: throw GradleException(
+            "Environment variable 'BUILD_SEGMENT_API_KEY' is not set. For local builds set it to empty."
+        )
+
+        destinationFile.set(
+            project.layout.projectDirectory.file("src/main/resources/META-INF/build.properties")
+        )
+        property("pluginVersion", rootProject.version)
+        property("segmentApiKey", segmentApiKey)
+    }
+
+    processResources {
+        dependsOn("buildProperties")
+    }
+}
+
 dependencies {
     implementation(project(":packages:mongodb-access-adapter"))
     implementation(project(":packages:mongodb-access-adapter:datagrip-access-adapter"))

@@ -1,9 +1,6 @@
-import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 import org.gradle.accessors.dm.LibrariesForLibs
-import org.gradle.kotlin.dsl.support.delegates.TaskContainerDelegate.*
 import org.jlleitschuh.gradle.ktlint.KtlintExtension
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.io.ByteArrayOutputStream
 
 plugins {
@@ -39,10 +36,6 @@ tasks {
     withType<JavaCompile> {
         sourceCompatibility = libs.versions.java.target.get()
         targetCompatibility = libs.versions.java.target.get()
-    }
-
-    withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-        kotlinOptions.jvmTarget = libs.versions.java.target.get()
     }
 
     withType<Test> {

@@ -36,7 +36,7 @@ replay_pid*
 buildSrc/.gradle
 
 # This file is generated at compile time.
-packages/jetbrains-plugin/src/main/resources/build.properties
+packages/jetbrains-plugin/src/main/resources/META-INF/build.properties
 /**/video
 /**/.DS_Store
 
@@ -45,3 +45,6 @@ FAKE_BROWSER_OUTPUT
 
 /.idea/dataSources
 *.iml
+
+/.idea/artifacts
+/.intellijPlatform

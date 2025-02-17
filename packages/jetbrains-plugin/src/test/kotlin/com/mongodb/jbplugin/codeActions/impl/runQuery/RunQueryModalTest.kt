@@ -116,9 +116,10 @@ class RunQueryModalTest {
         )
 
         val (fixture, modal) = render(robot, query, dataSource, coroutineScope)
-        val queryContext = modal.buildQueryContextFromModal()
 
         eventually {
+            val queryContext = modal.buildQueryContextFromModal()
+
             fixture.comboBox("DatabaseComboBox").requireVisible()
             fixture.comboBox("CollectionComboBox").requireVisible()
 

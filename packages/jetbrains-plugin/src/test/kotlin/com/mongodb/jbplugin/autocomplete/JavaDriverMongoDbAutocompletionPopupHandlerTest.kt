@@ -1,6 +1,5 @@
 package com.mongodb.jbplugin.autocomplete
 
-import com.intellij.database.util.common.containsElements
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.mongodb.jbplugin.accessadapter.slice.GetCollectionSchema
 import com.mongodb.jbplugin.accessadapter.slice.ListCollections
@@ -14,8 +13,8 @@ import com.mongodb.jbplugin.mql.BsonObject
 import com.mongodb.jbplugin.mql.BsonString
 import com.mongodb.jbplugin.mql.CollectionSchema
 import com.mongodb.jbplugin.mql.Namespace
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
@@ -48,13 +47,13 @@ class JavaDriverMongoDbAutocompletionPopupHandlerTest {
         fixture.type('"')
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myDatabase1"
             },
         )
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myDatabase2"
             },
         )
@@ -87,8 +86,8 @@ class JavaDriverMongoDbAutocompletionPopupHandlerTest {
         fixture.type('"')
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myCollection"
             },
         )
@@ -128,8 +127,8 @@ class JavaDriverMongoDbAutocompletionPopupHandlerTest {
         fixture.type('"')
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
@@ -169,8 +168,8 @@ class JavaDriverMongoDbAutocompletionPopupHandlerTest {
         fixture.type('"')
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
@@ -210,8 +209,8 @@ class JavaDriverMongoDbAutocompletionPopupHandlerTest {
         fixture.type('"')
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
@@ -253,8 +252,8 @@ class JavaDriverMongoDbAutocompletionPopupHandlerTest {
         fixture.type('"')
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
@@ -298,8 +297,8 @@ class JavaDriverMongoDbAutocompletionPopupHandlerTest {
         fixture.type('"')
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
@@ -343,8 +342,8 @@ class JavaDriverMongoDbAutocompletionPopupHandlerTest {
         fixture.type('"')
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
@@ -390,8 +389,8 @@ class JavaDriverMongoDbAutocompletionPopupHandlerTest {
         fixture.type('"')
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
@@ -435,8 +434,8 @@ class JavaDriverMongoDbAutocompletionPopupHandlerTest {
         fixture.type('"')
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
@@ -480,8 +479,8 @@ class JavaDriverMongoDbAutocompletionPopupHandlerTest {
         fixture.type('"')
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
@@ -527,8 +526,8 @@ class JavaDriverMongoDbAutocompletionPopupHandlerTest {
         fixture.type('"')
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
@@ -572,8 +571,8 @@ class JavaDriverMongoDbAutocompletionPopupHandlerTest {
         fixture.type('"')
         val elements = fixture.completeBasic()
 
-        assertFalse(
-            elements.containsElements {
+        assertNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
@@ -617,8 +616,8 @@ class JavaDriverMongoDbAutocompletionPopupHandlerTest {
         fixture.type('"')
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
@@ -663,8 +662,8 @@ class JavaDriverMongoDbAutocompletionPopupHandlerTest {
         fixture.type('"')
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
@@ -706,8 +705,8 @@ class JavaDriverMongoDbAutocompletionPopupHandlerTest {
         fixture.type('"')
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )

@@ -213,7 +213,7 @@ private class IntegrationTestExtension :
         application = ApplicationManager.getApplication() as ApplicationEx
     }
 
-    private fun tearDownProject(context: ExtensionContext) {
+    private fun tearDownProject() {
         application.invokeAndWait {
             runCatching {
                 val fileEditorManager = FileEditorManager.getInstance(testFixture.project)
@@ -232,9 +232,9 @@ private class IntegrationTestExtension :
     }
 
     override fun beforeAll(context: ExtensionContext) {
-        val defaultTimeout = 2.milliseconds.inWholeMilliseconds.toInt()
+        val defaultTimeout = 50.milliseconds.inWholeMilliseconds.toInt()
 
-        robot = BasicRobot.robotWithCurrentAwtHierarchyWithoutScreenLock()
+        robot = BasicRobot.robotWithNewAwtHierarchy()
         robot.settings().idleTimeout(defaultTimeout)
         robot.settings().timeoutToBeVisible(defaultTimeout)
         robot.settings().timeoutToFindPopup(defaultTimeout)
@@ -296,7 +296,7 @@ public class $className {
 
     override fun afterTestExecution(context: ExtensionContext) {
         if (context.requiresProjectForEachTest()) {
-            tearDownProject(context)
+            tearDownProject()
         }
 
         runInEdtAndWait {
@@ -308,7 +308,7 @@ public class $className {
 
     override fun afterAll(context: ExtensionContext) {
         if (!context.requiresProjectForEachTest()) {
-            tearDownProject(context)
+            tearDownProject()
         }
 
         application.cleanApplicationState()
