@@ -6,7 +6,7 @@ on:
     types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 env:
