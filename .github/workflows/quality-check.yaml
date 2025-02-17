@@ -181,7 +181,7 @@ jobs:
       - uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: ${{ runner.temp }}/qodana/results/qodana.sarif.json
-  unit-tests:
+  unit-and-integration-test:
     name: "Unit and Integration Tests"
     runs-on: ubuntu-latest
     needs:
@@ -276,7 +276,7 @@ jobs:
     name: "Fitness Check"
     runs-on: ubuntu-latest
     needs:
-      - verify-plugin
+      - unit-and-integration-test
     steps:
       - name: Checkout
         uses: actions/checkout@v4
