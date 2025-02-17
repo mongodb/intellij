@@ -20,7 +20,6 @@ import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.util.Disposer
 import com.intellij.testFramework.common.cleanApplicationState
 import com.intellij.testFramework.common.initTestApplication
-import com.intellij.testFramework.junit5.RunInEdt
 import com.intellij.util.ui.EDT
 import com.mongodb.jbplugin.accessadapter.MongoDbDriver
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.DataGripMongoDbDriver
@@ -36,6 +35,7 @@ import org.junit.jupiter.api.extension.*
 import org.testcontainers.containers.MongoDBContainer
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.lifecycle.Startables
+import java.lang.reflect.Method
 import java.nio.file.Files
 import java.util.*
 
@@ -53,7 +53,6 @@ enum class MongoDbVersion(
  *
  * @see com.mongodb.jbplugin.accessadapter.datagrip.adapter.DataGripMongoDbDriverTest
  */
-@RunInEdt(allMethods = true, writeIntent = true)
 @ExtendWith(IntegrationTestExtension::class)
 @Testcontainers(parallel = false)
 annotation class IntegrationTest(
@@ -67,6 +66,7 @@ annotation class IntegrationTest(
 internal class IntegrationTestExtension :
     BeforeAllCallback,
     BeforeEachCallback,
+    InvocationInterceptor,
     AfterEachCallback,
     AfterAllCallback,
     ParameterResolver {
@@ -180,6 +180,16 @@ internal class IntegrationTestExtension :
 
         runBlocking {
             driver.runQuery(query, Unit::class)
+        }
+    }
+
+    override fun interceptTestMethod(
+        invocation: InvocationInterceptor.Invocation<Void>?,
+        invocationContext: ReflectiveInvocationContext<Method>,
+        extensionContext: ExtensionContext,
+    ) {
+        ApplicationManager.getApplication().invokeAndWait {
+            invocation?.proceed()
         }
     }
 
