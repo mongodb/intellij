@@ -21,6 +21,7 @@ class IsCommand(val type: CommandType) : Component {
         UPDATE_MANY("updateMany"),
         UPDATE_ONE("updateOne"),
         UPSERT("updateOne"), // this is update with upsert
+        RUN_COMMAND("runCommand"),
         UNKNOWN("<unknown>")
     }
 }

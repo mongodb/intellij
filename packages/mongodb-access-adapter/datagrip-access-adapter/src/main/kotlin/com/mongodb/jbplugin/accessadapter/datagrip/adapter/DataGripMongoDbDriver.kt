@@ -13,8 +13,7 @@ import com.intellij.database.run.ConsoleRunConfiguration
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
-import com.mongodb.ConnectionString
-import com.mongodb.MongoClientSettings
+import com.mongodb.jbplugin.accessadapter.ConnectionString
 import com.mongodb.jbplugin.accessadapter.MongoDbDriver
 import com.mongodb.jbplugin.accessadapter.QueryResult
 import com.mongodb.jbplugin.dialects.OutputQuery
@@ -27,14 +26,8 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
-import org.bson.codecs.configuration.CodecRegistries.fromRegistries
-import org.bson.codecs.configuration.CodecRegistry
-import org.bson.conversions.Bson
-import org.bson.json.JsonMode
-import org.bson.json.JsonWriterSettings
 import org.bson.types.ObjectId
 import org.jetbrains.annotations.VisibleForTesting
-import org.owasp.encoder.Encode
 import java.math.BigDecimal
 import java.time.Instant
 import java.util.*
@@ -71,26 +64,14 @@ class DataGripMongoDbDriver(
                 it.connectionPoint.dataSource == dataSource
             }
 
-    private val codecRegistry: CodecRegistry =
-        fromRegistries(
-            MongoClientSettings.getDefaultCodecRegistry()
-        )
-    private val jsonWriterSettings =
-        JsonWriterSettings
-            .builder()
-            .outputMode(JsonMode.EXTENDED)
-            .indent(false)
-            .build()
+    private fun toMqlModelConnectionString(url: String): ConnectionString {
+        val driverConnectionString = com.mongodb.ConnectionString(url)
+        return ConnectionString(driverConnectionString.hosts)
+    }
 
-    private fun String.encodeForJs(): String = Encode.forJavaScript(this)
-
-    private fun Bson.toJson(): String =
-        this
-            .toBsonDocument(Bson::class.java, codecRegistry)
-            .toJson(jsonWriterSettings)
-            .encodeForJs()
-
-    override suspend fun connectionString(): ConnectionString = ConnectionString(dataSource.url!!)
+    override suspend fun connectionString(): ConnectionString = toMqlModelConnectionString(
+        dataSource.url!!
+    )
 
     override suspend fun <T : Any, S> runQuery(
         query: Node<S>,
@@ -130,27 +111,6 @@ class DataGripMongoDbDriver(
             QueryResult.Run(result as T)
         }
     }
-
-    override suspend fun <T : Any> runCommand(
-        database: String,
-        command: Bson,
-        result: KClass<T>,
-        timeout: Duration,
-    ): T =
-        withContext(
-            mongosh,
-        ) {
-            runQueryScript(
-                """
-                EJSON.serialize(
-                    db.getSiblingDB("${database.encodeForJs()}")
-                      .runCommand(EJSON.parse("${command.toJson()}"))
-                , { relaxed: false })
-                """.trimIndent(),
-                result,
-                timeout,
-            )[0]
-        }
 
     @VisibleForTesting
     internal suspend fun <T : Any> runQueryScript(

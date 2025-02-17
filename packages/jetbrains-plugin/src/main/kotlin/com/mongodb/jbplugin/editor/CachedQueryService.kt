@@ -187,22 +187,22 @@ class CachedQueryService(
                 val readModel by query.source.project.service<DataGripBasedReadModelProvider>()
                 val buildInfo = readModel.slice(dataSource, BuildInfo.Slice)
 
-                queryWithDb.withTargetCluster(
+                val queryWithTargetCluster = queryWithDb.withTargetCluster(
                     HasTargetCluster(Version.parse(buildInfo.version))
                 )
 
-                val knownReference = queryWithDb.component<HasCollectionReference<*>>()?.reference as? Known<*>
+                val knownReference = queryWithTargetCluster.component<HasCollectionReference<*>>()?.reference as? Known<*>
                 if (knownReference != null) {
                     val sampleSize by pluginSetting { ::sampleSize }
                     val collectionSchema = readModel.slice(
                         dataSource,
                         GetCollectionSchema.Slice(knownReference.namespace, sampleSize)
                     )
-                    queryWithDb.queryWithInjectedCollectionSchema(
+                    queryWithTargetCluster.queryWithInjectedCollectionSchema(
                         collectionSchema.schema
                     )
                 } else {
-                    queryWithDb
+                    queryWithTargetCluster
                 }
             } else {
                 queryWithDb

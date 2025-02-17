@@ -4,8 +4,6 @@ import com.intellij.database.dataSource.DatabaseConnectionPoint
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.openapi.application.Application
 import com.intellij.openapi.project.Project
-import com.mongodb.ConnectionString
-import com.mongodb.jbplugin.accessadapter.slice.BuildInfo
 import com.mongodb.jbplugin.fixtures.*
 import com.mongodb.jbplugin.fixtures.mockLogMessage
 import com.mongodb.jbplugin.observability.TelemetryProperty
@@ -93,21 +91,4 @@ class ConnectionFailureProbeTest {
             },
         )
     }
-
-    private val buildInfo = BuildInfo(
-        version = "7.0.0",
-        gitVersion = null,
-        modules = emptyList(),
-        buildEnvironment = emptyMap(),
-        isLocalhost = true,
-        isEnterprise = true,
-        isAtlas = false,
-        isLocalAtlas = false,
-        isAtlasStream = false,
-        isDigitalOcean = false,
-        isGenuineMongoDb = true,
-        nonGenuineVariant = null,
-        isDataLake = false,
-        serverUrl = ConnectionString("mongodb://localhost:27017")
-    )
 }

@@ -1,11 +1,10 @@
 package com.mongodb.jbplugin.accessadapter.slice
 
-import com.mongodb.ConnectionString
+import com.mongodb.jbplugin.accessadapter.ConnectionString
 import com.mongodb.jbplugin.accessadapter.MongoDbDriver
 import com.mongodb.jbplugin.accessadapter.QueryResult
 import com.mongodb.jbplugin.mql.QueryContext
 import kotlinx.coroutines.runBlocking
-import org.bson.Document
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -21,15 +20,16 @@ class BuildInfoTest {
     @Test
     fun `returns a valid build info`(): Unit =
         runBlocking {
-            val command = Document(mapOf("buildInfo" to 1))
             val driver = mock<MongoDbDriver>()
             `when`(driver.connected).thenReturn(true)
-            `when`(driver.connectionString()).thenReturn(ConnectionString("mongodb://localhost/"))
+            `when`(
+                driver.connectionString()
+            ).thenReturn(ConnectionString(listOf("mongodb://localhost/")))
             `when`(
                 driver.runQuery<Long, Unit>(any(), eq(Long::class), any(), eq(1.seconds))
             ).thenReturn(QueryResult.Run(1L))
-            `when`(driver.runCommand("admin", command, BuildInfoFromMongoDb::class)).thenReturn(
-                defaultBuildInfo(),
+            `when`(driver.runQuery<BuildInfoFromMongoDb, Unit>(any(), any())).thenReturn(
+                QueryResult.Run(defaultBuildInfo()),
             )
 
             val data = BuildInfo.Slice.queryUsingDriver(driver)
@@ -40,14 +40,15 @@ class BuildInfoTest {
     @Test
     fun `when not connected do not run queries`(): Unit =
         runBlocking {
-            val command = Document(mapOf("buildInfo" to 1))
             val driver = mock<MongoDbDriver>()
             `when`(driver.connected).thenReturn(false)
-            `when`(driver.connectionString()).thenReturn(ConnectionString("mongodb://localhost/"))
+            `when`(
+                driver.connectionString()
+            ).thenReturn(ConnectionString(listOf("mongodb://localhost/")))
             `when`(
                 driver.runQuery<Long, Unit>(any(), eq(Long::class), any(), eq(1.seconds))
             ).doThrow(NotImplementedError())
-            `when`(driver.runCommand("admin", command, BuildInfo::class)).doThrow(
+            `when`(driver.runQuery<Any, Unit>(any(), any())).doThrow(
                 NotImplementedError(),
             )
 
@@ -82,10 +83,9 @@ class BuildInfoTest {
         mongodbVariant: String?,
     ): Unit =
         runBlocking {
-            val command = Document(mapOf("buildInfo" to 1))
             val driver = mock<MongoDbDriver>()
             `when`(driver.connected).thenReturn(true)
-            `when`(driver.connectionString()).thenReturn(ConnectionString(url))
+            `when`(driver.connectionString()).thenReturn(ConnectionString(listOf(url)))
             `when`(
                 driver.runQuery<Long, Unit>(
                     any(),
@@ -94,8 +94,8 @@ class BuildInfoTest {
                     eq(1.seconds)
                 )
             ).thenReturn(QueryResult.Run(1L))
-            `when`(driver.runCommand("admin", command, BuildInfoFromMongoDb::class)).thenReturn(
-                defaultBuildInfo(),
+            `when`(driver.runQuery<BuildInfoFromMongoDb, Unit>(any(), any())).thenReturn(
+                QueryResult.Run(defaultBuildInfo()),
             )
 
             val data = BuildInfo.Slice.queryUsingDriver(driver)
@@ -129,15 +129,14 @@ class BuildInfoTest {
         atlasHost: String?,
     ): Unit =
         runBlocking {
-            val command = Document(mapOf("buildInfo" to 1))
             val driver = mock<MongoDbDriver>()
             `when`(driver.connected).thenReturn(true)
-            `when`(driver.connectionString()).thenReturn(ConnectionString(url))
+            `when`(driver.connectionString()).thenReturn(ConnectionString(listOf(url)))
             `when`(
                 driver.runQuery<Long, Unit>(any(), eq(Long::class), any(), eq(1.seconds))
             ).thenReturn(QueryResult.Run(1L))
-            `when`(driver.runCommand("admin", command, BuildInfoFromMongoDb::class)).thenReturn(
-                defaultBuildInfo(),
+            `when`(driver.runQuery<BuildInfoFromMongoDb, Unit>(any(), any())).thenReturn(
+                QueryResult.Run(defaultBuildInfo()),
             )
 
             val data = BuildInfo.Slice.queryUsingDriver(driver)

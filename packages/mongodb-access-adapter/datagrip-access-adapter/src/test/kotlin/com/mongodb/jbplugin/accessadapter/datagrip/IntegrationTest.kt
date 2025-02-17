@@ -24,9 +24,14 @@ import com.intellij.testFramework.junit5.RunInEdt
 import com.intellij.util.ui.EDT
 import com.mongodb.jbplugin.accessadapter.MongoDbDriver
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.DataGripMongoDbDriver
+import com.mongodb.jbplugin.mql.BsonString
+import com.mongodb.jbplugin.mql.Node
+import com.mongodb.jbplugin.mql.components.HasLimit
+import com.mongodb.jbplugin.mql.components.HasRunCommand
+import com.mongodb.jbplugin.mql.components.HasValueReference
+import com.mongodb.jbplugin.mql.components.IsCommand
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import org.bson.Document
 import org.junit.jupiter.api.extension.*
 import org.testcontainers.containers.MongoDBContainer
 import org.testcontainers.junit.jupiter.Testcontainers
@@ -157,17 +162,28 @@ internal class IntegrationTestExtension :
 
     override fun beforeEach(context: ExtensionContext) {
         val driver = context.getStore(namespace).get(driverKey) as MongoDbDriver
+        val query = Node(
+            Unit,
+            listOf(
+                IsCommand(IsCommand.CommandType.RUN_COMMAND),
+                HasRunCommand(
+                    database = HasValueReference(
+                        HasValueReference.Constant(Unit, "test", BsonString)
+                    ),
+                    commandName = HasValueReference(
+                        HasValueReference.Constant(Unit, "dropDatabase", BsonString)
+                    ),
+                ),
+                HasLimit(1)
+            )
+        )
+
         runBlocking {
-            driver.runCommand("test", Document(mapOf("dropDatabase" to 1)), Unit::class)
+            driver.runQuery(query, Unit::class)
         }
     }
 
     override fun afterEach(context: ExtensionContext) {
-        val driver = context.getStore(namespace).get(driverKey) as MongoDbDriver
-        runBlocking {
-            driver.runCommand("test", Document(mapOf("dropDatabase" to 1)), Unit::class)
-        }
-
         ApplicationManager.getApplication().cleanApplicationState()
     }
 
