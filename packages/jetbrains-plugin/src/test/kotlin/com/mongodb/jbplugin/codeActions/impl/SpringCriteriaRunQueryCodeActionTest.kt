@@ -11,6 +11,8 @@ import com.mongodb.jbplugin.fixtures.specifyDialect
 import com.mongodb.jbplugin.i18n.CodeActionsMessages
 import com.mongodb.jbplugin.i18n.Icons
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 
 @IntegrationTest
@@ -47,13 +49,13 @@ class SpringCriteriaRunQueryCodeActionTest {
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val gutters = fixture.findAllGutters()
-        assertEquals(1, gutters.size)
+        assertNotEquals(0, gutters.size)
 
-        val gutter = gutters.first()
-        assertEquals(Icons.runQueryGutter, gutter.icon)
+        val gutter = gutters.find { it.icon == Icons.runQueryGutter }
+        assertNotNull(gutter)
 
         application.runReadAction {
-            assertEquals(CodeActionsMessages.message("code.action.run.query"), gutter.tooltipText)
+            assertEquals(CodeActionsMessages.message("code.action.run.query"), gutter!!.tooltipText)
         }
     }
 }

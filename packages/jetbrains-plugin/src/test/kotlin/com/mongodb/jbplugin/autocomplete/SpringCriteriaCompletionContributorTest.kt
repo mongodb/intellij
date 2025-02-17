@@ -1,6 +1,5 @@
 package com.mongodb.jbplugin.autocomplete
 
-import com.intellij.database.util.common.containsElements
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.mongodb.jbplugin.accessadapter.slice.GetCollectionSchema
 import com.mongodb.jbplugin.accessadapter.slice.ListCollections
@@ -10,8 +9,8 @@ import com.mongodb.jbplugin.mql.BsonObject
 import com.mongodb.jbplugin.mql.BsonString
 import com.mongodb.jbplugin.mql.CollectionSchema
 import com.mongodb.jbplugin.mql.Namespace
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.eq
 
@@ -44,14 +43,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myCollection"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "anotherCollection"
             },
         )
@@ -92,14 +91,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )
@@ -144,14 +143,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )
@@ -185,14 +184,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myCollection"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "anotherCollection"
             },
         )
@@ -226,14 +225,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myCollection"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "anotherCollection"
             },
         )
@@ -280,14 +279,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )
@@ -334,14 +333,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )
@@ -388,14 +387,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )
@@ -442,14 +441,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )
@@ -496,14 +495,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )
@@ -550,14 +549,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )
@@ -604,14 +603,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )
@@ -658,14 +657,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )
@@ -712,14 +711,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )
@@ -766,14 +765,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )
@@ -820,14 +819,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )
@@ -876,14 +875,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )
@@ -932,14 +931,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )
@@ -990,14 +989,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )
@@ -1048,14 +1047,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )
@@ -1106,14 +1105,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )
@@ -1166,14 +1165,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )
@@ -1220,14 +1219,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )
@@ -1274,14 +1273,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )
@@ -1328,14 +1327,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )
@@ -1382,14 +1381,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )
@@ -1436,14 +1435,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )
@@ -1490,14 +1489,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )
@@ -1544,14 +1543,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )
@@ -1599,14 +1598,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )
@@ -1654,14 +1653,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )
@@ -1709,14 +1708,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )
@@ -1764,14 +1763,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )
@@ -1819,14 +1818,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )
@@ -1874,14 +1873,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )
@@ -1929,14 +1928,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )
@@ -1984,14 +1983,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertTrue(
-            elements.containsElements {
+        assertNotNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )
@@ -2040,14 +2039,14 @@ record Entity() {}
 
         val elements = fixture.completeBasic()
 
-        assertFalse(
-            elements.containsElements {
+        assertNull(
+            elements.firstOrNull {
                 it.lookupString == "myField"
             },
         )
 
-        assertFalse(
-            elements.containsElements {
+        assertNull(
+            elements.firstOrNull {
                 it.lookupString == "myField2"
             },
         )

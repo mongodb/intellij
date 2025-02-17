@@ -1,0 +1,17 @@
+version: "3"
+
+services:
+  mongo_6:
+    image: mongo:6
+    ports:
+      - "27017:27006"
+
+  mongo_7:
+    image: mongo:7
+    ports:
+      - "27017:27007"
+
+  mongo_8:
+    image: mongo:8
+    ports:
+      - "27017:27008"

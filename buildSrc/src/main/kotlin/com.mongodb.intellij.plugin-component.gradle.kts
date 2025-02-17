@@ -2,12 +2,13 @@ import com.mongodb.intellij.IntelliJPluginBundle
 import org.gradle.accessors.dm.LibrariesForLibs
 import org.jetbrains.changelog.Changelog
 import org.jetbrains.changelog.date
-import org.jetbrains.intellij.tasks.RunIdeForUiTestTask
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
 
 plugins {
     id("com.mongodb.intellij.isolated-module")
     id("org.gradle.test-retry")
-    id("org.jetbrains.intellij")
+    id("org.jetbrains.intellij.platform")
     id("me.champeau.jmh")
     id("io.morethan.jmhreport")
     id("org.jetbrains.changelog")
@@ -16,8 +17,11 @@ plugins {
 repositories {
     mavenCentral()
 
-    maven("https://www.jetbrains.com/intellij-repository/releases/")
-    maven("https://packages.jetbrains.team/maven/p/ij/intellij-dependencies")
+    intellijPlatform {
+        defaultRepositories()
+        intellijDependencies()
+        releases()
+    }
 }
 
 val libs = the<LibrariesForLibs>()
@@ -30,35 +34,97 @@ val pluginBundle: IntelliJPluginBundle =
 
 pluginBundle.enableBundle.convention(false)
 
-intellij {
-    version.set(libs.versions.intellij.min) // Target IDE Version
-    type.set(libs.versions.intellij.type) // Target IDE Platform
+intellijPlatform {
+    buildSearchableOptions = false
 
-    plugins.set(listOf("com.intellij.java", "com.intellij.database"))
+    pluginConfiguration {
+        version = rootProject.version.toString()
+        description =
+            providers.fileContents(rootProject.layout.projectDirectory.file("README.md")).asText
+
+        ideaVersion {
+            sinceBuild = libs.versions.intellij.minRelease
+            untilBuild = "${libs.versions.intellij.minRelease.get()}.*"
+        }
+
+        val changelog = rootProject.changelog
+        changeNotes = with(changelog) {
+            renderItem(
+              changelog
+                .getUnreleased()
+                .withHeader(false)
+                .withEmptySections(false),
+              Changelog.OutputType.HTML,
+            )
+        }
+    }
+
+    signing {
+        certificateChain = System.getenv("JB_CERTIFICATE_CHAIN")
+        privateKey = System.getenv("JB_PRIVATE_KEY")
+        password = System.getenv("JB_PRIVATE_KEY_PASSWORD")
+    }
+
+    publishing {
+        token = System.getenv("JB_PUBLISH_TOKEN")
+        channels = when (System.getenv("JB_PUBLISH_CHANNEL")) {
+            "ga" -> listOf("Stable")
+            "beta" -> listOf("beta")
+            else -> listOf("eap")
+        }
+    }
+
+    pluginVerification {
+        failureLevel = listOf(
+          VerifyPluginTask.FailureLevel.NOT_DYNAMIC,
+          VerifyPluginTask.FailureLevel.SCHEDULED_FOR_REMOVAL_API_USAGES,
+        )
+
+        ides {
+            recommended()
+        }
+    }
 }
 
 project.afterEvaluate {
+    val tasksToDisable = arrayOf(
+      "buildPlugin",
+      "buildSearchableOptions",
+      "jarSearchableOptions",
+      "prepareJarSearchableOptions",
+      "publishPlugin",
+      "runIde",
+      "signPlugin",
+      "testIdePerformance",
+      "verifyPlugin",
+      "verifyPluginProjectConfiguration",
+      "verifyPluginSignature",
+      "verifyPluginStructure"
+    )
+
     if (pluginBundle.enableBundle.get() == false) {
-        tasks.filter { it.group == "intellij" && (
-          it.name.startsWith("runIde") ||
-          it.name.startsWith("verify") ||
-          it.name.startsWith("build") ||
-          it.name.startsWith("publish") ||
-          it.name.startsWith("sign")
-          )}.forEach {
+        tasks.filter { it.group == "intellij platform" &&
+            tasksToDisable.contains(it.name)
+        }.forEach {
             it.enabled = false
         }
     }
 }
 
 dependencies {
+    intellijPlatform {
+        create(libs.versions.intellij.type.get(), libs.versions.intellij.min.get())
+
+        bundledPlugin("com.intellij.java")
+        bundledPlugin("com.intellij.database")
+
+        testFramework(TestFrameworkType.Plugin.Java)
+    }
+
     jmh(libs.kotlin.stdlib)
     jmh(libs.testing.jmh.core)
     jmh(libs.testing.jmh.annotationProcessor)
     jmh(libs.testing.jmh.generatorByteCode)
-
-    testImplementation(libs.testing.intellij.ideImpl)
-    testImplementation(libs.testing.intellij.coreUi)
 
     testImplementation(libs.mongodb.driver)
     testImplementation(libs.testing.spring.mongodb)
@@ -68,11 +134,7 @@ dependencies {
     testImplementation(libs.testing.testContainers.jupiter)
     testImplementation(libs.owasp.encoder)
 
-    testImplementation(libs.testing.intellij.testingFramework) {
-        exclude("ai.grazie.spell")
-        exclude("ai.grazie.utils")
-        exclude("ai.grazie.nlp")
-        exclude("ai.grazie.model")
+    testImplementation(libs.testing.intellij.testingFrameworkCore) {
         exclude("org.jetbrains.teamcity")
     }
 }
@@ -115,17 +177,8 @@ jmhReport {
 
 tasks {
     if (pluginBundle.enableBundle.get() == true) {
-        register("buildProperties", WriteProperties::class) {
-            group = "build"
-
-            val segmentApiKey = System.getenv("BUILD_SEGMENT_API_KEY")
-            if (segmentApiKey == null) {
-                throw GradleException("Environment variable 'BUILD_SEGMENT_API_KEY' is not set. For local builds set it to empty.")
-            }
-
-            destinationFile.set(project.layout.projectDirectory.file("src/main/resources/build.properties"))
-            property("pluginVersion", rootProject.version)
-            property("segmentApiKey", segmentApiKey)
+        publishPlugin {
+            dependsOn(patchChangelog)
         }
     }
 
@@ -157,50 +210,11 @@ tasks {
             dependsOn("buildProperties")
         }
     }
-
-    patchPluginXml {
-        // minimum version that our plugin works with
-        sinceBuild.set(libs.versions.intellij.minRelease)
-        // maximum version that our plugin is expected to work with
-        // setting this to empty string results in `<idea-version>` tag generated without until-build attribute
-        // which essentially means that we are expected to work with all the future releases of the IDE
-        // References: https://plugins.jetbrains.com/docs/intellij/build-number-ranges.html#build-number-format
-        untilBuild.set("")
-        version.set(rootProject.version.toString())
-
-        changeNotes.set(
-            provider {
-                changelog.renderItem(
-                    changelog
-                        .getUnreleased()
-                        .withHeader(false)
-                        .withEmptySections(false),
-                    Changelog.OutputType.HTML,
-                )
-            },
-        )
-    }
-
-    signPlugin {
-        certificateChain.set(System.getenv("JB_CERTIFICATE_CHAIN"))
-        privateKey.set(System.getenv("JB_PRIVATE_KEY"))
-        password.set(System.getenv("JB_PRIVATE_KEY_PASSWORD"))
-    }
-
-    publishPlugin {
-        channels =
-            when (System.getenv("JB_PUBLISH_CHANNEL")) {
-                "ga" -> listOf("Stable")
-                "beta" -> listOf("beta")
-                else -> listOf("eap")
-            }
-        token.set(System.getenv("JB_PUBLISH_TOKEN"))
-    }
 }
 
 changelog {
     version.set(rootProject.version.toString())
-    path.set(rootProject.file("CHANGELOG.md").canonicalPath)
+    path.set(rootProject.file("CHANGELOG.md").absolutePath)
     header.set(provider { "[${version.get()}] - ${date()}" })
     headerParserRegex.set("""(\d+\.\d+.\d+)""".toRegex())
     introduction.set(
@@ -210,7 +224,7 @@ changelog {
     )
     itemPrefix.set("-")
     keepUnreleasedSection.set(true)
-    unreleasedTerm.set("[Unreleased]")
+    unreleasedTerm.set("Unreleased")
     groups.set(listOf("Added", "Changed", "Deprecated", "Removed", "Fixed", "Security"))
     lineSeparator.set("\n")
     combinePreReleases.set(true)

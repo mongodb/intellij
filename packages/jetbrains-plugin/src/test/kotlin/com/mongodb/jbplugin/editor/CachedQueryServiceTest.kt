@@ -1,6 +1,5 @@
 package com.mongodb.jbplugin.editor
 
-import com.intellij.database.util.common.containsElements
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
@@ -11,8 +10,8 @@ import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.ParsingTest
 import com.mongodb.jbplugin.meta.service
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
 
 @IntegrationTest
 class CachedQueryServiceTest {
@@ -48,15 +47,15 @@ class CachedQueryServiceTest {
 
         val siblingsOfQuery1 = cachedQueryService.allSiblingsOf(query1)
         assertEquals(1, siblingsOfQuery1.size)
-        assertTrue(
-            siblingsOfQuery1.containsElements {
+        assertNotNull(
+            siblingsOfQuery1.firstOrNull {
                 it.source.text == query2.source.text
             },
             "query2 was not found as a sibling of query1 ${query2.source.text}"
         )
 
-        assertFalse(
-            siblingsOfQuery1.containsElements {
+        assertNull(
+            siblingsOfQuery1.firstOrNull {
                 it.source.text == query3.source.text
             },
             "query3 was found as a sibling of query1: ${query3.source.text}"

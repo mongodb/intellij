@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.timeout
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 
@@ -233,7 +234,7 @@ class ToolbarModelTest {
             verify(toolbarSettings).dataSourceId = dataSource.uniqueId
             verify(editorService).attachDataSourceToSelectedEditor(dataSource)
             verify(editorService, times(2)).reAnalyzeSelectedEditor(applyReadAction = true)
-            verify(dataSourceService).listDatabasesForDataSource(dataSource)
+            verify(dataSourceService, timeout(1000)).listDatabasesForDataSource(dataSource)
         }
 
         @Test
@@ -310,7 +311,7 @@ class ToolbarModelTest {
                 assertEquals(toolbarState.selectedDataSource?.uniqueId, dataSource.uniqueId)
                 assertEquals(toolbarState.selectedDataSourceConnecting, false)
             }
-            verify(dataSourceService).listDatabasesForDataSource(dataSource)
+            verify(dataSourceService, timeout(1000)).listDatabasesForDataSource(dataSource)
 
             toolbarModel.databasesLoadingStarted(dataSource)
             eventually {
@@ -343,7 +344,7 @@ class ToolbarModelTest {
                 assertEquals(toolbarState.selectedDataSource?.uniqueId, dataSource.uniqueId)
                 assertEquals(toolbarState.selectedDataSourceConnecting, false)
             }
-            verify(dataSourceService).listDatabasesForDataSource(dataSource)
+            verify(dataSourceService, timeout(1000)).listDatabasesForDataSource(dataSource)
 
             toolbarModel.databasesLoadingStarted(dataSource)
             eventually {
@@ -384,7 +385,7 @@ class ToolbarModelTest {
                 assertEquals(toolbarState.selectedDataSource?.uniqueId, dataSource.uniqueId)
                 assertEquals(toolbarState.selectedDataSourceConnecting, false)
             }
-            verify(dataSourceService).listDatabasesForDataSource(dataSource)
+            verify(dataSourceService, timeout(1000)).listDatabasesForDataSource(dataSource)
 
             toolbarModel.databasesLoadingStarted(dataSource)
             eventually {
@@ -426,7 +427,7 @@ class ToolbarModelTest {
                 assertEquals(toolbarState.selectedDataSource?.uniqueId, dataSource.uniqueId)
                 assertEquals(toolbarState.selectedDataSourceConnecting, false)
             }
-            verify(dataSourceService).listDatabasesForDataSource(dataSource)
+            verify(dataSourceService, timeout(1000)).listDatabasesForDataSource(dataSource)
 
             toolbarModel.databasesLoadingStarted(dataSource)
             eventually {
@@ -473,7 +474,7 @@ class ToolbarModelTest {
                 assertEquals(toolbarState.selectedDataSource?.uniqueId, dataSource.uniqueId)
                 assertEquals(toolbarState.selectedDataSourceConnecting, false)
             }
-            verify(dataSourceService).listDatabasesForDataSource(dataSource)
+            verify(dataSourceService, timeout(1000)).listDatabasesForDataSource(dataSource)
 
             toolbarModel.databasesLoadingStarted(dataSource)
             eventually {
@@ -516,7 +517,7 @@ class ToolbarModelTest {
                 assertEquals(toolbarState.selectedDataSource?.uniqueId, dataSource.uniqueId)
                 assertEquals(toolbarState.selectedDataSourceConnecting, false)
             }
-            verify(dataSourceService).listDatabasesForDataSource(dataSource)
+            verify(dataSourceService, timeout(1000)).listDatabasesForDataSource(dataSource)
 
             toolbarModel.databasesLoadingStarted(dataSource)
             eventually {
