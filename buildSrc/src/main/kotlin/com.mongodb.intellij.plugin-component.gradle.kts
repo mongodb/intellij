@@ -137,14 +137,6 @@ dependencies {
     testImplementation(libs.testing.intellij.testingFrameworkCore) {
         exclude("org.jetbrains.teamcity")
     }
-
-    testImplementation(libs.testing.intellij.testingFramework) {
-        exclude("ai.grazie.spell")
-        exclude("ai.grazie.utils")
-        exclude("ai.grazie.nlp")
-        exclude("ai.grazie.model")
-        exclude("org.jetbrains.teamcity")
-    }
 }
 
 jmh {
