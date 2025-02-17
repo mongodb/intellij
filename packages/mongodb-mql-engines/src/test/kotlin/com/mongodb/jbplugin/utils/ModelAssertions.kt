@@ -1,6 +1,7 @@
 package com.mongodb.jbplugin.utils
 
 import com.mongodb.jbplugin.indexing.IndexAnalyzer
+import com.mongodb.jbplugin.indexing.IndexAnalyzer.SortDirection
 import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -51,7 +52,13 @@ object ModelAssertions {
 
         assertEquals(expected.size, actual.fields.size)
         expected.zip(actual.fields) { expectedIdxField, actualIdxField ->
+            val expectedDirection = if (expectedIdxField.second == -1) {
+                SortDirection.Descending
+            } else {
+                SortDirection.Ascending
+            }
             assertEquals(expectedIdxField.first, actualIdxField.fieldName)
+            assertEquals(expectedDirection, actualIdxField.direction)
         }
 
         additionalAssertions(actual)

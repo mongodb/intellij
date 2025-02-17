@@ -1,5 +1,6 @@
 package com.mongodb.jbplugin.indexing
 
+import com.mongodb.jbplugin.mql.BsonAny
 import com.mongodb.jbplugin.mql.BsonType
 import com.mongodb.jbplugin.mql.CollectionSchema
 import com.mongodb.jbplugin.mql.Node
@@ -60,11 +61,20 @@ object IndexAnalyzer {
             .mapValues { (_, usages) -> usages.sortedBy { it.role.ordinal } }
 
         val contextInferredFieldUsages = allFieldUsages.mapValues { (_, usages) ->
-            val leastSpecificUsage = usages.reduce(QueryFieldUsage<S>::leastSpecificUsageOf)
+            val leastSpecificUsage = usages
+                .filter { it.role == QueryRole.EQUALITY || it.role == QueryRole.RANGE }
+                .reduceOrNull(QueryFieldUsage<S>::leastSpecificUsageOf)
+
+            // There might be more than one sort direction specified in the code
+            // so we take only the last defined direction.
+            val lastUsedSort = usages
+                .lastOrNull { it.role == QueryRole.SORT }
+
             usages.first().copy(
-                value = leastSpecificUsage.value,
-                valueType = leastSpecificUsage.valueType,
-                selectivity = leastSpecificUsage.selectivity,
+                value = leastSpecificUsage?.value ?: lastUsedSort?.value,
+                valueType = leastSpecificUsage?.valueType ?: lastUsedSort?.valueType ?: BsonAny,
+                selectivity = leastSpecificUsage?.selectivity,
+                sortDirection = lastUsedSort?.sortDirection ?: SortDirection.Ascending
             )
         }
 
@@ -74,7 +84,7 @@ object IndexAnalyzer {
                 SuggestedIndex.MongoDbIndexField(
                     source = it.source,
                     fieldName = it.fieldName,
-                    direction = SortDirection.Ascending,
+                    direction = it.sortDirection,
                     reason = reasonOfSuggestion(it),
                 )
             }
@@ -95,36 +105,31 @@ object IndexAnalyzer {
                 val valueRef = context.first.second
                 val fieldRef = context.second
                 val role = named.queryRole(valueRef.type)
-                val selectivityOfField = collectionSchema?.dataDistribution?.getSelectivityForPath(
-                    fieldRef.fieldName,
-                    valueRef.value,
-                )
-
+                val fieldType = collectionSchema?.typeOf(fieldRef.fieldName) ?: BsonAny
                 val selectivity = if (role == QueryRole.SORT) {
-                    // In case of sort the value is always null as it is an inferred value
-                    // and for that reason we consider this field as highly selective to move
-                    // it all the way back in the index definition so we can safely use cardinality
-                    // comparison
-                    1.0
+                    // In case of sort the selectivity is always null because there is no value to
+                    // calculate the selectivity from.
+                    null
                 } else {
-                    selectivityOfField
-                }
-
-                val valueType = if (role == QueryRole.SORT && collectionSchema != null) {
-                    // In case of sort we do not rely on the value of the type as it is always
-                    // Inferred and instead use the type of the field for the best guess.
-                    collectionSchema.typeOf(fieldRef.fieldName)
-                } else {
-                    valueRef.type
+                    collectionSchema?.dataDistribution?.getSelectivityForPath(
+                        fieldRef.fieldName,
+                        valueRef.value,
+                    )
                 }
 
                 QueryFieldUsage(
                     source = fieldRef.source,
                     fieldName = fieldRef.fieldName,
-                    valueType = valueType,
+                    fieldType = fieldType,
                     value = valueRef.value,
+                    valueType = valueRef.type,
                     role = role,
-                    selectivity = selectivity
+                    selectivity = selectivity,
+                    sortDirection = if (valueRef.value == -1) {
+                        SortDirection.Descending
+                    } else {
+                        SortDirection.Ascending
+                    }
                 )
             }.anyError()
 
@@ -164,10 +169,12 @@ object IndexAnalyzer {
     private data class QueryFieldUsage<S>(
         val source: S,
         val fieldName: String,
-        val valueType: BsonType,
+        val fieldType: BsonType,
         val value: Any?,
+        val valueType: BsonType,
         val role: QueryRole,
         val selectivity: Double?,
+        val sortDirection: SortDirection,
     ) {
         companion object {
             fun <S> byRoleSelectivityAndCardinality() = Comparator<QueryFieldUsage<S>> { a, b ->
@@ -179,7 +186,14 @@ object IndexAnalyzer {
                     if (selectivityComparison != 0) return@Comparator selectivityComparison
                 }
 
-                return@Comparator a.valueType.cardinality.compareTo(b.valueType.cardinality)
+                return@Comparator when {
+                    // In case of query role == Sort we compare by field types because value types
+                    // are ir-relevant as they are always inferred as 1 or -1.
+                    a.role == QueryRole.SORT && b.role == QueryRole.SORT ->
+                        a.fieldType.cardinality.compareTo(b.fieldType.cardinality)
+                    else ->
+                        a.valueType.cardinality.compareTo(b.valueType.cardinality)
+                }
             }
         }
 

@@ -133,6 +133,15 @@ object ModelDsl {
         nodes.add(Node(Unit, componentHolder.components + ascendingOp + inferredSortValue))
     }
 
+    fun NodeHolder.descending(rule: ComponentHolder.() -> Unit) {
+        val componentHolder = ComponentHolder(mutableListOf())
+        rule(componentHolder)
+
+        val descendingOp = Named(Name.DESCENDING)
+        val inferredSortValue = HasValueReference(HasValueReference.Inferred(Unit, -1, BsonInt32))
+        nodes.add(Node(Unit, componentHolder.components + descendingOp + inferredSortValue))
+    }
+
     fun NodeHolder.include(rule: ComponentHolder.() -> Unit) {
         val componentHolder = ComponentHolder(mutableListOf())
         rule(componentHolder)
