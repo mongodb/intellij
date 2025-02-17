@@ -23,11 +23,7 @@ internal class TelemetryService : AppLifecycleListener {
         Analytics
             .builder(
                 BuildInformation.run {
-                    if (segmentApiKey.isEmpty()) {
-                        "<invalid>"
-                    } else {
-                        segmentApiKey
-                    }
+                    segmentApiKey.ifEmpty { "<invalid>" }
                 }
             )
             .build()
