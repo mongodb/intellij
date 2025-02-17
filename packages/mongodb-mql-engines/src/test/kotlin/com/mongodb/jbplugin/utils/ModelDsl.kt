@@ -2,6 +2,7 @@ package com.mongodb.jbplugin.utils
 
 import com.mongodb.jbplugin.accessadapter.toNs
 import com.mongodb.jbplugin.indexing.IndexAnalyzer
+import com.mongodb.jbplugin.indexing.IndexAnalyzer.SortDirection
 import com.mongodb.jbplugin.mql.BsonInt32
 import com.mongodb.jbplugin.mql.CollectionSchema
 import com.mongodb.jbplugin.mql.Component
@@ -132,6 +133,15 @@ object ModelDsl {
         nodes.add(Node(Unit, componentHolder.components + ascendingOp + inferredSortValue))
     }
 
+    fun NodeHolder.descending(rule: ComponentHolder.() -> Unit) {
+        val componentHolder = ComponentHolder(mutableListOf())
+        rule(componentHolder)
+
+        val descendingOp = Named(Name.DESCENDING)
+        val inferredSortValue = HasValueReference(HasValueReference.Inferred(Unit, -1, BsonInt32))
+        nodes.add(Node(Unit, componentHolder.components + descendingOp + inferredSortValue))
+    }
+
     fun NodeHolder.include(rule: ComponentHolder.() -> Unit) {
         val componentHolder = ComponentHolder(mutableListOf())
         rule(componentHolder)
@@ -155,9 +165,14 @@ object ModelDsl {
             ),
             fields.map {
                 IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
-                    it.first,
-                    Unit,
-                    IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
+                    fieldName = it.first,
+                    source = Unit,
+                    direction = if (it.second == -1) {
+                        SortDirection.Descending
+                    } else {
+                        SortDirection.Ascending
+                    },
+                    reason = IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
                 )
             },
             coveredQueries = nodeHolder.nodes
