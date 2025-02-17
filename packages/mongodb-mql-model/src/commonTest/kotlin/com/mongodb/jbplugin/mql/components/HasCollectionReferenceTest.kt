@@ -3,13 +3,13 @@ package com.mongodb.jbplugin.mql.components
 import com.mongodb.jbplugin.mql.BsonObject
 import com.mongodb.jbplugin.mql.CollectionSchema
 import com.mongodb.jbplugin.mql.Namespace
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class HasCollectionReferenceTest {
     @Test
-    fun `when the underlying reference is Known, it creates a copy with the database modified`() {
+    fun when_the_underlying_reference_is_Known_it_creates_a_copy_with_the_database_modified() {
         val dbRef = 1
         val collRef = 2
 
@@ -38,7 +38,7 @@ class HasCollectionReferenceTest {
     }
 
     @Test
-    fun `when the underlying reference is Known, it creates a copy with the collection schema injected`() {
+    fun when_the_underlying_reference_is_Known_it_creates_a_copy_with_the_collection_schema_injected() {
         val dbRef = 1
         val collRef = 2
 
@@ -71,7 +71,7 @@ class HasCollectionReferenceTest {
     }
 
     @Test
-    fun `when the underlying reference is OnlyCollection, it converts it to Known`() {
+    fun when_the_underlying_reference_is_OnlyCollection_it_converts_it_to_Known() {
         val collRef = 1
         val collectionReference = HasCollectionReference(
             HasCollectionReference.OnlyCollection(
@@ -96,7 +96,7 @@ class HasCollectionReferenceTest {
     }
 
     @Test
-    fun `when the underlying reference is Unknown, it does nothing`() {
+    fun when_the_underlying_reference_is_Unknown_it_does_nothing() {
         val collectionReference = HasCollectionReference(
             HasCollectionReference.Unknown
         )

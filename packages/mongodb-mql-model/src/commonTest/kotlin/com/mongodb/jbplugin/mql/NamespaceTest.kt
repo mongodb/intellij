@@ -1,29 +1,31 @@
 package com.mongodb.jbplugin.mql
 
-import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class NamespaceTest {
     @Test
-    fun `serialises to a valid namespace string`() {
+    fun serialises_to_a_valid_namespace_string() {
         val namespace = Namespace("mydb", "my.cool.col")
         assertEquals("mydb.my.cool.col", namespace.toString())
     }
 
     @Test
-    fun `is not valid if both database and collections are provided`() {
+    fun is_not_valid_if_both_database_and_collections_are_provided() {
         val namespace = Namespace("mydb", "mycoll")
         assertTrue(namespace.isValid)
     }
 
     @Test
-    fun `is not valid if the database is empty`() {
+    fun is_not_valid_if_the_database_is_empty() {
         val namespace = Namespace("", "my.cool.col")
         assertFalse(namespace.isValid)
     }
 
     @Test
-    fun `is not valid if the collection is empty`() {
+    fun is_not_valid_if_the_collection_is_empty() {
         val namespace = Namespace("mydb", "")
         assertFalse(namespace.isValid)
     }

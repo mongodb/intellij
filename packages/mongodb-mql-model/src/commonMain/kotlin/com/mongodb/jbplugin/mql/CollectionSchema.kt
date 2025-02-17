@@ -1,8 +1,5 @@
 package com.mongodb.jbplugin.mql
 
-import org.intellij.lang.annotations.Language
-import java.lang.Integer.parseInt
-
 /**
  * @property namespace
  * @property schema
@@ -13,7 +10,7 @@ data class CollectionSchema(
     val dataDistribution: DataDistribution = DataDistribution.generate(emptyList()),
 ) {
     fun typeOf(
-        @Language("JSONPath") jsonPath: String,
+        jsonPath: String,
     ): BsonType {
         val splitJsonPath = jsonPath.split('.').toList()
         return recursivelyGetType(splitJsonPath, schema)
@@ -59,7 +56,7 @@ data class CollectionSchema(
         }
 
         val current = jsonPath.first()
-        val isCurrentNumber = kotlin.runCatching { parseInt(current) }.isSuccess
+        val isCurrentNumber = kotlin.runCatching { current.toInt() }.isSuccess
 
         val listOfOptions = mutableListOf<BsonType>()
 

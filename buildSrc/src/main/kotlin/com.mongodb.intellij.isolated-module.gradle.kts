@@ -1,13 +1,11 @@
+import gradle.kotlin.dsl.accessors._76b600702684b1c4586cd5ce03c14377.jacoco
+import gradle.kotlin.dsl.accessors._76b600702684b1c4586cd5ce03c14377.testImplementation
 import org.gradle.accessors.dm.LibrariesForLibs
-import org.jlleitschuh.gradle.ktlint.KtlintExtension
-import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
-import java.io.ByteArrayOutputStream
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    id("java")
-    kotlin("jvm")
-    id("jacoco")
-    id("org.jlleitschuh.gradle.ktlint")
+    id("com.mongodb.intellij.base-module")
+    kotlin("multiplatform")
 }
 
 repositories {
@@ -17,27 +15,64 @@ repositories {
 
 val libs = the<LibrariesForLibs>()
 
-dependencies {
-    compileOnly(libs.kotlin.stdlib)
-    compileOnly(libs.kotlin.coroutines.core)
-    compileOnly(libs.kotlin.reflect)
-    testImplementation(libs.testing.jupiter.engine)
-    testImplementation(libs.testing.jupiter.params)
-    testImplementation(libs.testing.jupiter.vintage.engine)
-    testImplementation(libs.testing.mockito.core)
-    testImplementation(libs.testing.mockito.kotlin)
-    testImplementation(libs.kotlin.coroutines.test)
-    testImplementation(libs.testing.testContainers.core)
-    testImplementation(libs.testing.testContainers.jupiter)
-    testImplementation(libs.testing.testContainers.mongodb)
+kotlin {
+    jvm {
+        val main by compilations.getting
+    }
+
+    js(IR) {
+        useEsModules()
+        browser {
+            testTask {
+                useKarma {
+                    useFirefox()
+                }
+            }
+        }
+
+        nodejs {
+            testTask {
+                useMocha()
+            }
+        }
+    }
+
+    sourceSets {
+        val commonMain by getting {
+            dependencies {
+                compileOnly(libs.kotlin.stdlib)
+                compileOnly(libs.kotlin.coroutines.core)
+                compileOnly(libs.kotlin.reflect)
+                implementation(libs.kotlin.collections)
+            }
+        }
+
+        val commonTest by getting {
+            dependencies {
+                implementation(libs.testing.kotlin.test)
+                implementation(libs.testing.kotlin.coroutines)
+            }
+        }
+
+        val jvmMain by getting
+        val jvmTest by getting {
+            dependencies {
+                implementation(libs.testing.jupiter.engine)
+                implementation(libs.testing.jupiter.params)
+                implementation(libs.testing.jupiter.vintage.engine)
+
+                implementation(libs.testing.mockito.core)
+                implementation(libs.testing.mockito.kotlin)
+                implementation(libs.testing.kotlin.coroutines)
+            }
+        }
+
+        val jsMain by getting
+        val jsTest by getting
+    }
 }
 
 tasks {
-    withType<JavaCompile> {
-        sourceCompatibility = libs.versions.java.target.get()
-        targetCompatibility = libs.versions.java.target.get()
-    }
-
     withType<Test> {
         useJUnitPlatform()
 
@@ -53,80 +88,9 @@ tasks {
         }
 
         jvmArgs(
-            listOf(
-                "--add-opens=java.base/java.lang=ALL-UNNAMED"
-            )
+          listOf(
+            "--add-opens=java.base/java.lang=ALL-UNNAMED"
+          )
         )
-    }
-
-    withType<JacocoReport> {
-        reports {
-            xml.required = true
-            csv.required = false
-            html.outputLocation = layout.buildDirectory.dir("reports/jacocoHtml")
-        }
-
-        executionData(
-            files(withType(Test::class.java)).filter { it.name.endsWith(".exec") && it.exists() }
-        )
-    }
-}
-
-configure<KtlintExtension> {
-    version.set(libs.versions.ktlint.tool)
-    verbose.set(true)
-    outputToConsole.set(true)
-    ignoreFailures.set(false)
-    enableExperimentalRules.set(true)
-
-    reporters {
-        reporter(ReporterType.PLAIN)
-        reporter(ReporterType.CHECKSTYLE)
-    }
-
-    filter {
-        exclude("**/generated/**")
-        include("**/kotlin/**")
-    }
-}
-
-tasks.register("checkSpecUpdates") {
-    group = "verification"
-    description = "Fails if a Kotlin file changed but no specification file was updated"
-
-    doLast {
-        val rootDir = "${rootDir.absolutePath}"
-        val baseDir = "${project.projectDir.path}"
-        val specsDir = "$baseDir/src/docs/"
-
-        if (!File(specsDir).exists()) {
-            logger.lifecycle("Skipping checkSpecUpdates: $specsDir does not exist.")
-            return@doLast
-        } else {
-            logger.lifecycle("Verifying specifications.")
-        }
-
-        val outputStream = ByteArrayOutputStream()
-        exec {
-            workingDir = project.rootDir
-            standardOutput = outputStream
-            commandLine("git", "diff", "--name-only", "origin/main")
-        }
-
-        val changedFiles = outputStream.toString().trim().lines().map { "$rootDir/$it" }
-
-        logger.quiet("List of changed files:")
-        changedFiles.forEach { file ->
-            logger.quiet(file)
-        }
-
-        val codeChanged = changedFiles.any { it.startsWith("$baseDir/src/main/kotlin/") && it.endsWith(".kt") }
-        val specChanged = changedFiles.any { it.startsWith(specsDir) }
-
-        if (codeChanged && !specChanged) {
-            logger.error("The specification is not up to date with the latest code changes.")
-            logger.error("Please update the relevant files in $specsDir or add the 'skip-spec-check' label to the PR.")
-            throw GradleException()
-        }
     }
 }

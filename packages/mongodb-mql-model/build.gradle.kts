@@ -2,8 +2,19 @@ plugins {
     id("com.mongodb.intellij.isolated-module")
 }
 
-dependencies {
-    implementation(libs.bson.kotlin)
-    implementation(libs.owasp.encoder)
-    implementation(libs.semver.parser)
+kotlin {
+    sourceSets {
+        commonMain {
+            dependencies {
+                // implementation(libs.owasp.encoder)
+                implementation(libs.semver.parser)
+            }
+        }
+
+        jvmMain {
+            dependencies {
+                implementation(libs.bson.kotlin)
+            }
+        }
+    }
 }

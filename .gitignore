@@ -48,3 +48,4 @@ FAKE_BROWSER_OUTPUT
 
 /.idea/artifacts
 /.intellijPlatform
+/kotlin-js-store

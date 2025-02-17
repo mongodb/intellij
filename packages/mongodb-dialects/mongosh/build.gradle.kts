@@ -1,5 +1,5 @@
 plugins {
-    id("com.mongodb.intellij.isolated-module")
+    id("com.mongodb.intellij.plugin-component")
 }
 
 dependencies {

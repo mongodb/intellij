@@ -1,7 +1,5 @@
 package com.mongodb.jbplugin.mql
 
-import java.util.*
-
 /**
  * Represents a MongoDB Namespace (db/coll)
  *
@@ -18,7 +16,7 @@ class Namespace private constructor(
 
     override fun equals(other: Any?): Boolean = other is Namespace && hashCode() == other.hashCode()
 
-    override fun hashCode(): Int = Objects.hash(database, collection)
+    override fun hashCode(): Int = database.hashCode() * collection.hashCode()
 
     companion object {
         operator fun invoke(

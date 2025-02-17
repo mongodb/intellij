@@ -1,11 +1,11 @@
 package com.mongodb.jbplugin.mql
 
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class CollectionSchemaTest {
     @Test
-    fun `should return the type of a field in the root object`() {
+    fun should_return_the_type_of_a_field_in_the_root_object() {
         val schema =
             CollectionSchema(
                 Namespace("a", "b"),
@@ -20,7 +20,7 @@ class CollectionSchemaTest {
     }
 
     @Test
-    fun `should be able to merge when multiple options inside an object`() {
+    fun should_be_able_to_merge_when_multiple_options_inside_an_object() {
         val schema =
             CollectionSchema(
                 Namespace("a", "b"),
@@ -45,7 +45,7 @@ class CollectionSchemaTest {
     }
 
     @Test
-    fun `should be able to iterate over an array with objects`() {
+    fun should_be_able_to_iterate_over_an_array_with_objects() {
         val schema =
             CollectionSchema(
                 Namespace("a", "b"),

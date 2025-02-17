@@ -6,7 +6,9 @@ import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
 
 plugins {
-    id("com.mongodb.intellij.isolated-module")
+    id("com.mongodb.intellij.base-module")
+    id("java")
+    kotlin("jvm")
     id("org.gradle.test-retry")
     id("org.jetbrains.intellij.platform")
     id("me.champeau.jmh")
@@ -126,6 +128,12 @@ dependencies {
     jmh(libs.testing.jmh.annotationProcessor)
     jmh(libs.testing.jmh.generatorByteCode)
 
+    testImplementation(libs.testing.jupiter.engine)
+    testImplementation(libs.testing.jupiter.params)
+    testImplementation(libs.testing.jupiter.vintage.engine)
+    testImplementation(libs.testing.mockito.core)
+    testImplementation(libs.testing.mockito.kotlin)
+    testImplementation(libs.testing.kotlin.coroutines)
     testImplementation(libs.mongodb.driver)
     testImplementation(libs.testing.spring.mongodb)
     testImplementation(libs.testing.assertj.swing)
@@ -136,6 +144,34 @@ dependencies {
 
     testImplementation(libs.testing.intellij.testingFrameworkCore) {
         exclude("org.jetbrains.teamcity")
+    }
+}
+
+tasks {
+    withType<JavaCompile> {
+        sourceCompatibility = libs.versions.java.target.get()
+        targetCompatibility = libs.versions.java.target.get()
+    }
+
+    withType<Test> {
+        useJUnitPlatform()
+
+        extensions.configure(JacocoTaskExtension::class) {
+            isJmx = true
+            includes = listOf("com.mongodb.*")
+            isIncludeNoLocationClasses = true
+        }
+
+        jacoco {
+            toolVersion = libs.versions.jacoco.get()
+            isScanForTestClasses = true
+        }
+
+        jvmArgs(
+          listOf(
+            "--add-opens=java.base/java.lang=ALL-UNNAMED"
+          )
+        )
     }
 }
 

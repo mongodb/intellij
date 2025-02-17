@@ -2,16 +2,16 @@ package com.mongodb.jbplugin.mql
 
 import com.mongodb.jbplugin.mql.components.*
 import com.mongodb.jbplugin.mql.components.HasCollectionReference.Known
-import com.mongodb.jbplugin.mql.components.HasCollectionReference.OnlyCollection
 import io.github.z4kn4fein.semver.Version
-import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.MethodSource
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class NodeTest {
     @Test
-    fun `is able to get a component if exists`() {
+    fun is_able_to_get_a_component_if_exists() {
         val node = Node<Unit?>(null, listOf(Named(Name.EQ)))
         val named = node.component<Named>()
 
@@ -19,7 +19,7 @@ class NodeTest {
     }
 
     @Test
-    fun `returns null if a component does not exist`() {
+    fun returns_null_if_a_component_does_not_exist() {
         val node = Node<Unit?>(null, listOf())
         val named = node.component<HasFieldReference<Unit?>>()
 
@@ -27,7 +27,7 @@ class NodeTest {
     }
 
     @Test
-    fun `is able to get all components of the same type`() {
+    fun is_able_to_get_all_components_of_the_same_type() {
         val node =
             Node<Unit?>(
                 null,
@@ -54,7 +54,7 @@ class NodeTest {
     }
 
     @Test
-    fun `returns true if a component of that type exists`() {
+    fun returns_true_if_a_component_of_that_type_exists() {
         val node =
             Node<Unit?>(
                 null,
@@ -66,7 +66,7 @@ class NodeTest {
     }
 
     @Test
-    fun `returns false if a component of that type does not exist`() {
+    fun returns_false_if_a_component_of_that_type_does_not_exist() {
         val node =
             Node<Unit?>(
                 null,
@@ -78,7 +78,7 @@ class NodeTest {
     }
 
     @Test
-    fun `it copies the Node by correctly mapping the underlying components`() {
+    fun it_copies_the_Node_by_correctly_mapping_the_underlying_components() {
         val node = Node<Unit?>(
             null,
             listOf(
@@ -109,7 +109,7 @@ class NodeTest {
     }
 
     @Test
-    fun `it creates a copy of the query with overwritten database in the components`() {
+    fun it_creates_a_copy_of_the_query_with_overwritten_database_in_the_components() {
         val node = Node<Unit?>(
             null,
             listOf(
@@ -123,42 +123,23 @@ class NodeTest {
         assertTrue(
             node.component<HasCollectionReference<*>>()?.let {
                 it.reference is HasCollectionReference.OnlyCollection
-            }
-                ?: false
+            } == true
         )
 
         assertTrue(
             nodeReference
                 ?.let {
-                    it.reference is HasCollectionReference.Known
-                }
-                ?: false
+                    it.reference is Known
+                } == true
         )
         assertEquals(
             "foo",
-            (nodeReference?.reference as HasCollectionReference.Known).namespace.database,
+            (nodeReference.reference as Known).namespace.database,
         )
     }
 
-    @MethodSource("validComponents")
-    @ParameterizedTest
-    fun `does support the following component`(
-        component: Component,
-        componentClass: Class<Component>,
-    ) {
-        val node =
-            Node<Unit?>(
-                null,
-                listOf(
-                    component,
-                ),
-            )
-
-        assertNotNull(node.component(componentClass))
-    }
-
     @Test
-    fun `adds target cluster if does not exist`() {
+    fun adds_target_cluster_if_does_not_exist() {
         val targetCluster = HasTargetCluster(Version.parse("7.0.0"))
         val query = Node(Unit, emptyList()).withTargetCluster(targetCluster)
 
@@ -166,7 +147,7 @@ class NodeTest {
     }
 
     @Test
-    fun `removes old target cluster and adds a new one`() {
+    fun removes_old_target_cluster_and_adds_a_new_one() {
         val oldCluster = HasTargetCluster(Version.parse("5.0.0"))
         val targetCluster = HasTargetCluster(Version.parse("7.0.0"))
         val query = Node(Unit, listOf(oldCluster)).withTargetCluster(targetCluster)
@@ -175,12 +156,12 @@ class NodeTest {
     }
 
     @Test
-    fun `on calling queryWithInjectedCollectionSchema it returns a Node with injected CollectionSchema if CollectionReference is Known`() {
+    fun on_calling_queryWithInjectedCollectionSchema_it_returns_a_Node_with_injected_CollectionSchema_if_CollectionReference_is_Known() {
         val node = Node<Unit?>(
             null,
             listOf(
                 HasCollectionReference(
-                    HasCollectionReference.Known(
+                    Known(
                         1,
                         2,
                         Namespace("db", "coll"),
@@ -197,52 +178,5 @@ class NodeTest {
         val modifiedNode = node.queryWithInjectedCollectionSchema(schema)
         val nodeReference = modifiedNode.component<HasCollectionReference<*>>()
         assertEquals(schema, (nodeReference?.reference as? Known<*>)?.schema)
-    }
-
-    companion object {
-        @JvmStatic
-        fun validComponents(): Array<Array<Any>> =
-            arrayOf(
-                arrayOf(HasFilter<Unit?>(emptyList()), HasFilter::class.java),
-                arrayOf(
-                    HasCollectionReference(HasCollectionReference.Unknown),
-                    HasCollectionReference::class.java
-                ),
-                arrayOf(
-                    HasCollectionReference(
-                        HasCollectionReference.Known(1, 2, Namespace("db", "coll"))
-                    ),
-                    HasCollectionReference::class.java,
-                ),
-                arrayOf(
-                    HasCollectionReference(HasCollectionReference.OnlyCollection(1, "coll")),
-                    HasCollectionReference::class.java,
-                ),
-                arrayOf(
-                    HasFieldReference(HasFieldReference.Unknown),
-                    HasFieldReference::class.java
-                ),
-                arrayOf(
-                    HasFieldReference(HasFieldReference.FromSchema(null, "abc")),
-                    HasFieldReference::class.java
-                ),
-                arrayOf(
-                    HasValueReference(HasValueReference.Unknown),
-                    HasValueReference::class.java
-                ),
-                arrayOf(
-                    HasValueReference(HasValueReference.Constant(null, 123, BsonInt32)),
-                    HasValueReference::class.java
-                ),
-                arrayOf(
-                    HasValueReference(HasValueReference.Runtime(null, BsonInt32)),
-                    HasValueReference::class.java
-                ),
-                arrayOf(
-                    HasValueReference(HasValueReference.Unknown),
-                    HasValueReference::class.java
-                ),
-                arrayOf(Named(Name.EQ), Named::class.java),
-            )
     }
 }

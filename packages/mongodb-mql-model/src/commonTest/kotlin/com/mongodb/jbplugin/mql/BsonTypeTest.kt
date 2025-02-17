@@ -1,79 +1,68 @@
 package com.mongodb.jbplugin.mql
 
-import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.MethodSource
-import java.math.BigDecimal
-import java.math.BigInteger
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.util.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
-@Suppress("TOO_LONG_FUNCTION")
 class BsonTypeTest {
-    @ParameterizedTest
-    @MethodSource("java to bson")
-    fun `should map correctly all java types`(
-        javaClass: Class<*>,
-        expected: BsonType,
-    ) {
-        assertEquals(expected, javaClass.toBsonType())
-    }
-
-    @ParameterizedTest
-    @MethodSource(
-        "assignable to a non higher precision number, non collection, non arbitrary BsonType",
-        "assignable to BsonInt64",
-        "assignable to BsonDecimal128",
-        "assignable to BsonNull",
-        "assignable to BsonAny",
-        "assignable to BsonAnyOf",
-        "BsonArray match assertions",
-        "BsonObject match assertions",
-    )
-    fun `should calculate correctly whether a type matches the other provided type`(
-        // calling these value and field type just for clarity around usage
-        valueType: BsonType,
-        fieldType: BsonType,
-        expectedToMatch: Boolean,
-    ) {
-        val assertionFailureMessage = if (expectedToMatch) {
-            "$valueType was expected to be assignable to $fieldType but it was not!"
-        } else {
-            "$valueType was not expected to be assignable to $fieldType but it was!"
+    @Test
+    fun should_calculate_correctly_whether_a_type_matches_the_other_provided_type() {
+        assignable_to_a_non_higher_precision_number_non_collection_non_arbitrary_BsonType().forEach {
+            assertShouldMatchCorrectlyTypes(it[0] as BsonType, it[1] as BsonType, it[2] as Boolean)
         }
-        val result = valueType.isAssignableTo(fieldType)
-        assertEquals(
-            result,
-            expectedToMatch,
-            assertionFailureMessage
-        )
+
+        assignable_to_BsonInt64().forEach {
+            assertShouldMatchCorrectlyTypes(it[0] as BsonType, it[1] as BsonType, it[2] as Boolean)
+        }
+
+        assignable_to_BsonDecimal128().forEach {
+            assertShouldMatchCorrectlyTypes(it[0] as BsonType, it[1] as BsonType, it[2] as Boolean)
+        }
+
+        assignable_to_BsonNull().forEach {
+            assertShouldMatchCorrectlyTypes(it[0] as BsonType, it[1] as BsonType, it[2] as Boolean)
+        }
+
+        assignable_to_BsonAny().forEach {
+            assertShouldMatchCorrectlyTypes(it[0] as BsonType, it[1] as BsonType, it[2] as Boolean)
+        }
+
+        assignable_to_BsonAnyOf().forEach {
+            assertShouldMatchCorrectlyTypes(it[0] as BsonType, it[1] as BsonType, it[2] as Boolean)
+        }
+
+        bsonArray_match_assertions().forEach {
+            assertShouldMatchCorrectlyTypes(it[0] as BsonType, it[1] as BsonType, it[2] as Boolean)
+        }
+
+        bsonObject_match_assertions().forEach {
+            assertShouldMatchCorrectlyTypes(it[0] as BsonType, it[1] as BsonType, it[2] as Boolean)
+        }
     }
 
     @Test
-    fun `bson enum should be assignable to a string`() {
+    fun bson_enum_should_be_assignable_to_a_string() {
         val bsonEnum = BsonEnum(setOf("A", "B"))
         assertTrue(bsonEnum.isAssignableTo(BsonString))
     }
 
     @Test
-    fun `bson enum should be assignable to another bson enum if they are equals`() {
+    fun bson_enum_should_be_assignable_to_another_bson_enum_if_they_are_equals() {
         val bsonEnum = BsonEnum(setOf("A", "B"))
         val otherBsonEnum = BsonEnum(setOf("A", "B"))
         assertTrue(bsonEnum.isAssignableTo(otherBsonEnum))
     }
 
     @Test
-    fun `bson enum should be assignable to another bson enum if it is an strict subset`() {
+    fun bson_enum_should_be_assignable_to_another_bson_enum_if_it_is_an_strict_subset() {
         val bsonEnum = BsonEnum(setOf("A"))
         val otherBsonEnum = BsonEnum(setOf("A", "B"))
         assertTrue(bsonEnum.isAssignableTo(otherBsonEnum))
     }
 
     @Test
-    fun `bson enum should not be assignable to another bson enum if it is not a subset`() {
+    fun bson_enum_should_not_be_assignable_to_another_bson_enum_if_it_is_not_a_subset() {
         val bsonEnum = BsonEnum(setOf("A", "C"))
         val otherBsonEnum = BsonEnum(setOf("A", "B"))
         assertFalse(bsonEnum.isAssignableTo(otherBsonEnum))
@@ -91,9 +80,23 @@ class BsonTypeTest {
             BsonDecimal128,
         )
 
-        private fun List<BsonType>.listExcluding(type: BsonType): List<BsonType> = subtract(
-            setOf(type)
-        ).toList()
+        private fun assertShouldMatchCorrectlyTypes(
+            valueType: BsonType,
+            fieldType: BsonType,
+            expectedToMatch: Boolean
+        ) {
+            val assertionFailureMessage = if (expectedToMatch) {
+                "$valueType was expected to be assignable to $fieldType but it was not!"
+            } else {
+                "$valueType was not expected to be assignable to $fieldType but it was!"
+            }
+            val result = valueType.isAssignableTo(fieldType)
+            assertEquals(
+                result,
+                expectedToMatch,
+                assertionFailureMessage
+            )
+        }
 
         private fun List<BsonType>.listExcluding(types: Set<BsonType>): List<BsonType> = subtract(
             types
@@ -107,39 +110,7 @@ class BsonTypeTest {
             types
         ).random()
 
-        @JvmStatic
-        fun `java to bson`(): Array<Any> =
-            arrayOf(
-                arrayOf(Double::class.javaObjectType, BsonAnyOf(BsonNull, BsonDouble)),
-                arrayOf(Double::class.javaPrimitiveType, BsonDouble),
-                arrayOf(CharSequence::class.java, BsonAnyOf(BsonNull, BsonString)),
-                arrayOf(String::class.java, BsonAnyOf(BsonNull, BsonString)),
-                arrayOf(Boolean::class.javaObjectType, BsonAnyOf(BsonNull, BsonBoolean)),
-                arrayOf(Boolean::class.javaPrimitiveType, BsonBoolean),
-                arrayOf(Date::class.java, BsonAnyOf(BsonNull, BsonDate)),
-                arrayOf(Instant::class.java, BsonAnyOf(BsonNull, BsonDate)),
-                arrayOf(LocalDate::class.java, BsonAnyOf(BsonNull, BsonDate)),
-                arrayOf(LocalDateTime::class.java, BsonAnyOf(BsonNull, BsonDate)),
-                arrayOf(Int::class.javaObjectType, BsonAnyOf(BsonNull, BsonInt32)),
-                arrayOf(Int::class.javaPrimitiveType, BsonInt32),
-                arrayOf(BigInteger::class.java, BsonAnyOf(BsonNull, BsonInt64)),
-                arrayOf(BigDecimal::class.java, BsonAnyOf(BsonNull, BsonDecimal128)),
-                arrayOf(ArrayList::class.java, BsonAnyOf(BsonNull, BsonArray(BsonAny))),
-                arrayOf(
-                    ExampleClass::class.java,
-                    BsonAnyOf(
-                        BsonNull,
-                        BsonObject(
-                            mapOf(
-                                "field" to BsonAnyOf(BsonNull, BsonString),
-                            ),
-                        ),
-                    ),
-                ),
-            )
-
-        @JvmStatic
-        fun `assignable to a non higher precision number, non collection, non arbitrary BsonType`(): Array<Array<Any>> {
+        fun assignable_to_a_non_higher_precision_number_non_collection_non_arbitrary_BsonType(): Array<Array<Any>> {
             // Special cases for assignability for numerical types down below
             val types = simpleTypes.listExcluding(setOf(BsonInt64, BsonDecimal128))
             return types.flatMap { simpleType ->
@@ -173,8 +144,7 @@ class BsonTypeTest {
             }.toTypedArray()
         }
 
-        @JvmStatic
-        fun `assignable to BsonInt64`(): Array<Array<Any>> = arrayOf(
+        fun assignable_to_BsonInt64(): Array<Array<Any>> = arrayOf(
             arrayOf(BsonInt64, BsonInt64, true),
             // Lower precision number can also be assigned
             arrayOf(BsonInt32, BsonInt64, true),
@@ -208,8 +178,7 @@ class BsonTypeTest {
             arrayOf(BsonObject(mapOf("simpleTypeField" to BsonInt64)), BsonInt64, false),
         )
 
-        @JvmStatic
-        fun `assignable to BsonDecimal128`(): Array<Array<Any>> = arrayOf(
+        fun assignable_to_BsonDecimal128(): Array<Array<Any>> = arrayOf(
             arrayOf(BsonDecimal128, BsonDecimal128, true),
             // Lower precision number can also be assigned
             arrayOf(BsonDouble, BsonDecimal128, true),
@@ -247,8 +216,7 @@ class BsonTypeTest {
             arrayOf(BsonObject(mapOf("simpleTypeField" to BsonDecimal128)), BsonDecimal128, false),
         )
 
-        @JvmStatic
-        fun `assignable to BsonNull`(): Array<Array<Any>> = arrayOf(
+        fun assignable_to_BsonNull(): Array<Array<Any>> = arrayOf(
             arrayOf(BsonNull, BsonNull, true),
             arrayOf(BsonAny, BsonNull, true),
             arrayOf(BsonAnyOf(BsonNull), BsonNull, true),
@@ -261,8 +229,7 @@ class BsonTypeTest {
             arrayOf(BsonObject(mapOf("simpleTypeField" to simpleTypes.random())), BsonNull, false),
         )
 
-        @JvmStatic
-        fun `assignable to BsonAny`(): Array<Array<Any>> = arrayOf(
+        fun assignable_to_BsonAny(): Array<Array<Any>> = arrayOf(
             arrayOf(BsonAny, BsonAny, true),
             arrayOf(BsonNull, BsonAny, true),
             arrayOf(simpleTypes.random(), BsonAny, true),
@@ -273,8 +240,7 @@ class BsonTypeTest {
             arrayOf(BsonObject(mapOf("simpleTypeField" to simpleTypes.random())), BsonAny, true),
         )
 
-        @JvmStatic
-        fun `assignable to BsonAnyOf`(): Array<Array<Any>> {
+        fun assignable_to_BsonAnyOf(): Array<Array<Any>> {
             val types = simpleTypes.listExcluding(setOf(BsonInt64, BsonDecimal128))
             val positiveAssertions = types.flatMap { simpleType ->
                 listOf(
@@ -375,8 +341,7 @@ class BsonTypeTest {
             return (positiveAssertions + negativeAssertions).toTypedArray()
         }
 
-        @JvmStatic
-        fun `BsonArray match assertions`(): Array<Array<Any>> =
+        fun bsonArray_match_assertions(): Array<Array<Any>> =
             arrayOf(
                 // Similar type arrays can be assigned to each other
                 arrayOf(BsonArray(BsonString), BsonArray(BsonString), true),
@@ -423,8 +388,7 @@ class BsonTypeTest {
                 ),
             )
 
-        @JvmStatic
-        fun `BsonObject match assertions`(): Array<Array<Any>> =
+        fun bsonObject_match_assertions(): Array<Array<Any>> =
             arrayOf(
                 // Matches when structurally similar
                 arrayOf(
@@ -570,9 +534,5 @@ class BsonTypeTest {
                     false
                 )
             )
-
-        data class ExampleClass(
-            val field: String,
-        )
     }
 }

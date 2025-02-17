@@ -27,7 +27,7 @@ data class DataDistribution(private val distribution: Map<Field, Map<Value, Occu
     }
 
     fun getDistributionForPath(fieldPath: Field): Map<Value, OccurrencePercentage>? {
-        return distribution.getOrDefault(fieldPath, null)
+        return distribution.getOrElse(fieldPath) { null }
     }
 
     companion object {
@@ -55,7 +55,7 @@ data class DataDistribution(private val distribution: Map<Field, Map<Value, Occu
                     when (value) {
                         is Map<*, *> -> {
                             fieldDistribution[JsonObject] =
-                                fieldDistribution.getOrDefault(JsonObject, 0) + 1
+                                (fieldDistribution.getOrElse(JsonObject) { 0 }) + 1
                             val mappedValue = value.map { it.key.toString() to it.value }.toMap()
                             populateDistributionForList(
                                 listOf(mappedValue),
@@ -66,20 +66,20 @@ data class DataDistribution(private val distribution: Map<Field, Map<Value, Occu
 
                         is Array<*> -> {
                             fieldDistribution[JsonArray] =
-                                fieldDistribution.getOrDefault(JsonArray, 0) + 1
+                                (fieldDistribution.getOrElse(JsonArray) { 0 }) + 1
                             val listOfMaps = value.filterIsInstance<Map<String, Any?>>()
                             populateDistributionForList(listOfMaps, distribution, fieldPath)
                         }
 
                         is Collection<*> -> {
                             fieldDistribution[JsonArray] =
-                                fieldDistribution.getOrDefault(JsonArray, 0) + 1
+                                (fieldDistribution.getOrElse(JsonArray) { 0 }) + 1
                             val listOfMaps = value.filterIsInstance<Map<String, Any?>>()
                             populateDistributionForList(listOfMaps, distribution, fieldPath)
                         }
 
                         else -> {
-                            fieldDistribution[value] = fieldDistribution.getOrDefault(value, 0) + 1
+                            fieldDistribution[value] = fieldDistribution.getOrElse(value) { 0 } + 1
                         }
                     }
                 }
@@ -95,7 +95,7 @@ data class DataDistribution(private val distribution: Map<Field, Map<Value, Occu
                 for ((field, fieldDistribution) in distribution) {
                     if (!fieldPathsFromDocument.contains(field)) {
                         fieldDistribution[JsonUndefined] =
-                            fieldDistribution.getOrDefault(JsonUndefined, 0) + 1
+                            fieldDistribution.getOrElse(JsonUndefined) { 0 } + 1
                     }
                 }
             }

@@ -1,11 +1,11 @@
 package com.mongodb.jbplugin.mql
 
-import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class DataDistributionTest {
     @Test
-    fun `returns a distribution for simple key value pairs`() {
+    fun returns_a_distribution_for_simple_key_value_pairs() {
         val distribution = DataDistribution.generate(
             listOf(
                 mapOf(
@@ -20,17 +20,17 @@ class DataDistributionTest {
             )
         )
 
-        assertEquals(
+        assertEquals<Map<Value, OccurrencePercentage>>(
             mapOf(
                 "MongoDB" to 66.66666666666667,
                 "BongoDB" to 33.333333333333336,
             ),
-            distribution.getDistributionForPath("name")
+            distribution.getDistributionForPath("name")!!
         )
     }
 
     @Test
-    fun `returns a distribution for simple key value pairs with mixed primitive value types`() {
+    fun returns_a_distribution_for_simple_key_value_pairs_with_mixed_primitive_value_types() {
         val distribution = DataDistribution.generate(
             listOf(
                 mapOf(
@@ -79,7 +79,7 @@ class DataDistributionTest {
     }
 
     @Test
-    fun `returns a distribution for key value pairs where value is a List of maps`() {
+    fun returns_a_distribution_for_key_value_pairs_where_value_is_a_List_of_maps() {
         val distribution = DataDistribution.generate(
             listOf(
                 mapOf(
@@ -108,33 +108,33 @@ class DataDistributionTest {
             )
         )
 
-        assertEquals(
+        assertEquals<Map<Value, OccurrencePercentage>>(
             mapOf(
                 JsonArray to 100.0
             ),
-            distribution.getDistributionForPath("name")
+            distribution.getDistributionForPath("name")!!
         )
 
-        assertEquals(
+        assertEquals<Map<Value, OccurrencePercentage>>(
             mapOf(
                 "Mongo" to 33.333333333333336,
                 "Bongo" to 33.333333333333336,
                 JsonUndefined to 33.333333333333336,
             ),
-            distribution.getDistributionForPath("name.firstName")
+            distribution.getDistributionForPath("name.firstName")!!
         )
 
-        assertEquals(
+        assertEquals<Map<Value, OccurrencePercentage>>(
             mapOf(
                 "DB" to 66.66666666666667,
                 JsonUndefined to 33.333333333333336,
             ),
-            distribution.getDistributionForPath("name.lastName")
+            distribution.getDistributionForPath("name.lastName")!!
         )
     }
 
     @Test
-    fun `returns a distribution for key value pairs where value is a Map`() {
+    fun returns_a_distribution_for_key_value_pairs_where_value_is_a_Map() {
         val distribution = DataDistribution.generate(
             listOf(
                 mapOf(
@@ -153,34 +153,34 @@ class DataDistributionTest {
             )
         )
 
-        assertEquals(
+        assertEquals<Map<Value, OccurrencePercentage>>(
             mapOf(
                 JsonObject to 66.66666666666667,
                 JsonUndefined to 33.333333333333336
             ),
-            distribution.getDistributionForPath("name")
+            distribution.getDistributionForPath("name")!!
         )
 
-        assertEquals(
+        assertEquals<Map<Value, OccurrencePercentage>>(
             mapOf(
                 "Mongo" to 33.333333333333336,
                 "Bongo" to 33.333333333333336,
                 JsonUndefined to 33.333333333333336
             ),
-            distribution.getDistributionForPath("name.firstName")
+            distribution.getDistributionForPath("name.firstName")!!
         )
 
-        assertEquals(
+        assertEquals<Map<Value, OccurrencePercentage>>(
             mapOf(
                 "DB" to 66.66666666666667,
                 JsonUndefined to 33.333333333333336
             ),
-            distribution.getDistributionForPath("name.lastName")
+            distribution.getDistributionForPath("name.lastName")!!
         )
     }
 
     @Test
-    fun `returns a distribution for key value pairs where value is mix of primitive and map values`() {
+    fun returns_a_distribution_for_key_value_pairs_where_value_is_mix_of_primitive_and_map_values() {
         val distribution = DataDistribution.generate(
             listOf(
                 mapOf(
@@ -204,35 +204,35 @@ class DataDistributionTest {
             )
         )
 
-        assertEquals(
+        assertEquals<Map<Value, OccurrencePercentage>>(
             mapOf(
                 "MongoDB" to 50.0,
                 JsonObject to 50.0,
             ),
-            distribution.getDistributionForPath("name")
+            distribution.getDistributionForPath("name")!!
         )
 
-        assertEquals(
+        assertEquals<Map<Value, OccurrencePercentage>>(
             mapOf(
                 "BongoDB" to 25.0,
                 "Bingo" to 25.0,
                 JsonUndefined to 50.0
             ),
-            distribution.getDistributionForPath("name.firstName")
+            distribution.getDistributionForPath("name.firstName")!!
         )
 
-        assertEquals(
+        assertEquals<Map<Value, OccurrencePercentage>>(
             mapOf(
                 "MongoDB" to 25.0,
                 "Normo" to 25.0,
                 JsonUndefined to 50.0
             ),
-            distribution.getDistributionForPath("name.lastName")
+            distribution.getDistributionForPath("name.lastName")!!
         )
     }
 
     @Test
-    fun `returns a distribution for key value pairs where value is mix of primitive and list values`() {
+    fun returns_a_distribution_for_key_value_pairs_where_value_is_mix_of_primitive_and_list_values() {
         val distribution = DataDistribution.generate(
             listOf(
                 mapOf(
@@ -254,12 +254,12 @@ class DataDistributionTest {
             )
         )
 
-        assertEquals(
+        assertEquals<Map<Value, OccurrencePercentage>>(
             mapOf(
                 "MongoDB" to 50.0,
                 JsonArray to 50.0,
             ),
-            distribution.getDistributionForPath("name")
+            distribution.getDistributionForPath("name")!!
         )
     }
 }

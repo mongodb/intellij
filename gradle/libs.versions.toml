@@ -18,6 +18,8 @@ qodana = "2024.3.4"
 # Library dependencies
 kotlin-stdlib = "2.0.21"
 kotlinx-coroutines = "1.8.0"
+kotlinx-collections = "0.3.8"
+
 jupiter = "5.10.2"
 mockito = "5.11.0"
 mockito-kotlin = "5.3.1"
@@ -38,7 +40,7 @@ assertj-swing="3.17.1"
 kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlin-stdlib" }
 kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "kotlin-stdlib" }
 kotlin-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
-kotlin-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
+kotlin-collections = { group = "org.jetbrains.kotlinx", name = "kotlinx-collections-immutable", version.ref="kotlinx-collections" }
 ## Production Libraries.
 segment = { group = "com.segment.analytics.java", name = "analytics", version.ref = "segment" }
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
@@ -49,6 +51,8 @@ semver-parser = { group = "io.github.z4kn4fein", name = "semver", version.ref = 
 snakeyaml = { group = "org.yaml", name = "snakeyaml", version.ref = "snakeyaml" }
 ######################################################
 ## Testing Libraries.
+testing-kotlin-test = { group="org.jetbrains.kotlin", name="kotlin-test", version.ref="kotlin-stdlib" }
+testing-kotlin-coroutines = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 testing-jupiter-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version.ref = "jupiter" }
 testing-jupiter-params = { group = "org.junit.jupiter", name = "junit-jupiter-params", version.ref = "jupiter" }
 testing-jupiter-vintage-engine = { group = "org.junit.vintage", name = "junit-vintage-engine", version.ref = "jupiter" }
