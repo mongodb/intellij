@@ -20,8 +20,8 @@ object BuildInformation {
         if (buildProps != null) {
             it.load(buildProps)
         } else {
-            it.put("pluginVersion", "<unk>")
-            it.put("segmentApiKey", "<unk>")
+            it["pluginVersion"] = "<unk>"
+            it["segmentApiKey"] = "<unk>"
         }
     }
     val pluginVersion: String by properties

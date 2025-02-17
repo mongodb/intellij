@@ -89,9 +89,9 @@ tasks {
 
         doLast {
             val checks = JsonSlurper().parse(URL("https://api.github.com/repos/mongodb-js/intellij/commits/main/check-runs")) as Map<String, Any>
-            val check_runs = checks["check_runs"] as List<Map<String, Any>>
-            var success: Boolean = true
-            for (check in check_runs) {
+            val checkRuns = checks["check_runs"] as List<Map<String, Any>>
+            var success = true
+            for (check in checkRuns) {
                 if (check["name"] == "Prepare Release") {
                     continue
                 }
