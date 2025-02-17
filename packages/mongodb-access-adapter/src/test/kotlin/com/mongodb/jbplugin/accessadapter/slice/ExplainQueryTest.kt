@@ -223,4 +223,44 @@ class ExplainQueryTest {
 
         assertEquals(ExplainQuery(ExplainPlan.IneffectiveIndexUsage), explainPlanResult)
     }
+
+    @Test
+    fun `it is able to analyse nested winning plan reported by the query planner`() = runTest {
+        val driver = mock<MongoDbDriver>()
+        val namespace = Namespace("myDb", "myCollection")
+
+        whenever(driver.runQuery<Map<String, Any>, Unit>(any(), any(), any())).thenReturn(
+            QueryResult.Run(
+                mapOf(
+                    "queryPlanner" to mapOf(
+                        "winningPlan" to mapOf(
+                            "queryPlan" to mapOf(
+                                "stage" to "FILTER",
+                                "inputStage" to mapOf(
+                                    "stage" to "IXSCAN"
+                                )
+                            ),
+                            "slotBasedPlan" to mapOf(
+                                "slots" to "",
+                                "stages" to "",
+                            )
+                        )
+                    )
+                )
+            )
+        )
+
+        val query = Node(
+            Unit,
+            listOf(
+                HasCollectionReference(HasCollectionReference.Known(Unit, Unit, namespace)),
+                HasExplain(HasExplain.ExplainPlanType.SAFE),
+            )
+        )
+
+        val explainPlanResult = ExplainQuery.Slice(query, QueryContext(emptyMap(), false, true))
+            .queryUsingDriver(driver)
+
+        assertEquals(ExplainQuery(ExplainPlan.IneffectiveIndexUsage), explainPlanResult)
+    }
 }
