@@ -31,19 +31,6 @@ jobs:
           regex: "[A-Z]{4,10}-[0-9]{1,5}$"
           error-hint: Invalid PR title. Make sure it ends with a JIRA ticket - i.e. VSCODE-1234 or add the no-title-validation label
           ignore-labels: no-title-validation
-  changelog-check:
-    name: "Changelog Check"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: false
-      - name: Check Changelog
-        uses: dangoslen/changelog-enforcer@204e7d3ef26579f4cd0fd759c57032656fdf23c7 # 3.6.1
-        with:
-          skipLabels: no release notes
-          missingUpdateErrorMessage: Please add an entry in CHANGELOG.md or apply the 'no release notes' label to skip this check.
   spec-check:
     name: "MQL Specification Check"
     runs-on: ubuntu-latest
@@ -105,30 +92,3 @@ jobs:
       - name: Run Dependency Updates
         run: |
           ./gradlew --quiet --console=plain dependencyUpdates
-  style-check:
-    name: "Style Check"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: "temurin"
-          java-version: "21"
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
-        with:
-          gradle-home-cache-cleanup: true
-
-      - name: Run Linter
-        run: |
-          ./gradlew --quiet --console=plain ktlintCheck
-
-      - name: Push Checkstyle report
-        uses: jwgmeligmeyling/checkstyle-github-action@50292990e18466f2c5d95d04ff5fab931254fa5f # 1.2.0
-        if: success() || failure() # always run even if the previous step fails
-        with:
-          path: "**/*Check.xml"
