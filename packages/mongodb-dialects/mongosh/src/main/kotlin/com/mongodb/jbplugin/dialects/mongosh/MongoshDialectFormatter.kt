@@ -13,6 +13,7 @@ import com.mongodb.jbplugin.dialects.mongosh.query.emitSort
 import com.mongodb.jbplugin.dialects.mongosh.query.resolveFieldReference
 import com.mongodb.jbplugin.dialects.mongosh.query.resolveValueReference
 import com.mongodb.jbplugin.indexing.IndexAnalyzer
+import com.mongodb.jbplugin.indexing.IndexAnalyzer.SortDirection
 import com.mongodb.jbplugin.mql.BsonType
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.QueryContext
@@ -170,7 +171,13 @@ object MongoshDialectFormatter : DialectFormatter {
                 prefix = "{ ",
                 postfix = " }"
             ) {
-                """"${Encode.forJavaScript(it.fieldName)}": 1 """.trim()
+                val indexDirection = when (it.direction) {
+                    SortDirection.Ascending -> "1"
+                    SortDirection.Descending -> "-1"
+                }
+                """"${Encode.forJavaScript(
+                    it.fieldName
+                )}": ${Encode.forJavaScript(indexDirection)} """.trim()
             }
             """
 $prelude

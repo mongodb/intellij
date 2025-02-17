@@ -268,6 +268,70 @@ class MongoshDialectFormatterTest {
     }
 
     @Test
+    fun `generates an index suggestion for a query given its fields and an explicit sort direction`() = runTest {
+        assertGeneratedIndex(
+            """
+                // Learn about creating an index: https://www.mongodb.com/docs/v7.0/core/data-model-operations/#indexes
+                db.getSiblingDB("myDb").getCollection("myCollection")
+                  .createIndex({ "myField": 1, "myField2": 1 })
+            """.trimIndent()
+        ) {
+            Node(
+                Unit,
+                listOf(
+                    HasCollectionReference(
+                        HasCollectionReference.Known(Unit, Unit, Namespace("myDb", "myCollection"))
+                    ),
+                    HasFilter(
+                        listOf(
+                            Node(
+                                Unit,
+                                listOf(
+                                    Named(Name.EQ),
+                                    HasFieldReference(
+                                        HasFieldReference.FromSchema(Unit, "myField")
+                                    ),
+                                    HasValueReference(
+                                        HasValueReference.Constant(Unit, "myVal", BsonString)
+                                    )
+                                )
+                            ),
+                            Node(
+                                Unit,
+                                listOf(
+                                    Named(Name.EQ),
+                                    HasFieldReference(
+                                        HasFieldReference.FromSchema(Unit, "myField2")
+                                    ),
+                                    HasValueReference(
+                                        HasValueReference.Constant(Unit, "myVal2", BsonString)
+                                    )
+                                )
+                            )
+                        )
+                    ),
+                    HasSorts(
+                        listOf(
+                            Node(
+                                Unit,
+                                listOf(
+                                    Named(Name.ASCENDING),
+                                    HasFieldReference(
+                                        HasFieldReference.FromSchema(Unit, "myField")
+                                    ),
+                                    HasValueReference(
+                                        HasValueReference.Inferred(Unit, 1, BsonInt32)
+                                    ),
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        }
+    }
+
+    @Test
     fun `generates an index suggestion with references to other covered queries`() = runTest {
         assertGeneratedIndexWithReferences(
             """

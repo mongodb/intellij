@@ -71,7 +71,12 @@ object IndexAnalyzer {
         val indexFields = contextInferredFieldUsages.values
             .sortedWith(QueryFieldUsage.byRoleSelectivityAndCardinality())
             .map {
-                SuggestedIndex.MongoDbIndexField(it.fieldName, it.source, reasonOfSuggestion(it))
+                SuggestedIndex.MongoDbIndexField(
+                    source = it.source,
+                    fieldName = it.fieldName,
+                    direction = SortDirection.Ascending,
+                    reason = reasonOfSuggestion(it),
+                )
             }
             .toList()
 
@@ -208,6 +213,7 @@ object IndexAnalyzer {
         data class MongoDbIndexField<S>(
             val fieldName: String,
             val source: S,
+            val direction: SortDirection,
             val reason: IndexSuggestionFieldReason
         )
 
@@ -222,5 +228,10 @@ object IndexAnalyzer {
         data object RoleEquality : IndexSuggestionFieldReason
         data object RoleSort : IndexSuggestionFieldReason
         data object RoleRange : IndexSuggestionFieldReason
+    }
+
+    sealed interface SortDirection {
+        data object Ascending : SortDirection
+        data object Descending : SortDirection
     }
 }

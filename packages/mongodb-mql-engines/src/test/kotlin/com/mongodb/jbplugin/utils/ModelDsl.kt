@@ -2,6 +2,7 @@ package com.mongodb.jbplugin.utils
 
 import com.mongodb.jbplugin.accessadapter.toNs
 import com.mongodb.jbplugin.indexing.IndexAnalyzer
+import com.mongodb.jbplugin.indexing.IndexAnalyzer.SortDirection
 import com.mongodb.jbplugin.mql.BsonInt32
 import com.mongodb.jbplugin.mql.CollectionSchema
 import com.mongodb.jbplugin.mql.Component
@@ -155,9 +156,14 @@ object ModelDsl {
             ),
             fields.map {
                 IndexAnalyzer.SuggestedIndex.MongoDbIndexField(
-                    it.first,
-                    Unit,
-                    IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
+                    fieldName = it.first,
+                    source = Unit,
+                    direction = if (it.second == -1) {
+                        SortDirection.Descending
+                    } else {
+                        SortDirection.Ascending
+                    },
+                    reason = IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
                 )
             },
             coveredQueries = nodeHolder.nodes
