@@ -6,9 +6,8 @@ on:
     types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
 
 permissions:
-  contents: write
+  contents: read
   pull-requests: write
-  checks: write
 
 env:
   BUILD_SEGMENT_API_KEY: ""
