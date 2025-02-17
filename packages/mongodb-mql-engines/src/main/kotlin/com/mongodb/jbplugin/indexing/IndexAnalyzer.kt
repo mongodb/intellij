@@ -60,7 +60,12 @@ object IndexAnalyzer {
             .mapValues { (_, usages) -> usages.sortedBy { it.role.ordinal } }
 
         val contextInferredFieldUsages = allFieldUsages.mapValues { (_, usages) ->
-            usages.first().copy(value = usages.reduce(QueryFieldUsage<S>::leastSpecificUsageOf))
+            val leastSpecificUsage = usages.reduce(QueryFieldUsage<S>::leastSpecificUsageOf)
+            usages.first().copy(
+                value = leastSpecificUsage.value,
+                valueType = leastSpecificUsage.valueType,
+                selectivity = leastSpecificUsage.selectivity,
+            )
         }
 
         val indexFields = contextInferredFieldUsages.values
@@ -111,7 +116,7 @@ object IndexAnalyzer {
                 QueryFieldUsage(
                     source = fieldRef.source,
                     fieldName = fieldRef.fieldName,
-                    type = valueType,
+                    valueType = valueType,
                     value = valueRef.value,
                     role = role,
                     selectivity = selectivity
@@ -154,7 +159,7 @@ object IndexAnalyzer {
     private data class QueryFieldUsage<S>(
         val source: S,
         val fieldName: String,
-        val type: BsonType,
+        val valueType: BsonType,
         val value: Any?,
         val role: QueryRole,
         val selectivity: Double?,
@@ -169,7 +174,7 @@ object IndexAnalyzer {
                     if (selectivityComparison != 0) return@Comparator selectivityComparison
                 }
 
-                return@Comparator a.type.cardinality.compareTo(b.type.cardinality)
+                return@Comparator a.valueType.cardinality.compareTo(b.valueType.cardinality)
             }
         }
 
@@ -182,7 +187,7 @@ object IndexAnalyzer {
          */
         fun leastSpecificUsageOf(other: QueryFieldUsage<S>): QueryFieldUsage<S> {
             return if (other.value == null && this.value == null) {
-                if (this.type.cardinality > other.type.cardinality) {
+                if (this.valueType.cardinality > other.valueType.cardinality) {
                     this
                 } else {
                     other
