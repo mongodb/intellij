@@ -221,10 +221,10 @@ fun mergeSchemaTogether(
                 .fold(persistentMapOf<String, BsonType>()) { acc, entry ->
                     val currentValue = acc[entry.key]
                     if (currentValue != null) {
-                        acc.put(entry.key, currentValue)
+                        acc.put(entry.key, mergeSchemaTogether(currentValue, entry.value))
+                    } else {
+                        acc.put(entry.key, entry.value)
                     }
-
-                    acc
                 }
 
         return BsonObject(mergedMap)
@@ -290,3 +290,5 @@ fun BsonType.toNonNullableType(): BsonType {
         else -> this
     }
 }
+
+expect inline fun <reified T> T.toBsonType(): BsonType

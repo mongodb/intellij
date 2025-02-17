@@ -10,6 +10,7 @@ import java.time.LocalDateTime
 import java.util.Date
 import java.util.UUID
 import kotlin.collections.get
+import kotlin.jvm.javaClass
 
 /**
  * Returns the inferred BSON type of the current Java class, considering it's nullability.
@@ -69,4 +70,8 @@ fun <T> Class<T>?.toBsonType(value: T? = null): BsonType {
 fun primitiveOrWrapper(example: Class<*>): Class<*> {
     val type = runCatching { example.getField("TYPE").get(null) as? Class<*> }.getOrNull()
     return type ?: example
+}
+
+actual inline fun <reified T> T.toBsonType(): BsonType {
+    return T::class.java.toBsonType(this)
 }

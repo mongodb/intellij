@@ -148,6 +148,10 @@ dependencies {
 }
 
 tasks {
+    register("jvmTest") {
+        dependsOn("test")
+    }
+
     withType<JavaCompile> {
         sourceCompatibility = libs.versions.java.target.get()
         targetCompatibility = libs.versions.java.target.get()
