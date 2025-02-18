@@ -302,12 +302,9 @@ fun PsiElement.tryToResolveAsConstantString(): String? =
  * PsiClassReferenceType
  */
 fun PsiType.toBsonType(): BsonType {
-    val javaClass = if (this is PsiClassReferenceType) {
-        resolve() ?: return BsonAny
-    } else if (this is PsiImmediateClassType) {
-        resolve() ?: return BsonAny
-    } else {
-        null
+    val javaClass = when (this) {
+        is PsiClassReferenceType, is PsiImmediateClassType -> resolve() ?: return BsonAny
+        else -> null
     }
 
     if (javaClass?.isEnum == true) {
