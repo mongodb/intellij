@@ -543,7 +543,7 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                 } else { // case 2
                     HasValueReference.Runtime(
                         secondArg,
-                        secondArg.type?.toBsonType() ?: BsonArray(BsonAny)
+                        toBsonType(secondArg.type) ?: BsonArray(BsonAny)
                     )
                 }
             } else if (argumentList.expressionCount > (start + 1)) {
@@ -563,13 +563,13 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                 else -> HasValueReference(
                     HasValueReference.Runtime(
                         valuePsi,
-                        valuePsi.type?.toBsonType() ?: BsonAny
+                        toBsonType(valuePsi.type) ?: BsonAny
                     )
                 )
             }
 
             else -> HasValueReference(
-                HasValueReference.Constant(valuePsi, value, value.javaClass.toBsonType(value))
+                HasValueReference.Constant(valuePsi, value, toBsonType(value.javaClass, value))
             )
         }
         return valueReference as HasValueReference<PsiElement>

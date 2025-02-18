@@ -289,7 +289,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
                 } else { // case 2
                     HasValueReference.Runtime(
                         secondArg,
-                        secondArg.type?.toBsonType() ?: BsonArray(BsonAny)
+                        toBsonType(secondArg.type) ?: BsonArray(BsonAny)
                     )
                 }
             } else if (filter.argumentList.expressionCount > 2) {
@@ -794,7 +794,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
             HasValueReference.Constant(
                 source = valueExpression,
                 value = it,
-                type = it.javaClass.toBsonType(),
+                type = toBsonType(it.javaClass),
             )
         } ?: HasValueReference.Unknown
 
@@ -826,13 +826,13 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
         val (wasResolvedAtCompileTime, resolvedValue) = expression.tryToResolveAsConstant()
 
         val resolvedType = if (resolvedValue is PsiEnumConstant) {
-            resolvedValue.type.toBsonType()
+            toBsonType(resolvedValue.type)
         } else if (resolvedValue is PsiType) {
-            resolvedValue.toBsonType()
+            toBsonType(resolvedValue)
         } else if (wasResolvedAtCompileTime) {
-            resolvedValue?.javaClass.toBsonType()
+            toBsonType(resolvedValue?.javaClass)
         } else {
-            expression.type?.toBsonType()
+            toBsonType(expression.type)
         }
 
         val valueReference =
@@ -968,17 +968,17 @@ fun PsiExpressionList.inferFromSingleArrayArgument(start: Int = 0): HasValueRefe
     val arrayArg = expressions[start]
     val (constant, value) = arrayArg.tryToResolveAsConstant()
 
-    return if (constant) {
+    return if (constant && value != null) {
         HasValueReference.Constant(
             arrayArg,
             listOf(value),
-            BsonArray(value?.javaClass.toBsonType(value))
+            BsonArray(toBsonType(value.javaClass, value))
         )
     } else {
         HasValueReference.Runtime(
             arrayArg,
             BsonArray(
-                arrayArg.type?.toBsonType() ?: BsonAny
+                toBsonType(arrayArg.type) ?: BsonAny
             )
         )
     }
@@ -1020,11 +1020,13 @@ fun PsiType.guessIterableContentType(project: Project): BsonType {
     }
 
     val typeStr = text.substring(start + 1, end)
-    return PsiType.getTypeByName(
-        typeStr,
-        project,
-        GlobalSearchScope.everythingScope(project)
-    ).toBsonType()
+    return toBsonType(
+        PsiType.getTypeByName(
+            typeStr,
+            project,
+            GlobalSearchScope.everythingScope(project)
+        )
+    ) ?: BsonArray(BsonAny)
 }
 
 fun PsiExpressionList.inferValueReferenceFromVarArg(start: Int = 0): HasValueReference.ValueReference<PsiElement> {
@@ -1036,7 +1038,7 @@ fun PsiExpressionList.inferValueReferenceFromVarArg(start: Int = 0): HasValueRef
         return HasValueReference.Runtime(parent, BsonArray(BsonAny))
     } else if (allConstants.all { it.first }) {
         val eachType = allConstants.mapNotNull {
-            it.second?.javaClass?.toBsonType(it.second)
+            it.second?.javaClass?.let { klass -> toBsonType(klass, it.second) }
         }.map {
             flattenAnyOfReferences(it)
         }.toSet()
@@ -1050,7 +1052,7 @@ fun PsiExpressionList.inferValueReferenceFromVarArg(start: Int = 0): HasValueRef
             )
         } else {
             val eachType = allConstants.mapNotNull {
-                it.second?.javaClass?.toBsonType(it.second)
+                it.second?.javaClass?.let { klass -> toBsonType(klass, it.second) }
             }.toSet()
             val schema = flattenAnyOfReferences(BsonAnyOf(eachType))
             return HasValueReference.Constant(
@@ -1199,11 +1201,11 @@ fun PsiElement.parseFieldExpressionAsValueReference(): HasValueReference<PsiElem
             constant -> HasValueReference.Constant(
                 element,
                 value,
-                value?.javaClass.toBsonType(value)
+                value.toBsonType()
             )
             !constant && element is PsiExpression -> HasValueReference.Runtime(
                 element,
-                element.type?.toBsonType() ?: BsonAny
+                toBsonType(element.type) ?: BsonAny
             )
             else -> HasValueReference.Unknown as HasValueReference.ValueReference<PsiElement>
         }

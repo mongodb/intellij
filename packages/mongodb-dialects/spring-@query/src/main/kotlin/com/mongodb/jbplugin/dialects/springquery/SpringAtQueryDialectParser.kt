@@ -160,7 +160,7 @@ object SpringAtQueryDialectParser : DialectParser<PsiElement> {
                             HasValueReference.Unknown as HasValueReference.ValueReference<PsiElement>
                         )
 
-                val argType = methodArg.type.toBsonType()
+                val argType = toBsonType(methodArg.type) ?: BsonAny
                 return HasValueReference(
                     HasValueReference.Runtime(methodArg, argType)
                 )

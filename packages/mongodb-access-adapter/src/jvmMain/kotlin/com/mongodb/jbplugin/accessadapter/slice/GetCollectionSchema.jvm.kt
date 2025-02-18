@@ -22,9 +22,8 @@ actual fun recursivelyBuildSchema(value: Any?): BsonType {
         is Array<*> ->
             BsonArray(
                 value
-                    .map {
-                        it?.javaClass?.toBsonType(it) ?: BsonNull
-                    }.toSet()
+                    .map { toBsonType(it?.javaClass, it) }
+                    .toSet()
                     .let {
                         if (it.size == 1) {
                             it.first()
@@ -34,6 +33,9 @@ actual fun recursivelyBuildSchema(value: Any?): BsonType {
                     },
             )
 
-        else -> primitiveOrWrapper(value.javaClass).toBsonType()
+        else -> {
+            val realJavaClass = primitiveOrWrapper(value.javaClass) as Class<Any>
+            toBsonType(realJavaClass, value)
+        }
     }
 }

@@ -30,7 +30,7 @@ class PsiMdbTreeUtilTest {
     ) {
         ApplicationManager.getApplication().invokeAndWait {
             val psiType = typeProvider(project)
-            assertEquals(expected, psiType.toBsonType())
+            assertEquals(expected, toBsonType(psiType))
         }
     }
 
@@ -40,7 +40,7 @@ class PsiMdbTreeUtilTest {
         javaQualifiedName: String,
         expected: BsonType,
     ) {
-        assertEquals(expected, javaQualifiedName.toBsonType())
+        assertEquals(expected, toBsonType(javaQualifiedName))
     }
 
     @ParsingTest(

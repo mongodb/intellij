@@ -2,7 +2,7 @@ package com.mongodb.jbplugin.mql
 
 import kotlin.reflect.KClass
 
-actual inline fun <reified T> T.toBsonType(): BsonType {
+actual inline fun <reified T : Any?> T.toBsonType(): BsonType {
     return this?.runtimeBsonType(T::class) ?: BsonNull
 }
 
@@ -30,10 +30,12 @@ fun Any.runtimeBsonType(klass: KClass<*>): BsonType {
     }
 }
 
-private fun jsTypeOf(value: Any): String {
+// We are inlining JavaScript here, so it's actually used.
+private fun jsTypeOf(@Suppress("UNUSED_PARAMETER") value: Any): String {
     return js("typeof value")
 }
 
-private fun isInteger(value: Any): Boolean {
+// We are inlining JavaScript here, so it's actually used.
+private fun isInteger(@Suppress("UNUSED_PARAMETER") value: Any): Boolean {
     return js("Number.isInteger(value)")
 }

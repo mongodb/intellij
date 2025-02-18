@@ -291,4 +291,4 @@ fun BsonType.toNonNullableType(): BsonType {
     }
 }
 
-expect inline fun <reified T> T.toBsonType(): BsonType
+expect inline fun <reified T : Any?> T.toBsonType(): BsonType

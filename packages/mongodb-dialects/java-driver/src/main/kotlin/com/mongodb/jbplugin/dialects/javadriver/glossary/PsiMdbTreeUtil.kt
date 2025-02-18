@@ -394,11 +394,15 @@ fun PsiElement.tryToResolveAsConstantString(): String? =
  * Maps a PsiType to its BSON counterpart.
  * PsiClassReferenceType
  */
-fun PsiType.toBsonType(): BsonType {
-    val javaClass = if (this is PsiClassReferenceType) {
-        resolve() ?: return BsonAny
-    } else if (this is PsiImmediateClassType) {
-        resolve() ?: return BsonAny
+fun toBsonType(type: PsiType?): BsonType? {
+    if (type == null) {
+        return null
+    }
+
+    val javaClass = if (type is PsiClassReferenceType) {
+        type.resolve() ?: return BsonAny
+    } else if (type is PsiImmediateClassType) {
+        type.resolve() ?: return BsonAny
     } else {
         null
     }
@@ -408,53 +412,53 @@ fun PsiType.toBsonType(): BsonType {
         return BsonEnum(enumConstants.map { it.name }.toSet(), javaClass.name)
     }
 
-    return this.canonicalText.toBsonType()
+    return toBsonType(type.canonicalText)
 }
 
 /**
  * Maps a Java FQN to a BsonType.
  */
-fun String.toBsonType(): BsonType {
-    if (this == ("org.bson.types.ObjectId")) {
+fun toBsonType(typeName: String): BsonType {
+    if (typeName == ("org.bson.types.ObjectId")) {
         return BsonAnyOf(BsonObjectId, BsonNull)
-    } else if (this == ("boolean") || this == ("java.lang.Boolean")) {
+    } else if (typeName == ("boolean") || typeName == ("java.lang.Boolean")) {
         return BsonBoolean
-    } else if (this == ("short") || this == ("java.lang.Short")) {
+    } else if (typeName == ("short") || typeName == ("java.lang.Short")) {
         return BsonInt32
-    } else if (this == ("int") || this == ("java.lang.Integer")) {
+    } else if (typeName == ("int") || typeName == ("java.lang.Integer")) {
         return BsonInt32
-    } else if (this == ("long") || this == ("java.lang.Long")) {
+    } else if (typeName == ("long") || typeName == ("java.lang.Long")) {
         return BsonInt64
-    } else if (this == ("float") || this == ("java.lang.Float")) {
+    } else if (typeName == ("float") || typeName == ("java.lang.Float")) {
         return BsonDouble
-    } else if (this == ("double") || this == ("java.lang.Double")) {
+    } else if (typeName == ("double") || typeName == ("java.lang.Double")) {
         return BsonDouble
-    } else if (this == ("java.lang.CharSequence") ||
-        this == ("java.lang.String") ||
-        this == "String"
+    } else if (typeName == ("java.lang.CharSequence") ||
+        typeName == ("java.lang.String") ||
+        typeName == "String"
     ) {
         return BsonAnyOf(BsonString, BsonNull)
-    } else if (this == ("java.util.Date") ||
-        this == ("java.time.Instant") ||
-        this == ("java.time.LocalDate") ||
-        this == ("java.time.LocalDateTime")
+    } else if (typeName == ("java.util.Date") ||
+        typeName == ("java.time.Instant") ||
+        typeName == ("java.time.LocalDate") ||
+        typeName == ("java.time.LocalDateTime")
     ) {
         return BsonAnyOf(BsonDate, BsonNull)
-    } else if (this == ("java.math.BigInteger")) {
+    } else if (typeName == ("java.math.BigInteger")) {
         return BsonAnyOf(BsonInt64, BsonNull)
-    } else if (this == ("java.math.BigDecimal")) {
+    } else if (typeName == ("java.math.BigDecimal")) {
         return BsonAnyOf(BsonDecimal128, BsonNull)
-    } else if (this.endsWith("[]")) {
-        val baseType = this.substring(0, this.length - 2)
-        return BsonArray(baseType.toBsonType())
-    } else if (this.contains("List") || this.contains("Set")) {
-        if (!this.contains("<")) { // not passing the generic types, so assume an array of BsonAny
+    } else if (typeName.endsWith("[]")) {
+        val baseType = typeName.substring(0, typeName.length - 2)
+        return BsonArray(toBsonType(baseType))
+    } else if (typeName.contains("List") || typeName.contains("Set")) {
+        if (!typeName.contains("<")) { // not passing the generic types, so assume an array of BsonAny
             return BsonArray(BsonAny)
         }
 
-        val baseType = this.substringAfter("<").substringBeforeLast(">")
-        return BsonArray(baseType.toBsonType())
-    } else if (this == ("java.util.UUID")) {
+        val baseType = typeName.substringAfter("<").substringBeforeLast(">")
+        return BsonArray(toBsonType(baseType))
+    } else if (typeName == ("java.util.UUID")) {
         return BsonUUID
     }
 

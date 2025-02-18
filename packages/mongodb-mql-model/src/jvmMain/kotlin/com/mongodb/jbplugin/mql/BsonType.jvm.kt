@@ -17,8 +17,8 @@ import kotlin.jvm.javaClass
  *
  * @param value
  */
-fun <T> Class<T>?.toBsonType(value: T? = null): BsonType {
-    return when (this) {
+fun <T> toBsonType(klass: Class<T>?, value: T? = null): BsonType {
+    return when (klass) {
         null -> BsonNull
         Float::class.javaPrimitiveType -> BsonDouble
         Float::class.javaObjectType -> BsonAnyOf(BsonNull, BsonDouble)
@@ -41,25 +41,28 @@ fun <T> Class<T>?.toBsonType(value: T? = null): BsonType {
         BigDecimal::class.java -> BsonAnyOf(BsonNull, BsonDecimal128)
         Decimal128::class.java -> BsonAnyOf(BsonNull, BsonDecimal128)
         else ->
-            if (isEnum) {
-                val variants = this.enumConstants.map { it.toString() }.toSet()
+            if (klass.isEnum) {
+                val variants = klass.enumConstants.map { it.toString() }.toSet()
                 BsonEnum(variants)
-            } else if (Collection::class.java.isAssignableFrom(this) ||
-                Array::class.java.isAssignableFrom(this)
+            } else if (Collection::class.java.isAssignableFrom(klass) ||
+                Array::class.java.isAssignableFrom(klass)
             ) {
                 return BsonAnyOf(BsonNull, BsonArray(BsonAny)) // types are lost at runtime
-            } else if (Map::class.java.isAssignableFrom(this)) {
-                value?.let {
-                    val fields =
-                        Map::class.java.cast(value).entries.associate {
-                            it.key.toString() to it.value?.javaClass.toBsonType(it.value)
-                        }
+            } else if (Map::class.java.isAssignableFrom(klass)) {
+                if (value == null) {
+                    return BsonAnyOf(BsonNull, BsonAny)
+                } else {
+                    val fields = Map::class.java.cast(value).entries.associate {
+                        it.key.toString() to toBsonType(it.value?.javaClass, it.value)
+                    }
                     return BsonAnyOf(BsonNull, BsonObject(fields))
-                } ?: return BsonAnyOf(BsonNull, BsonAny)
+                }
+            } else if (Class::class.java.isAssignableFrom(klass)) {
+                return BsonAnyOf(BsonNull, BsonObject(emptyMap()))
             } else {
                 val fields =
-                    this.declaredFields.associate {
-                        it.name to it.type.toBsonType()
+                    klass.declaredFields.associate {
+                        it.name to toBsonType(it.type)
                     }
 
                 return BsonAnyOf(BsonNull, BsonObject(fields))
@@ -72,6 +75,10 @@ fun primitiveOrWrapper(example: Class<*>): Class<*> {
     return type ?: example
 }
 
-actual inline fun <reified T> T.toBsonType(): BsonType {
-    return T::class.java.toBsonType(this)
+actual inline fun <reified T : Any?> T.toBsonType(): BsonType {
+    if (this == null) {
+        return BsonNull
+    }
+
+    return toBsonType(this.javaClass, this)
 }

@@ -1,5 +1,7 @@
 package com.mongodb.jbplugin.dialects.mongosh.backend
 
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.psi.PsiEnumConstant
 import com.mongodb.jbplugin.mql.*
 import com.mongodb.jbplugin.mql.QueryContext.AsIs
 import org.bson.types.ObjectId
@@ -267,6 +269,9 @@ private fun serializePrimitive(value: Any?): String = when (value) {
         "\"${it.key}\": ${serializePrimitive(it.value)}"
     }
     is AsIs -> value.value
+    is PsiEnumConstant -> ApplicationManager.getApplication().runReadAction<String> {
+        '"' + Encode.forJavaScript(value.name) + '"'
+    }
     null -> "null"
     else -> "{}"
 }

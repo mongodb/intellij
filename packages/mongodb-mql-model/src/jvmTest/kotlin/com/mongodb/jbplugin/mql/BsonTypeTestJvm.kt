@@ -1,5 +1,6 @@
 package com.mongodb.jbplugin.mql
 
+import com.mongodb.jbplugin.mql.toBsonType
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -17,7 +18,7 @@ class BsonTypeTestJvm {
         javaClass: Class<*>,
         expected: BsonType,
     ) {
-        assertEquals(expected, javaClass.toBsonType())
+        assertEquals(expected, toBsonType(javaClass))
     }
 
     companion object {
