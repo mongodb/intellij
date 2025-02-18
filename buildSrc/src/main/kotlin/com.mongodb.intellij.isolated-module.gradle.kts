@@ -2,6 +2,7 @@ import gradle.kotlin.dsl.accessors._76b600702684b1c4586cd5ce03c14377.jacoco
 import gradle.kotlin.dsl.accessors._76b600702684b1c4586cd5ce03c14377.testImplementation
 import org.gradle.accessors.dm.LibrariesForLibs
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.targets.js.ir.KotlinJsIrCompilation
 
 plugins {
     id("com.mongodb.intellij.base-module")
@@ -22,6 +23,7 @@ kotlin {
 
     js(IR) {
         useEsModules()
+        generateTypeScriptDefinitions()
         browser {
             testTask {
                 useKarma {
@@ -35,6 +37,8 @@ kotlin {
                 useMocha()
             }
         }
+
+        binaries.library()
     }
 
     sourceSets {
@@ -55,6 +59,7 @@ kotlin {
         }
 
         val jvmMain by getting
+
         val jvmTest by getting {
             dependencies {
                 implementation(libs.testing.jupiter.engine)
@@ -67,7 +72,13 @@ kotlin {
             }
         }
 
-        val jsMain by getting
+        val jsMain by getting {
+            dependencies {
+                implementation(libs.kotlin.stdlib)
+                implementation(libs.kotlin.coroutines.core)
+            }
+        }
+
         val jsTest by getting
     }
 }

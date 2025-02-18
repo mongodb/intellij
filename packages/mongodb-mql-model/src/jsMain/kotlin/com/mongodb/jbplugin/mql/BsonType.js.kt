@@ -19,6 +19,7 @@ fun Any.runtimeBsonType(klass: KClass<*>): BsonType {
             (this as Map<*, *>).map { (k, v) -> k.toString() to v.toBsonType() } as Map<String, BsonType>
         )
         else -> when (jsTypeOf(this)) {
+            "boolean" -> BsonBoolean
             "string" -> BsonAnyOf(BsonNull, BsonString)
             "number" -> if (isInteger(this)) {
                 BsonInt32
