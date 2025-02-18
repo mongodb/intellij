@@ -78,7 +78,7 @@ sealed class TelemetryEvent(
     override fun equals(other: Any?): Boolean =
         (other as? TelemetryEvent)?.let {
             name == it.name && properties == it.properties
-        } ?: false
+        } == true
 
     override fun hashCode(): Int = Objects.hashCode(name, properties)
 

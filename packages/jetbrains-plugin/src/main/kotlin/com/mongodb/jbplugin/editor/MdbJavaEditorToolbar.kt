@@ -10,7 +10,6 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
-import com.intellij.platform.util.coroutines.childScope
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.util.ui.JBUI
@@ -35,8 +34,6 @@ import javax.swing.*
 /**
  * Toolbar class that encapsulates rendering and interacting with the toolbar itself
  *
- * @param dataSourceModel
- * @param databaseModel
  */
 class MdbJavaEditorToolbar(
     private val project: Project,
@@ -173,7 +170,7 @@ class MdbJavaEditorToolbar(
             private val databaseComboBoxVisible: Boolean,
             private val okButtonText: String,
         ) : DialogWrapper(project, false) {
-            private val dialogScope = parentScope.childScope()
+            private val dialogScope = parentScope
             private lateinit var okAction: Action
             private lateinit var cancelAction: Action
 

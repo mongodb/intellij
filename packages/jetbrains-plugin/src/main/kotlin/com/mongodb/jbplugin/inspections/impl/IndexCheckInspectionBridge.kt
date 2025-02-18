@@ -36,6 +36,7 @@ import com.mongodb.jbplugin.observability.probe.InspectionStatusChangedProbe
 import com.mongodb.jbplugin.settings.pluginSetting
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.annotations.Nls
 
 class IndexCheckInspectionBridge(coroutineScope: CoroutineScope) :
     AbstractMongoDbInspectionBridge(
@@ -114,38 +115,7 @@ internal object IndexCheckLinterInspection : MongoDbInspection {
             "inspection.index.checking.error.query.not.covered.by.index",
         )
 
-        val probe by service<InspectionStatusChangedProbe>()
-        probe.inspectionChanged(
-            TelemetryEvent.InspectionStatusChangeEvent.InspectionType.QUERY_NOT_COVERED_BY_INDEX,
-            query
-        )
-
-        problems.registerProblem(
-            query.source,
-            problemDescription,
-            ProblemHighlightType.WARNING,
-            OpenDataSourceConsoleAppendingCode(
-                coroutineScope,
-                InspectionsAndInlaysMessages.message(
-                    "inspection.index.checking.error.query.not.covered.by.index.quick.fix"
-                ),
-                localDataSource
-            ) {
-                val createIndexClicked by query.source.project.service<CreateIndexIntentionProbe>()
-                createIndexClicked.intentionClicked(query)
-
-                val cachedQueryService by query.source.project.service<CachedQueryService>()
-                val index = runBlocking {
-                    IndexAnalyzer.analyze(
-                        query,
-                        cachedQueryService,
-                        CollectionIndexConsolidationOptions(10)
-                    )
-                }
-
-                MongoshDialect.formatter.indexCommand(query, index, ::queryReferenceString)
-            }
-        )
+        emitQueryNotCoveredByIndexProblem(query, problems, problemDescription, coroutineScope, localDataSource)
     }
 
     private fun registerQueryNotUsingIndexEffectively(
@@ -158,6 +128,16 @@ internal object IndexCheckLinterInspection : MongoDbInspection {
             "inspection.index.checking.error.query.not.effectively.using.an.index",
         )
 
+        emitQueryNotCoveredByIndexProblem(query, problems, problemDescription, coroutineScope, localDataSource)
+    }
+
+    private fun emitQueryNotCoveredByIndexProblem(
+        query: Node<PsiElement>,
+        problems: ProblemsHolder,
+        problemDescription: @Nls String,
+        coroutineScope: CoroutineScope,
+        localDataSource: LocalDataSource
+    ) {
         val probe by service<InspectionStatusChangedProbe>()
         probe.inspectionChanged(
             TelemetryEvent.InspectionStatusChangeEvent.InspectionType.QUERY_NOT_COVERED_BY_INDEX,

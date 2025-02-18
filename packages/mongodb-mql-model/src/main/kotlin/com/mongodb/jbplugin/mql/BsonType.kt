@@ -172,7 +172,7 @@ data class BsonObject(
 
     private fun isAssignableToBsonObjectType(otherType: BsonObject): Boolean {
         return this.schema.all { (key, bsonType) ->
-            otherType.schema[key]?.let { bsonType.isAssignableTo(it) } ?: false
+            otherType.schema[key]?.let { bsonType.isAssignableTo(it) } == true
         }
     }
 }

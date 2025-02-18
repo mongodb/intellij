@@ -330,7 +330,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
                     ),
                 ),
             )
-        } else if (method.name == "eq" && method.parameters.size == 1) {
+        } else if (method.name == "eq" && method.parameterList.parameters.size == 1) {
             if (filter.argumentList.expressionCount == 0) {
                 return null
             }
@@ -346,7 +346,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
                     HasValueReference(valueReference),
                 )
             )
-        } else if (method.name == "exists" && method.parameters.size == 1) {
+        } else if (method.name == "exists" && method.parameterList.parameters.size == 1) {
             if (filter.argumentList.expressionCount == 0) {
                 return null
             }
@@ -366,7 +366,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
                     HasValueReference(valueReference),
                 )
             )
-        } else if (method.parameters.size == 2) {
+        } else if (method.parameterList.parameters.size == 2) {
             // If it has two parameters, it's field/value.
             val fieldReference = filter.argumentList.expressions[0].resolveFieldNameFromExpression()
             val valueReference = resolveValueFromExpression(filter.argumentList.expressions[1])
@@ -399,7 +399,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
                     ),
                 ),
             )
-        } else if (method.parameters.size == 2) {
+        } else if (method.parameterList.parameters.size == 2) {
             // If it has two parameters, it's field/value.
             val fieldReference = filter.argumentList.expressions[0].resolveFieldNameFromExpression()
             val named = Named(Name.from(method.name))
@@ -440,7 +440,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
                     ),
                 ),
             )
-        } else if (method.parameters.size == 1) {
+        } else if (method.parameterList.parameters.size == 1) {
             // Updates.unset for example
             val fieldReference = filter.argumentList.expressions[0].resolveFieldNameFromExpression()
 
@@ -616,7 +616,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
                     components = listOf(
                         Named(Name.UNWIND),
                         HasFieldReference(
-                            HasFieldReference.FromSchema(
+                            FromSchema(
                                 source = fieldExpression,
                                 fieldName = fieldName.trim('$'),
                                 displayName = fieldName,
@@ -781,7 +781,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
         val expressionArguments = fieldExpression.argumentList?.expressions
         val fieldNameExpression = expressionArguments?.getOrNull(0)
         val fieldReference = fieldNameExpression?.tryToResolveAsConstantString()?.let {
-            HasFieldReference.Computed(
+            Computed(
                 source = fieldNameExpression,
                 fieldName = it,
             )

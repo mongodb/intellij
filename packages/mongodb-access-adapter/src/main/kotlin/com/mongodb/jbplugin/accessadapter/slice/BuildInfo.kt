@@ -61,7 +61,7 @@ data class BuildInfo(
             ?.replace(Regex(""":\d+"""), "")
             .takeIf { isAtlas }
     object Slice : com.mongodb.jbplugin.accessadapter.Slice<BuildInfo> {
-        override val id = javaClass.canonicalName
+        override val id: String = javaClass.canonicalName
         private val atlasRegex = Regex(""".*\.mongodb(-dev|-qa|-stage)?\.net(:\d+)?$""")
         private val atlasStreamRegex = Regex("""^atlas-stream-.+""")
         private val isLocalhostRegex =
@@ -116,7 +116,7 @@ data class BuildInfo(
                 isDigitalOcean = isDigitalOcean,
                 isGenuineMongoDb = nonGenuineVariant == null,
                 nonGenuineVariant = nonGenuineVariant,
-                isDataLake = buildInfoFromMongoDb.isDataLake ?: false,
+                isDataLake = buildInfoFromMongoDb.isDataLake == true,
                 serverUrl = connectionString
             )
         }

@@ -161,8 +161,6 @@ class MdbEditorService(private val project: Project) : EditorService {
 /**
  * Helper method to retrieve the MdbEditorService instance from Application
  *
- * @param project
- * @return
  */
 fun Project.getEditorService(): EditorService = getService(
     MdbEditorService::class.java

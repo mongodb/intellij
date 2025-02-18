@@ -1,6 +1,5 @@
 package com.mongodb.jbplugin.codeActions.impl.runQuery
 
-import com.intellij.collaboration.ui.selectFirst
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.rd.util.launchChildBackground
@@ -130,7 +129,7 @@ class NamespaceSelector(
                 databaseModel.removeAllElements()
                 collectionModel.removeAllElements()
                 databaseModel.addAll(event.databases)
-                databaseModel.selectFirst()
+                databaseModel.selectedItem = event.databases.firstOrNull()
                 databaseComboBox.isEnabled = true
             }
             is Event.DatabaseSelected -> {
@@ -152,7 +151,7 @@ class NamespaceSelector(
 
             is Event.CollectionsLoaded -> {
                 collectionModel.addAll(event.collections)
-                collectionModel.selectFirst()
+                collectionModel.selectedItem = event.collections.firstOrNull()
                 collectionComboBox.isEnabled = true
             }
             else -> {}

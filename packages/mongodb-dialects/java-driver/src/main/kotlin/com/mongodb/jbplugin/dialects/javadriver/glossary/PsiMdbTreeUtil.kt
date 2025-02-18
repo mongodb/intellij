@@ -18,11 +18,8 @@ import com.intellij.psi.PsiLocalVariable
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiMethodCallExpression
 import com.intellij.psi.PsiParenthesizedExpression
-import com.intellij.psi.PsiReference
 import com.intellij.psi.PsiReferenceExpression
 import com.intellij.psi.PsiReturnStatement
-import com.intellij.psi.PsiSuperExpression
-import com.intellij.psi.PsiThisExpression
 import com.intellij.psi.PsiType
 import com.intellij.psi.impl.source.PsiClassReferenceType
 import com.intellij.psi.impl.source.PsiImmediateClassType
@@ -133,46 +130,6 @@ fun PsiClass.isMongoDbClientClass(project: Project): Boolean {
 }
 
 /**
- * Helper function to check if a type is a MongoDB Client
- *
- * @param project
- * @return
- */
-fun PsiType.isMongoDbClientClass(project: Project): Boolean {
-    val thisClass = PsiTypesUtil.getPsiClass(this)
-    return thisClass?.isMongoDbClientClass(project) == true
-}
-
-/**
- * Helper function to check if a type is a MongoDB Cursor
- *
- * @param project
- * @return
- */
-fun PsiClass.isMongoDbCursorClass(project: Project): Boolean {
-    val javaFacade = JavaPsiFacade.getInstance(project)
-
-    val mdbCursorClass =
-        javaFacade.findClass(
-            "com.mongodb.client.MongoIterable",
-            GlobalSearchScope.everythingScope(project),
-        )
-
-    return this.isInheritor(mdbCursorClass!!, false) || this == mdbCursorClass
-}
-
-/**
- * Helper function to check if a type is a MongoDB Cursor
- *
- * @param project
- * @return
- */
-fun PsiType.isMongoDbCursorClass(project: Project): Boolean {
-    val thisClass = PsiTypesUtil.getPsiClass(this)
-    return thisClass?.isMongoDbCursorClass(project) == true
-}
-
-/**
  * Helper function to check if a type is a MongoDB Class
  *
  * @param project
@@ -184,56 +141,6 @@ fun PsiType?.isMongoDbClass(project: Project): Boolean =
             isMongoDbDatabaseClass(project) ||
             isMongoDbClientClass(project)
     } == true
-
-/**
- * Checks if a class is a MongoDB class
- *
- * @param project
- * @return
- */
-fun PsiClass.isMongoDbClass(project: Project): Boolean =
-    isMongoDbCollectionClass(project) ||
-        isMongoDbDatabaseClass(project) ||
-        isMongoDbClientClass(project)
-
-/**
- * Finds all references to the MongoDB driver in a method.
- *
- * @return
- */
-fun PsiMethod.findAllReferencesToMongoDbObjects(): List<PsiReference> =
-    PsiTreeUtil
-        .findChildrenOfType(this, PsiExpression::class.java)
-        .filter {
-            it.type
-                ?.isMongoDbClass(this.project) == true
-        }.mapNotNull { it.reference }
-
-/**
- * Find, from a method call, the current MongoDB driver method is getting called.
- */
-fun PsiMethodCallExpression.findCurrentReferenceToMongoDbObject(): PsiReference? {
-    if (methodExpression.type?.isMongoDbClass(project) == true) {
-        return methodExpression.reference
-    } else if (methodExpression.qualifierExpression is PsiSuperExpression ||
-        methodExpression.qualifierExpression is PsiThisExpression ||
-        methodExpression.qualifierExpression == null
-    ) {
-        val resolution = methodExpression.resolve()
-        if (resolution is PsiField) {
-            return if (resolution.type.isMongoDbClass(project)) resolution.reference else null
-        } else {
-            return (methodExpression.resolve() as PsiMethod?)?.findAllReferencesToMongoDbObjects()?.firstOrNull()
-        }
-    } else {
-        if (methodExpression.qualifierExpression is PsiMethodCallExpression) {
-            return (methodExpression.qualifierExpression as PsiMethodCallExpression)
-                .findCurrentReferenceToMongoDbObject()
-        }
-    }
-
-    return null
-}
 
 /**
  * Collects all elements of type T upwards until a type S is found.
@@ -307,14 +214,14 @@ fun PsiMethodCallExpression.findMongoDbCollectionMethodCallForCommand(
  */
 fun PsiElement.findMongoDbCollectionReference(): PsiExpression? {
     if (this is PsiMethodCallExpression) {
-        if (methodExpression.type?.isMongoDbCollectionClass(project) == true) {
-            return methodExpression
+        return if (methodExpression.type?.isMongoDbCollectionClass(project) == true) {
+            methodExpression
         } else if (methodExpression.qualifierExpression is PsiMethodCallExpression) {
-            return (methodExpression.qualifierExpression as PsiMethodCallExpression).findMongoDbCollectionReference()
+            (methodExpression.qualifierExpression as PsiMethodCallExpression).findMongoDbCollectionReference()
         } else if (methodExpression.qualifierExpression?.reference?.resolve() is PsiField) {
-            return methodExpression.qualifierExpression
+            methodExpression.qualifierExpression
         } else {
-            return methodExpression.children.firstNotNullOfOrNull {
+            methodExpression.children.firstNotNullOfOrNull {
                 it.findMongoDbCollectionReference()
             }
         }
@@ -468,7 +375,7 @@ fun String.toBsonType(): BsonType {
  * @param type
  */
 fun <T> PsiElement.findAllChildrenOfType(type: Class<T>): List<T> {
-    var allChildren = this.children.flatMap { it.findAllChildrenOfType(type) }
+    var allChildren = this.children.flatMap { it.findAllChildrenOfType(type) }.toMutableList()
 
     if (this is PsiMethodCallExpression) {
         allChildren += this.argumentList.expressions.flatMap { it.findAllChildrenOfType(type) }

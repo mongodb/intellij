@@ -61,7 +61,7 @@ class DefaultContext : Context {
             val variable = ContextValue.Variable(nameWithCounter, type, value)
             variables[nameWithCounter] = variable
             return variable
-        } else if (existingVariable != null && existingVariable.value != null) {
+        } else if (existingVariable != null) {
             return existingVariable
         } else {
             val variable = ContextValue.Variable(cleanName, type, value)

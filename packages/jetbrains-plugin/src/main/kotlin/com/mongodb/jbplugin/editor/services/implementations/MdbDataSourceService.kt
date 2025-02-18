@@ -16,7 +16,6 @@ import com.mongodb.jbplugin.accessadapter.slice.ListDatabases
 import com.mongodb.jbplugin.editor.models.getToolbarModel
 import com.mongodb.jbplugin.editor.services.DataSourceService
 import com.mongodb.jbplugin.observability.useLogMessage
-import io.ktor.util.collections.*
 import kotlinx.coroutines.CoroutineScope
 
 private val log = logger<MdbDataSourceService>()
@@ -137,9 +136,6 @@ class MdbDataSourceService(
 
 /**
  * Helper method to retrieve the MdbDataSourceService instance from Application
- *
- * @param project
- * @return
  */
 fun Project.getDataSourceService(): DataSourceService = getService(
     MdbDataSourceService::class.java
