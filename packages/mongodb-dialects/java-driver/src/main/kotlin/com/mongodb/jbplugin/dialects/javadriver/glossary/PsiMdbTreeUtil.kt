@@ -375,7 +375,7 @@ fun String.toBsonType(): BsonType {
  * @param type
  */
 fun <T> PsiElement.findAllChildrenOfType(type: Class<T>): List<T> {
-    var allChildren = this.children.flatMap { it.findAllChildrenOfType(type) }.toMutableList()
+    val allChildren = this.children.flatMap { it.findAllChildrenOfType(type) }.toMutableList()
 
     if (this is PsiMethodCallExpression) {
         allChildren += this.argumentList.expressions.flatMap { it.findAllChildrenOfType(type) }
