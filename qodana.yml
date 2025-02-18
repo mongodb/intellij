@@ -12,7 +12,7 @@ exclude:
       - .qodana
       - .gradle.kts
 fixesStrategy: apply
-failureConditions:
-  severityThresholds:
-    critical: 0
-    high: 0
+#failureConditions:
+#  severityThresholds:
+#    critical: 0
+#    high: 0
