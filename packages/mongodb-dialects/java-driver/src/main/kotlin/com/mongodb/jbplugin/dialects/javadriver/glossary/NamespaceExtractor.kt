@@ -266,7 +266,7 @@ object NamespaceExtractor {
                             return@flatMap emptySet<Resolvable>()
                         }
 
-                        if (it.argumentList.expressions.size == 0) { // unknown method, so go inside
+                        if (it.argumentList.expressions.isEmpty()) { // unknown method, so go inside
                             return@flatMap findAllResolvableConceptsInMethod(method)
                         }
 
@@ -397,4 +397,4 @@ private fun PsiElement.findContainingMethod(): PsiMethod? =
 
 private val PsiClass.constructorsWithSuperClasses: List<PsiMethod>
     get() = constructors.toList() +
-        (superClass?.constructorsWithSuperClasses ?: emptyList<PsiMethod>())
+        (superClass?.constructorsWithSuperClasses ?: emptyList())

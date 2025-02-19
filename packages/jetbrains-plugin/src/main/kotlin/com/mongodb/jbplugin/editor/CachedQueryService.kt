@@ -121,7 +121,7 @@ class CachedQueryService(
         // Request a read lock. In this case, we don't block other reader threads, but we will get blocked
         // when someone else requests this lock in write mode. This will only happen when there is a change
         // in a query from the editor and IntelliJs parser kicks in.
-        return rwLock.read<Array<Node<PsiElement>>> {
+        return rwLock.read {
             val allQueriesForNamespace = cachedQueriesByNamespace.getOrDefault(
                 collRef.namespace,
                 emptySet()

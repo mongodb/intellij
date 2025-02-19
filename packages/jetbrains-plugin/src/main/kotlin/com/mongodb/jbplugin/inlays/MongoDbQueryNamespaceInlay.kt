@@ -6,7 +6,6 @@ import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
-import com.mongodb.jbplugin.dialects.javadriver.glossary.NamespaceExtractor
 import com.mongodb.jbplugin.editor.dialect
 import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
@@ -14,8 +13,6 @@ import com.mongodb.jbplugin.mql.components.HasCollectionReference
 /**
  * This inlay shows for the current query in which namespace is going to run, if possible,
  * according to the extraction rules of NamespaceExtractor.
- *
- * @see NamespaceExtractor
  */
 class MongoDbQueryNamespaceInlay : InlayHintsProvider {
     override fun createCollector(

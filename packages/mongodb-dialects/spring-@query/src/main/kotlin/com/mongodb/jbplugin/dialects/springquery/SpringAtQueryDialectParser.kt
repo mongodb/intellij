@@ -270,7 +270,7 @@ object SpringAtQueryDialectParser : DialectParser<PsiElement> {
 
     private fun findParentMethodWithQueryAnnotation(source: PsiElement): PsiMethod? {
         return source.findTopParentBy { method ->
-            method as? PsiMethod ?: return@findTopParentBy false
+            if (method is PsiMethod) method else return@findTopParentBy false
             method.annotations.find {
                 it.hasQualifiedName(QUERY_FQN)
             } != null

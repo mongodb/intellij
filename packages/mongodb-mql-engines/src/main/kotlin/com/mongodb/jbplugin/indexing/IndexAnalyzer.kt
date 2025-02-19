@@ -98,7 +98,7 @@ object IndexAnalyzer {
     ): List<QueryFieldUsage<S>> {
         val nodeQueryUsage = requireNonNull<Node<S>, NoConditionFulfilled>(NoConditionFulfilled)
             .zip(extractOperation<S>())
-            .zip(extractValueReferencesRelevantForIndexing<S>())
+            .zip(extractValueReferencesRelevantForIndexing())
             .zip(fieldReference<HasFieldReference.FromSchema<S>, S>())
             .map { context ->
                 val named = context.first.first.second

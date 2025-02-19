@@ -26,7 +26,7 @@ class QueryRunProbe {
     ) {
         val telemetry by service<TelemetryService>()
 
-        var dialect = query.component<HasSourceDialect>() ?: return
+        val dialect = query.component<HasSourceDialect>() ?: return
         val event = TelemetryEvent.QueryRunEvent(dialect.name, console, trigger)
         telemetry.sendEvent(event)
 

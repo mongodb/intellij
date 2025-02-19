@@ -143,7 +143,7 @@ class DataGripMongoDbDriver(
                 while (resultSet.next()) {
                     val hashMap = resultSet.getObject(1) as Map<String, Any>
                     val parsedEJson = deserializeEJson(hashMap)
-                    val result = mapToClass<T>(parsedEJson, resultClass)
+                    val result = mapToClass(parsedEJson, resultClass)
                     if (result != null) {
                         listOfResults.add(result)
                     }
@@ -217,8 +217,8 @@ class DataGripMongoDbDriver(
                 return value as T
             } else if (value is Map<*, *>) {
                 val constructor = kClass.constructors.first()
-                val sortedArgs = constructor.parameters.associate {
-                    it to mapToClass(value[it.name], it.type.classifier as KClass<*>)
+                val sortedArgs = constructor.parameters.associateWith {
+                    mapToClass(value[it.name], it.type.classifier as KClass<*>)
                 }
 
                 return constructor.callBy(sortedArgs)

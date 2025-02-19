@@ -36,9 +36,9 @@ class NamespaceSelector(
     private val events: MutableSharedFlow<Event> = MutableSharedFlow(extraBufferCapacity = 1)
 
     private val databaseModel = DefaultComboBoxModel<String>(emptyArray())
-    val databaseComboBox = ComboBox<String?>(databaseModel)
+    val databaseComboBox = ComboBox(databaseModel)
     private val collectionModel = DefaultComboBoxModel<String>(emptyArray())
-    val collectionComboBox = ComboBox<String?>(collectionModel)
+    val collectionComboBox = ComboBox(collectionModel)
 
     val selectedDatabase: String?
         get() = databaseModel.selectedItem?.toString()

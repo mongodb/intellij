@@ -580,7 +580,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
                 // .addFields can have varargs of Field objects or Fields objects in an iterable
                 // so we need to resolve them.
                 val addedFieldNodes = resolveAddFieldsArguments(stageCall)
-                    .mapNotNull(::parseAddFieldsArgument)
+                    .map(::parseAddFieldsArgument)
 
                 return Node(
                     source = stageCall,
@@ -765,7 +765,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
     ): List<PsiNewExpression> {
         return addFieldsCall.getVarArgsOrIterableArgs()
             .mapNotNull {
-                it.resolveElementUntil<PsiNewExpression> { element ->
+                it.resolveElementUntil { element ->
                     val newExpression = element as? PsiNewExpression
                         ?: return@resolveElementUntil false
 
@@ -777,7 +777,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
             }
     }
 
-    private fun parseAddFieldsArgument(fieldExpression: PsiNewExpression): Node<PsiElement>? {
+    private fun parseAddFieldsArgument(fieldExpression: PsiNewExpression): Node<PsiElement> {
         val expressionArguments = fieldExpression.argumentList?.expressions
         val fieldNameExpression = expressionArguments?.getOrNull(0)
         val fieldReference = fieldNameExpression?.tryToResolveAsConstantString()?.let {
@@ -1065,7 +1065,7 @@ fun PsiExpressionList.inferValueReferenceFromVarArg(start: Int = 0): HasValueRef
 }
 
 fun PsiExpressionList.inferFromSingleVarArgElement(start: Int = 0): HasValueReference.ValueReference<PsiElement> {
-    var secondArg = expressions[start].meaningfulExpression() as PsiExpression
+    val secondArg = expressions[start].meaningfulExpression() as PsiExpression
     return if (secondArg.type?.isJavaIterable() == true) { // case 3
         HasValueReference.Runtime(
             secondArg,

@@ -3,8 +3,6 @@
  * Usually, we won't use this class directly, only in tests. What we
  * will use is the MongoDBReadModelProvider, that provides caching
  * and safety mechanisms.
- *
- * @see com.mongodb.jbplugin.accessadapter.MongoDbReadModelProvider
  */
 
 package com.mongodb.jbplugin.accessadapter
@@ -34,8 +32,6 @@ class ConnectionString(hostInfo: List<String>) {
  * Usually, we won't use this class directly, only in tests. What we
  * will use is the MongoDBReadModelProvider, that provides caching
  * and safety mechanisms.
- *
- * @see com.mongodb.jbplugin.accessadapter.MongoDbReadModelProvider
  */
 interface MongoDbDriver {
     val connected: Boolean
