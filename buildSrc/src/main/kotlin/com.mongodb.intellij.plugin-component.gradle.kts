@@ -11,8 +11,6 @@ plugins {
     kotlin("jvm")
     id("org.gradle.test-retry")
     id("org.jetbrains.intellij.platform")
-    id("me.champeau.jmh")
-    id("io.morethan.jmhreport")
     id("org.jetbrains.changelog")
 }
 
@@ -123,11 +121,6 @@ dependencies {
         testFramework(TestFrameworkType.Plugin.Java)
     }
 
-    jmh(libs.kotlin.stdlib)
-    jmh(libs.testing.jmh.core)
-    jmh(libs.testing.jmh.annotationProcessor)
-    jmh(libs.testing.jmh.generatorByteCode)
-
     testImplementation(libs.testing.jupiter.engine)
     testImplementation(libs.testing.jupiter.params)
     testImplementation(libs.testing.jupiter.vintage.engine)
@@ -177,42 +170,6 @@ tasks {
           )
         )
     }
-}
-
-jmh {
-    benchmarkMode.set(listOf("thrpt"))
-    iterations.set(10)
-    timeOnIteration.set("6s")
-    timeUnit.set("s")
-
-    warmup.set("1s")
-    warmupIterations.set(3)
-    warmupMode.set("INDI")
-    fork.set(1)
-    threads.set(1)
-    failOnError.set(false)
-    forceGC.set(true)
-
-    humanOutputFile.set(rootProject.layout.buildDirectory.file("reports/jmh/human.txt"))
-    resultsFile.set(rootProject.layout.buildDirectory.file("reports/jmh/results.json"))
-    resultFormat.set("json")
-    profilers.set(listOf("gc"))
-
-    zip64.set(true)
-}
-
-jmhReport {
-    jmhResultPath =
-        rootProject.layout.buildDirectory
-            .file("reports/jmh/results.json")
-            .get()
-            .asFile.absolutePath
-
-    jmhReportOutput =
-        rootProject.layout.buildDirectory
-            .dir("reports/jmh/")
-            .get()
-            .asFile.absolutePath
 }
 
 tasks {

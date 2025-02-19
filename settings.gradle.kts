@@ -1,6 +1,7 @@
 rootProject.name = "mongodb-jetbrains-plugin"
 
 include(
+    "packages:mongodb-design-system",
     "packages:mongodb-mql-model",
     "packages:mongodb-dialects",
     "packages:mongodb-dialects:java-driver",

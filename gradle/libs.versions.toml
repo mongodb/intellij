@@ -41,6 +41,7 @@ kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", versio
 kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "kotlin-stdlib" }
 kotlin-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 kotlin-collections = { group = "org.jetbrains.kotlinx", name = "kotlinx-collections-immutable", version.ref="kotlinx-collections" }
+kotlinx-coroutines-swing = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
 ## Production Libraries.
 segment = { group = "com.segment.analytics.java", name = "analytics", version.ref = "segment" }
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }

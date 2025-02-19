@@ -1,5 +1,14 @@
 plugins {
     id("com.mongodb.intellij.plugin-component")
+    id("org.jetbrains.compose") version ("1.7.3")
+    id("org.jetbrains.kotlin.plugin.compose") version ("2.0.21")
+}
+
+repositories {
+    google()
+    maven("https://www.jetbrains.com/intellij-repository/releases/")
+    maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
+    maven("https://packages.jetbrains.team/maven/p/kpm/public/")
 }
 
 pluginBundle {
@@ -36,6 +45,10 @@ dependencies {
     implementation(project(":packages:mongodb-dialects:spring-@query"))
     implementation(project(":packages:mongodb-dialects:mongosh"))
     implementation(project(":packages:mongodb-mql-model"))
+    implementation(project(":packages:mongodb-design-system"))
+
+    compileOnly(compose.desktop.common)
+    compileOnly(libs.kotlinx.coroutines.swing)
 
     implementation(libs.mongodb.driver)
     implementation(libs.segment)

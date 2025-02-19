@@ -1,8 +1,4 @@
-import gradle.kotlin.dsl.accessors._76b600702684b1c4586cd5ce03c14377.jacoco
-import gradle.kotlin.dsl.accessors._76b600702684b1c4586cd5ce03c14377.testImplementation
 import org.gradle.accessors.dm.LibrariesForLibs
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.targets.js.ir.KotlinJsIrCompilation
 
 plugins {
     id("com.mongodb.intellij.base-module")
