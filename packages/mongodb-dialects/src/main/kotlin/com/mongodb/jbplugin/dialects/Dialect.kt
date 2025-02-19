@@ -130,7 +130,6 @@ data class ConnectionContext(
  * will build the toolbar based on the set of requirements defined in the ConnectionContextExtractor.
  *
  * @see ConnectionContextExtractor
- * @see com.mongodb.jbplugin.editor.EditorToolbarDecorator
  */
 enum class ConnectionContextRequirement {
     DATABASE
@@ -142,8 +141,6 @@ enum class ConnectionContextRequirement {
  *
  * `C` is an opaque type that represents the Context holder (or the content root) of a dialect.
  * For example, for dialects that depend on IntelliJ, this will be the Project class.
- *
- * @see com.mongodb.jbplugin.dialects.springcriteria.SpringCriteriaContextExtractor
  *
  * @param C
  */

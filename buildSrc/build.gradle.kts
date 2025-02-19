@@ -16,8 +16,6 @@ dependencies {
     api(libs.buildScript.plugin.testRetry)
     api(libs.buildScript.plugin.intellij.plugin)
     api(libs.buildScript.plugin.intellij.changelog)
-    api(libs.buildScript.plugin.jmh)
-    api(libs.buildScript.plugin.jmhreport)
     api(libs.buildScript.plugin.ktlint)
     api(libs.buildScript.plugin.qodana)
 }

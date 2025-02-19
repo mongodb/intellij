@@ -20,16 +20,6 @@ class MdbPluginDisposable : Disposable {
     private val onDisposeListeners = ConcurrentSet<() -> Unit>()
 
     /**
-     * Registers a listener for when the service is disposed which happens either when the project is closed
-     * or when the plugin is unloaded
-     *
-     * @param block - Listener that gets called with the service is being disposed
-     */
-    fun onDispose(block: () -> Unit) {
-        onDisposeListeners.add(block)
-    }
-
-    /**
      * Disposable interface that gets called when this service is being disposed
      */
     override fun dispose() {

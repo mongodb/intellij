@@ -145,15 +145,6 @@ fun <I, E, O> Parser<I, E, List<O>>.nth(index: Int): Parser<I, Either<E, IndexOu
 }
 
 /**
- * Parser that returns the number of elements in a list.
- */
-fun <I> count(): Parser<List<I>, Any, Int> {
-    return { input ->
-        Either.right(input.size)
-    }
-}
-
-/**
  * Returns a parser that runs both this, and the parameter parser, in parallel, and aggregates
  * the results.
  */

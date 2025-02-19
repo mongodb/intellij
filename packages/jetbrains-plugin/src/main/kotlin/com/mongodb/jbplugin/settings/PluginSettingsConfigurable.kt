@@ -155,14 +155,7 @@ internal class PluginSettingsComponent {
             add(subtextLabel)
         }
 
-        sampleSize = JFormattedTextField(defaultNumberFormatter).apply {
-            focusLostBehavior = JFormattedTextField.PERSIST
-            addPropertyChangeListener("value") { evt ->
-                if (evt.newValue == null) {
-                    this.text = ""
-                }
-            }
-        }
+        sampleSize = numberInputField()
 
         return JPanel().apply {
             layout = BoxLayout(this, BoxLayout.X_AXIS)
@@ -180,14 +173,7 @@ internal class PluginSettingsComponent {
             add(mainLabel)
         }
 
-        softIndexesLimit = JFormattedTextField(defaultNumberFormatter).apply {
-            focusLostBehavior = JFormattedTextField.PERSIST
-            addPropertyChangeListener("value") { evt ->
-                if (evt.newValue == null) {
-                    this.text = ""
-                }
-            }
-        }
+        softIndexesLimit = numberInputField()
 
         return JPanel().apply {
             layout = BoxLayout(this, BoxLayout.X_AXIS)
@@ -213,6 +199,15 @@ internal class PluginSettingsComponent {
             maximum = Integer.MAX_VALUE
             allowsInvalid = false
             commitsOnValidEdit = true
+        }
+
+        private fun numberInputField(): JFormattedTextField = JFormattedTextField(defaultNumberFormatter).apply {
+            focusLostBehavior = JFormattedTextField.PERSIST
+            addPropertyChangeListener("value") { evt ->
+                if (evt.newValue == null) {
+                    this.text = ""
+                }
+            }
         }
     }
 }

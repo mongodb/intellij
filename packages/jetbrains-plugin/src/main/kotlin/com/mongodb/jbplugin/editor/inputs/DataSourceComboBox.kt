@@ -26,13 +26,6 @@ import javax.swing.SwingConstants
 import javax.swing.event.PopupMenuEvent
 import javax.swing.event.PopupMenuListener
 
-/**
- * @param parent
- * @param onDataSourceSelected
- * @param onDataSourceUnselected
- * @param initialDataSources
- * @param initialSelectedDataSource
- */
 class DataSourceComboBox(
     private val parent: JComponent,
     private val project: Project,

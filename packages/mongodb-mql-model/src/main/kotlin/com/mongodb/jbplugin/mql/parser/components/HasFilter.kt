@@ -8,19 +8,6 @@ import com.mongodb.jbplugin.mql.parser.Parser
 
 data object NoFilters
 
-fun <S> atLeastOneFilter(): Parser<Node<S>, NoFilters, List<Node<S>>> {
-    return { input ->
-        when (val ref = input.component<HasFilter<S>>()) {
-            null -> Either.left(NoFilters)
-            else -> if (ref.children.isNotEmpty()) {
-                Either.right(ref.children)
-            } else {
-                Either.left(NoFilters)
-            }
-        }
-    }
-}
-
 fun <S> allFiltersRecursively(): Parser<Node<S>, NoFilters, List<Node<S>>> {
     return { input ->
         fun gather(el: Node<S>): List<Node<S>> {

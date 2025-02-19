@@ -25,10 +25,6 @@ import javax.swing.event.PopupMenuListener
 
 /**
  * @param parent
- * @param onDatabaseSelected
- * @param onDatabaseUnselected
- * @param initialDatabases
- * @param initialSelectedDatabase
  */
 class DatabaseComboBox(
     private val parent: JComponent,

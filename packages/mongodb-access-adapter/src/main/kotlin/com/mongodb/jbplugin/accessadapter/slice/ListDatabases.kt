@@ -20,7 +20,7 @@ data class ListDatabases(
     val databases: List<Database>,
 ) {
     object Slice : com.mongodb.jbplugin.accessadapter.Slice<ListDatabases> {
-        override val id = javaClass.canonicalName
+        override val id: String = javaClass.canonicalName
 
         override suspend fun queryUsingDriver(from: MongoDbDriver): ListDatabases {
             val query = Node(

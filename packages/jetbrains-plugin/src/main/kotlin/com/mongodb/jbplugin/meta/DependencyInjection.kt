@@ -140,7 +140,7 @@ fun <E : Any> SharedFlow<E>.eventCount(parent: Disposable): AsyncState<E, Long> 
     AsyncState(
         parent,
         this,
-        { _, e, -> e + 1L },
+        { _, e -> e + 1L },
         { },
         0L
     )
