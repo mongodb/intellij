@@ -26,6 +26,8 @@ kotlin {
                     exclude(group = "org.jetbrains.compose.material")
                     exclude(group = "org.jetbrains.kotlinx")
                 }
+
+                compileOnly(libs.kotlinx.coroutines.swing)
                 // api(compose.desktop.currentOs) {
                 //     exclude(group = "org.jetbrains.compose.material")
                 //     exclude(group = "org.jetbrains.kotlinx")
