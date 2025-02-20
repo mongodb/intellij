@@ -31,6 +31,20 @@ class SidePanel : ToolWindowFactory {
         toolWindow: ToolWindow
     ) {
 
+        val activeConnection = project.getToolbarModel().toolbarState.map {
+            it.selectedDataSource?.let {
+                Connection(
+                    it.uniqueId,
+                    it.name,
+                    if (it.isConnected()) {
+                        CONNECTED
+                    } else {
+                        IDLE
+                    }
+                )
+            }
+        }
+
         val connections = project.getToolbarModel().toolbarState.map {
             it.dataSources.map {
                 Connection(
@@ -50,7 +64,7 @@ class SidePanel : ToolWindowFactory {
             SwingBridgeTheme {
                 Box(modifier = Modifier.padding(8.dp)) {
                     Card(AllIconsKeys.General.Error, "MongoDB Connection Unavailable") {
-                        ConnectionComboBox(connections) { connection ->
+                        ConnectionComboBox(activeConnection, connections) { connection ->
                             project.getToolbarModel().selectDataSource(
                                 project.getToolbarModel().toolbarState.value.dataSources.first {
                                     it.uniqueId == connection.id

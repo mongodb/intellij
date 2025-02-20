@@ -8,9 +8,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.mongodb.jbplugin.designsystem.ConnectionState.CONNECTED
 import kotlinx.coroutines.flow.Flow
@@ -30,21 +27,20 @@ data class Connection(val id: String, val name: String, val state: ConnectionSta
 
 @Composable
 @Preview
-fun ConnectionComboBox(connectionFlow: Flow<List<Connection>>, onConnectionSelected: (Connection) -> Unit) {
-    val connections by connectionFlow.collectAsState(emptyList())
-    var selected by remember { mutableStateOf<Connection?>(null) }
-
-    fun onSelectDataSource(connection: Connection) {
-        selected = connection
-        onConnectionSelected(connection)
-    }
+fun ConnectionComboBox(
+    activeConnection: Flow<Connection?>,
+    allConnections: Flow<List<Connection>>,
+    onConnectionSelected: (Connection) -> Unit
+) {
+    val connections by allConnections.collectAsState(emptyList())
+    val selected by activeConnection.collectAsState(null as Connection?)
 
     Row {
         Column {
             ComboBox(selected?.name ?: "Choose a connection") {
                 Column {
                     for (connection in connections) {
-                        ComboBoxConnectionElement(connection, ::onSelectDataSource)
+                        ComboBoxConnectionElement(connection, onConnectionSelected)
                     }
                 }
             }
