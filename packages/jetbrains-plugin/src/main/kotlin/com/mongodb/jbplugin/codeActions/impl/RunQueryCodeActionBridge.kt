@@ -62,7 +62,7 @@ internal object RunQueryCodeAction : MongoDbCodeAction {
         dataSource: LocalDataSource?,
         query: Node<PsiElement>,
         formatter: DialectFormatter
-    ): LineMarkerInfo<PsiElement>? {
+    ): LineMarkerInfo<PsiElement> {
         return LineMarkerInfo(
             query.sourceForMarker,
             query.sourceForMarker.textRange,

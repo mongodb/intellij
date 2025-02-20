@@ -24,6 +24,7 @@ import com.mongodb.jbplugin.mql.components.HasRunCommand
 import com.mongodb.jbplugin.mql.components.HasTargetCluster
 import com.mongodb.jbplugin.mql.components.IsCommand
 import io.github.z4kn4fein.semver.Version
+import kotlinx.coroutines.runBlocking
 import org.owasp.encoder.Encode
 
 object MongoshDialectFormatter : DialectFormatter {
@@ -166,6 +167,14 @@ object MongoshDialectFormatter : DialectFormatter {
             prelude +=
                 "// Learn about creating an index: $docPrefix/core/data-model-operations/#indexes"
 
+            val partialIndexExpression = index.partialFilterExpression?.let {
+                runBlocking { formatPartialExpression(it) }
+            }
+
+            val options = partialIndexExpression?.let {
+                ", { options: { partialFilterExpression: $partialIndexExpression } }"
+            } ?: ""
+
             val indexTemplate = index.fields.joinToString(
                 separator = ", ",
                 prefix = "{ ",
@@ -182,9 +191,17 @@ object MongoshDialectFormatter : DialectFormatter {
             """
 $prelude
 db.getSiblingDB("$encodedDbName").getCollection("$encodedColl")
-  .createIndex($indexTemplate)
+  .createIndex(${indexTemplate}$options)
             """.trimIndent()
         }
+    }
+
+    private suspend fun <S> formatPartialExpression(node: Node<S>): String {
+        return MongoshBackend(
+            prettyPrint = false,
+            automaticallyRun = false
+        ).emitQueryFilter(node, firstCall = true)
+            .computeOutput()
     }
 
     override fun formatType(type: BsonType) = ""

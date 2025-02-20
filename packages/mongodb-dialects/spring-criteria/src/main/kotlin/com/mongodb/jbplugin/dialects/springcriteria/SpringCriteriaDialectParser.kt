@@ -535,7 +535,7 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
     private fun varargExpressionListToValueReference(argumentList: PsiExpressionList, start: Int = 0): HasValueReference<PsiElement> {
         val valueReference: HasValueReference.ValueReference<PsiElement> =
             if (argumentList.expressionCount == (start + 1)) {
-                var secondArg = argumentList.expressions[start].meaningfulExpression() as PsiExpression
+                val secondArg = argumentList.expressions[start].meaningfulExpression() as PsiExpression
                 if (secondArg.type?.isJavaIterable() == true) { // case 3
                     argumentList.inferFromSingleVarArgElement(start)
                 } else if (secondArg.type?.isArray() == false) { // case 1
@@ -552,7 +552,7 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                 HasValueReference.Runtime(argumentList, BsonArray(BsonAny))
             }
 
-        return HasValueReference<PsiElement>(valueReference)
+        return HasValueReference(valueReference)
     }
 
     private fun psiExpressionToValueReference(valuePsi: PsiExpression?): HasValueReference<PsiElement> {
@@ -666,10 +666,10 @@ private fun PsiMethodCallExpression.findSpringMongoDbExpression(): PsiMethodCall
             method.containingClass?.qualifiedName?.contains(it) == true
         }
     ) {
-        var parentMethodCall = findParentOfType<PsiMethodCallExpression>()
+        val parentMethodCall = findParentOfType<PsiMethodCallExpression>()
         return parentMethodCall?.findSpringMongoDbExpression() ?: this
     } else {
-        var parentMethodCall = findParentOfType<PsiMethodCallExpression>() ?: return null
+        val parentMethodCall = findParentOfType<PsiMethodCallExpression>() ?: return null
         return parentMethodCall.findSpringMongoDbExpression()
     }
 }

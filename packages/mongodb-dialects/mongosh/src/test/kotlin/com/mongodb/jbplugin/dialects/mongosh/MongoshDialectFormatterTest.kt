@@ -2,6 +2,7 @@ package com.mongodb.jbplugin.dialects.mongosh
 
 import com.mongodb.jbplugin.indexing.CollectionIndexConsolidationOptions
 import com.mongodb.jbplugin.indexing.IndexAnalyzer
+import com.mongodb.jbplugin.indexing.IndexAnalyzer.SortDirection
 import com.mongodb.jbplugin.mql.BsonBoolean
 import com.mongodb.jbplugin.mql.BsonInt32
 import com.mongodb.jbplugin.mql.BsonString
@@ -416,6 +417,100 @@ class MongoshDialectFormatterTest {
     }
 
     @Test
+    fun `generates an index suggestion with a partial filter expression with eq`() = runTest {
+        assertIndexJs(
+            """
+                // Learn about creating an index: https://www.mongodb.com/docs/v7.0/core/data-model-operations/#indexes
+                db.getSiblingDB("myDb").getCollection("myCollection")
+                  .createIndex({ "myField": 1 }, { options: { partialFilterExpression: {"myField": true} } })
+            """.trimIndent(),
+            IndexAnalyzer.SuggestedIndex.MongoDbIndex(
+                collectionReference = HasCollectionReference(HasCollectionReference.Known(Unit, Unit, Namespace("myDb", "myCollection"))),
+                fields = listOf(
+                    IndexAnalyzer.SuggestedIndex.MongoDbIndexField("myField", Unit, SortDirection.Ascending, IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality)
+                ),
+                coveredQueries = emptyList(),
+                partialFilterExpression = Node(
+                    Unit,
+                    listOf(
+                        Named(Name.EQ),
+                        HasFieldReference(HasFieldReference.FromSchema(Unit, "myField")),
+                        HasValueReference(HasValueReference.Constant(Unit, true, BsonBoolean))
+                    )
+                )
+            )
+        ) {
+            Node(
+                Unit,
+                listOf(
+                    HasCollectionReference(
+                        HasCollectionReference.Known(Unit, Unit, Namespace("myDb", "myCollection"))
+                    ),
+                    HasFilter(
+                        listOf(
+                            Node(
+                                Unit,
+                                listOf(
+                                    Named(Name.EQ),
+                                    HasFieldReference(HasFieldReference.FromSchema(Unit, "myField")),
+                                    HasValueReference(HasValueReference.Constant(Unit, true, BsonBoolean))
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `generates an index suggestion with a partial filter expression with gt`() = runTest {
+        assertIndexJs(
+            """
+                // Learn about creating an index: https://www.mongodb.com/docs/v7.0/core/data-model-operations/#indexes
+                db.getSiblingDB("myDb").getCollection("myCollection")
+                  .createIndex({ "myField": 1 }, { options: { partialFilterExpression: {"myField": {"${'$'}gt": 42}} } })
+            """.trimIndent(),
+            IndexAnalyzer.SuggestedIndex.MongoDbIndex(
+                collectionReference = HasCollectionReference(HasCollectionReference.Known(Unit, Unit, Namespace("myDb", "myCollection"))),
+                fields = listOf(
+                    IndexAnalyzer.SuggestedIndex.MongoDbIndexField("myField", Unit, SortDirection.Ascending, IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality)
+                ),
+                coveredQueries = emptyList(),
+                partialFilterExpression = Node(
+                    Unit,
+                    listOf(
+                        Named(Name.GT),
+                        HasFieldReference(HasFieldReference.FromSchema(Unit, "myField")),
+                        HasValueReference(HasValueReference.Constant(Unit, 42, BsonInt32))
+                    )
+                )
+            )
+        ) {
+            Node(
+                Unit,
+                listOf(
+                    HasCollectionReference(
+                        HasCollectionReference.Known(Unit, Unit, Namespace("myDb", "myCollection"))
+                    ),
+                    HasFilter(
+                        listOf(
+                            Node(
+                                Unit,
+                                listOf(
+                                    Named(Name.EQ),
+                                    HasFieldReference(HasFieldReference.FromSchema(Unit, "myField")),
+                                    HasValueReference(HasValueReference.Constant(Unit, true, BsonBoolean))
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        }
+    }
+
+    @Test
     fun `can format a buildInfo run command`() = runTest {
         assertGeneratedQuery(
             """
@@ -532,5 +627,15 @@ internal fun assertGeneratedIndexWithReferences(
     }
 
     val generated = MongoshDialectFormatter.indexCommand(query, index, toQueryReference)
+    assertEquals(js, generated)
+}
+
+internal fun assertIndexJs(
+    @Language("js") js: String,
+    index: IndexAnalyzer.SuggestedIndex<Unit>,
+    script: () -> Node<Unit>,
+) {
+    val query = script()
+    val generated = MongoshDialectFormatter.indexCommand(query, index, { null })
     assertEquals(js, generated)
 }

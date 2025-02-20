@@ -144,7 +144,7 @@ suspend fun <S> MongoshBackend.emitQueryFilter(node: Node<S>, firstCall: Boolean
                 // $field$: { $not: $condition$ }
                 // we will do a JIT translation
 
-                var innerChild = hasFilter.children.first()
+                val innerChild = hasFilter.children.first()
                 val operation = innerChild.component<Named>()
                 val fieldRef = innerChild.component<HasFieldReference<S>>()
                 val valueRef = innerChild.component<HasValueReference<S>>()

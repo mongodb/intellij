@@ -90,7 +90,7 @@ object IndexAnalyzer {
             }
             .toList()
 
-        return SuggestedIndex.MongoDbIndex(collectionRef, indexFields, listOf(query))
+        return SuggestedIndex.MongoDbIndex(collectionRef, indexFields, listOf(query), null)
     }
 
     private suspend fun <S> Node<S>.allFieldReferences(
@@ -98,7 +98,7 @@ object IndexAnalyzer {
     ): List<QueryFieldUsage<S>> {
         val nodeQueryUsage = requireNonNull<Node<S>, NoConditionFulfilled>(NoConditionFulfilled)
             .zip(extractOperation<S>())
-            .zip(extractValueReferencesRelevantForIndexing<S>())
+            .zip(extractValueReferencesRelevantForIndexing())
             .zip(fieldReference<HasFieldReference.FromSchema<S>, S>())
             .map { context ->
                 val named = context.first.first.second
@@ -234,7 +234,8 @@ object IndexAnalyzer {
         data class MongoDbIndex<S>(
             val collectionReference: HasCollectionReference<S>,
             val fields: List<MongoDbIndexField<S>>,
-            val coveredQueries: List<Node<S>>
+            val coveredQueries: List<Node<S>>,
+            val partialFilterExpression: Node<S>?
         ) : SuggestedIndex<S>
     }
 

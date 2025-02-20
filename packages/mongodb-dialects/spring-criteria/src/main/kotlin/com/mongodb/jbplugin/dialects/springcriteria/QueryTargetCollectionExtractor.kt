@@ -26,12 +26,11 @@ object QueryTargetCollectionExtractor {
 
             if (currentMethod.name == "query") {
                 return extractCollectionFromClassTypeParameter(
-                    currentMethodCall?.argumentList?.expressions?.getOrNull(0)
+                    currentMethodCall.argumentList.expressions.getOrNull(0)
                 )
             }
 
-            currentMethodCall =
-                currentMethodCall?.firstChild?.firstChild as? PsiMethodCallExpression
+            currentMethodCall = currentMethodCall.firstChild?.firstChild as? PsiMethodCallExpression
         } while (true)
 
         return unknown

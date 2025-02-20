@@ -175,7 +175,8 @@ object ModelDsl {
                     reason = IndexAnalyzer.IndexSuggestionFieldReason.RoleEquality
                 )
             },
-            coveredQueries = nodeHolder.nodes
+            coveredQueries = nodeHolder.nodes,
+            partialFilterExpression = null
         )
     }
 }

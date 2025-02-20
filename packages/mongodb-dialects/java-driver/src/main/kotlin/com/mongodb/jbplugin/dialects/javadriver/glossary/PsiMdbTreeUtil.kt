@@ -213,26 +213,30 @@ fun PsiMethodCallExpression.findMongoDbCollectionMethodCallForCommand(
  * Returns the reference to a MongoDB driver collection.
  */
 fun PsiElement.findMongoDbCollectionReference(): PsiExpression? {
-    if (this is PsiMethodCallExpression) {
-        return if (methodExpression.type?.isMongoDbCollectionClass(project) == true) {
-            methodExpression
-        } else if (methodExpression.qualifierExpression is PsiMethodCallExpression) {
-            (methodExpression.qualifierExpression as PsiMethodCallExpression).findMongoDbCollectionReference()
-        } else if (methodExpression.qualifierExpression?.reference?.resolve() is PsiField) {
-            methodExpression.qualifierExpression
-        } else {
-            methodExpression.children.firstNotNullOfOrNull {
-                it.findMongoDbCollectionReference()
+    when (this) {
+        is PsiMethodCallExpression -> {
+            return if (methodExpression.type?.isMongoDbCollectionClass(project) == true) {
+                methodExpression
+            } else if (methodExpression.qualifierExpression is PsiMethodCallExpression) {
+                (methodExpression.qualifierExpression as PsiMethodCallExpression).findMongoDbCollectionReference()
+            } else if (methodExpression.qualifierExpression?.reference?.resolve() is PsiField) {
+                methodExpression.qualifierExpression
+            } else {
+                methodExpression.children.firstNotNullOfOrNull {
+                    it.findMongoDbCollectionReference()
+                }
             }
         }
-    } else if (this is PsiExpression) {
-        if (this.type?.isMongoDbCollectionClass(project) == true) {
-            return this
-        }
+        is PsiExpression -> {
+            if (this.type?.isMongoDbCollectionClass(project) == true) {
+                return this
+            }
 
-        return null
-    } else {
-        return children.firstNotNullOfOrNull { it.findMongoDbCollectionReference() }
+            return null
+        }
+        else -> {
+            return children.firstNotNullOfOrNull { it.findMongoDbCollectionReference() }
+        }
     }
 }
 

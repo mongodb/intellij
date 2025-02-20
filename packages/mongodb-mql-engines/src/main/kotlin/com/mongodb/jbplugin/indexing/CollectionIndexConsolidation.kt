@@ -14,7 +14,7 @@ object CollectionIndexConsolidation {
 
         val partitionOfIndex = indexes
             .filterIsInstance<IndexAnalyzer.SuggestedIndex.MongoDbIndex<S>>()
-            .fold(IndexPartitions<S>(), IndexPartitions<S>::addIndex)
+            .fold(IndexPartitions(), IndexPartitions<S>::addIndex)
             .addIndex(baseIndex)
             .partitionOfIndex(baseIndex) ?: return IndexAnalyzer.SuggestedIndex.NoIndex.cast()
 

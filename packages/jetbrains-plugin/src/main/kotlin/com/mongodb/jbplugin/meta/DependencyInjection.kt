@@ -16,7 +16,7 @@ import kotlin.reflect.KProperty
 
 class DependencyInjection<out T>(private val cm: ComponentManager, private val javaClass: Class<T>) {
     operator fun getValue(thisRef: Any?, property: KProperty<*>): T {
-        return cm.getService<T>(javaClass)
+        return cm.getService(javaClass)
     }
 }
 

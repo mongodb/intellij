@@ -22,7 +22,7 @@ class CreateIndexIntentionProbe {
     fun intentionClicked(query: Node<PsiElement>) {
         val telemetry by service<TelemetryService>()
 
-        var dialect = query.component<HasSourceDialect>() ?: return
+        val dialect = query.component<HasSourceDialect>() ?: return
         val event = TelemetryEvent.CreateIndexIntentionEvent(dialect.name)
         telemetry.sendEvent(event)
 

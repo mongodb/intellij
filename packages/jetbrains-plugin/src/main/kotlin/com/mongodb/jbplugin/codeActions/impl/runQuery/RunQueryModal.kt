@@ -107,7 +107,7 @@ class RunQueryModal(
             val type = fieldValue.type.toNonNullableType()
             val typeWithJavaRepresentation = JavaDriverDialectFormatter.formatType(type)
             val label = JBLabel("${fieldName.fieldName} ($typeWithJavaRepresentation):")
-            val (input, toolTip) = toInput(type) ?: continue
+            val (input, toolTip) = toInput(type)
 
             fieldsForContext += Triple(fieldName.fieldName, type, input)
 
@@ -177,7 +177,7 @@ class RunQueryModal(
             }
         }
 
-    private fun toInput(type: BsonType): Pair<JComponent, String?>? {
+    private fun toInput(type: BsonType): Pair<JComponent, String?> {
         return when (val nonNullType = type.toNonNullableType()) {
             BsonInt32, BsonInt64, BsonDouble, BsonDecimal128, BsonString -> JBTextField() to null
             BsonBoolean -> JBCheckBox() to null
@@ -226,14 +226,8 @@ class RunQueryModal(
             }.toMutableMap() as MutableMap<String, QueryContext.LocalVariable>
 
         namespaceSelector?.let {
-            localVariables.put(
-                "database",
-                QueryContext.LocalVariable(BsonString, it.selectedDatabase)
-            )
-            localVariables.put(
-                "collection",
-                QueryContext.LocalVariable(BsonString, it.selectedCollection)
-            )
+            localVariables["database"] = QueryContext.LocalVariable(BsonString, it.selectedDatabase)
+            localVariables["collection"] = QueryContext.LocalVariable(BsonString, it.selectedCollection)
         }
 
         return QueryContext(localVariables, prettyPrint = true, automaticallyRun = false)

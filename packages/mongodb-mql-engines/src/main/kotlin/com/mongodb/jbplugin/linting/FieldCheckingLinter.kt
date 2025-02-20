@@ -160,6 +160,6 @@ object FieldCheckingLinter {
             fieldType,
             valueSource,
             valueType
-        ).takeIf { !valueType.isAssignableTo(fieldType) } as? FieldCheckWarning<S>
+        ).takeIf { !valueType.isAssignableTo(fieldType) }
     }
 }
