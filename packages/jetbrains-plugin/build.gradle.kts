@@ -45,7 +45,12 @@ dependencies {
     implementation(project(":packages:mongodb-dialects:spring-@query"))
     implementation(project(":packages:mongodb-dialects:mongosh"))
     implementation(project(":packages:mongodb-mql-model"))
-    implementation(project(":packages:mongodb-design-system"))
+    implementation(project(":packages:mongodb-design-system")) {
+        exclude(group = "org.jetbrains.compose.material")
+        exclude(group = "org.jetbrains.kotlinx")
+        exclude(group = "org.jetbrains.jewel", module = "jewel-int-ui-standalone-243")
+    }
+    compileOnly("org.jetbrains.jewel:jewel-ide-laf-bridge-243:0.27.0")
 
     compileOnly(compose.desktop.common)
     compileOnly(libs.kotlinx.coroutines.swing)

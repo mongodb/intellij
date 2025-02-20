@@ -5,7 +5,6 @@
 
 package com.mongodb.jbplugin.editor
 
-import androidx.compose.ui.awt.ComposePanel
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ex.EditorEx
@@ -16,7 +15,6 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.util.ui.JBUI
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
-import com.mongodb.jbplugin.designsystem.Panel
 import com.mongodb.jbplugin.editor.inputs.DataSourceComboBox
 import com.mongodb.jbplugin.editor.inputs.DatabaseComboBox
 import com.mongodb.jbplugin.editor.models.getToolbarModel
@@ -72,21 +70,10 @@ class MdbJavaEditorToolbar(
         )
     }
 
-    private lateinit var composePanel: ComposePanel
-
     init {
-        SwingUtilities.invokeAndWait {
-            composePanel = ComposePanel()
-        }
-
-        composePanel.setContent {
-            Panel()
-        }
-
         // Setup UI
         dropdownsPanel.layout = BoxLayout(dropdownsPanel, BoxLayout.X_AXIS)
         mainPanel.add(dropdownsPanel, BorderLayout.EAST)
-        mainPanel.add(composePanel)
     }
 
     private fun showDatabasesComboBox() {

@@ -49,7 +49,8 @@ class PluginSettingsConfigurable : Configurable {
             settingsComponent.enableFullExplainPlan.isSelected !=
             savedSettings.state.isFullExplainPlanEnabled ||
             sampleSizeInComponent != sampleSizeSavedOnDisk ||
-            softIndexLimitInComponent != softIndexLimitSavedOnDisk
+            softIndexLimitInComponent != softIndexLimitSavedOnDisk ||
+            settingsComponent.useNewSidePanel.isSelected != savedSettings.state.useNewSidePanel
     }
 
     override fun apply() {
@@ -61,6 +62,7 @@ class PluginSettingsConfigurable : Configurable {
             softIndexesLimit =
                 settingsComponent.softIndexesLimit.text.toIntOrNull()
                     ?: DEFAULT_INDEXES_AMOUNT_SOFT_LIMIT
+            useNewSidePanel = settingsComponent.useNewSidePanel.isSelected
         }
     }
 
@@ -72,6 +74,7 @@ class PluginSettingsConfigurable : Configurable {
             savedSettings.state.isFullExplainPlanEnabled
         settingsComponent.sampleSize.text = savedSettings.state.sampleSize.toString()
         settingsComponent.softIndexesLimit.text = savedSettings.state.softIndexesLimit.toString()
+        settingsComponent.useNewSidePanel.isSelected = savedSettings.state.useNewSidePanel
     }
 
     override fun getDisplayName() = SettingsMessages.message("settings.display-name")
@@ -89,6 +92,8 @@ internal class PluginSettingsComponent {
     val privacyPolicyButton = JButton(TelemetryMessages.message("action.view-privacy-policy"))
     val evaluateOperationPerformanceButton =
         JButton(TelemetryMessages.message("settings.view-full-explain-plan-documentation"))
+    val useNewSidePanel =
+        JBCheckBox("Use new side panel.")
 
     lateinit var sampleSize: JTextField
     lateinit var softIndexesLimit: JTextField
@@ -106,6 +111,8 @@ internal class PluginSettingsComponent {
 
         root =
             FormBuilder.createFormBuilder()
+                .addComponent(useNewSidePanel)
+                .addSeparator()
                 .addComponent(getSampleSizeField())
                 .addSeparator()
                 .addComponent(enableFullExplainPlan)

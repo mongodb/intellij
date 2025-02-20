@@ -100,6 +100,15 @@
         <completion.confidence language="JAVA" order="first"
                                id="MongoDbStringCompletionConfidence"
                                implementationClass="com.mongodb.jbplugin.autocomplete.MongoDbStringCompletionConfidence" />
+
+        <toolWindow
+            factoryClass="com.mongodb.jbplugin.sidePanel.SidePanel"
+            id="MongoDB"
+            anchor="right"
+            secondary="true"
+            icon="AllIcons.Providers.MongoDB"
+        />
+
     </extensions>
     <applicationListeners>
     </applicationListeners>

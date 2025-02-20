@@ -18,16 +18,26 @@ kotlin {
                 compileOnly(compose.runtime)
                 compileOnly(compose.foundation)
 
-                implementation("org.jetbrains.jewel:jewel-ide-laf-bridge-243:0.27.0")
+                implementation("org.jetbrains.jewel:jewel-ide-laf-bridge-243:0.27.0") {
+                    exclude(group = "org.jetbrains.compose.material")
+                    exclude(group = "org.jetbrains.kotlinx")
+                }
+
+                implementation("org.jetbrains.jewel:jewel-int-ui-standalone-243:0.27.0") {
+                    exclude(group = "org.jetbrains.compose.material")
+                    exclude(group = "org.jetbrains.kotlinx")
+                }
+
                 compileOnly("androidx.lifecycle:lifecycle-viewmodel:2.8.5")
                 compileOnly("androidx.lifecycle:lifecycle-runtime:2.8.5")
+
                 // Do not bring in Material (we use Jewel) and Coroutines (the IDE has its own)
                 compileOnly(compose.desktop.currentOs) {
                     exclude(group = "org.jetbrains.compose.material")
                     exclude(group = "org.jetbrains.kotlinx")
                 }
 
-                compileOnly(libs.kotlinx.coroutines.swing)
+                api(libs.kotlinx.coroutines.swing)
                 // api(compose.desktop.currentOs) {
                 //     exclude(group = "org.jetbrains.compose.material")
                 //     exclude(group = "org.jetbrains.kotlinx")
