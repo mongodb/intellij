@@ -4,6 +4,7 @@ import com.mongodb.jbplugin.accessadapter.toNs
 import com.mongodb.jbplugin.indexing.IndexAnalyzer
 import com.mongodb.jbplugin.indexing.IndexAnalyzer.SortDirection
 import com.mongodb.jbplugin.mql.BsonInt32
+import com.mongodb.jbplugin.mql.BsonType
 import com.mongodb.jbplugin.mql.CollectionSchema
 import com.mongodb.jbplugin.mql.Component
 import com.mongodb.jbplugin.mql.Namespace
@@ -17,6 +18,7 @@ import com.mongodb.jbplugin.mql.components.HasProjections
 import com.mongodb.jbplugin.mql.components.HasSorts
 import com.mongodb.jbplugin.mql.components.HasValueReference
 import com.mongodb.jbplugin.mql.components.Name
+import com.mongodb.jbplugin.mql.components.Name.AND
 import com.mongodb.jbplugin.mql.components.Named
 import com.mongodb.jbplugin.mql.toBsonType
 import kotlin.jvm.javaClass
@@ -64,7 +66,7 @@ object ModelDsl {
     fun ComponentHolder.filterBy(supplier: NodeHolder.() -> Unit) {
         val nodeHolder = NodeHolder(mutableListOf())
         supplier(nodeHolder)
-        components.add(HasFilter<Unit>(nodeHolder.nodes))
+        components.add(HasFilter(nodeHolder.nodes))
     }
 
     fun NodeHolder.match(supplier: NodeHolder.() -> Unit) {
@@ -91,7 +93,7 @@ object ModelDsl {
     fun ComponentHolder.sortBy(supplier: NodeHolder.() -> Unit) {
         val nodeHolder = NodeHolder(mutableListOf())
         supplier(nodeHolder)
-        components.add(HasSorts<Unit>(nodeHolder.nodes))
+        components.add(HasSorts(nodeHolder.nodes))
     }
 
     fun NodeHolder.predicate(name: Name, predicate: ComponentHolder.() -> Unit) {
@@ -120,6 +122,14 @@ object ModelDsl {
         components.add(
             HasValueReference(
                 HasValueReference.Constant(Unit, value, value.javaClass.toBsonType(value))
+            )
+        )
+    }
+
+    fun ComponentHolder.runtime(type: BsonType) {
+        components.add(
+            HasValueReference(
+                HasValueReference.Runtime(Unit, type)
             )
         )
     }
@@ -154,7 +164,7 @@ object ModelDsl {
     fun indexOf(
         vararg fields: Pair<String, Int>,
         coveredQueries: NodeHolder.() -> Unit = {
-        }
+        },
     ): IndexAnalyzer.SuggestedIndex.MongoDbIndex<Unit> {
         val nodeHolder = NodeHolder(mutableListOf())
         coveredQueries(nodeHolder)
@@ -178,5 +188,24 @@ object ModelDsl {
             coveredQueries = nodeHolder.nodes,
             partialFilterExpression = null
         )
+    }
+
+    fun IndexAnalyzer.SuggestedIndex.MongoDbIndex<Unit>.withPartialExpression(expression: NodeHolder.() -> Unit): IndexAnalyzer.SuggestedIndex.MongoDbIndex<Unit> {
+        return copy(partialFilterExpression = partialFilterExpression(expression))
+    }
+
+    fun partialFilterExpression(expression: NodeHolder.() -> Unit): Node<Unit> {
+        val nodeHolder = NodeHolder(mutableListOf())
+        expression(nodeHolder)
+
+        if (nodeHolder.nodes.isEmpty()) {
+            throw AssertionError("Expression can not be empty.")
+        }
+
+        return if (nodeHolder.nodes.size == 1) {
+            nodeHolder.nodes.first()
+        } else {
+            Node(Unit, listOf(Named(AND), HasFilter(nodeHolder.nodes)))
+        }
     }
 }

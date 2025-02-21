@@ -366,7 +366,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
                     HasValueReference(valueReference),
                 )
             )
-        } else if (method.parameterList.parameters.size == 2) {
+        } else if (method.parameterList.parameters.size == 2 && filter.argumentList.expressions.size == 2) {
             // If it has two parameters, it's field/value.
             val fieldReference = filter.argumentList.expressions[0].resolveFieldNameFromExpression()
             val valueReference = resolveValueFromExpression(filter.argumentList.expressions[1])

@@ -25,8 +25,6 @@ import com.mongodb.jbplugin.mql.components.HasTargetCluster
 import com.mongodb.jbplugin.settings.pluginSetting
 import io.github.z4kn4fein.semver.Version
 import kotlinx.coroutines.CoroutineScope
-import java.lang.ref.WeakReference
-import java.util.Objects
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
@@ -46,7 +44,7 @@ class CachedQueryService(
 ) : SiblingQueriesFinder<PsiElement> {
     private val queryCacheKey = Key.create<CachedValue<Node<PsiElement>>>("QueryCache")
     private val cachedQueriesByNamespace:
-        MutableMap<Namespace, Set<WeakReference<Node<PsiElement>>>> = mutableMapOf()
+        MutableMap<Namespace, Set<Node<PsiElement>>> = mutableMapOf()
     private val rwLock: ReentrantReadWriteLock = ReentrantReadWriteLock(true)
 
     fun queryAt(expression: PsiElement): Node<PsiElement>? {
@@ -84,23 +82,16 @@ class CachedQueryService(
                     // here we have an exclusive lock, let's first do some housekeeping.
                     // clear all stale references (queries that do not exist anymore)
                     for (entry in cachedQueriesByNamespace.entries) {
-                        val queries = entry.value
-                        entry.setValue(
-                            queries.filter { it.get() != null }
-                                // Sometimes weak reference are not garbage collected yet, but
-                                // they are removed from the containingFile. In this situation,
-                                // requesting the containingFile throws an exception, so in addition
-                                // to the first check, we also verify if the source is in a file.
-                                .filter {
-                                    runCatching { it.get()?.source?.containingFile }.isSuccess
-                                }
-                                .distinctBy { it.get()?.source?.textOffset }.toSet()
-                        )
+                        val queries = entry.value.filter {
+                            runCatching { it.source.containingFile }.isSuccess
+                        }.toSet()
+
+                        entry.setValue(queries)
                     }
 
                     // now add the current query to the cache
-                    cachedQueriesByNamespace.compute(namespaceOfQuery) { ns, queries ->
-                        (queries ?: emptySet()) + WeakReference(parsedAst)
+                    cachedQueriesByNamespace.compute(namespaceOfQuery) { _, queries ->
+                        (queries ?: emptySet()) + parsedAst
                     }
                 }
             }
@@ -118,6 +109,7 @@ class CachedQueryService(
                 ?: return emptyArray()
 
         val psiManager = PsiManager.getInstance(query.source.project)
+
         // Request a read lock. In this case, we don't block other reader threads, but we will get blocked
         // when someone else requests this lock in write mode. This will only happen when there is a change
         // in a query from the editor and IntelliJs parser kicks in.
@@ -127,33 +119,14 @@ class CachedQueryService(
                 emptySet()
             )
 
-            // Sometimes we can have a query twice because the old psi element is not
-            // deleted. This class uses Psi element equivalence to get rid of
-            // duplicates.
-            class EquivalenceBasedQuery(val query: Node<PsiElement>) {
-                override fun equals(other: Any?): Boolean {
-                    return psiManager.areElementsEquivalent(
-                        query.source,
-                        other as? PsiElement
-                    )
-                }
-
-                override fun hashCode(): Int {
-                    return Objects.hash(query.components)
-                }
-            }
-
             // filter out all stale references and then decorate with whatever metadata is relevant
             // from the query source file. Return a copy of the set as an array so further modifications
             // do not affect the returned value.
             // In addition, filter out ourselves from the array, as we don't need to handle the query twice.
             allQueriesForNamespace
-                .mapNotNull { it.get() }
-                .map { EquivalenceBasedQuery(it) }
-                .distinct()
-                .map { it.query }
-                .filter { !psiManager.areElementsEquivalent(it.source, query.source) }
+                .filter { !psiManager.areElementsEquivalent(query.source, it.source) }
                 .map { decorateWithMetadata(it.source.containingFile.dataSource, it) }
+                .distinct()
                 .toTypedArray()
         }
     }

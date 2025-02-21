@@ -172,7 +172,7 @@ object MongoshDialectFormatter : DialectFormatter {
             }
 
             val options = partialIndexExpression?.let {
-                ", { options: { partialFilterExpression: $partialIndexExpression } }"
+                ", { partialFilterExpression: $partialIndexExpression }"
             } ?: ""
 
             val indexTemplate = index.fields.joinToString(
