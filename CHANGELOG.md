@@ -5,6 +5,7 @@ MongoDB plugin for IntelliJ IDEA.
 ## Unreleased
 
 ### Added
+* [INTELLIJ-223](https://jira.mongodb.org/browse/INTELLIJ-223) Support for partial indexes on queries that depend on constant values.
 * [INTELLIJ-226](https://jira.mongodb.org/browse/INTELLIJ-226) Consider sort direction specified in the user code when suggesting indexes.
 * [INTELLIJ-232](https://jira.mongodb.org/browse/INTELLIJ-219) Consider selectivity of a field over cardinality when suggesting indexes.
 * [INTELLIJ-219](https://jira.mongodb.org/browse/INTELLIJ-219) Implement index consolidation of a query and it's siblings.

@@ -11,6 +11,7 @@ import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.SiblingQueriesFinder
 import com.mongodb.jbplugin.mql.components.Name
 import com.mongodb.jbplugin.utils.ModelAssertions.assertIndexCollectionIs
+import com.mongodb.jbplugin.utils.ModelAssertions.assertMongoDbIndexHasPartialExpression
 import com.mongodb.jbplugin.utils.ModelAssertions.assertMongoDbIndexIs
 import com.mongodb.jbplugin.utils.ModelDsl.aggregate
 import com.mongodb.jbplugin.utils.ModelDsl.ascending
@@ -20,6 +21,7 @@ import com.mongodb.jbplugin.utils.ModelDsl.filterBy
 import com.mongodb.jbplugin.utils.ModelDsl.findMany
 import com.mongodb.jbplugin.utils.ModelDsl.include
 import com.mongodb.jbplugin.utils.ModelDsl.match
+import com.mongodb.jbplugin.utils.ModelDsl.partialFilterExpression
 import com.mongodb.jbplugin.utils.ModelDsl.predicate
 import com.mongodb.jbplugin.utils.ModelDsl.project
 import com.mongodb.jbplugin.utils.ModelDsl.schema
@@ -726,6 +728,44 @@ class IndexAnalyzerTest {
                 result
             )
         }
+    }
+
+    @Test
+    fun `when a field is queried always the same way use a partial filter expression`() = runTest {
+        val ns = "my.db".toNs()
+        val predefinedSiblingQueries = PredefinedSiblingQueriesFinder(
+            arrayOf(
+                findMany(ns) {
+                    filterBy {
+                        predicate(Name.EQ) {
+                            schema("alwaysBlue")
+                            constant("blue")
+                        }
+                    }
+                }
+            )
+        )
+
+        val query1 = findMany(ns) {
+            filterBy {
+                predicate(Name.EQ) {
+                    schema("alwaysBlue")
+                    constant("blue")
+                }
+            }
+        }
+
+        val result = IndexAnalyzer.analyze(query1, predefinedSiblingQueries, emptyOptions())
+        assertMongoDbIndexIs(arrayOf("alwaysBlue" to 1), result)
+        assertMongoDbIndexHasPartialExpression(
+            partialFilterExpression {
+                predicate(Name.EQ) {
+                    schema("alwaysBlue")
+                    constant("blue")
+                }
+            },
+            result
+        )
     }
 
     private fun emptyOptions() = CollectionIndexConsolidationOptions(10)

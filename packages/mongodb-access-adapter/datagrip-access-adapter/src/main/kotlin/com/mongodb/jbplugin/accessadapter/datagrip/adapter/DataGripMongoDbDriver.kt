@@ -127,7 +127,7 @@ class DataGripMongoDbDriver(
                 val listOfResults = mutableListOf<T>()
                 val queryResult = runCatching { statement.executeQuery() }
                 if (queryResult.isFailure) {
-                    logger.error(
+                    logger.warn(
                         "Can not query MongoDB: $queryString",
                         queryResult.exceptionOrNull()
                     )

@@ -1,5 +1,10 @@
 package com.mongodb.jbplugin.indexing
 
+import com.mongodb.jbplugin.mql.Node
+import com.mongodb.jbplugin.mql.components.HasFilter
+import com.mongodb.jbplugin.mql.components.QueryRole
+import kotlinx.coroutines.runBlocking
+
 data class CollectionIndexConsolidationOptions(val indexesSoftLimit: Int)
 
 object CollectionIndexConsolidation {
@@ -24,21 +29,65 @@ object CollectionIndexConsolidation {
             )
             .distinctBy { it.components }
 
-        val bestIndex = partitionOfIndex.maxBy(::numberOfFields).copy(
-            coveredQueries = coveredQueries
+        partitionOfIndex.sortWith(
+            compareByDescending<IndexAnalyzer.SuggestedIndex.MongoDbIndex<S>> {
+                it.fields.size
+            }.thenByDescending {
+                it.coveredQueries.size
+            }
         )
 
-        return bestIndex
+        val bestIndex = partitionOfIndex.first().copy(coveredQueries = coveredQueries)
+        return erasePartialExpressionIfNotSafe(bestIndex, partitionOfIndex)
     }
 
-    private fun <S> numberOfFields(index: IndexAnalyzer.SuggestedIndex.MongoDbIndex<S>): Int {
-        return index.fields.size
+    private fun <S> erasePartialExpressionIfNotSafe(
+        index: IndexAnalyzer.SuggestedIndex.MongoDbIndex<S>,
+        partition: IndexPartition<S>
+    ): IndexAnalyzer.SuggestedIndex.MongoDbIndex<S> {
+        val unwindFieldUsages = partition.flatMap {
+            if (it.partialFilterExpression == null) {
+                emptyList()
+            } else {
+                runBlocking {
+                    IndexQueryFieldUsage.allFieldReferences(it.partialFilterExpression, collectionSchema = null)
+                }
+            }
+        }.groupBy { it.fieldName }
+
+        val commonPartialExpressions = unwindFieldUsages.values.asSequence()
+            .filter {
+                it.size == partition.size
+            }.map {
+                it.filter { query -> query.role != QueryRole.SORT }
+            }.filter {
+                it.isNotEmpty()
+            }.map {
+                it.reduce(IndexQueryFieldUsage<S>::applyValueErasureIfNecessary)
+            }.filter { it.reference != null && it.value != null }
+            .toList()
+
+        return if (commonPartialExpressions.isEmpty()) {
+            index.copy(partialFilterExpression = null)
+        } else if (commonPartialExpressions.size == 1) {
+            index.copy(partialFilterExpression = commonPartialExpressions[0].reference)
+        } else {
+            index.copy(
+                partialFilterExpression = Node(
+                    commonPartialExpressions[0].reference!!.source,
+                    listOf(
+                        HasFilter(commonPartialExpressions.mapNotNull { it.reference })
+                    )
+                )
+            )
+        }
     }
 }
 
+private typealias IndexPartition<S> = MutableList<IndexAnalyzer.SuggestedIndex.MongoDbIndex<S>>
+
 private class IndexPartitions<S> {
-    private val partitions: MutableList<MutableList<IndexAnalyzer.SuggestedIndex.MongoDbIndex<S>>> =
-        mutableListOf()
+    private val partitions: MutableList<IndexPartition<S>> = mutableListOf()
 
     fun partitionOfIndex(index: IndexAnalyzer.SuggestedIndex<S>) = partitions.find {
         it.contains(index)

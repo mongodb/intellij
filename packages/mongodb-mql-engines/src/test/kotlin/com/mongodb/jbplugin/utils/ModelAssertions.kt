@@ -3,6 +3,7 @@ package com.mongodb.jbplugin.utils
 import com.mongodb.jbplugin.indexing.IndexAnalyzer
 import com.mongodb.jbplugin.indexing.IndexAnalyzer.SortDirection
 import com.mongodb.jbplugin.mql.Namespace
+import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import org.junit.jupiter.api.Assertions.assertEquals
 
@@ -62,5 +63,18 @@ object ModelAssertions {
         }
 
         additionalAssertions(actual)
+    }
+
+    fun assertMongoDbIndexHasPartialExpression(
+        expected: Node<Unit>?,
+        actual: IndexAnalyzer.SuggestedIndex<Unit>,
+    ) {
+        if (actual !is IndexAnalyzer.SuggestedIndex.MongoDbIndex<Unit>) {
+            throw AssertionError(
+                "Index is not equals to $expected because it's not a MongoDbIndex, but ${actual.javaClass.name}"
+            )
+        }
+
+        assertEquals(expected, actual.partialFilterExpression)
     }
 }

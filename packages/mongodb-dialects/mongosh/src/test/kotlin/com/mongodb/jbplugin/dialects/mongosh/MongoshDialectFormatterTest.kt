@@ -245,7 +245,7 @@ class MongoshDialectFormatterTest {
                                         HasFieldReference.FromSchema(Unit, "myField")
                                     ),
                                     HasValueReference(
-                                        HasValueReference.Constant(Unit, "myVal", BsonString)
+                                        HasValueReference.Runtime(Unit, BsonString)
                                     )
                                 )
                             ),
@@ -257,7 +257,7 @@ class MongoshDialectFormatterTest {
                                         HasFieldReference.FromSchema(Unit, "myField2")
                                     ),
                                     HasValueReference(
-                                        HasValueReference.Constant(Unit, "myVal2", BsonString)
+                                        HasValueReference.Runtime(Unit, BsonString)
                                     )
                                 )
                             )
@@ -293,7 +293,7 @@ class MongoshDialectFormatterTest {
                                         HasFieldReference.FromSchema(Unit, "myField")
                                     ),
                                     HasValueReference(
-                                        HasValueReference.Constant(Unit, "myVal", BsonString)
+                                        HasValueReference.Runtime(Unit, BsonString)
                                     )
                                 )
                             ),
@@ -305,7 +305,7 @@ class MongoshDialectFormatterTest {
                                         HasFieldReference.FromSchema(Unit, "myField2")
                                     ),
                                     HasValueReference(
-                                        HasValueReference.Constant(Unit, "myVal2", BsonString)
+                                        HasValueReference.Runtime(Unit, BsonString)
                                     )
                                 )
                             )
@@ -364,7 +364,7 @@ class MongoshDialectFormatterTest {
                                             HasFieldReference.FromSchema(Unit, "myField")
                                         ),
                                         HasValueReference(
-                                            HasValueReference.Constant(Unit, "myVal", BsonString)
+                                            HasValueReference.Runtime(Unit, BsonString)
                                         )
                                     )
                                 )
@@ -393,7 +393,7 @@ class MongoshDialectFormatterTest {
                                         HasFieldReference.FromSchema(Unit, "myField")
                                     ),
                                     HasValueReference(
-                                        HasValueReference.Constant(Unit, "myVal", BsonString)
+                                        HasValueReference.Runtime(Unit, BsonString)
                                     )
                                 )
                             ),
@@ -422,7 +422,7 @@ class MongoshDialectFormatterTest {
             """
                 // Learn about creating an index: https://www.mongodb.com/docs/v7.0/core/data-model-operations/#indexes
                 db.getSiblingDB("myDb").getCollection("myCollection")
-                  .createIndex({ "myField": 1 }, { options: { partialFilterExpression: {"myField": true} } })
+                  .createIndex({ "myField": 1 }, { partialFilterExpression: {"myField": true} })
             """.trimIndent(),
             IndexAnalyzer.SuggestedIndex.MongoDbIndex(
                 collectionReference = HasCollectionReference(HasCollectionReference.Known(Unit, Unit, Namespace("myDb", "myCollection"))),
@@ -469,7 +469,7 @@ class MongoshDialectFormatterTest {
             """
                 // Learn about creating an index: https://www.mongodb.com/docs/v7.0/core/data-model-operations/#indexes
                 db.getSiblingDB("myDb").getCollection("myCollection")
-                  .createIndex({ "myField": 1 }, { options: { partialFilterExpression: {"myField": {"${'$'}gt": 42}} } })
+                  .createIndex({ "myField": 1 }, { partialFilterExpression: {"myField": {"${'$'}gt": 42}} })
             """.trimIndent(),
             IndexAnalyzer.SuggestedIndex.MongoDbIndex(
                 collectionReference = HasCollectionReference(HasCollectionReference.Known(Unit, Unit, Namespace("myDb", "myCollection"))),
