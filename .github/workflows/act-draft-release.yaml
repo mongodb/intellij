@@ -90,6 +90,12 @@ jobs:
         run: |
           ./gradlew ":packages:jetbrains-plugin:patchPluginXml"
 
+      - name: Verify Plugin
+        env:
+          BUILD_SEGMENT_API_KEY: ''
+        run: |
+          ./gradlew ":packages:jetbrains-plugin:verifyPlugin"
+
       - name: Sign and Publish Plugin in Beta
         if: ${{ github.event.inputs.dryRun != 'true' }}
         env:
