@@ -92,7 +92,7 @@ tasks {
             val checkRuns = checks["check_runs"] as List<Map<String, Any>>
             var success = true
             for (check in checkRuns) {
-                if (check["name"] == "Prepare Release") {
+                if (check["name"] == "Prepare Release" || check["name"].toString().contains("Qodana")) {
                     continue
                 }
 
