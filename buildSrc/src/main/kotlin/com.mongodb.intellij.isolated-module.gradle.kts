@@ -1,4 +1,6 @@
 import org.gradle.accessors.dm.LibrariesForLibs
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jlleitschuh.gradle.ktlint.KtlintExtension
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 import java.io.ByteArrayOutputStream
@@ -36,6 +38,12 @@ tasks {
     withType<JavaCompile> {
         sourceCompatibility = libs.versions.java.target.get()
         targetCompatibility = libs.versions.java.target.get()
+    }
+
+    withType<KotlinCompile> {
+        compilerOptions {
+            jvmTarget = JvmTarget.fromTarget(libs.versions.java.target.get())
+        }
     }
 
     withType<Test> {

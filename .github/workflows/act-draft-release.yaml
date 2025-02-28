@@ -18,6 +18,12 @@ on:
         description: 'Exact version: (Only effective selecting "exact-version" as version bump)'
         required: false
 
+      dryRun:
+        description: 'Dry Run: (Will run everything but will not create the release on GH nor publish to the marketplace)'
+        type: boolean
+        required: false
+        default: false
+
 permissions:
   contents: write
 
@@ -41,7 +47,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: "temurin"
-          java-version: "17"
+          java-version: "21"
           cache: "gradle"
 
       - name: Determine Next Version
@@ -85,10 +91,13 @@ jobs:
           ./gradlew ":packages:jetbrains-plugin:patchPluginXml"
 
       - name: Verify Plugin
+        env:
+          BUILD_SEGMENT_API_KEY: ''
         run: |
           ./gradlew ":packages:jetbrains-plugin:verifyPlugin"
 
       - name: Sign and Publish Plugin in Beta
+        if: ${{ github.event.inputs.dryRun != 'true' }}
         env:
           JB_PUBLISH_CHANNEL: "beta"
           BUILD_SEGMENT_API_KEY: ${{ secrets.BUILD_SEGMENT_API_KEY }}
@@ -105,6 +114,7 @@ jobs:
 
       - name: Create Draft Release
         shell: bash
+        if: ${{ github.event.inputs.dryRun != 'true' }}
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
