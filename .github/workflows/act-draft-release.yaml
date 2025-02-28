@@ -19,7 +19,7 @@ on:
         required: false
 
       dryRun:
-        description: 'Dry Run: (Will run everything but won't create the release on GH nor publish to the marketplace)'
+        description: 'Dry Run: (Will run everything but will not create the release on GH nor publish to the marketplace)'
         type: boolean
         required: false
         default: false
