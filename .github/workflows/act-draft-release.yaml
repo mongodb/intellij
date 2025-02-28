@@ -85,6 +85,8 @@ jobs:
           ./gradlew ":packages:jetbrains-plugin:patchPluginXml"
 
       - name: Verify Plugin
+        env:
+          BUILD_SEGMENT_API_KEY: ${{ secrets.BUILD_SEGMENT_API_KEY }}
         run: |
           ./gradlew ":packages:jetbrains-plugin:verifyPlugin"
 
