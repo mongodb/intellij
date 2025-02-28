@@ -47,7 +47,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: "temurin"
-          java-version: "17"
+          java-version: "21"
           cache: "gradle"
 
       - name: Determine Next Version
@@ -91,6 +91,7 @@ jobs:
           ./gradlew ":packages:jetbrains-plugin:patchPluginXml"
 
       - name: Sign and Publish Plugin in Beta
+        if: ${{ github.event.inputs.dryRun != 'true' }}
         env:
           JB_PUBLISH_CHANNEL: "beta"
           BUILD_SEGMENT_API_KEY: ${{ secrets.BUILD_SEGMENT_API_KEY }}
