@@ -18,6 +18,7 @@ import com.mongodb.jbplugin.inspections.IntelliJBasedInspectionHolder
 import com.mongodb.jbplugin.inspections.MongoDbInspection
 import com.mongodb.jbplugin.linting.NamespaceCheckWarning
 import com.mongodb.jbplugin.linting.NamespaceCheckingLinter
+import com.mongodb.jbplugin.linting.NamespaceCheckingSettings
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.observability.TelemetryEvent
@@ -70,131 +71,15 @@ internal object NamespaceCheckingLinterInspection : MongoDbInspection {
         }
 
         val readModelProvider by query.source.project.service<DataGripBasedReadModelProvider>()
-        val result = runBlocking {
-            NamespaceCheckingLinter.lintQuery(
-                dataSource,
-                readModelProvider,
+        runBlocking {
+            NamespaceCheckingLinter<LocalDataSource>().run(
                 query,
+              problems,
+              NamespaceCheckingSettings(
+                dataSource,
+                readModelProvider
+              )
             )
         }
-
-        result.warnings.forEach {
-            when (it) {
-                is NamespaceCheckWarning.NoNamespaceInferred ->
-                    registerNoNamespaceInferred(coroutineScope, problems, it.source, query)
-                is NamespaceCheckWarning.CollectionDoesNotExist ->
-                    registerCollectionDoesNotExist(
-                        coroutineScope,
-                        problems,
-                        it.database,
-                        it.collection,
-                        query
-                    )
-                is NamespaceCheckWarning.DatabaseDoesNotExist ->
-                    registerDatabaseDoesNotExist(
-                        coroutineScope,
-                        problems,
-                        it.source,
-                        it.database,
-                        query
-                    )
-            }
-        }
-    }
-
-    private fun registerNoNamespaceInferred(
-        coroutineScope: CoroutineScope,
-        problems: IntelliJBasedInspectionHolder,
-        source: PsiElement,
-        query: Node<PsiElement>
-    ) {
-        val probe by service<InspectionStatusChangedProbe>()
-        probe.inspectionChanged(
-            TelemetryEvent.InspectionStatusChangeEvent.InspectionType.NO_NAMESPACE_INFERRED,
-            query
-        )
-
-        val problemDescription = InspectionsAndInlaysMessages.message(
-            "inspection.namespace.checking.error.message",
-        )
-        coroutineScope.launch {
-            problems.register(
-                Inspection.PerformanceWarning(
-                    query,
-                    problemDescription,
-                    Inspection.NoAction
-                )
-            )
-        }
-    }
-
-    private fun registerDatabaseDoesNotExist(
-        coroutineScope: CoroutineScope,
-        problems: IntelliJBasedInspectionHolder,
-        source: PsiElement,
-        dbName: String,
-        query: Node<PsiElement>
-    ) {
-        val probe by service<InspectionStatusChangedProbe>()
-        probe.inspectionChanged(
-            TelemetryEvent.InspectionStatusChangeEvent.InspectionType.DATABASE_DOES_NOT_EXIST,
-            query
-        )
-
-        val problemDescription = InspectionsAndInlaysMessages.message(
-            "inspection.namespace.checking.error.message.database.missing",
-            dbName
-        )
-
-        coroutineScope.launch {
-            problems.register(
-                Inspection.PerformanceWarning(
-                    query,
-                    problemDescription,
-                    Inspection.NoAction
-                )
-            )
-        }
-    }
-
-    private fun registerCollectionDoesNotExist(
-        coroutineScope: CoroutineScope,
-        problems: IntelliJBasedInspectionHolder,
-        dbName: String,
-        collName: String,
-        query: Node<PsiElement>
-    ) {
-        val probe by service<InspectionStatusChangedProbe>()
-        probe.inspectionChanged(
-            TelemetryEvent.InspectionStatusChangeEvent.InspectionType.COLLECTION_DOES_NOT_EXIST,
-            query
-        )
-
-        val problemDescription = InspectionsAndInlaysMessages.message(
-            "inspection.namespace.checking.error.message.collection.missing",
-            collName,
-            dbName
-        )
-
-        coroutineScope.launch {
-            problems.register(
-                Inspection.PerformanceWarning(
-                    query,
-                    problemDescription,
-                    Inspection.NoAction
-                )
-            )
-        }
-        // problems.registerProblem(
-        //     source,
-        //     problemDescription,
-        //     ProblemHighlightType.WARNING,
-        //     OpenConnectionChooserQuickFix(
-        //         coroutineScope,
-        //         InspectionsAndInlaysMessages.message(
-        //             "inspection.field.checking.quickfix.choose.new.connection"
-        //         ),
-        //     ),
-        // )
     }
 }
