@@ -5,24 +5,20 @@
 
 package com.mongodb.jbplugin.inspections.impl
 
-import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.util.findParentOfType
+import com.mongodb.jbplugin.Inspection
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
 import com.mongodb.jbplugin.dialects.DialectFormatter
-import com.mongodb.jbplugin.dialects.mongosh.MongoshDialect
-import com.mongodb.jbplugin.editor.CachedQueryService
 import com.mongodb.jbplugin.i18n.InspectionsAndInlaysMessages
-import com.mongodb.jbplugin.indexing.CollectionIndexConsolidationOptions
-import com.mongodb.jbplugin.indexing.IndexAnalyzer
 import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionBridge
+import com.mongodb.jbplugin.inspections.IntelliJBasedInspectionHolder
 import com.mongodb.jbplugin.inspections.MongoDbInspection
-import com.mongodb.jbplugin.inspections.quickfixes.OpenDataSourceConsoleAppendingCode
 import com.mongodb.jbplugin.linting.IndexCheckWarning
 import com.mongodb.jbplugin.linting.IndexCheckingLinter
 import com.mongodb.jbplugin.meta.service
@@ -31,11 +27,10 @@ import com.mongodb.jbplugin.mql.QueryContext
 import com.mongodb.jbplugin.mql.components.HasExplain
 import com.mongodb.jbplugin.mql.components.HasExplain.ExplainPlanType
 import com.mongodb.jbplugin.observability.TelemetryEvent
-import com.mongodb.jbplugin.observability.probe.CreateIndexIntentionProbe
 import com.mongodb.jbplugin.observability.probe.InspectionStatusChangedProbe
 import com.mongodb.jbplugin.settings.pluginSetting
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
 
 class IndexCheckInspectionBridge(coroutineScope: CoroutineScope) :
     AbstractMongoDbInspectionBridge(
@@ -59,7 +54,7 @@ internal object IndexCheckLinterInspection : MongoDbInspection {
     override fun visitMongoDbQuery(
         coroutineScope: CoroutineScope,
         dataSource: LocalDataSource?,
-        problems: ProblemsHolder,
+        problems: IntelliJBasedInspectionHolder,
         query: Node<PsiElement>,
         formatter: DialectFormatter,
     ) {
@@ -96,7 +91,7 @@ internal object IndexCheckLinterInspection : MongoDbInspection {
                 is IndexCheckWarning.QueryNotUsingEffectiveIndex ->
                     registerQueryNotUsingIndexEffectively(
                         coroutineScope,
-                        dataSource,
+                        // dataSource,
                         problems,
                         query
                     )
@@ -107,7 +102,7 @@ internal object IndexCheckLinterInspection : MongoDbInspection {
     private fun registerQueryNotCoveredByIndex(
         coroutineScope: CoroutineScope,
         localDataSource: LocalDataSource,
-        problems: ProblemsHolder,
+        problems: IntelliJBasedInspectionHolder,
         query: Node<PsiElement>
     ) {
         val problemDescription = InspectionsAndInlaysMessages.message(
@@ -120,38 +115,45 @@ internal object IndexCheckLinterInspection : MongoDbInspection {
             query
         )
 
-        problems.registerProblem(
-            query.source,
-            problemDescription,
-            ProblemHighlightType.WARNING,
-            OpenDataSourceConsoleAppendingCode(
-                coroutineScope,
-                InspectionsAndInlaysMessages.message(
-                    "inspection.index.checking.error.query.not.covered.by.index.quick.fix"
+        coroutineScope.launch {
+            problems.register(
+                Inspection.PerformanceWarning(
+                    query,
+                    problemDescription,
+                    Inspection.NoAction,
                 ),
-                localDataSource
-            ) {
-                val createIndexClicked by query.source.project.service<CreateIndexIntentionProbe>()
-                createIndexClicked.intentionClicked(query)
-
-                val cachedQueryService by query.source.project.service<CachedQueryService>()
-                val index = runBlocking {
-                    IndexAnalyzer.analyze(
-                        query,
-                        cachedQueryService,
-                        CollectionIndexConsolidationOptions(10)
-                    )
-                }
-
-                MongoshDialect.formatter.indexCommand(query, index, ::queryReferenceString)
-            }
-        )
+                // query.source,
+                // problemDescription,
+                // ProblemHighlightType.WARNING,
+                // OpenDataSourceConsoleAppendingCode(
+                //     coroutineScope,
+                //     InspectionsAndInlaysMessages.message(
+                //         "inspection.index.checking.error.query.not.covered.by.index.quick.fix"
+                //     ),
+                //     localDataSource
+                // ) {
+                //     val createIndexClicked by query.source.project.service<CreateIndexIntentionProbe>()
+                //     createIndexClicked.intentionClicked(query)
+                //
+                //     val cachedQueryService by query.source.project.service<CachedQueryService>()
+                //     val index = runBlocking {
+                //         IndexAnalyzer.analyze(
+                //             query,
+                //             cachedQueryService,
+                //             CollectionIndexConsolidationOptions(10)
+                //         )
+                //     }
+                //
+                //     MongoshDialect.formatter.indexCommand(query, index, ::queryReferenceString)
+                // }
+            )
+        }
     }
 
     private fun registerQueryNotUsingIndexEffectively(
         coroutineScope: CoroutineScope,
-        localDataSource: LocalDataSource,
-        problems: ProblemsHolder,
+        // localDataSource: LocalDataSource,
+        problems: IntelliJBasedInspectionHolder,
         query: Node<PsiElement>
     ) {
         val problemDescription = InspectionsAndInlaysMessages.message(
@@ -164,32 +166,65 @@ internal object IndexCheckLinterInspection : MongoDbInspection {
             query
         )
 
-        problems.registerProblem(
-            query.source,
-            problemDescription,
-            ProblemHighlightType.WARNING,
-            OpenDataSourceConsoleAppendingCode(
-                coroutineScope,
-                InspectionsAndInlaysMessages.message(
-                    "inspection.index.checking.error.query.not.covered.by.index.quick.fix"
+        coroutineScope.launch {
+            problems.register(
+                Inspection.PerformanceWarning(
+                    query,
+                    problemDescription,
+                    Inspection.NoAction,
                 ),
-                localDataSource
-            ) {
-                val createIndexClicked by query.source.project.service<CreateIndexIntentionProbe>()
-                createIndexClicked.intentionClicked(query)
-
-                val cachedQueryService by query.source.project.service<CachedQueryService>()
-                val index = runBlocking {
-                    IndexAnalyzer.analyze(
-                        query,
-                        cachedQueryService,
-                        CollectionIndexConsolidationOptions(10)
-                    )
-                }
-
-                MongoshDialect.formatter.indexCommand(query, index, ::queryReferenceString)
-            }
-        )
+                // query.source,
+                // problemDescription,
+                // ProblemHighlightType.WARNING,
+                // OpenDataSourceConsoleAppendingCode(
+                //     coroutineScope,
+                //     InspectionsAndInlaysMessages.message(
+                //         "inspection.index.checking.error.query.not.covered.by.index.quick.fix"
+                //     ),
+                //     localDataSource
+                // ) {
+                //     val createIndexClicked by query.source.project.service<CreateIndexIntentionProbe>()
+                //     createIndexClicked.intentionClicked(query)
+                //
+                //     val cachedQueryService by query.source.project.service<CachedQueryService>()
+                //     val index = runBlocking {
+                //         IndexAnalyzer.analyze(
+                //             query,
+                //             cachedQueryService,
+                //             CollectionIndexConsolidationOptions(10)
+                //         )
+                //     }
+                //
+                //     MongoshDialect.formatter.indexCommand(query, index, ::queryReferenceString)
+                // }
+            )
+        }
+        // problems.registerProblem(
+        //     query.source,
+        //     problemDescription,
+        //     ProblemHighlightType.WARNING,
+        //     OpenDataSourceConsoleAppendingCode(
+        //         coroutineScope,
+        //         InspectionsAndInlaysMessages.message(
+        //             "inspection.index.checking.error.query.not.covered.by.index.quick.fix"
+        //         ),
+        //         localDataSource
+        //     ) {
+        //         val createIndexClicked by query.source.project.service<CreateIndexIntentionProbe>()
+        //         createIndexClicked.intentionClicked(query)
+        //
+        //         val cachedQueryService by query.source.project.service<CachedQueryService>()
+        //         val index = runBlocking {
+        //             IndexAnalyzer.analyze(
+        //                 query,
+        //                 cachedQueryService,
+        //                 CollectionIndexConsolidationOptions(10)
+        //             )
+        //         }
+        //
+        //         MongoshDialect.formatter.indexCommand(query, index, ::queryReferenceString)
+        //     }
+        // )
     }
 
     private fun queryReferenceString(query: Node<PsiElement>): String? {

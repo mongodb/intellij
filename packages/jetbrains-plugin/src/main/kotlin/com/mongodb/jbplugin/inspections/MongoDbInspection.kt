@@ -1,6 +1,5 @@
 package com.mongodb.jbplugin.inspections
 
-import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.dialects.DialectFormatter
@@ -18,7 +17,7 @@ interface MongoDbInspection {
     fun visitMongoDbQuery(
         coroutineScope: CoroutineScope,
         dataSource: LocalDataSource?,
-        problems: ProblemsHolder,
+        problems: IntelliJBasedInspectionHolder,
         query: Node<PsiElement>,
         formatter: DialectFormatter,
     )

@@ -5,17 +5,17 @@
 
 package com.mongodb.jbplugin.inspections.impl
 
-import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.psi.PsiElement
+import com.mongodb.jbplugin.Inspection
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
 import com.mongodb.jbplugin.dialects.DialectFormatter
 import com.mongodb.jbplugin.i18n.InspectionsAndInlaysMessages
 import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionBridge
+import com.mongodb.jbplugin.inspections.IntelliJBasedInspectionHolder
 import com.mongodb.jbplugin.inspections.MongoDbInspection
-import com.mongodb.jbplugin.inspections.quickfixes.OpenConnectionChooserQuickFix
 import com.mongodb.jbplugin.linting.FieldCheckWarning
 import com.mongodb.jbplugin.linting.FieldCheckingLinter
 import com.mongodb.jbplugin.meta.service
@@ -25,6 +25,7 @@ import com.mongodb.jbplugin.observability.TelemetryEvent
 import com.mongodb.jbplugin.observability.probe.InspectionStatusChangedProbe
 import com.mongodb.jbplugin.settings.pluginSetting
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 class FieldCheckInspectionBridge(coroutineScope: CoroutineScope) :
@@ -55,16 +56,16 @@ internal object FieldCheckLinterInspection : MongoDbInspection {
     override fun visitMongoDbQuery(
         coroutineScope: CoroutineScope,
         dataSource: LocalDataSource?,
-        problems: ProblemsHolder,
+        problems: IntelliJBasedInspectionHolder,
         query: Node<PsiElement>,
         formatter: DialectFormatter,
     ) {
         if (dataSource == null || !dataSource.isConnected()) {
-            return registerNoConnectionProblem(coroutineScope, problems, query.source)
+            return registerNoConnectionProblem(coroutineScope, problems, query)
         }
 
         if (query.component<HasCollectionReference<PsiElement>>()?.reference is HasCollectionReference.OnlyCollection) {
-            return registerNoDatabaseSelectedProblem(coroutineScope, problems, query.source)
+            return registerNoDatabaseSelectedProblem(coroutineScope, problems, query)
         }
 
         val readModelProvider by query.source.project.service<DataGripBasedReadModelProvider>()
@@ -95,82 +96,107 @@ internal object FieldCheckLinterInspection : MongoDbInspection {
 
     private fun registerNoConnectionProblem(
         coroutineScope: CoroutineScope,
-        problems: ProblemsHolder,
-        source: PsiElement
+        problems: IntelliJBasedInspectionHolder,
+        query: Node<PsiElement>
     ) {
         val problemDescription = InspectionsAndInlaysMessages.message(
             "inspection.field.checking.error.message.no.connection",
         )
-        problems.registerProblem(
-            source,
-            problemDescription,
-            ProblemHighlightType.WARNING,
-            OpenConnectionChooserQuickFix(
-                coroutineScope,
-                InspectionsAndInlaysMessages.message(
-                    "inspection.field.checking.quickfix.choose.new.connection"
-                ),
-            ),
-        )
+        coroutineScope.launch {
+            problems.register(
+                Inspection.PerformanceWarning(query, problemDescription, Inspection.NoAction)
+            )
+        }
+        //
+        // problems.registerProblem(
+        //     source,
+        //     problemDescription,
+        //     ProblemHighlightType.WARNING,
+        //     OpenConnectionChooserQuickFix(
+        //         coroutineScope,
+        //         InspectionsAndInlaysMessages.message(
+        //             "inspection.field.checking.quickfix.choose.new.connection"
+        //         ),
+        //     ),
+        // )
     }
 
     private fun registerNoDatabaseSelectedProblem(
         coroutineScope: CoroutineScope,
-        problems: ProblemsHolder,
-        source: PsiElement
+        problems: IntelliJBasedInspectionHolder,
+        source: Node<PsiElement>
     ) {
         val problemDescription = InspectionsAndInlaysMessages.message(
             "inspection.field.checking.error.message.no.database",
         )
-        problems.registerProblem(
-            source,
-            problemDescription,
-            ProblemHighlightType.WARNING,
-            OpenConnectionChooserQuickFix(
-                coroutineScope,
-                InspectionsAndInlaysMessages.message(
-                    "inspection.field.checking.quickfix.choose.new.connection"
-                ),
-            ),
-        )
+        coroutineScope.launch {
+            problems.register(
+                Inspection.PerformanceWarning(
+                    source,
+                    problemDescription,
+                    Inspection.NoAction
+                )
+            )
+        }
+        // problems.registerProblem(
+        //     source,
+        //     problemDescription,
+        //     ProblemHighlightType.WARNING,
+        //     OpenConnectionChooserQuickFix(
+        //         coroutineScope,
+        //         InspectionsAndInlaysMessages.message(
+        //             "inspection.field.checking.quickfix.choose.new.connection"
+        //         ),
+        //     ),
+        // )
     }
 
     private fun registerFieldDoesNotExistProblem(
         coroutineScope: CoroutineScope,
-        problems: ProblemsHolder,
+        problems: IntelliJBasedInspectionHolder,
         warningInfo: FieldCheckWarning.FieldDoesNotExist<PsiElement>,
-        query: Node<PsiElement>,
+        source: Node<PsiElement>,
     ) {
         val problemDescription = InspectionsAndInlaysMessages.message(
             "inspection.field.checking.error.message",
             warningInfo.field,
             warningInfo.namespace,
         )
-        problems.registerProblem(
-            warningInfo.source,
-            problemDescription,
-            ProblemHighlightType.WARNING,
-            OpenConnectionChooserQuickFix(
-                coroutineScope,
-                InspectionsAndInlaysMessages.message(
-                    "inspection.field.checking.quickfix.choose.new.connection"
-                ),
-            ),
-        )
+        coroutineScope.launch {
+            problems.register(
+                Inspection.PerformanceWarning(
+                    source,
+                    problemDescription,
+                    Inspection.NoAction
+                )
+            )
+        }
+
+        // problems.registerProblem(
+        //     warningInfo.source,
+        //     problemDescription,
+        //     ProblemHighlightType.WARNING,
+        //     OpenConnectionChooserQuickFix(
+        //         coroutineScope,
+        //         InspectionsAndInlaysMessages.message(
+        //             "inspection.field.checking.quickfix.choose.new.connection"
+        //         ),
+        //     ),
+        // )
 
         val probe by service<InspectionStatusChangedProbe>()
         probe.inspectionChanged(
             TelemetryEvent.InspectionStatusChangeEvent.InspectionType.FIELD_DOES_NOT_EXIST,
-            query
+            source
         )
     }
 
     private fun registerFieldValueTypeMismatch(
         coroutineScope: CoroutineScope,
-        problems: ProblemsHolder,
+        problems: IntelliJBasedInspectionHolder,
         warningInfo: FieldCheckWarning.FieldValueTypeMismatch<PsiElement>,
         formatter: DialectFormatter,
-        query: Node<PsiElement>
+        source: Node<PsiElement>
     ) {
         val expectedType = formatter.formatType(warningInfo.fieldType)
         val actualType = formatter.formatType(warningInfo.valueType)
@@ -181,21 +207,31 @@ internal object FieldCheckLinterInspection : MongoDbInspection {
             expectedType,
             warningInfo.field,
         )
-        problems.registerProblem(
-            warningInfo.valueSource,
-            problemDescription,
-            ProblemHighlightType.WARNING,
-            OpenConnectionChooserQuickFix(
-                coroutineScope,
-                InspectionsAndInlaysMessages.message(
-                    "inspection.field.checking.quickfix.choose.new.connection"
-                ),
-            ),
-        )
+        coroutineScope.launch {
+            problems.register(
+                Inspection.PerformanceWarning(
+                    source,
+                    problemDescription,
+                    Inspection.NoAction
+                )
+            )
+        }
+
+        // problems.registerProblem(
+        //     warningInfo.valueSource,
+        //     problemDescription,
+        //     ProblemHighlightType.WARNING,
+        //     OpenConnectionChooserQuickFix(
+        //         coroutineScope,
+        //         InspectionsAndInlaysMessages.message(
+        //             "inspection.field.checking.quickfix.choose.new.connection"
+        //         ),
+        //     ),
+        // )
 
         val probe by service<InspectionStatusChangedProbe>()
         probe.typeMismatchInspectionActive(
-            query,
+            source,
             actualType,
             expectedType,
         )

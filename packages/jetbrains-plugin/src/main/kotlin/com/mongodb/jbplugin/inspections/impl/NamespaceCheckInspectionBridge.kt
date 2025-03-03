@@ -5,17 +5,17 @@
 
 package com.mongodb.jbplugin.inspections.impl
 
-import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.psi.PsiElement
+import com.mongodb.jbplugin.Inspection
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
 import com.mongodb.jbplugin.dialects.DialectFormatter
 import com.mongodb.jbplugin.i18n.InspectionsAndInlaysMessages
 import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionBridge
+import com.mongodb.jbplugin.inspections.IntelliJBasedInspectionHolder
 import com.mongodb.jbplugin.inspections.MongoDbInspection
-import com.mongodb.jbplugin.inspections.quickfixes.OpenConnectionChooserQuickFix
 import com.mongodb.jbplugin.linting.NamespaceCheckWarning
 import com.mongodb.jbplugin.linting.NamespaceCheckingLinter
 import com.mongodb.jbplugin.meta.service
@@ -23,6 +23,7 @@ import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.observability.TelemetryEvent
 import com.mongodb.jbplugin.observability.probe.InspectionStatusChangedProbe
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 /**
@@ -60,7 +61,7 @@ internal object NamespaceCheckingLinterInspection : MongoDbInspection {
     override fun visitMongoDbQuery(
         coroutineScope: CoroutineScope,
         dataSource: LocalDataSource?,
-        problems: ProblemsHolder,
+        problems: IntelliJBasedInspectionHolder,
         query: Node<PsiElement>,
         formatter: DialectFormatter,
     ) {
@@ -85,7 +86,6 @@ internal object NamespaceCheckingLinterInspection : MongoDbInspection {
                     registerCollectionDoesNotExist(
                         coroutineScope,
                         problems,
-                        it.source,
                         it.database,
                         it.collection,
                         query
@@ -104,7 +104,7 @@ internal object NamespaceCheckingLinterInspection : MongoDbInspection {
 
     private fun registerNoNamespaceInferred(
         coroutineScope: CoroutineScope,
-        problems: ProblemsHolder,
+        problems: IntelliJBasedInspectionHolder,
         source: PsiElement,
         query: Node<PsiElement>
     ) {
@@ -117,22 +117,20 @@ internal object NamespaceCheckingLinterInspection : MongoDbInspection {
         val problemDescription = InspectionsAndInlaysMessages.message(
             "inspection.namespace.checking.error.message",
         )
-        problems.registerProblem(
-            source,
-            problemDescription,
-            ProblemHighlightType.WARNING,
-            OpenConnectionChooserQuickFix(
-                coroutineScope,
-                InspectionsAndInlaysMessages.message(
-                    "inspection.field.checking.quickfix.choose.new.connection"
-                ),
-            ),
-        )
+        coroutineScope.launch {
+            problems.register(
+                Inspection.PerformanceWarning(
+                    query,
+                    problemDescription,
+                    Inspection.NoAction
+                )
+            )
+        }
     }
 
     private fun registerDatabaseDoesNotExist(
         coroutineScope: CoroutineScope,
-        problems: ProblemsHolder,
+        problems: IntelliJBasedInspectionHolder,
         source: PsiElement,
         dbName: String,
         query: Node<PsiElement>
@@ -147,23 +145,21 @@ internal object NamespaceCheckingLinterInspection : MongoDbInspection {
             "inspection.namespace.checking.error.message.database.missing",
             dbName
         )
-        problems.registerProblem(
-            source,
-            problemDescription,
-            ProblemHighlightType.WARNING,
-            OpenConnectionChooserQuickFix(
-                coroutineScope,
-                InspectionsAndInlaysMessages.message(
-                    "inspection.field.checking.quickfix.choose.new.connection"
-                ),
-            ),
-        )
+
+        coroutineScope.launch {
+            problems.register(
+                Inspection.PerformanceWarning(
+                    query,
+                    problemDescription,
+                    Inspection.NoAction
+                )
+            )
+        }
     }
 
     private fun registerCollectionDoesNotExist(
         coroutineScope: CoroutineScope,
-        problems: ProblemsHolder,
-        source: PsiElement,
+        problems: IntelliJBasedInspectionHolder,
         dbName: String,
         collName: String,
         query: Node<PsiElement>
@@ -180,16 +176,25 @@ internal object NamespaceCheckingLinterInspection : MongoDbInspection {
             dbName
         )
 
-        problems.registerProblem(
-            source,
-            problemDescription,
-            ProblemHighlightType.WARNING,
-            OpenConnectionChooserQuickFix(
-                coroutineScope,
-                InspectionsAndInlaysMessages.message(
-                    "inspection.field.checking.quickfix.choose.new.connection"
-                ),
-            ),
-        )
+        coroutineScope.launch {
+            problems.register(
+                Inspection.PerformanceWarning(
+                    query,
+                    problemDescription,
+                    Inspection.NoAction
+                )
+            )
+        }
+        // problems.registerProblem(
+        //     source,
+        //     problemDescription,
+        //     ProblemHighlightType.WARNING,
+        //     OpenConnectionChooserQuickFix(
+        //         coroutineScope,
+        //         InspectionsAndInlaysMessages.message(
+        //             "inspection.field.checking.quickfix.choose.new.connection"
+        //         ),
+        //     ),
+        // )
     }
 }
