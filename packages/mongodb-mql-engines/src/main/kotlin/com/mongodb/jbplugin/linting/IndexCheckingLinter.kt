@@ -12,11 +12,14 @@ import com.mongodb.jbplugin.accessadapter.slice.ExplainPlan
 import com.mongodb.jbplugin.accessadapter.slice.ExplainQuery
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.QueryContext
+import com.mongodb.jbplugin.mql.components.HasExplain
+import com.mongodb.jbplugin.mql.components.HasExplain.ExplainPlanType
 
 data class IndexCheckingSettings<D>(
     val dataSource: D,
     val readModelProvider: MongoDbReadModelProvider<D>,
-    val context: QueryContext
+    val context: QueryContext,
+    val explainPlanType: ExplainPlanType
 )
 
 /**
@@ -30,7 +33,7 @@ class IndexCheckingLinter<DataSource> : QueryInspection<IndexCheckingSettings<Da
     ) {
         val explainPlanResult = settings.readModelProvider.slice(
             settings.dataSource,
-            ExplainQuery.Slice(query, settings.context)
+            ExplainQuery.Slice(query.with(HasExplain(settings.explainPlanType)), settings.context)
         )
 
         when (explainPlanResult.explainPlan) {

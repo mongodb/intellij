@@ -23,14 +23,15 @@ import com.mongodb.jbplugin.Inspection.CreateIndex
 import com.mongodb.jbplugin.Inspection.NavigateToQuery
 import com.mongodb.jbplugin.Inspection.NoAction
 import com.mongodb.jbplugin.InspectionHolder
+import com.mongodb.jbplugin.QueryInspection
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
 import com.mongodb.jbplugin.editor.CachedQueryService
 import com.mongodb.jbplugin.editor.dataSource
-import com.mongodb.jbplugin.editor.dialect
 import com.mongodb.jbplugin.i18n.InspectionsAndInlaysMessages
 import com.mongodb.jbplugin.inspections.quickfixes.OpenConnectionChooserQuickFix
 import com.mongodb.jbplugin.inspections.quickfixes.OpenConsoleWithNewIndexForQueryQuickFix
 import com.mongodb.jbplugin.meta.service
+import com.mongodb.jbplugin.mql.Node
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -51,10 +52,12 @@ import kotlinx.coroutines.withContext
  * @param inspection
  * @param coroutineScope
  */
-abstract class AbstractMongoDbInspectionBridge(
+abstract class AbstractMongoDbInspectionBridge<Settings>(
     private val coroutineScope: CoroutineScope,
-    private val inspection: MongoDbInspection,
+    private val inspection: QueryInspection<Settings>,
 ) : AbstractBaseJavaLocalInspectionTool() {
+    protected abstract fun buildSettings(query: Node<PsiElement>): Settings
+
     protected abstract fun emitFinishedInspectionTelemetryEvent(problemsHolder: ProblemsHolder)
 
     override fun buildVisitor(
@@ -88,9 +91,8 @@ abstract class AbstractMongoDbInspectionBridge(
                     val containingFile =
                         PsiTreeUtil.getParentOfType(expression, PsiFile::class.java)
                             ?: return@runReadAction
-                    val dataSource = containingFile.dataSource
-                    val dialect = containingFile.dialect ?: return@runReadAction
 
+                    val dataSource = containingFile.dataSource
                     val queryService by expression.project.service<CachedQueryService>()
                     val query = queryService.queryAt(expression)
 
@@ -99,12 +101,10 @@ abstract class AbstractMongoDbInspectionBridge(
                         dataSource?.isConnected() == true
                     ) {
                         runBlocking {
-                            inspection.visitMongoDbQuery(
-                                coroutineScope,
-                                dataSource,
-                                inspectionHolder,
+                            inspection.run(
                                 query,
-                                dialect.formatter,
+                                inspectionHolder,
+                                buildSettings(query)
                             )
                         }
                     }
