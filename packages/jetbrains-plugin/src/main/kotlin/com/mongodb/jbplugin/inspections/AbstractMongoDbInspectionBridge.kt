@@ -1,19 +1,18 @@
 package com.mongodb.jbplugin.inspections
 
 import com.intellij.codeInspection.AbstractBaseJavaLocalInspectionTool
-import com.intellij.codeInspection.LocalInspectionTool
 import com.intellij.codeInspection.LocalInspectionToolSession
 import com.intellij.codeInspection.LocalQuickFix
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.readAction
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.components.Service
 import com.intellij.psi.JavaElementVisitor
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
 import com.intellij.psi.PsiFile
-import com.intellij.psi.PsiJavaFile
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiMethodCallExpression
 import com.intellij.psi.util.PsiTreeUtil
@@ -56,9 +55,37 @@ abstract class AbstractMongoDbInspectionBridge<Settings>(
     private val coroutineScope: CoroutineScope,
     private val inspection: QueryInspection<Settings>,
 ) : AbstractBaseJavaLocalInspectionTool() {
+
     protected abstract fun buildSettings(query: Node<PsiElement>): Settings
 
     protected abstract fun emitFinishedInspectionTelemetryEvent(problemsHolder: ProblemsHolder)
+
+    override fun inspectionStarted(
+        session: LocalInspectionToolSession,
+        isOnTheFly: Boolean
+    ) {
+        val viewModel by session.file.project.service<InspectionViewModel>()
+
+        super.inspectionStarted(session, isOnTheFly)
+        coroutineScope.launch(viewModel.inspections) {
+            viewModel.currentSession.clear()
+        }
+    }
+
+    override fun inspectionFinished(
+        session: LocalInspectionToolSession,
+        problemsHolder: ProblemsHolder
+    ) {
+        val viewModel by session.file.project.service<InspectionViewModel>()
+        coroutineScope.launch(viewModel.inspections) {
+            if (viewModel.allInspections.value != viewModel.currentSession) {
+                viewModel.allInspections.emit(viewModel.currentSession)
+            }
+        }
+
+        super.inspectionFinished(session, problemsHolder)
+        emitFinishedInspectionTelemetryEvent(problemsHolder)
+    }
 
     override fun buildVisitor(
         holder: ProblemsHolder,
@@ -66,11 +93,6 @@ abstract class AbstractMongoDbInspectionBridge<Settings>(
         session: LocalInspectionToolSession,
     ): PsiElementVisitor =
         object : JavaElementVisitor() {
-            override fun visitJavaFile(file: PsiJavaFile) {
-                super.visitJavaFile(file)
-                emitFinishedInspectionTelemetryEvent(holder)
-            }
-
             override fun visitMethodCallExpression(expression: PsiMethodCallExpression) {
                 dispatchIfValidMongoDbQuery(expression)
             }
@@ -114,35 +136,10 @@ abstract class AbstractMongoDbInspectionBridge<Settings>(
 }
 
 @Service(Service.Level.PROJECT)
-class InspectionViewModel(
-    private val coroutineScope: CoroutineScope
-) : LocalInspectionTool() {
-    private val inspections = Dispatchers.IO.limitedParallelism(1)
-
-    val allInspections = MutableStateFlow(emptyList<QueryInspectionResult<PsiElement>>())
-    private val currentSession = mutableListOf<QueryInspectionResult<PsiElement>>()
-
-    override fun inspectionStarted(
-        session: LocalInspectionToolSession,
-        isOnTheFly: Boolean
-    ) {
-        super.inspectionStarted(session, isOnTheFly)
-        coroutineScope.launch(inspections) {
-            currentSession.clear()
-        }
-    }
-
-    override fun inspectionFinished(
-        session: LocalInspectionToolSession,
-        problemsHolder: ProblemsHolder
-    ) {
-        coroutineScope.launch(inspections) {
-            allInspections.emit(currentSession)
-            currentSession.clear()
-        }
-
-        super.inspectionFinished(session, problemsHolder)
-    }
+class InspectionViewModel {
+    internal val inspections = Dispatchers.IO.limitedParallelism(1)
+    internal val currentSession = mutableListOf<QueryInspectionResult<PsiElement>>()
+    internal val allInspections = MutableStateFlow(emptyList<QueryInspectionResult<PsiElement>>())
 
     suspend fun addInspection(queryInspectionResult: QueryInspectionResult<PsiElement>) {
         withContext(inspections) {

@@ -79,6 +79,7 @@ class DatabaseComboBox(
         comboBoxComponent.setRenderer { _, value, index, _, _ -> renderComboBoxItem(value, index) }
 
         var isFirstInit = true
+
         coroutineScope.launch {
             project.getToolbarModel().toolbarState.collect { state ->
                 ApplicationManager.getApplication().invokeLater({

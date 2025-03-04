@@ -37,19 +37,19 @@ public class JavaDriverRepository {
                     Filters.gt("tomatoes.critic.numReviews", 1),
                     Filters.eq("rated", "r"),
                     Filters.eq("languages", lang),
-                    Filters.gt("delivered", 1993)
+                    Filters.gt("deliveredx", 1993)
                 )
             ).sort(Sorts.ascending("year"))
             .first();
     }
-
-    public Document notIndexedAnotherQuery(Language lang) {
-        return client
-            .getDatabase("sample_mflix")
-            .getCollection("movies")
-            .find(
-                Filters.eq("rated", "abc")
-            )
-            .first();
-    }
+//
+//    public Document notIndexedAnotherQuery(Language lang) {
+//        return client
+//            .getDatabase("sample_mflix")
+//            .getCollection("movies")
+//            .find(
+//                Filters.eq("rated", "abc")
+//            )
+//            .first();
+//    }
 }
