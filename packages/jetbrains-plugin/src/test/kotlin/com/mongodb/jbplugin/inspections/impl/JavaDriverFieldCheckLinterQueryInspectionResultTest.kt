@@ -21,7 +21,7 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
 
 @IntegrationTest
-class JavaDriverFieldCheckLinterInspectionTest {
+class JavaDriverFieldCheckLinterQueryInspectionResultTest {
     @ParsingTest(
 """
     public FindIterable<Document> exampleFind() {

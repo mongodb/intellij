@@ -4,9 +4,9 @@
 
 package com.mongodb.jbplugin.linting
 
-import com.mongodb.jbplugin.Inspection
-import com.mongodb.jbplugin.InspectionHolder
 import com.mongodb.jbplugin.QueryInspection
+import com.mongodb.jbplugin.QueryInspectionHolder
+import com.mongodb.jbplugin.QueryInspectionResult
 import com.mongodb.jbplugin.accessadapter.MongoDbReadModelProvider
 import com.mongodb.jbplugin.accessadapter.slice.GetCollectionSchema
 import com.mongodb.jbplugin.mql.BsonNull
@@ -41,7 +41,7 @@ data class FieldCheckingSettings<D>(
 class FieldCheckingLinter<DataSource> : QueryInspection<FieldCheckingSettings<DataSource>> {
     override suspend fun <Source> run(
         query: Node<Source>,
-        holder: InspectionHolder<Source>,
+        holder: QueryInspectionHolder<Source>,
         settings: FieldCheckingSettings<DataSource>
     ) {
         val querySchema = knownCollection<Source>()
@@ -81,18 +81,18 @@ class FieldCheckingLinter<DataSource> : QueryInspection<FieldCheckingSettings<Da
 
     private suspend fun <Source> toFieldNotExistingWarning(
         query: Node<Source>,
-        holder: InspectionHolder<Source>,
+        holder: QueryInspectionHolder<Source>,
         collectionSchema: CollectionSchema,
         known: HasFieldReference.FromSchema<Source>
     ): Either<Any, Unit> {
         val fieldType = collectionSchema.typeOf(known.fieldName)
         if (fieldType == BsonNull) {
             holder.register(
-                Inspection.CorrectnessWarning(
+                QueryInspectionResult.CorrectnessWarning(
                     query,
                     "com.mongodb.jbplugin.inspections.correctness.field-not-existing",
                     listOf(known.fieldName, collectionSchema.namespace.toString()),
-                    Inspection.ChooseConnection,
+                    QueryInspectionResult.ChooseConnection,
                     known.source
                 )
             )
@@ -103,7 +103,7 @@ class FieldCheckingLinter<DataSource> : QueryInspection<FieldCheckingSettings<Da
 
     private suspend fun <Source> toValueMismatchWarning(
         query: Node<Source>,
-        holder: InspectionHolder<Source>,
+        holder: QueryInspectionHolder<Source>,
         collectionSchema: CollectionSchema,
         pair: Pair<HasFieldReference.FromSchema<Source>, ParsedValueReference<Source, out Any>>
     ) {
@@ -114,11 +114,11 @@ class FieldCheckingLinter<DataSource> : QueryInspection<FieldCheckingSettings<Da
 
         if (!valueType.isAssignableTo(fieldType)) {
             holder.register(
-                Inspection.CorrectnessWarning(
+                QueryInspectionResult.CorrectnessWarning(
                     query,
                     "com.mongodb.jbplugin.inspections.correctness.value-mismatch",
                     listOf(fieldName),
-                    Inspection.NavigateToQuery,
+                    QueryInspectionResult.NavigateToQuery,
                     valueSource
                 )
             )

@@ -17,7 +17,7 @@ interface MongoDbInspection {
     suspend fun visitMongoDbQuery(
         coroutineScope: CoroutineScope,
         dataSource: LocalDataSource,
-        problems: IntelliJBasedInspectionHolder,
+        problems: IntelliJBasedQueryInspectionHolder,
         query: Node<PsiElement>,
         formatter: DialectFormatter,
     )

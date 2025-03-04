@@ -4,9 +4,9 @@
 
 package com.mongodb.jbplugin.linting
 
-import com.mongodb.jbplugin.Inspection
-import com.mongodb.jbplugin.InspectionHolder
 import com.mongodb.jbplugin.QueryInspection
+import com.mongodb.jbplugin.QueryInspectionHolder
+import com.mongodb.jbplugin.QueryInspectionResult
 import com.mongodb.jbplugin.accessadapter.MongoDbReadModelProvider
 import com.mongodb.jbplugin.accessadapter.slice.ExplainPlan
 import com.mongodb.jbplugin.accessadapter.slice.ExplainQuery
@@ -28,7 +28,7 @@ data class IndexCheckingSettings<D>(
 class IndexCheckingLinter<DataSource> : QueryInspection<IndexCheckingSettings<DataSource>> {
     override suspend fun <Source> run(
         query: Node<Source>,
-        holder: InspectionHolder<Source>,
+        holder: QueryInspectionHolder<Source>,
         settings: IndexCheckingSettings<DataSource>
     ) {
         val explainPlanResult = settings.readModelProvider.slice(
@@ -39,21 +39,21 @@ class IndexCheckingLinter<DataSource> : QueryInspection<IndexCheckingSettings<Da
         when (explainPlanResult.explainPlan) {
             is ExplainPlan.CollectionScan ->
                 holder.register(
-                    Inspection.PerformanceWarning(
+                    QueryInspectionResult.PerformanceWarning(
                         query,
                         "com.mongodb.jbplugin.inspections.performance.not-using-an-index",
                         emptyList(),
-                        Inspection.CreateIndex,
+                        QueryInspectionResult.CreateIndex,
                         query.source
                     )
                 )
             is ExplainPlan.IneffectiveIndexUsage ->
                 holder.register(
-                    Inspection.PerformanceWarning(
+                    QueryInspectionResult.PerformanceWarning(
                         query,
                         "com.mongodb.jbplugin.inspections.performance.not-using-an-index-effectively",
                         emptyList(),
-                        Inspection.CreateIndex,
+                        QueryInspectionResult.CreateIndex,
                         query.source
                     )
                 )

@@ -5,9 +5,9 @@
 
 package com.mongodb.jbplugin.linting
 
-import com.mongodb.jbplugin.Inspection
-import com.mongodb.jbplugin.InspectionHolder
 import com.mongodb.jbplugin.QueryInspection
+import com.mongodb.jbplugin.QueryInspectionHolder
+import com.mongodb.jbplugin.QueryInspectionResult
 import com.mongodb.jbplugin.accessadapter.MongoDbReadModelProvider
 import com.mongodb.jbplugin.accessadapter.slice.ListCollections
 import com.mongodb.jbplugin.accessadapter.slice.ListDatabases
@@ -30,7 +30,7 @@ data class NamespaceCheckingSettings<D>(
 class NamespaceCheckingLinter<DataSource> : QueryInspection<NamespaceCheckingSettings<DataSource>> {
     override suspend fun <Source> run(
         query: Node<Source>,
-        holder: InspectionHolder<Source>,
+        holder: QueryInspectionHolder<Source>,
         settings: NamespaceCheckingSettings<DataSource>
     ) {
         val dbList = settings.readModelProvider.slice(settings.dataSource, ListDatabases.Slice)
@@ -39,11 +39,11 @@ class NamespaceCheckingLinter<DataSource> : QueryInspection<NamespaceCheckingSet
             .filter { databaseDoesNotExist(dbList, it) }
             .map {
                 holder.register(
-                    Inspection.CorrectnessWarning(
+                    QueryInspectionResult.CorrectnessWarning(
                         query,
                         "com.mongodb.jbplugin.inspections.correctness.database-does-not-exist",
                         listOf(it.namespace.database),
-                        Inspection.ChooseConnection,
+                        QueryInspectionResult.ChooseConnection,
                         it.collectionSource
                     )
                 )
@@ -53,11 +53,11 @@ class NamespaceCheckingLinter<DataSource> : QueryInspection<NamespaceCheckingSet
             .filter { collectionDoesNotExist(settings.readModelProvider, settings.dataSource, it) }
             .map {
                 holder.register(
-                    Inspection.CorrectnessWarning(
+                    QueryInspectionResult.CorrectnessWarning(
                         query,
                         "com.mongodb.jbplugin.inspections.correctness.namespace-does-not-exist",
                         listOf(it.namespace.database, it.namespace.collection),
-                        Inspection.ChooseConnection,
+                        QueryInspectionResult.ChooseConnection,
                         it.collectionSource
                     )
                 )
@@ -67,11 +67,11 @@ class NamespaceCheckingLinter<DataSource> : QueryInspection<NamespaceCheckingSet
             .filter { it.collection.isNotEmpty() }
             .map {
                 holder.register(
-                    Inspection.CorrectnessWarning(
+                    QueryInspectionResult.CorrectnessWarning(
                         query,
                         "com.mongodb.jbplugin.inspections.correctness.database-not-inferred",
                         listOf(),
-                        Inspection.ChooseConnection,
+                        QueryInspectionResult.ChooseConnection,
                         it.collectionSource
                     )
                 )
@@ -80,11 +80,11 @@ class NamespaceCheckingLinter<DataSource> : QueryInspection<NamespaceCheckingSet
         val noCollectionSpecified = noCollection<Source>()
             .map {
                 holder.register(
-                    Inspection.CorrectnessWarning(
+                    QueryInspectionResult.CorrectnessWarning(
                         query,
                         "com.mongodb.jbplugin.inspections.correctness.collection-not-inferred",
                         listOf(),
-                        Inspection.ChooseConnection,
+                        QueryInspectionResult.ChooseConnection,
                         query.source
                     )
                 )

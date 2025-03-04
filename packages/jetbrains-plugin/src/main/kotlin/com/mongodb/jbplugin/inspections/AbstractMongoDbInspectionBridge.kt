@@ -17,13 +17,13 @@ import com.intellij.psi.PsiJavaFile
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiMethodCallExpression
 import com.intellij.psi.util.PsiTreeUtil
-import com.mongodb.jbplugin.Inspection
-import com.mongodb.jbplugin.Inspection.ChooseConnection
-import com.mongodb.jbplugin.Inspection.CreateIndex
-import com.mongodb.jbplugin.Inspection.NavigateToQuery
-import com.mongodb.jbplugin.Inspection.NoAction
-import com.mongodb.jbplugin.InspectionHolder
 import com.mongodb.jbplugin.QueryInspection
+import com.mongodb.jbplugin.QueryInspectionHolder
+import com.mongodb.jbplugin.QueryInspectionResult
+import com.mongodb.jbplugin.QueryInspectionResult.ChooseConnection
+import com.mongodb.jbplugin.QueryInspectionResult.CreateIndex
+import com.mongodb.jbplugin.QueryInspectionResult.NavigateToQuery
+import com.mongodb.jbplugin.QueryInspectionResult.NoAction
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
 import com.mongodb.jbplugin.editor.CachedQueryService
 import com.mongodb.jbplugin.editor.dataSource
@@ -82,7 +82,7 @@ abstract class AbstractMongoDbInspectionBridge<Settings>(
             private fun dispatchIfValidMongoDbQuery(expression: PsiElement) {
                 ApplicationManager.getApplication().runReadAction {
                     val viewModel by expression.project.service<InspectionViewModel>()
-                    val inspectionHolder = IntelliJBasedInspectionHolder(
+                    val inspectionHolder = IntelliJBasedQueryInspectionHolder(
                         coroutineScope,
                         viewModel,
                         holder
@@ -119,8 +119,8 @@ class InspectionViewModel(
 ) : LocalInspectionTool() {
     private val inspections = Dispatchers.IO.limitedParallelism(1)
 
-    val allInspections = MutableStateFlow(emptyList<Inspection<PsiElement>>())
-    private val currentSession = mutableListOf<Inspection<PsiElement>>()
+    val allInspections = MutableStateFlow(emptyList<QueryInspectionResult<PsiElement>>())
+    private val currentSession = mutableListOf<QueryInspectionResult<PsiElement>>()
 
     override fun inspectionStarted(
         session: LocalInspectionToolSession,
@@ -144,29 +144,29 @@ class InspectionViewModel(
         super.inspectionFinished(session, problemsHolder)
     }
 
-    suspend fun addInspection(inspection: Inspection<PsiElement>) {
+    suspend fun addInspection(queryInspectionResult: QueryInspectionResult<PsiElement>) {
         withContext(inspections) {
-            currentSession.add(inspection)
+            currentSession.add(queryInspectionResult)
         }
     }
 }
 
-class IntelliJBasedInspectionHolder(
+class IntelliJBasedQueryInspectionHolder(
     private val coroutineScope: CoroutineScope,
     private val viewModel: InspectionViewModel,
     private val problemsHolder: ProblemsHolder,
-) : InspectionHolder<PsiElement> {
-    override suspend fun register(inspection: Inspection<PsiElement>) {
-        viewModel.addInspection(inspection)
+) : QueryInspectionHolder<PsiElement> {
+    override suspend fun register(queryInspectionResult: QueryInspectionResult<PsiElement>) {
+        viewModel.addInspection(queryInspectionResult)
 
         withContext(Dispatchers.EDT) {
             readAction {
                 val message = InspectionsAndInlaysMessages.message(
-                    inspection.description,
-                    *inspection.descriptionArguments.toTypedArray()
+                    queryInspectionResult.description,
+                    *queryInspectionResult.descriptionArguments.toTypedArray()
                 )
                 if (problemsHolder.results.firstOrNull {
-                        it.psiElement.isEquivalentTo(inspection.source) &&
+                        it.psiElement.isEquivalentTo(queryInspectionResult.source) &&
                             it.descriptionTemplate == message
                     } !=
                     null
@@ -175,22 +175,22 @@ class IntelliJBasedInspectionHolder(
                 }
 
                 problemsHolder.registerProblem(
-                    inspection.source,
+                    queryInspectionResult.source,
                     InspectionsAndInlaysMessages.message(
-                        inspection.description,
-                        *inspection.descriptionArguments.toTypedArray()
+                        queryInspectionResult.description,
+                        *queryInspectionResult.descriptionArguments.toTypedArray()
                     ),
-                    *intellijQuickFixesFromInspection(inspection)
+                    *intellijQuickFixesFromInspection(queryInspectionResult)
                 )
             }
         }
     }
 
-    private fun intellijQuickFixesFromInspection(inspection: Inspection<PsiElement>): Array<LocalQuickFix> {
-        return when (inspection.action) {
+    private fun intellijQuickFixesFromInspection(queryInspectionResult: QueryInspectionResult<PsiElement>): Array<LocalQuickFix> {
+        return when (queryInspectionResult.action) {
             ChooseConnection -> arrayOf(OpenConnectionChooserQuickFix(coroutineScope))
             CreateIndex -> arrayOf(
-                OpenConsoleWithNewIndexForQueryQuickFix(coroutineScope, inspection.query)
+                OpenConsoleWithNewIndexForQueryQuickFix(coroutineScope, queryInspectionResult.query)
             )
             NavigateToQuery -> emptyArray()
             NoAction -> emptyArray()

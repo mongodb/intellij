@@ -2,7 +2,7 @@ package com.mongodb.jbplugin
 
 import com.mongodb.jbplugin.mql.Node
 
-sealed interface Inspection<S> {
+sealed interface QueryInspectionResult<S> {
     val query: Node<S>
     val description: String
     val descriptionArguments: List<String>
@@ -15,7 +15,7 @@ sealed interface Inspection<S> {
         override val descriptionArguments: List<String>,
         override val action: Action,
         override val source: S,
-    ) : Inspection<S>
+    ) : QueryInspectionResult<S>
 
     data class CorrectnessWarning<S>(
         override val query: Node<S>,
@@ -23,7 +23,7 @@ sealed interface Inspection<S> {
         override val descriptionArguments: List<String>,
         override val action: Action,
         override val source: S,
-    ) : Inspection<S>
+    ) : QueryInspectionResult<S>
 
     data class OtherWarning<S>(
         override val query: Node<S>,
@@ -31,7 +31,7 @@ sealed interface Inspection<S> {
         override val descriptionArguments: List<String>,
         override val action: Action,
         override val source: S,
-    ) : Inspection<S>
+    ) : QueryInspectionResult<S>
 
     sealed interface Action
     data object NoAction : Action
@@ -40,6 +40,6 @@ sealed interface Inspection<S> {
     data object CreateIndex : Action
 }
 
-interface InspectionHolder<S> {
-    suspend fun register(inspection: Inspection<S>)
+interface QueryInspectionHolder<S> {
+    suspend fun register(queryInspectionResult: QueryInspectionResult<S>)
 }
