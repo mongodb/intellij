@@ -1,7 +1,6 @@
 package com.mongodb.jbplugin
 
 import com.mongodb.jbplugin.mql.Node
-import kotlinx.coroutines.flow.StateFlow
 
 sealed interface Inspection<S> {
     val query: Node<S>
@@ -41,12 +40,6 @@ sealed interface Inspection<S> {
     data object CreateIndex : Action
 }
 
-interface InspectionHolder<C, S> {
-    val allInspections: StateFlow<List<Inspection<S>>>
-
-    // https://github.com/JetBrains/intellij-community/blob/idea/243.25659.39/platform/analysis-api/src/com/intellij/codeInspection/LocalInspectionTool.java#L154
-    suspend fun inspectionBegin(context: C)
-    suspend fun inspectionEnd(context: C)
-
+interface InspectionHolder<S> {
     suspend fun register(inspection: Inspection<S>)
 }

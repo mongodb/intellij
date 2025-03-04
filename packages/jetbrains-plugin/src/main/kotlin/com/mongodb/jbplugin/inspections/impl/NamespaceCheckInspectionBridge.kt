@@ -8,15 +8,11 @@ package com.mongodb.jbplugin.inspections.impl
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.psi.PsiElement
-import com.mongodb.jbplugin.Inspection
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
-import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
 import com.mongodb.jbplugin.dialects.DialectFormatter
-import com.mongodb.jbplugin.i18n.InspectionsAndInlaysMessages
 import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionBridge
 import com.mongodb.jbplugin.inspections.IntelliJBasedInspectionHolder
 import com.mongodb.jbplugin.inspections.MongoDbInspection
-import com.mongodb.jbplugin.linting.NamespaceCheckWarning
 import com.mongodb.jbplugin.linting.NamespaceCheckingLinter
 import com.mongodb.jbplugin.linting.NamespaceCheckingSettings
 import com.mongodb.jbplugin.meta.service
@@ -24,8 +20,6 @@ import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.observability.TelemetryEvent
 import com.mongodb.jbplugin.observability.probe.InspectionStatusChangedProbe
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 
 /**
  * @param coroutineScope
@@ -59,27 +53,23 @@ class NamespaceCheckInspectionBridge(coroutineScope: CoroutineScope) :
  * editor.
  */
 internal object NamespaceCheckingLinterInspection : MongoDbInspection {
-    override fun visitMongoDbQuery(
+    private val linter = NamespaceCheckingLinter<LocalDataSource>()
+
+    override suspend fun visitMongoDbQuery(
         coroutineScope: CoroutineScope,
-        dataSource: LocalDataSource?,
+        dataSource: LocalDataSource,
         problems: IntelliJBasedInspectionHolder,
         query: Node<PsiElement>,
         formatter: DialectFormatter,
     ) {
-        if (dataSource == null || !dataSource.isConnected()) {
-            return
-        }
-
         val readModelProvider by query.source.project.service<DataGripBasedReadModelProvider>()
-        runBlocking {
-            NamespaceCheckingLinter<LocalDataSource>().run(
-                query,
-              problems,
-              NamespaceCheckingSettings(
+        linter.run(
+            query,
+            problems,
+            NamespaceCheckingSettings(
                 dataSource,
                 readModelProvider
-              )
             )
-        }
+        )
     }
 }

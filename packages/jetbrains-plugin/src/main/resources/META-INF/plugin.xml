@@ -35,8 +35,6 @@
     <extensions defaultExtensionNs="com.intellij">
         <postStartupActivity implementation="com.mongodb.jbplugin.ActivatePluginPostStartupActivity"/>
         <postStartupActivity implementation="com.mongodb.jbplugin.editor.EditorToolbarDecorator"/>
-        <localInspection language="JAVA" displayName="MongoDB" id="MongoDB" enabledByDefault="true" implementationClass="com.mongodb.jbplugin.inspections.IntelliJBasedInspectionHolder"
-            groupKey="MongoDB" />
 
         <applicationConfigurable
                 parentId="tools"

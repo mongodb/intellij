@@ -19,10 +19,10 @@ import kotlinx.coroutines.CoroutineScope
  * @param dataSource Data Source to open console from.
  * @param codeToAppend Provider of a string with the code to append. It's a function so it's lazily evaluated.
  */
-class OpenDataSourceConsoleAppendingCode(
+open class OpenDataSourceConsoleAppendingCodeQuickFix(
     private val coroutineScope: CoroutineScope,
     private val message: String,
-    private val dataSource: LocalDataSource,
+    private val dataSource: LocalDataSource?,
     private val codeToAppend: () -> String,
 ) : LocalQuickFix {
     override fun getFamilyName(): String = message
@@ -31,6 +31,10 @@ class OpenDataSourceConsoleAppendingCode(
         project: Project,
         descriptor: ProblemDescriptor,
     ) {
+        if (dataSource == null) {
+            return
+        }
+
         val editor = DatagripConsoleEditor.openConsoleForDataSource(project, dataSource) ?: return
         editor.appendText(codeToAppend())
     }

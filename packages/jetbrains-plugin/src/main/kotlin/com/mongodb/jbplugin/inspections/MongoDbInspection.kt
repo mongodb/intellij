@@ -14,9 +14,9 @@ import kotlinx.coroutines.CoroutineScope
  * @see com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionBridge for the actual implementation.
  */
 interface MongoDbInspection {
-    fun visitMongoDbQuery(
+    suspend fun visitMongoDbQuery(
         coroutineScope: CoroutineScope,
-        dataSource: LocalDataSource?,
+        dataSource: LocalDataSource,
         problems: IntelliJBasedInspectionHolder,
         query: Node<PsiElement>,
         formatter: DialectFormatter,

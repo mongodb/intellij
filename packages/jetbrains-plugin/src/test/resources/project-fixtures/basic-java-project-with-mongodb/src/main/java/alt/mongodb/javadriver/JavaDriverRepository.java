@@ -28,14 +28,14 @@ public class JavaDriverRepository {
         this.client = client;
     }
 
-    public Document notIndexedQuery(Language lang) {
+    public Document notIndexedQuery(String lang) {
         return client
             .getDatabase("sample_mflix")
             .getCollection("movies")
             .find(
                 Filters.and(
                     Filters.gt("tomatoes.critic.numReviews", 1),
-                    Filters.eq("rated", Rate.TV_PG),
+                    Filters.eq("rated", "r"),
                     Filters.eq("languages", lang),
                     Filters.gt("delivered", 1993)
                 )
@@ -48,7 +48,7 @@ public class JavaDriverRepository {
             .getDatabase("sample_mflix")
             .getCollection("movies")
             .find(
-                Filters.eq("rated", Rate.TV_PG)
+                Filters.eq("rated", "abc")
             )
             .first();
     }

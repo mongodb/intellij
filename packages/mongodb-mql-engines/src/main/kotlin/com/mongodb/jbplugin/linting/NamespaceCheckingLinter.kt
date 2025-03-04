@@ -5,13 +5,13 @@
 
 package com.mongodb.jbplugin.linting
 
+import com.mongodb.jbplugin.Inspection
 import com.mongodb.jbplugin.InspectionHolder
 import com.mongodb.jbplugin.QueryInspection
 import com.mongodb.jbplugin.accessadapter.MongoDbReadModelProvider
 import com.mongodb.jbplugin.accessadapter.slice.ListCollections
 import com.mongodb.jbplugin.accessadapter.slice.ListDatabases
 import com.mongodb.jbplugin.mql.Node
-import com.mongodb.jbplugin.Inspection
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.parser.*
 import com.mongodb.jbplugin.mql.parser.components.knownCollection
@@ -19,8 +19,8 @@ import com.mongodb.jbplugin.mql.parser.components.noCollection
 import com.mongodb.jbplugin.mql.parser.components.onlyCollection
 
 data class NamespaceCheckingSettings<D>(
-  val dataSource: D,
-  val readModelProvider: MongoDbReadModelProvider<D>
+    val dataSource: D,
+    val readModelProvider: MongoDbReadModelProvider<D>
 )
 
 /**
@@ -28,47 +28,38 @@ data class NamespaceCheckingSettings<D>(
  * in the connected data source.
  */
 class NamespaceCheckingLinter<DataSource> : QueryInspection<NamespaceCheckingSettings<DataSource>> {
-    override suspend fun <Context, Source> run(
+    override suspend fun <Source> run(
         query: Node<Source>,
-        holder: InspectionHolder<Context, Source>,
+        holder: InspectionHolder<Source>,
         settings: NamespaceCheckingSettings<DataSource>
     ) {
-        lintQuery(settings.dataSource, settings.readModelProvider, query, holder)
-    }
-
-    private suspend fun <Context, Source> lintQuery(
-        dataSource: DataSource,
-        readModelProvider: MongoDbReadModelProvider<DataSource>,
-        query: Node<Source>,
-        holder: InspectionHolder<Context, Source>,
-    ) {
-        val dbList = readModelProvider.slice(dataSource, ListDatabases.Slice)
+        val dbList = settings.readModelProvider.slice(settings.dataSource, ListDatabases.Slice)
 
         val databaseDoesNotExistParser = knownCollection<Source>()
             .filter { databaseDoesNotExist(dbList, it) }
             .map {
                 holder.register(
-                  Inspection.CorrectnessWarning(
-                    query,
-                    "com.mongodb.jbplugin.inspections.database-does-not-exist",
-                    listOf(it.namespace.database),
-                    Inspection.ChooseConnection,
-                    it.collectionSource
-                  )
+                    Inspection.CorrectnessWarning(
+                        query,
+                        "com.mongodb.jbplugin.inspections.correctness.database-does-not-exist",
+                        listOf(it.namespace.database),
+                        Inspection.ChooseConnection,
+                        it.collectionSource
+                    )
                 )
             }.anyError()
 
         val collectionDoesNotExistParser = knownCollection<Source>()
-            .filter { collectionDoesNotExist(readModelProvider, dataSource, it) }
+            .filter { collectionDoesNotExist(settings.readModelProvider, settings.dataSource, it) }
             .map {
                 holder.register(
-                  Inspection.CorrectnessWarning(
-                    query,
-                    "com.mongodb.jbplugin.inspections.namespace-does-not-exist",
-                    listOf(it.namespace.database, it.namespace.collection),
-                    Inspection.ChooseConnection,
-                    it.collectionSource
-                  )
+                    Inspection.CorrectnessWarning(
+                        query,
+                        "com.mongodb.jbplugin.inspections.correctness.namespace-does-not-exist",
+                        listOf(it.namespace.database, it.namespace.collection),
+                        Inspection.ChooseConnection,
+                        it.collectionSource
+                    )
                 )
             }.anyError()
 
@@ -76,28 +67,28 @@ class NamespaceCheckingLinter<DataSource> : QueryInspection<NamespaceCheckingSet
             .filter { it.collection.isNotEmpty() }
             .map {
                 holder.register(
-                  Inspection.CorrectnessWarning(
-                    query,
-                    "com.mongodb.jbplugin.inspections.database-not-inferred",
-                    listOf(),
-                    Inspection.ChooseConnection,
-                    it.collectionSource
-                  )
+                    Inspection.CorrectnessWarning(
+                        query,
+                        "com.mongodb.jbplugin.inspections.correctness.database-not-inferred",
+                        listOf(),
+                        Inspection.ChooseConnection,
+                        it.collectionSource
+                    )
                 )
             }.anyError()
 
         val noCollectionSpecified = noCollection<Source>()
-          .map {
-              holder.register(
-                Inspection.CorrectnessWarning(
-                  query,
-                  "com.mongodb.jbplugin.inspections.collection-not-inferred",
-                  listOf(),
-                  Inspection.ChooseConnection,
-                  query.source
+            .map {
+                holder.register(
+                    Inspection.CorrectnessWarning(
+                        query,
+                        "com.mongodb.jbplugin.inspections.correctness.collection-not-inferred",
+                        listOf(),
+                        Inspection.ChooseConnection,
+                        query.source
+                    )
                 )
-              )
-          }.anyError()
+            }.anyError()
 
         val namespaceErrorsParser = first(
             databaseDoesNotExistParser,
