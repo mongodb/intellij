@@ -2167,10 +2167,10 @@ import java.util.ArrayList;
 import static com.mongodb.client.model.Filters.*;
 
 public final class Repository {
-    private final MongoCollection<Document> collection;
+    private final MongoClient client;
     
     public Repository(MongoClient client) {
-        this.collection = client.getDatabase("simple").getCollection("books");
+        this.client = client;
     }
     
     public MongoCursor<Document> findBookById(ObjectId id) {
