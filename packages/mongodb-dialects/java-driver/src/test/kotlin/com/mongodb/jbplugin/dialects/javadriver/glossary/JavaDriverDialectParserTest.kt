@@ -2161,6 +2161,40 @@ public final class Repository {
         value = """
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
+import org.bson.types.ObjectId;
+import java.util.ArrayList;
+import static com.mongodb.client.model.Filters.*;
+
+public final class Repository {
+    private final MongoCollection<Document> collection;
+    
+    public Repository(MongoClient client) {
+        this.collection = client.getDatabase("simple").getCollection("books");
+    }
+    
+    public MongoCursor<Document> findBookById(ObjectId id) {
+        return getCollection().find(eq("_id", id)).iterator();
+    }
+    
+    private MongoCollection<Document> getCollection() {
+        return client.getDatabase("simple").getCollection("books");
+    }
+}
+        """,
+    )
+    fun `correctly parses a query with iterator() as FIND_MANY command`(psiFile: PsiFile) {
+        val query = psiFile.getQueryAtMethod("Repository", "findBookById")
+        val parsedQuery = JavaDriverDialect.parser.parse(query)
+        val command = parsedQuery.component<IsCommand>()
+        assertEquals(IsCommand.CommandType.FIND_MANY, command?.type)
+    }
+
+    @ParsingTest(
+        fileName = "Repository.java",
+        value = """
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
 import org.bson.types.ObjectId;
 import java.util.ArrayList;
 import static com.mongodb.client.model.Filters.*;
