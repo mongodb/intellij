@@ -37,6 +37,7 @@ class JavaDriverDialectFormatterTest {
                 arrayOf(BsonAny, "any"),
                 arrayOf(BsonAnyOf(BsonNull, BsonDouble), "Double"), // java boxed value
                 arrayOf(BsonAnyOf(BsonInt32, BsonDouble), "double | int"),
+                arrayOf(BsonAnyOf(), "any"),
             )
     }
 }

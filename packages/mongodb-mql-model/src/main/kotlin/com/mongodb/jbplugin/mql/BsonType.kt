@@ -144,7 +144,7 @@ data object BsonAny : BsonType
 data class BsonAnyOf(
     val types: Set<BsonType>,
 ) : BsonType {
-    override val cardinality = types.maxOf { it.cardinality }
+    override val cardinality = types.maxOfOrNull { it.cardinality } ?: Long.MAX_VALUE
 
     constructor(vararg types: BsonType) : this(types.toSet())
 

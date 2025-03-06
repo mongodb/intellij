@@ -55,6 +55,7 @@ object JavaDriverDialectFormatter : DialectFormatter {
                     .map { formatType(it) }
                     .sorted()
                     .joinToString(" | ")
+                    .ifEmpty { "any" }
             }
         is BsonEnum -> type.name ?: (type.members.take(3).sorted().joinToString(" | ") + "...")
         else -> "any"
@@ -79,6 +80,7 @@ object JavaDriverDialectFormatter : DialectFormatter {
                     .map { formatTypeNullable(it) }
                     .sorted()
                     .joinToString(" | ")
+                    .ifEmpty { "any" }
 
             else -> "any"
         }

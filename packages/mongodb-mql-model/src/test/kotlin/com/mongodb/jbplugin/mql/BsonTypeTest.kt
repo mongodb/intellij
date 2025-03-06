@@ -79,6 +79,12 @@ class BsonTypeTest {
         assertFalse(bsonEnum.isAssignableTo(otherBsonEnum))
     }
 
+    @Test
+    fun `cardinality of an empty BsonAnyOf is Long_MAX_VALUE`() {
+        val bsonType = BsonAnyOf()
+        assertEquals(Long.MAX_VALUE, bsonType.cardinality)
+    }
+
     companion object {
         private val simpleTypes = listOf(
             BsonString,
@@ -90,10 +96,6 @@ class BsonTypeTest {
             BsonDouble,
             BsonDecimal128,
         )
-
-        private fun List<BsonType>.listExcluding(type: BsonType): List<BsonType> = subtract(
-            setOf(type)
-        ).toList()
 
         private fun List<BsonType>.listExcluding(types: Set<BsonType>): List<BsonType> = subtract(
             types
