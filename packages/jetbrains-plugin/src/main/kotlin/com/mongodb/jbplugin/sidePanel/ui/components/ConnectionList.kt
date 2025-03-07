@@ -19,9 +19,9 @@ import org.jetbrains.jewel.ui.component.Text
 
 @Composable
 fun TestConnectionList() {
-    val currentConnection by useViewModelState(ConnectionStateViewModel::connection)
-    val connectionList by useViewModelState(ConnectionStateViewModel::connectionList)
-    val connect = useViewModelMutator(ConnectionStateViewModel::connect)
+    val currentConnection by useViewModelState(ConnectionStateViewModel::connection, initial = Disconnected)
+    val connectionList by useViewModelState(ConnectionStateViewModel::connectionList, initial = emptyList())
+    val connect by useViewModelMutator(ConnectionStateViewModel::connect)
 
     Column {
         Row {
