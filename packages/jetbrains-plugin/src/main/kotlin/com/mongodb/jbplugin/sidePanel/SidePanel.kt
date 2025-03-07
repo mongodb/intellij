@@ -1,7 +1,9 @@
 package com.mongodb.jbplugin.sidePanel
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposePanel
 import androidx.compose.ui.unit.dp
@@ -16,6 +18,8 @@ import com.mongodb.jbplugin.designsystem.ConnectionState.CONNECTED
 import com.mongodb.jbplugin.designsystem.ConnectionState.IDLE
 import com.mongodb.jbplugin.editor.models.getToolbarModel
 import com.mongodb.jbplugin.settings.pluginSetting
+import com.mongodb.jbplugin.sidePanel.ui.components.TestConnectionList
+import com.mongodb.jbplugin.sidePanel.ui.composition.LocalProject
 import kotlinx.coroutines.flow.map
 import org.jetbrains.jewel.bridge.theme.SwingBridgeTheme
 import org.jetbrains.jewel.ui.icons.AllIconsKeys
@@ -62,14 +66,24 @@ class SidePanel : ToolWindowFactory {
         val composePanel = ComposePanel()
         composePanel.setContent {
             SwingBridgeTheme {
-                Box(modifier = Modifier.padding(8.dp)) {
-                    Card(AllIconsKeys.General.Error, "MongoDB Connection Unavailable") {
-                        ConnectionComboBox(activeConnection, connections) { connection ->
-                            project.getToolbarModel().selectDataSource(
-                                project.getToolbarModel().toolbarState.value.dataSources.first {
-                                    it.uniqueId == connection.id
+                CompositionLocalProvider(
+                    LocalProject provides project,
+                ) {
+                    Column {
+                        Box(modifier = Modifier.padding(8.dp)) {
+                            TestConnectionList()
+                        }
+
+                        Box(modifier = Modifier.padding(8.dp)) {
+                            Card(AllIconsKeys.General.Error, "MongoDB Connection Unavailable") {
+                                ConnectionComboBox(activeConnection, connections) { connection ->
+                                    project.getToolbarModel().selectDataSource(
+                                        project.getToolbarModel().toolbarState.value.dataSources.first {
+                                            it.uniqueId == connection.id
+                                        }
+                                    )
                                 }
-                            )
+                            }
                         }
                     }
                 }

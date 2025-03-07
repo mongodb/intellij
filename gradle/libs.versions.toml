@@ -33,6 +33,7 @@ spring-mongodb="4.3.2"
 semver-parser="2.0.0"
 snakeyaml="2.3"
 assertj-swing="3.17.1"
+runtimeAndroid = "1.7.8"
 
 [libraries]
 ## Kotlin compileOnly libraries. They must not be bundled because they are already part of the
@@ -80,4 +81,5 @@ buildScript-plugin-jmh = { group = "me.champeau.jmh", name = "jmh-gradle-plugin"
 buildScript-plugin-jmhreport = { group = "gradle.plugin.io.morethan.jmhreport", name = "gradle-jmh-report", version = "0.9.6" }
 buildScript-plugin-ktlint = { group = "org.jlleitschuh.gradle", name = "ktlint-gradle", version.ref = "ktlint-plugin" }
 buildScript-plugin-qodana = { group ="org.jetbrains.qodana", name = "org.jetbrains.qodana.gradle.plugin", version.ref = "qodana" }
+runtime-android = { group = "androidx.compose.runtime", name = "runtime-android", version.ref = "runtimeAndroid" }
 ######################################################

@@ -50,6 +50,7 @@ dependencies {
         exclude(group = "org.jetbrains.kotlinx")
         exclude(group = "org.jetbrains.jewel", module = "jewel-int-ui-standalone-243")
     }
+
     compileOnly("org.jetbrains.jewel:jewel-ide-laf-bridge-243:0.27.0")
 
     compileOnly(compose.desktop.common)
