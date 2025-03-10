@@ -61,4 +61,9 @@ dependencies {
     implementation(libs.mongodb.driver)
     implementation(libs.segment)
     implementation(libs.semver.parser)
+
+    testImplementation(compose.runtime)
+    testImplementation(compose.foundation)
+    testImplementation(compose.desktop.common)
+    testImplementation(libs.compose.jewel.laf.bridge)
 }
