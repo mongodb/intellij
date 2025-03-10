@@ -18,4 +18,6 @@ dependencies {
     api(libs.buildScript.plugin.intellij.changelog)
     api(libs.buildScript.plugin.ktlint)
     api(libs.buildScript.plugin.qodana)
+    api(libs.buildScript.plugin.jetbrains.compose)
+    api(libs.buildScript.plugin.jetbrains.kotlin.compose)
 }
