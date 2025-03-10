@@ -6,8 +6,12 @@ package com.mongodb.jbplugin.settings
 
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.options.Configurable
+import com.intellij.ui.TitledSeparator
 import com.intellij.ui.components.JBCheckBox
+import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.FormBuilder
+import com.intellij.util.ui.UIUtil.ComponentStyle
+import com.intellij.util.ui.UIUtil.FontColor
 import com.mongodb.jbplugin.i18n.SettingsMessages
 import com.mongodb.jbplugin.i18n.TelemetryMessages
 import com.mongodb.jbplugin.meta.service
@@ -44,12 +48,16 @@ class PluginSettingsConfigurable : Configurable {
         val softIndexLimitInComponent = settingsComponent.softIndexesLimit.text.ifEmpty { "0" }
         val softIndexLimitSavedOnDisk = savedSettings.state.softIndexesLimit.toString()
 
+        val ftSidePanelInComponent = settingsComponent.isFtSidePanelEnabled.isSelected
+        val ftSidePanelOnDisk = savedSettings.state.ftEnableSidePanel
+
         return settingsComponent.isTelemetryEnabledCheckBox.isSelected !=
             savedSettings.state.isTelemetryEnabled ||
             settingsComponent.enableFullExplainPlan.isSelected !=
             savedSettings.state.isFullExplainPlanEnabled ||
             sampleSizeInComponent != sampleSizeSavedOnDisk ||
-            softIndexLimitInComponent != softIndexLimitSavedOnDisk
+            softIndexLimitInComponent != softIndexLimitSavedOnDisk ||
+            ftSidePanelInComponent != ftSidePanelOnDisk
     }
 
     override fun apply() {
@@ -61,6 +69,7 @@ class PluginSettingsConfigurable : Configurable {
             softIndexesLimit =
                 settingsComponent.softIndexesLimit.text.toIntOrNull()
                     ?: DEFAULT_INDEXES_AMOUNT_SOFT_LIMIT
+            ftEnableSidePanel = settingsComponent.isFtSidePanelEnabled.isSelected
         }
     }
 
@@ -72,6 +81,7 @@ class PluginSettingsConfigurable : Configurable {
             savedSettings.state.isFullExplainPlanEnabled
         settingsComponent.sampleSize.text = savedSettings.state.sampleSize.toString()
         settingsComponent.softIndexesLimit.text = savedSettings.state.softIndexesLimit.toString()
+        settingsComponent.isFtSidePanelEnabled.isSelected = savedSettings.state.ftEnableSidePanel
     }
 
     override fun getDisplayName() = SettingsMessages.message("settings.display-name")
@@ -90,6 +100,9 @@ internal class PluginSettingsComponent {
     val evaluateOperationPerformanceButton =
         JButton(TelemetryMessages.message("settings.view-full-explain-plan-documentation"))
 
+    val isFtSidePanelEnabled =
+        JBCheckBox("Enable new side panel")
+
     lateinit var sampleSize: JTextField
     lateinit var softIndexesLimit: JTextField
 
@@ -106,17 +119,20 @@ internal class PluginSettingsComponent {
 
         root =
             FormBuilder.createFormBuilder()
+                .addComponent(TitledSeparator("Plugin Behaviour"))
                 .addComponent(getSampleSizeField())
-                .addSeparator()
                 .addComponent(enableFullExplainPlan)
-                .addTooltip(TelemetryMessages.message("settings.full-explain-plan-tooltip"))
+                .addComponent(JBLabel(TelemetryMessages.message("settings.full-explain-plan-tooltip"), ComponentStyle.SMALL, FontColor.BRIGHTER))
                 .addComponent(getIndexSoftLimitField())
-                .addTooltip(SettingsMessages.message("settings.indexes-soft-limit.sub-label"))
+                .addComponent(JBLabel(SettingsMessages.message("settings.indexes-soft-limit.sub-label"), ComponentStyle.SMALL, FontColor.BRIGHTER))
                 .addComponent(evaluateOperationPerformanceButton)
-                .addSeparator()
+                .addComponent(TitledSeparator("Telemetry"))
                 .addComponent(isTelemetryEnabledCheckBox)
-                .addTooltip(TelemetryMessages.message("settings.telemetry-collection-tooltip"))
+                .addComponent(JBLabel(TelemetryMessages.message("settings.telemetry-collection-tooltip"), ComponentStyle.SMALL, FontColor.BRIGHTER))
                 .addComponent(privacyPolicyButton)
+                .addComponent(TitledSeparator("Feature Toggles (Advanced)"))
+                .addComponent(JBLabel("Changes on feature toggles require a restart of the IDE to take effect.", ComponentStyle.SMALL, FontColor.BRIGHTER))
+                .addComponent(isFtSidePanelEnabled)
                 .addComponentFillVertically(JPanel(), 0)
                 .panel
 
@@ -128,6 +144,7 @@ internal class PluginSettingsComponent {
         enableFullExplainPlan.accessibleContext.accessibleName = "MongoDB Enable Full Explain Plan"
         sampleSize.accessibleContext.accessibleName = "MongoDB Sample Size"
         softIndexesLimit.accessibleContext.accessibleName = "MongoDB Soft Index Limit"
+        isFtSidePanelEnabled.accessibleContext.accessibleName = "MongoDB Side Panel Enabled"
 
         root.name = root.accessibleContext.accessibleName
         evaluateOperationPerformanceButton.name =
@@ -138,6 +155,7 @@ internal class PluginSettingsComponent {
         enableFullExplainPlan.name = enableFullExplainPlan.accessibleContext.accessibleName
         sampleSize.name = sampleSize.accessibleContext.accessibleName
         softIndexesLimit.name = softIndexesLimit.accessibleContext.accessibleName
+        isFtSidePanelEnabled.name = isFtSidePanelEnabled.accessibleContext.accessibleName
     }
 
     fun getSampleSizeField(): JComponent {

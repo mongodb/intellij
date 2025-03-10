@@ -24,6 +24,7 @@ import com.mongodb.jbplugin.editor.MongoDbVirtualFileDataSourceProvider.Keys
 import com.mongodb.jbplugin.editor.models.getToolbarModel
 import com.mongodb.jbplugin.editor.services.EditorService
 import com.mongodb.jbplugin.observability.useLogMessage
+import com.mongodb.jbplugin.settings.pluginSetting
 
 private val allDialects = listOf(
     JavaDriverDialect,
@@ -125,10 +126,13 @@ class MdbEditorService(private val project: Project) : EditorService {
     ) {
         val currentEditor = selectedEditor ?: return
         val selectedEditorDialect = getDialectForSelectedEditor()
+        val isSidePanelEnabled by pluginSetting { ::ftEnableSidePanel }
 
         selectedEditorDialect?.let {
             val databaseComboBoxVisible = isDatabaseComboBoxVisibleForSelectedEditor()
-            toolbar.attachToEditor(currentEditor, databaseComboBoxVisible)
+            if (!isSidePanelEnabled) {
+                toolbar.attachToEditor(currentEditor, databaseComboBoxVisible)
+            }
             currentEditor.virtualFile?.putUserData(Keys.attachedToolbar, toolbar)
             // If we already have some toolbar state then we preserve that as well
             // when toggling the toolbar for new editor
