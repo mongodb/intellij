@@ -101,7 +101,7 @@ internal class PluginSettingsComponent {
         JButton(TelemetryMessages.message("settings.view-full-explain-plan-documentation"))
 
     val isFtSidePanelEnabled =
-        JBCheckBox("Enable new side panel")
+        JBCheckBox(SettingsMessages.message("settings.ft.enable-new-side-panel"))
 
     lateinit var sampleSize: JTextField
     lateinit var softIndexesLimit: JTextField
@@ -119,19 +119,19 @@ internal class PluginSettingsComponent {
 
         root =
             FormBuilder.createFormBuilder()
-                .addComponent(TitledSeparator("Plugin Behaviour"))
+                .addComponent(TitledSeparator(SettingsMessages.message("settings.titles.plugin-behaviour")))
                 .addComponent(getSampleSizeField())
                 .addComponent(enableFullExplainPlan)
                 .addComponent(JBLabel(TelemetryMessages.message("settings.full-explain-plan-tooltip"), ComponentStyle.SMALL, FontColor.BRIGHTER))
                 .addComponent(getIndexSoftLimitField())
                 .addComponent(JBLabel(SettingsMessages.message("settings.indexes-soft-limit.sub-label"), ComponentStyle.SMALL, FontColor.BRIGHTER))
                 .addComponent(evaluateOperationPerformanceButton)
-                .addComponent(TitledSeparator("Telemetry"))
+                .addComponent(TitledSeparator(SettingsMessages.message("settings.titles.telemetry")))
                 .addComponent(isTelemetryEnabledCheckBox)
                 .addComponent(JBLabel(TelemetryMessages.message("settings.telemetry-collection-tooltip"), ComponentStyle.SMALL, FontColor.BRIGHTER))
                 .addComponent(privacyPolicyButton)
-                .addComponent(TitledSeparator("Feature Toggles (Advanced)"))
-                .addComponent(JBLabel("Changes on feature toggles require a restart of the IDE to take effect.", ComponentStyle.SMALL, FontColor.BRIGHTER))
+                .addComponent(TitledSeparator(SettingsMessages.message("settings.titles.feature-toggles")))
+                .addComponent(JBLabel(SettingsMessages.message("settings.info.requires-restart"), ComponentStyle.SMALL, FontColor.BRIGHTER))
                 .addComponent(isFtSidePanelEnabled)
                 .addComponentFillVertically(JPanel(), 0)
                 .panel
