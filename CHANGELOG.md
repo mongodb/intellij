@@ -90,6 +90,7 @@ MongoDB plugin for IntelliJ IDEA.
 
 ### Fixed
 * [INTELLIJ-236](https://jira.mongodb.org/browse/INTELLIJ-236): Do not fail if we can't infer the cardinality of an empty BsonAnyOf
+* [INTELLIJ-235](https://jira.mongodb.org/browse/INTELLIJ-235): Detect .iterator queries written in the Java Driver.
 * [INTELLIJ-231](https://jira.mongodb.org/browse/INTELLIJ-231): Gracefully fail if the JVM does not give us access to plugin metadata.
 * [INTELLIJ-158](https://jira.mongodb.org/browse/INTELLIJ-158): Autocomplete does not work when triggered inside valid positions but wrapped in a parseable Java Iterable.
 * [INTELLIJ-157](https://jira.mongodb.org/browse/INTELLIJ-157): Unable to parse and hence inspect `Filters.and`, `Filters.or` and `Filters.nor`, in code that uses Java Driver, when argument for these method calls is a parseable Java Iterable.

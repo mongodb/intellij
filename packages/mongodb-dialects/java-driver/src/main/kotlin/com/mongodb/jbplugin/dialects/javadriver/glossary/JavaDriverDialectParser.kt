@@ -888,7 +888,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
                 "countDocuments" -> IsCommand.CommandType.COUNT_DOCUMENTS
                 "estimatedDocumentCount" -> IsCommand.CommandType.ESTIMATED_DOCUMENT_COUNT
                 "distinct" -> IsCommand.CommandType.DISTINCT
-                "find" -> IsCommand.CommandType.FIND_MANY
+                "find", "iterator" -> IsCommand.CommandType.FIND_MANY
                 "first" -> IsCommand.CommandType.FIND_ONE
                 "aggregate" -> IsCommand.CommandType.AGGREGATE
                 "insertOne" -> IsCommand.CommandType.INSERT_ONE
