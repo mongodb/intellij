@@ -53,9 +53,11 @@ dependencies {
     implementation(project(":packages:mongodb-dialects:mongosh"))
     implementation(project(":packages:mongodb-mql-model"))
 
+    compileOnly(compose.ui)
     compileOnly(compose.runtime)
     compileOnly(compose.foundation)
     compileOnly(compose.desktop.common)
+    compileOnly(compose.desktop.currentOs)
     compileOnly(libs.compose.jewel.laf.bridge)
 
     implementation(libs.mongodb.driver)
