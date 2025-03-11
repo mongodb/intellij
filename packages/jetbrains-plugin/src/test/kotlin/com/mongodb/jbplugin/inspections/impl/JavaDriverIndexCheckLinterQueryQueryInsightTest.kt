@@ -17,7 +17,7 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
 
 @IntegrationTest
-class JavaDriverIndexCheckLinterQueryInspectionResultTest {
+class JavaDriverIndexCheckLinterQueryQueryInsightTest {
     @ParsingTest(
 """
 public FindIterable<Document> exampleFind() {

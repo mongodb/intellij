@@ -4,9 +4,10 @@
 
 package com.mongodb.jbplugin.linting
 
+import com.mongodb.jbplugin.Inspection
+import com.mongodb.jbplugin.QueryInsight
+import com.mongodb.jbplugin.QueryInsightsHolder
 import com.mongodb.jbplugin.QueryInspection
-import com.mongodb.jbplugin.QueryInspectionHolder
-import com.mongodb.jbplugin.QueryInspectionResult
 import com.mongodb.jbplugin.accessadapter.MongoDbReadModelProvider
 import com.mongodb.jbplugin.accessadapter.slice.ExplainPlan
 import com.mongodb.jbplugin.accessadapter.slice.ExplainQuery
@@ -28,7 +29,7 @@ data class IndexCheckingSettings<D>(
 class IndexCheckingLinter<DataSource> : QueryInspection<IndexCheckingSettings<DataSource>> {
     override suspend fun <Source> run(
         query: Node<Source>,
-        holder: QueryInspectionHolder<Source>,
+        holder: QueryInsightsHolder<Source>,
         settings: IndexCheckingSettings<DataSource>
     ) {
         val explainPlanResult = settings.readModelProvider.slice(
@@ -39,22 +40,22 @@ class IndexCheckingLinter<DataSource> : QueryInspection<IndexCheckingSettings<Da
         when (explainPlanResult.explainPlan) {
             is ExplainPlan.CollectionScan ->
                 holder.register(
-                    QueryInspectionResult.PerformanceWarning(
-                        query,
-                        "com.mongodb.jbplugin.inspections.performance.not-using-an-index",
-                        emptyList(),
-                        QueryInspectionResult.CreateIndex,
-                        query.source
+                    QueryInsight(
+                        query = query,
+                        source = query.source,
+                        description = "com.mongodb.jbplugin.inspections.performance.not-using-an-index",
+                        descriptionArguments = emptyList(),
+                        inspection = Inspection.NotUsingIndex,
                     )
                 )
             is ExplainPlan.IneffectiveIndexUsage ->
                 holder.register(
-                    QueryInspectionResult.PerformanceWarning(
-                        query,
-                        "com.mongodb.jbplugin.inspections.performance.not-using-an-index-effectively",
-                        emptyList(),
-                        QueryInspectionResult.CreateIndex,
-                        query.source
+                    QueryInsight(
+                        query = query,
+                        source = query.source,
+                        description = "com.mongodb.jbplugin.inspections.performance.not-using-an-index-effectively",
+                        descriptionArguments = emptyList(),
+                        inspection = Inspection.IneffectiveIndex,
                     )
                 )
             else -> {} // do nothing

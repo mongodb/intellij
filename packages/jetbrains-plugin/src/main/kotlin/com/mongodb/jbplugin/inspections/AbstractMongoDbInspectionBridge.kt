@@ -7,8 +7,6 @@ import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.readAction
-import com.intellij.openapi.application.runReadAction
-import com.intellij.openapi.components.Service
 import com.intellij.psi.JavaElementVisitor
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
@@ -16,13 +14,14 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiMethodCallExpression
 import com.intellij.psi.util.PsiTreeUtil
+import com.mongodb.jbplugin.Inspection.ChooseConnection
+import com.mongodb.jbplugin.Inspection.CreateIndex
+import com.mongodb.jbplugin.Inspection.NavigateToQuery
+import com.mongodb.jbplugin.Inspection.NoAction
+import com.mongodb.jbplugin.Inspection.RunQuery
+import com.mongodb.jbplugin.QueryInsight
+import com.mongodb.jbplugin.QueryInsightsHolder
 import com.mongodb.jbplugin.QueryInspection
-import com.mongodb.jbplugin.QueryInspectionHolder
-import com.mongodb.jbplugin.QueryInspectionResult
-import com.mongodb.jbplugin.QueryInspectionResult.ChooseConnection
-import com.mongodb.jbplugin.QueryInspectionResult.CreateIndex
-import com.mongodb.jbplugin.QueryInspectionResult.NavigateToQuery
-import com.mongodb.jbplugin.QueryInspectionResult.NoAction
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
 import com.mongodb.jbplugin.editor.CachedQueryService
 import com.mongodb.jbplugin.editor.dataSource
@@ -33,7 +32,6 @@ import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.mql.Node
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -64,11 +62,11 @@ abstract class AbstractMongoDbInspectionBridge<Settings>(
         session: LocalInspectionToolSession,
         isOnTheFly: Boolean
     ) {
-        val viewModel by session.file.project.service<InspectionViewModel>()
+        val viewModel by session.file.project.service<InspectionsViewModel>()
 
         super.inspectionStarted(session, isOnTheFly)
-        coroutineScope.launch(viewModel.inspections) {
-            viewModel.currentSession.clear()
+        coroutineScope.launch(viewModel.insightsContext) {
+            viewModel.currentSessionInsights.clear()
         }
     }
 
@@ -76,10 +74,10 @@ abstract class AbstractMongoDbInspectionBridge<Settings>(
         session: LocalInspectionToolSession,
         problemsHolder: ProblemsHolder
     ) {
-        val viewModel by session.file.project.service<InspectionViewModel>()
-        coroutineScope.launch(viewModel.inspections) {
-            if (viewModel.allInspections.value != viewModel.currentSession) {
-                viewModel.allInspections.emit(viewModel.currentSession)
+        val viewModel by session.file.project.service<InspectionsViewModel>()
+        coroutineScope.launch(viewModel.insightsContext) {
+            if (viewModel.insights.value != viewModel.currentSessionInsights) {
+                viewModel.insights.emit(viewModel.currentSessionInsights)
             }
         }
 
@@ -103,8 +101,8 @@ abstract class AbstractMongoDbInspectionBridge<Settings>(
 
             private fun dispatchIfValidMongoDbQuery(expression: PsiElement) {
                 ApplicationManager.getApplication().runReadAction {
-                    val viewModel by expression.project.service<InspectionViewModel>()
-                    val inspectionHolder = IntelliJBasedQueryInspectionHolder(
+                    val viewModel by expression.project.service<InspectionsViewModel>()
+                    val insightsHolder = IntelliJBasedQueryInsightsHolder(
                         coroutineScope,
                         viewModel,
                         holder
@@ -125,7 +123,7 @@ abstract class AbstractMongoDbInspectionBridge<Settings>(
                         runBlocking {
                             inspection.run(
                                 query,
-                                inspectionHolder,
+                                insightsHolder,
                                 buildSettings(query)
                             )
                         }
@@ -135,35 +133,22 @@ abstract class AbstractMongoDbInspectionBridge<Settings>(
         }
 }
 
-@Service(Service.Level.PROJECT)
-class InspectionViewModel {
-    internal val inspections = Dispatchers.IO.limitedParallelism(1)
-    internal val currentSession = mutableListOf<QueryInspectionResult<PsiElement>>()
-    internal val allInspections = MutableStateFlow(emptyList<QueryInspectionResult<PsiElement>>())
-
-    suspend fun addInspection(queryInspectionResult: QueryInspectionResult<PsiElement>) {
-        withContext(inspections) {
-            currentSession.add(queryInspectionResult)
-        }
-    }
-}
-
-class IntelliJBasedQueryInspectionHolder(
+class IntelliJBasedQueryInsightsHolder(
     private val coroutineScope: CoroutineScope,
-    private val viewModel: InspectionViewModel,
+    private val inspectionsViewModel: InspectionsViewModel,
     private val problemsHolder: ProblemsHolder,
-) : QueryInspectionHolder<PsiElement> {
-    override suspend fun register(queryInspectionResult: QueryInspectionResult<PsiElement>) {
-        viewModel.addInspection(queryInspectionResult)
+) : QueryInsightsHolder<PsiElement> {
+    override suspend fun register(queryInsight: QueryInsight<PsiElement>) {
+        inspectionsViewModel.addInsight(queryInsight)
 
         withContext(Dispatchers.EDT) {
             readAction {
                 val message = InspectionsAndInlaysMessages.message(
-                    queryInspectionResult.description,
-                    *queryInspectionResult.descriptionArguments.toTypedArray()
+                    queryInsight.description,
+                    *queryInsight.descriptionArguments.toTypedArray()
                 )
                 if (problemsHolder.results.firstOrNull {
-                        it.psiElement.isEquivalentTo(queryInspectionResult.source) &&
+                        it.psiElement.isEquivalentTo(queryInsight.source) &&
                             it.descriptionTemplate == message
                     } !=
                     null
@@ -172,25 +157,28 @@ class IntelliJBasedQueryInspectionHolder(
                 }
 
                 problemsHolder.registerProblem(
-                    queryInspectionResult.source,
+                    queryInsight.source,
                     InspectionsAndInlaysMessages.message(
-                        queryInspectionResult.description,
-                        *queryInspectionResult.descriptionArguments.toTypedArray()
+                        queryInsight.description,
+                        *queryInsight.descriptionArguments.toTypedArray()
                     ),
-                    *intellijQuickFixesFromInspection(queryInspectionResult)
+                    *intellijQuickFixesFromInspection(queryInsight)
                 )
             }
         }
     }
 
-    private fun intellijQuickFixesFromInspection(queryInspectionResult: QueryInspectionResult<PsiElement>): Array<LocalQuickFix> {
-        return when (queryInspectionResult.action) {
+    private fun intellijQuickFixesFromInspection(queryInsight: QueryInsight<PsiElement>): Array<LocalQuickFix> {
+        return when (queryInsight.inspection.action) {
             ChooseConnection -> arrayOf(OpenConnectionChooserQuickFix(coroutineScope))
             CreateIndex -> arrayOf(
-                OpenConsoleWithNewIndexForQueryQuickFix(coroutineScope, queryInspectionResult.query)
+                OpenConsoleWithNewIndexForQueryQuickFix(coroutineScope, queryInsight.query)
             )
             NavigateToQuery -> emptyArray()
             NoAction -> emptyArray()
+            RunQuery -> arrayOf(
+                // RunQueryQuickFix here
+            )
         }
     }
 }

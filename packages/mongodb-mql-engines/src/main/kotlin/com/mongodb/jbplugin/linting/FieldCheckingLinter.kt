@@ -4,9 +4,10 @@
 
 package com.mongodb.jbplugin.linting
 
+import com.mongodb.jbplugin.Inspection
+import com.mongodb.jbplugin.QueryInsight
+import com.mongodb.jbplugin.QueryInsightsHolder
 import com.mongodb.jbplugin.QueryInspection
-import com.mongodb.jbplugin.QueryInspectionHolder
-import com.mongodb.jbplugin.QueryInspectionResult
 import com.mongodb.jbplugin.accessadapter.MongoDbReadModelProvider
 import com.mongodb.jbplugin.accessadapter.slice.GetCollectionSchema
 import com.mongodb.jbplugin.mql.BsonNull
@@ -38,10 +39,11 @@ data class FieldCheckingSettings<D>(
 /**
  * Linter that verifies that all fields that are referenced in a query do exist in the target collection.
  */
-class FieldCheckingLinter<DataSource> : QueryInspection<FieldCheckingSettings<DataSource>> {
+class FieldCheckingLinter<DataSource> :
+    QueryInspection<FieldCheckingSettings<DataSource>> {
     override suspend fun <Source> run(
         query: Node<Source>,
-        holder: QueryInspectionHolder<Source>,
+        holder: QueryInsightsHolder<Source>,
         settings: FieldCheckingSettings<DataSource>
     ) {
         val querySchema = knownCollection<Source>()
@@ -81,19 +83,22 @@ class FieldCheckingLinter<DataSource> : QueryInspection<FieldCheckingSettings<Da
 
     private suspend fun <Source> toFieldNotExistingWarning(
         query: Node<Source>,
-        holder: QueryInspectionHolder<Source>,
+        holder: QueryInsightsHolder<Source>,
         collectionSchema: CollectionSchema,
         known: HasFieldReference.FromSchema<Source>
     ): Either<Any, Unit> {
         val fieldType = collectionSchema.typeOf(known.fieldName)
         if (fieldType == BsonNull) {
             holder.register(
-                QueryInspectionResult.CorrectnessWarning(
-                    query,
-                    "com.mongodb.jbplugin.inspections.correctness.field-not-existing",
-                    listOf(known.fieldName, collectionSchema.namespace.toString()),
-                    QueryInspectionResult.ChooseConnection,
-                    known.source
+                QueryInsight(
+                    query = query,
+                    source = known.source,
+                    description = "com.mongodb.jbplugin.inspections.correctness.field-not-existing",
+                    descriptionArguments = listOf(
+                        known.fieldName,
+                        collectionSchema.namespace.toString()
+                    ),
+                    inspection = Inspection.NonExistentField,
                 )
             )
         }
@@ -103,7 +108,7 @@ class FieldCheckingLinter<DataSource> : QueryInspection<FieldCheckingSettings<Da
 
     private suspend fun <Source> toValueMismatchWarning(
         query: Node<Source>,
-        holder: QueryInspectionHolder<Source>,
+        holder: QueryInsightsHolder<Source>,
         collectionSchema: CollectionSchema,
         pair: Pair<HasFieldReference.FromSchema<Source>, ParsedValueReference<Source, out Any>>
     ) {
@@ -114,12 +119,12 @@ class FieldCheckingLinter<DataSource> : QueryInspection<FieldCheckingSettings<Da
 
         if (!valueType.isAssignableTo(fieldType)) {
             holder.register(
-                QueryInspectionResult.CorrectnessWarning(
-                    query,
-                    "com.mongodb.jbplugin.inspections.correctness.value-mismatch",
-                    listOf(fieldName),
-                    QueryInspectionResult.NavigateToQuery,
-                    valueSource
+                QueryInsight(
+                    query = query,
+                    source = valueSource,
+                    description = "com.mongodb.jbplugin.inspections.correctness.value-mismatch",
+                    descriptionArguments = listOf(fieldName),
+                    inspection = Inspection.FieldValueTypeMismatch,
                 )
             )
         }

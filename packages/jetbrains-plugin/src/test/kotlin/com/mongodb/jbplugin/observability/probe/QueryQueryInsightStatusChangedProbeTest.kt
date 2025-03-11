@@ -21,7 +21,7 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 
 @IntegrationTest
-internal class QueryInspectionResultStatusChangedProbeTest {
+internal class QueryQueryInsightStatusChangedProbeTest {
     @Test
     fun `should send a InspectionStatusChangeEvent event when found for the first time`(
         application: Application,

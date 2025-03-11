@@ -11,7 +11,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 
 @IntegrationTest
-class SpringCriteriaIndexCheckLinterQueryInspectionResultTest {
+class SpringCriteriaIndexCheckLinterQueryQueryInsightTest {
     @ParsingTest(
         setup = DefaultSetup.SPRING_DATA,
         value = """

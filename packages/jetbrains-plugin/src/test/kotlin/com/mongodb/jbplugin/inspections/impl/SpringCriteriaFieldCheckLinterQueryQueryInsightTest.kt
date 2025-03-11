@@ -22,7 +22,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 
 @IntegrationTest
-class SpringCriteriaFieldCheckLinterQueryInspectionResultTest {
+class SpringCriteriaFieldCheckLinterQueryQueryInsightTest {
     @ParsingTest(
         setup = DefaultSetup.SPRING_DATA,
         value = """
