@@ -36,7 +36,7 @@ public class JavaDriverRepository {
                 Filters.and(
                     Filters.gt("tomatoes.critic.numReviews", 1),
                     Filters.eq("rated", "r"),
-                    Filters.eq("languages", lang),
+                    Filters.eq("languages", 12),
                     Filters.gt("deliveredx", 1993)
                 )
             ).sort(Sorts.ascending("year"))

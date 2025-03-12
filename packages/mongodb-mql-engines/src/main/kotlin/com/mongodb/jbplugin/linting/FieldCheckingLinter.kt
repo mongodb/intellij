@@ -5,6 +5,8 @@
 package com.mongodb.jbplugin.linting
 
 import com.mongodb.jbplugin.Inspection
+import com.mongodb.jbplugin.Inspection.FieldValueTypeMismatch
+import com.mongodb.jbplugin.Inspection.NonExistentField
 import com.mongodb.jbplugin.QueryInsight
 import com.mongodb.jbplugin.QueryInsightsHolder
 import com.mongodb.jbplugin.QueryInspection
@@ -40,10 +42,10 @@ data class FieldCheckingSettings<D>(
  * Linter that verifies that all fields that are referenced in a query do exist in the target collection.
  */
 class FieldCheckingLinter<DataSource> :
-    QueryInspection<FieldCheckingSettings<DataSource>> {
+    QueryInspection<FieldCheckingSettings<DataSource>, Inspection.FieldCheckInspection> {
     override suspend fun <Source> run(
         query: Node<Source>,
-        holder: QueryInsightsHolder<Source>,
+        holder: QueryInsightsHolder<Source, Inspection.FieldCheckInspection>,
         settings: FieldCheckingSettings<DataSource>
     ) {
         val querySchema = knownCollection<Source>()
@@ -83,7 +85,7 @@ class FieldCheckingLinter<DataSource> :
 
     private suspend fun <Source> toFieldNotExistingWarning(
         query: Node<Source>,
-        holder: QueryInsightsHolder<Source>,
+        holder: QueryInsightsHolder<Source, Inspection.FieldCheckInspection>,
         collectionSchema: CollectionSchema,
         known: HasFieldReference.FromSchema<Source>
     ): Either<Any, Unit> {
@@ -108,7 +110,7 @@ class FieldCheckingLinter<DataSource> :
 
     private suspend fun <Source> toValueMismatchWarning(
         query: Node<Source>,
-        holder: QueryInsightsHolder<Source>,
+        holder: QueryInsightsHolder<Source, Inspection.FieldCheckInspection>,
         collectionSchema: CollectionSchema,
         pair: Pair<HasFieldReference.FromSchema<Source>, ParsedValueReference<Source, out Any>>
     ) {

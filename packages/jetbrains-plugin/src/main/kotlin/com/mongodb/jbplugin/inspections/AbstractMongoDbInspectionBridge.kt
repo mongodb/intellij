@@ -14,6 +14,7 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiMethodCallExpression
 import com.intellij.psi.util.PsiTreeUtil
+import com.mongodb.jbplugin.Inspection
 import com.mongodb.jbplugin.Inspection.ChooseConnection
 import com.mongodb.jbplugin.Inspection.CreateIndex
 import com.mongodb.jbplugin.Inspection.NavigateToQuery
@@ -49,9 +50,9 @@ import kotlinx.coroutines.withContext
  * @param inspection
  * @param coroutineScope
  */
-abstract class AbstractMongoDbInspectionBridge<Settings>(
+abstract class AbstractMongoDbInspectionBridge<Settings, I : Inspection>(
     private val coroutineScope: CoroutineScope,
-    private val inspection: QueryInspection<Settings>,
+    private val inspection: QueryInspection<Settings, I>,
 ) : AbstractBaseJavaLocalInspectionTool() {
 
     protected abstract fun buildSettings(query: Node<PsiElement>): Settings
@@ -62,7 +63,7 @@ abstract class AbstractMongoDbInspectionBridge<Settings>(
         session: LocalInspectionToolSession,
         isOnTheFly: Boolean
     ) {
-        val viewModel by session.file.project.service<InspectionsViewModel>()
+        val viewModel by session.file.project.service<InspectionsViewModel<I>>()
 
         super.inspectionStarted(session, isOnTheFly)
         coroutineScope.launch(viewModel.insightsContext) {
@@ -74,7 +75,7 @@ abstract class AbstractMongoDbInspectionBridge<Settings>(
         session: LocalInspectionToolSession,
         problemsHolder: ProblemsHolder
     ) {
-        val viewModel by session.file.project.service<InspectionsViewModel>()
+        val viewModel by session.file.project.service<InspectionsViewModel<I>>()
         coroutineScope.launch(viewModel.insightsContext) {
             if (viewModel.insights.value != viewModel.currentSessionInsights) {
                 viewModel.insights.emit(viewModel.currentSessionInsights)
@@ -101,8 +102,8 @@ abstract class AbstractMongoDbInspectionBridge<Settings>(
 
             private fun dispatchIfValidMongoDbQuery(expression: PsiElement) {
                 ApplicationManager.getApplication().runReadAction {
-                    val viewModel by expression.project.service<InspectionsViewModel>()
-                    val insightsHolder = IntelliJBasedQueryInsightsHolder(
+                    val viewModel by expression.project.service<InspectionsViewModel<I>>()
+                    val insightsHolder = IntelliJBasedQueryInsightsHolder<I>(
                         coroutineScope,
                         viewModel,
                         holder
@@ -133,12 +134,12 @@ abstract class AbstractMongoDbInspectionBridge<Settings>(
         }
 }
 
-class IntelliJBasedQueryInsightsHolder(
+class IntelliJBasedQueryInsightsHolder<I : Inspection>(
     private val coroutineScope: CoroutineScope,
-    private val inspectionsViewModel: InspectionsViewModel,
+    private val inspectionsViewModel: InspectionsViewModel<I>,
     private val problemsHolder: ProblemsHolder,
-) : QueryInsightsHolder<PsiElement> {
-    override suspend fun register(queryInsight: QueryInsight<PsiElement>) {
+) : QueryInsightsHolder<PsiElement, I> {
+    override suspend fun register(queryInsight: QueryInsight<PsiElement, I>) {
         inspectionsViewModel.addInsight(queryInsight)
 
         withContext(Dispatchers.EDT) {
@@ -168,7 +169,7 @@ class IntelliJBasedQueryInsightsHolder(
         }
     }
 
-    private fun intellijQuickFixesFromInspection(queryInsight: QueryInsight<PsiElement>): Array<LocalQuickFix> {
+    private fun intellijQuickFixesFromInspection(queryInsight: QueryInsight<PsiElement, I>): Array<LocalQuickFix> {
         return when (queryInsight.inspection.action) {
             ChooseConnection -> arrayOf(OpenConnectionChooserQuickFix(coroutineScope))
             CreateIndex -> arrayOf(

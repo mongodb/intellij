@@ -28,10 +28,10 @@ data class NamespaceCheckingSettings<D>(
  * Linter that verifies that the specified database and collection in the current query does exist
  * in the connected data source.
  */
-class NamespaceCheckingLinter<DataSource> : QueryInspection<NamespaceCheckingSettings<DataSource>> {
+class NamespaceCheckingLinter<DataSource> : QueryInspection<NamespaceCheckingSettings<DataSource>, Inspection.NamespaceCheckInspection> {
     override suspend fun <Source> run(
         query: Node<Source>,
-        holder: QueryInsightsHolder<Source>,
+        holder: QueryInsightsHolder<Source, Inspection.NamespaceCheckInspection>,
         settings: NamespaceCheckingSettings<DataSource>
     ) {
         val dbList = settings.readModelProvider.slice(settings.dataSource, ListDatabases.Slice)

@@ -8,6 +8,7 @@ package com.mongodb.jbplugin.inspections.impl
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.psi.PsiElement
+import com.mongodb.jbplugin.Inspection
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
 import com.mongodb.jbplugin.editor.dataSource
 import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionBridge
@@ -21,7 +22,7 @@ import com.mongodb.jbplugin.settings.pluginSetting
 import kotlinx.coroutines.CoroutineScope
 
 class FieldCheckInspectionBridge(coroutineScope: CoroutineScope) :
-    AbstractMongoDbInspectionBridge<FieldCheckingSettings<LocalDataSource>>(
+    AbstractMongoDbInspectionBridge<FieldCheckingSettings<LocalDataSource>, Inspection.FieldCheckInspection>(
         coroutineScope,
         FieldCheckingLinter(),
     ) {

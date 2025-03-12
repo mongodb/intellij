@@ -26,10 +26,10 @@ data class IndexCheckingSettings<D>(
 /**
  * Linter that verifies that the query is properly using indexes in the target cluster.
  */
-class IndexCheckingLinter<DataSource> : QueryInspection<IndexCheckingSettings<DataSource>> {
+class IndexCheckingLinter<DataSource> : QueryInspection<IndexCheckingSettings<DataSource>, Inspection.IndexCheckInspection> {
     override suspend fun <Source> run(
         query: Node<Source>,
-        holder: QueryInsightsHolder<Source>,
+        holder: QueryInsightsHolder<Source, Inspection.IndexCheckInspection>,
         settings: IndexCheckingSettings<DataSource>
     ) {
         val explainPlanResult = settings.readModelProvider.slice(
