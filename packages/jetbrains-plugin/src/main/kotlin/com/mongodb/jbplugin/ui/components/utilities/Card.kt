@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.jetbrains.jewel.ui.component.Icon
@@ -27,7 +28,7 @@ enum class CardCategory(internal val icon: IconKey, internal val contentDescript
 
 @Composable
 fun Card(category: CardCategory, title: String, body: @Composable () -> Unit) {
-    Box(modifier = Modifier.padding(vertical = 4.dp, horizontal = 8.dp)) {
+    Box(modifier = Modifier.testTag("Card::$title").padding(vertical = 4.dp, horizontal = 8.dp)) {
         Column(
             modifier = Modifier
                 .fillMaxWidth(1f)

@@ -16,7 +16,6 @@ ktlint-tool = "1.5.0"
 qodana = "2024.3.4"
 # Compose plugins
 jetbrains-compose = "1.7.3"
-jetbrains-kotlin-compose = "2.0.21"
 jewel="0.27.0"
 
 # Library dependencies
@@ -44,6 +43,7 @@ kotlin-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coro
 kotlin-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 ## Compose libraries
 compose-jewel-laf-bridge = { group = "org.jetbrains.jewel", name="jewel-ide-laf-bridge-243", version.ref="jewel"}
+compose-jewel-laf-standalone = { group = "org.jetbrains.jewel", name="jewel-int-ui-standalone-243", version.ref="jewel"}
 
 ## Production Libraries.
 segment = { group = "com.segment.analytics.java", name = "analytics", version.ref = "segment" }
@@ -77,5 +77,5 @@ buildScript-plugin-intellij-changelog = { group = "org.jetbrains.intellij.plugin
 buildScript-plugin-ktlint = { group = "org.jlleitschuh.gradle", name = "ktlint-gradle", version.ref = "ktlint-plugin" }
 buildScript-plugin-qodana = { group ="org.jetbrains.qodana", name = "org.jetbrains.qodana.gradle.plugin", version.ref = "qodana" }
 buildScript-plugin-jetbrains-compose = { group = "org.jetbrains.compose", name = "org.jetbrains.compose.gradle.plugin", version.ref = "jetbrains-compose"}
-buildScript-plugin-jetbrains-kotlin-compose = { group = "org.jetbrains.kotlin.plugin.compose", name = "org.jetbrains.kotlin.plugin.compose.gradle.plugin", version.ref="jetbrains-kotlin-compose"}
+buildScript-plugin-jetbrains-kotlin-compose = { group = "org.jetbrains.kotlin.plugin.compose", name = "org.jetbrains.kotlin.plugin.compose.gradle.plugin", version.ref="kotlin-stdlib"}
 ######################################################

@@ -1,3 +1,5 @@
+import org.jetbrains.compose.ExperimentalComposeLibrary
+
 plugins {
     id("com.mongodb.intellij.plugin-component")
     id("org.jetbrains.compose")
@@ -58,7 +60,9 @@ dependencies {
     compileOnly(compose.foundation)
     compileOnly(compose.desktop.common)
     compileOnly(compose.desktop.currentOs)
-    compileOnly(libs.compose.jewel.laf.bridge)
+
+    implementation(libs.compose.jewel.laf.bridge)
+    implementation(libs.compose.jewel.laf.standalone)
 
     implementation(libs.mongodb.driver)
     implementation(libs.segment)
@@ -67,5 +71,14 @@ dependencies {
     testImplementation(compose.runtime)
     testImplementation(compose.foundation)
     testImplementation(compose.desktop.common)
+    testImplementation(compose.desktop.currentOs)
     testImplementation(libs.compose.jewel.laf.bridge)
+    testImplementation(libs.compose.jewel.laf.standalone)
+    testImplementation(kotlin("test"))
+    @OptIn(ExperimentalComposeLibrary::class)
+    testImplementation(compose.uiTest) {
+        exclude(group = "org.jetbrains.kotlinx")
+    }
+    testImplementation(libs.kotlin.coroutines.core)
+    testImplementation(libs.kotlin.coroutines.test)
 }
