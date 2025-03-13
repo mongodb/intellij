@@ -17,6 +17,7 @@ plugins {
 repositories {
     mavenCentral()
     mavenLocal()
+    google()
 
     maven("https://www.jetbrains.com/intellij-repository/releases/")
     maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
