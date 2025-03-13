@@ -20,10 +20,7 @@ import org.jetbrains.jewel.ui.icon.IconKey
 import org.jetbrains.jewel.ui.icons.AllIconsKeys
 
 enum class CardCategory(internal val icon: IconKey, internal val contentDescription: String) {
-    LOGO(AllIconsKeys.Providers.MongoDB, "MongoDB"),
-    INFO(AllIconsKeys.General.Information, "Information"),
-    ERROR(AllIconsKeys.General.Error, "Error"),
-    WARNING(AllIconsKeys.General.Warning, "Warning")
+    LOGO(AllIconsKeys.Providers.MongoDB, "MongoDB")
 }
 
 @Composable
