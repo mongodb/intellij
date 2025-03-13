@@ -62,7 +62,9 @@ dependencies {
     compileOnly(compose.desktop.currentOs)
 
     implementation(libs.compose.jewel.laf.bridge)
-    implementation(libs.compose.jewel.laf.standalone)
+    implementation(libs.compose.jewel.laf.standalone) {
+        exclude(group = "org.jetbrains.kotlinx")
+    }
 
     implementation(libs.mongodb.driver)
     implementation(libs.segment)
