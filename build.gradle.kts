@@ -25,7 +25,11 @@ repositories {
 }
 
 dependencies {
-    jacocoAggregation(project(":packages:jetbrains-plugin"))
+    jacocoAggregation(project(":packages:jetbrains-plugin")) {
+        exclude(group = "org.jetbrains.skiko")
+        exclude(group = "org.jetbrains.jewel")
+    }
+
     jacocoAggregation(project(":packages:mongodb-access-adapter"))
     jacocoAggregation(project(":packages:mongodb-access-adapter:datagrip-access-adapter"))
     jacocoAggregation(project(":packages:mongodb-mql-engines"))
