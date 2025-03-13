@@ -1,5 +1,6 @@
 package com.mongodb.jbplugin.ui.components.connection
 
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
@@ -20,7 +21,7 @@ class ConnectionBootstrapCardTest {
         val dataSource = mockDataSource(MongoDbServerUrl("mongodb://localhost:27017"))
 
         setContentWithTheme {
-            ConnectionItem(dataSource, onSelectItem = {})
+            ConnectionItem(dataSource)
         }
 
         onNodeWithTag("ConnectionItem::${dataSource.uniqueId}").assertTextEquals(dataSource.name)
@@ -32,7 +33,13 @@ class ConnectionBootstrapCardTest {
         var clickedDataSource: LocalDataSource? = null
 
         setContentWithTheme {
-            ConnectionItem(dataSource, onSelectItem = { clickedDataSource = it })
+            CompositionLocalProvider(
+                LocalConnectionCallbacks provides ConnectionCallbacks(
+                    onConnect = { clickedDataSource = it }
+                )
+            ) {
+                ConnectionItem(dataSource)
+            }
         }
 
         onNodeWithTag("ConnectionItem::${dataSource.uniqueId}").performClick()
@@ -42,7 +49,7 @@ class ConnectionBootstrapCardTest {
     @Test
     fun `DisconnectItem should show the Disconnect text`() = runComposeUiTest {
         setContentWithTheme {
-            DisconnectItem(onSelectItem = {})
+            DisconnectItem()
         }
 
         onNodeWithTag("DisconnectItem").assertTextEquals("Disconnect")
@@ -53,7 +60,13 @@ class ConnectionBootstrapCardTest {
         var clickedWithNull = false
 
         setContentWithTheme {
-            DisconnectItem(onSelectItem = { clickedWithNull = it == null })
+            CompositionLocalProvider(
+                LocalConnectionCallbacks provides ConnectionCallbacks(
+                    onConnect = { clickedWithNull = it == null }
+                )
+            ) {
+                DisconnectItem()
+            }
         }
 
         onNodeWithTag("DisconnectItem").performClick()

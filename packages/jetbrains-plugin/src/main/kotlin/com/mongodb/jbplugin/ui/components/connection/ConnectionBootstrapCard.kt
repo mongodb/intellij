@@ -3,6 +3,8 @@ package com.mongodb.jbplugin.ui.components.connection
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -26,13 +28,18 @@ fun ConnectionBootstrapCard() {
     val connectionState by useViewModelState(ConnectionStateViewModel::connectionState, ConnectionState.default())
     val connect by useViewModelMutator(ConnectionStateViewModel::selectDataSource)
 
-    _ConnectionBootstrapCard(connectionState, connect)
+    val connectionCallbacks = ConnectionCallbacks(
+        onConnect = connect
+    )
+
+    CompositionLocalProvider(LocalConnectionCallbacks provides connectionCallbacks) {
+        _ConnectionBootstrapCard(connectionState)
+    }
 }
 
 @Composable
 internal fun _ConnectionBootstrapCard(
-    connectionState: ConnectionState,
-    onConnect: (LocalDataSource?) -> Unit
+    connectionState: ConnectionState
 ) {
     Card(CardCategory.LOGO, useTranslation("side-panel.connection.ConnectionBootstrapCard.title")) {
         Column {
@@ -43,7 +50,7 @@ internal fun _ConnectionBootstrapCard(
                 BulletItem(useTranslation("side-panel.connection.ConnectionBootstrapCard.3st-bullet-point"))
             }
             Column(modifier = Modifier.padding(top = 8.dp)) {
-                ConnectionComboBox(connectionState.selectedConnectionState, connectionState.connections, onConnect)
+                ConnectionComboBox(connectionState.selectedConnectionState, connectionState.connections)
             }
         }
     }
@@ -55,7 +62,7 @@ internal fun BulletItem(text: String) {
 }
 
 @Composable
-internal fun ConnectionComboBox(selectedConnectionState: SelectedConnectionState, dataSources: List<LocalDataSource>, onSelectItem: (LocalDataSource?) -> Unit) {
+internal fun ConnectionComboBox(selectedConnectionState: SelectedConnectionState, dataSources: List<LocalDataSource>) {
     ComboBox(
         when (selectedConnectionState) {
             is SelectedConnectionState.Empty -> "Choose a connection"
@@ -64,22 +71,24 @@ internal fun ConnectionComboBox(selectedConnectionState: SelectedConnectionState
     ) {
         Column {
             if (selectedConnectionState !is SelectedConnectionState.Empty) {
-                DisconnectItem(onSelectItem)
+                DisconnectItem()
             }
 
             for (dataSource in dataSources) {
-                ConnectionItem(dataSource, onSelectItem)
+                ConnectionItem(dataSource)
             }
         }
     }
 }
 
 @Composable
-internal fun DisconnectItem(onSelectItem: (LocalDataSource?) -> Unit) {
+internal fun DisconnectItem() {
+    val connectionCallback = useConnectionCallbacks()
+
     Box(
         modifier = Modifier
             .testTag("DisconnectItem")
-            .clickable { onSelectItem(null) }
+            .clickable { connectionCallback.onConnect(null) }
             .padding(4.dp)
             .fillMaxWidth(1f)
     ) {
@@ -91,11 +100,13 @@ internal fun DisconnectItem(onSelectItem: (LocalDataSource?) -> Unit) {
 }
 
 @Composable
-internal fun ConnectionItem(dataSource: LocalDataSource, onSelectItem: (LocalDataSource?) -> Unit) {
+internal fun ConnectionItem(dataSource: LocalDataSource) {
+    val connectionCallback = useConnectionCallbacks()
+
     Box(
         modifier = Modifier
             .testTag("ConnectionItem::${dataSource.uniqueId}")
-            .clickable { onSelectItem(dataSource) }
+            .clickable { connectionCallback.onConnect(dataSource) }
             .padding(4.dp)
             .fillMaxWidth(1f)
     ) {
@@ -104,4 +115,15 @@ internal fun ConnectionItem(dataSource: LocalDataSource, onSelectItem: (LocalDat
             Text(dataSource.name)
         }
     }
+}
+
+internal data class ConnectionCallbacks(
+    val onConnect: (LocalDataSource?) -> Unit = {}
+)
+
+internal val LocalConnectionCallbacks = compositionLocalOf { ConnectionCallbacks() }
+
+@Composable
+internal fun useConnectionCallbacks(): ConnectionCallbacks {
+    return LocalConnectionCallbacks.current
 }
