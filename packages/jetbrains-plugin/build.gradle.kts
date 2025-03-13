@@ -76,7 +76,6 @@ dependencies {
     testImplementation(compose.desktop.currentOs)
     testImplementation(libs.compose.jewel.laf.bridge)
     testImplementation(libs.compose.jewel.laf.standalone)
-    testImplementation(kotlin("test"))
     @OptIn(ExperimentalComposeLibrary::class)
     testImplementation(compose.uiTest) {
         exclude(group = "org.jetbrains.kotlinx")
