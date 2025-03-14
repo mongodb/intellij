@@ -11,6 +11,10 @@ exclude:
     paths:
       - .qodana
       - .gradle.kts
+  # @Composable functions use their own function conventions
+  - name: FunctionName
+    paths:
+      - packages/jetbrains-plugin/src/main/kotlin/com/mongodb/jbplugin/ui/components/
 fixesStrategy: apply
 #failureConditions:
 #  severityThresholds:

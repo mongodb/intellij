@@ -1,3 +1,5 @@
+import org.jetbrains.compose.ExperimentalComposeLibrary
+
 plugins {
     id("com.mongodb.intellij.plugin-component")
     id("org.jetbrains.compose")
@@ -53,10 +55,16 @@ dependencies {
     implementation(project(":packages:mongodb-dialects:mongosh"))
     implementation(project(":packages:mongodb-mql-model"))
 
+    compileOnly(compose.ui)
     compileOnly(compose.runtime)
     compileOnly(compose.foundation)
     compileOnly(compose.desktop.common)
-    compileOnly(libs.compose.jewel.laf.bridge)
+    compileOnly(compose.desktop.currentOs)
+
+    implementation(libs.compose.jewel.laf.bridge)
+    implementation(libs.compose.jewel.laf.standalone) {
+        exclude(group = "org.jetbrains.kotlinx")
+    }
 
     implementation(libs.mongodb.driver)
     implementation(libs.segment)
@@ -65,5 +73,13 @@ dependencies {
     testImplementation(compose.runtime)
     testImplementation(compose.foundation)
     testImplementation(compose.desktop.common)
+    testImplementation(compose.desktop.currentOs)
     testImplementation(libs.compose.jewel.laf.bridge)
+    testImplementation(libs.compose.jewel.laf.standalone)
+    @OptIn(ExperimentalComposeLibrary::class)
+    testImplementation(compose.uiTest) {
+        exclude(group = "org.jetbrains.kotlinx")
+    }
+    testImplementation(libs.kotlin.coroutines.core)
+    testImplementation(libs.kotlin.coroutines.test)
 }

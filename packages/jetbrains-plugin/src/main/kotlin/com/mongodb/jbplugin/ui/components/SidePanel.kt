@@ -1,12 +1,14 @@
 package com.mongodb.jbplugin.ui.components
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.mongodb.jbplugin.settings.pluginSetting
+import com.mongodb.jbplugin.ui.components.connection.ConnectionBootstrapCard
+import com.mongodb.jbplugin.ui.components.utilities.hooks.LocalProject
 import org.jetbrains.jewel.bridge.addComposeTab
-import org.jetbrains.jewel.ui.component.Text
 
 class SidePanel : ToolWindowFactory {
     override fun createToolWindowContent(
@@ -14,7 +16,11 @@ class SidePanel : ToolWindowFactory {
         toolWindow: ToolWindow
     ) {
         toolWindow.addComposeTab(isLockable = true, isCloseable = false) {
-            createSidePanelComponent()
+            CompositionLocalProvider(
+                LocalProject provides project
+            ) {
+                createSidePanelComponent()
+            }
         }
     }
 
@@ -25,6 +31,6 @@ class SidePanel : ToolWindowFactory {
 
     @Composable
     private fun createSidePanelComponent() {
-        Text("This is just text.")
+        ConnectionBootstrapCard()
     }
 }

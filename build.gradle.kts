@@ -17,10 +17,19 @@ plugins {
 repositories {
     mavenCentral()
     mavenLocal()
+    google()
+
+    maven("https://www.jetbrains.com/intellij-repository/releases/")
+    maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
+    maven("https://packages.jetbrains.team/maven/p/kpm/public/")
 }
 
 dependencies {
-    jacocoAggregation(project(":packages:jetbrains-plugin"))
+    jacocoAggregation(project(":packages:jetbrains-plugin")) {
+        exclude(group = "org.jetbrains.skiko")
+        exclude(group = "org.jetbrains.jewel")
+    }
+
     jacocoAggregation(project(":packages:mongodb-access-adapter"))
     jacocoAggregation(project(":packages:mongodb-access-adapter:datagrip-access-adapter"))
     jacocoAggregation(project(":packages:mongodb-mql-engines"))

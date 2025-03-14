@@ -4,6 +4,9 @@
 
 package com.mongodb.jbplugin.fixtures
 
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.test.ComposeUiTest
+import androidx.compose.ui.test.ExperimentalTestApi
 import com.google.gson.Gson
 import com.intellij.database.Dbms
 import com.intellij.database.dataSource.DatabaseConnection
@@ -65,6 +68,7 @@ import kotlinx.coroutines.test.TestScope
 import org.assertj.swing.core.BasicRobot
 import org.assertj.swing.core.Robot
 import org.intellij.lang.annotations.Language
+import org.jetbrains.jewel.intui.standalone.theme.IntUiTheme
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.*
 import org.mockito.Mockito
@@ -598,4 +602,14 @@ fun CodeInsightTestFixture.specifyDialect(dialect: Dialect<PsiElement, Project>)
         MongoDbVirtualFileDataSourceProvider.Keys.attachedDialect,
         dialect
     )
+}
+
+/**
+ * This sets up a test with the correct theme.
+ */
+@OptIn(ExperimentalTestApi::class)
+fun ComposeUiTest.setContentWithTheme(composable: @Composable () -> Unit) {
+    setContent {
+        IntUiTheme(isDark = true) { composable() }
+    }
 }
