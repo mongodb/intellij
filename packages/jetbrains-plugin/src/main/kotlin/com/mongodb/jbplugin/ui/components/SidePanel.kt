@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
+import com.mongodb.jbplugin.settings.pluginSetting
 import org.jetbrains.jewel.bridge.addComposeTab
 import org.jetbrains.jewel.ui.component.Text
 
@@ -15,6 +16,11 @@ class SidePanel : ToolWindowFactory {
         toolWindow.addComposeTab(isLockable = true, isCloseable = false) {
             createSidePanelComponent()
         }
+    }
+
+    override suspend fun isApplicableAsync(project: Project): Boolean {
+        val isEnabled by pluginSetting { ::ftEnableSidePanel }
+        return isEnabled
     }
 
     @Composable

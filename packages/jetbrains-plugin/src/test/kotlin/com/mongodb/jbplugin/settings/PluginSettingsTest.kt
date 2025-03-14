@@ -77,6 +77,18 @@ class PluginSettingsTest {
         }
     }
 
+    @Test
+    fun `renders the side panel feature toggle`(robot: Robot) {
+        val (fixture, _) = render(robot)
+
+        eventually {
+            fixture.checkBox("MongoDB Side Panel Enabled")
+                .requireVisible()
+                .requireEnabled()
+                .requireNotSelected()
+        }
+    }
+
     private fun render(robot: Robot): Pair<FrameFixture, PluginSettingsConfigurable> {
         return GuiActionRunner.execute<Pair<FrameFixture, PluginSettingsConfigurable>> {
             val frame = JFrame()
