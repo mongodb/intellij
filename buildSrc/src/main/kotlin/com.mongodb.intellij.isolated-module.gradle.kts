@@ -28,7 +28,7 @@ dependencies {
     testImplementation(libs.testing.jupiter.vintage.engine)
     testImplementation(libs.testing.mockito.core)
     testImplementation(libs.testing.mockito.kotlin)
-    testImplementation(libs.kotlin.coroutines.test)
+    testImplementation(libs.testing.kotlin.coroutines.test)
     testImplementation(libs.testing.testContainers.core)
     testImplementation(libs.testing.testContainers.jupiter)
     testImplementation(libs.testing.testContainers.mongodb)

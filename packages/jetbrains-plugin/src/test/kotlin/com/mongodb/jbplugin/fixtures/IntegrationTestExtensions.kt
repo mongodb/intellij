@@ -42,6 +42,7 @@ import com.intellij.psi.PsiJavaFile
 import com.intellij.psi.PsiMethodCallExpression
 import com.intellij.testFramework.IdeaTestUtil
 import com.intellij.testFramework.PsiTestUtil
+import com.intellij.testFramework.TestApplicationManager
 import com.intellij.testFramework.common.cleanApplicationState
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.fixtures.DefaultLightProjectDescriptor
@@ -75,6 +76,9 @@ import org.mockito.Mockito
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
+import java.awt.Toolkit
+import java.awt.datatransfer.DataFlavor
+import java.awt.datatransfer.StringSelection
 import java.util.*
 import kotlin.io.path.Path
 import kotlin.io.path.absolutePathString
@@ -609,7 +613,18 @@ fun CodeInsightTestFixture.specifyDialect(dialect: Dialect<PsiElement, Project>)
  */
 @OptIn(ExperimentalTestApi::class)
 fun ComposeUiTest.setContentWithTheme(composable: @Composable () -> Unit) {
+    TestApplicationManager.getInstance()
+    resetClipboard()
+
     setContent {
         IntUiTheme(isDark = true) { composable() }
     }
+}
+
+fun resetClipboard() {
+    Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(""), null)
+}
+
+fun readClipboard(flavor: DataFlavor = DataFlavor.stringFlavor): String? {
+    return Toolkit.getDefaultToolkit().systemClipboard.getData(flavor)?.toString()
 }
