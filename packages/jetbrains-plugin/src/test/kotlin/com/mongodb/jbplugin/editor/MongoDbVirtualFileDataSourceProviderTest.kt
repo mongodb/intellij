@@ -7,6 +7,10 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.mockDataSource
 import com.mongodb.jbplugin.fixtures.withMockedService
+import com.mongodb.jbplugin.ui.viewModel.ConnectionState
+import com.mongodb.jbplugin.ui.viewModel.ConnectionStateViewModel
+import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState.Connected
+import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
@@ -19,14 +23,22 @@ import org.mockito.kotlin.verify
 @IntegrationTest
 class MongoDbVirtualFileDataSourceProviderTest {
     @Test
-    fun `returns a datasource if attached to a file`(project: Project) {
+    fun `returns a datasource from the view model`(project: Project) {
         val provider = MongoDbVirtualFileDataSourceProvider()
+        val viewModel = mock<ConnectionStateViewModel>()
         val facade = mock<DbPsiFacade>()
         project.withMockedService(facade)
+        project.withMockedService(viewModel)
 
         val dataSource = mockDataSource()
         val mockDbDataSource = mock<DbDataSource>()
         val file = mock<VirtualFile>()
+
+        `when`(
+            viewModel.connectionState
+        ).thenReturn(
+            MutableStateFlow(ConnectionState(emptyList(), Connected(dataSource)))
+        )
 
         `when`(
             file.getUserData(MongoDbVirtualFileDataSourceProvider.Keys.attachedDataSource)

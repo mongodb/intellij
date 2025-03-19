@@ -1,22 +1,12 @@
 package com.mongodb.jbplugin.inspections.impl
 
-import com.intellij.database.dataSource.DatabaseConnectionManager
-import com.intellij.database.dataSource.DatabaseConnectionPoint
-import com.intellij.database.dataSource.localDataSource
-import com.intellij.database.psi.DbDataSource
-import com.intellij.database.psi.DbPsiFacade
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
-import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
 import com.mongodb.jbplugin.accessadapter.slice.GetCollectionSchema
 import com.mongodb.jbplugin.dialects.springcriteria.SpringCriteriaDialect
 import com.mongodb.jbplugin.editor.MongoDbVirtualFileDataSourceProvider
 import com.mongodb.jbplugin.fixtures.*
-import com.mongodb.jbplugin.fixtures.mockDataSource
-import com.mongodb.jbplugin.fixtures.mockDatabaseConnection
 import com.mongodb.jbplugin.mql.*
-import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
@@ -83,32 +73,7 @@ class SpringCriteriaFieldCheckLinterInspectionTest {
         project: Project,
         fixture: CodeInsightTestFixture,
     ) {
-        val dbPsiFacade = mock<DbPsiFacade>()
-        val dbDataSource = mock<DbDataSource>()
-        val dataSource = mockDataSource()
-        val application = ApplicationManager.getApplication()
-        val realConnectionManager = DatabaseConnectionManager.getInstance()
-        val dbConnectionManager =
-            mock<DatabaseConnectionManager>().also { cm ->
-                `when`(cm.build(any(), any())).thenAnswer {
-                    realConnectionManager.build(
-                        it.arguments[0] as Project,
-                        it.arguments[1] as DatabaseConnectionPoint
-                    )
-                }
-            }
-        val connection = mockDatabaseConnection(dataSource)
-        val readModelProvider = mock<DataGripBasedReadModelProvider>()
-
-        `when`(dbDataSource.localDataSource).thenReturn(dataSource)
-        `when`(dbPsiFacade.findDataSource(any())).thenReturn(dbDataSource)
-        `when`(dbConnectionManager.activeConnections).thenReturn(listOf(connection))
-
-        fixture.file.virtualFile.putUserData(
-            MongoDbVirtualFileDataSourceProvider.Keys.attachedDataSource,
-            dataSource,
-        )
-
+        val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(SpringCriteriaDialect)
 
         `when`(
@@ -118,10 +83,6 @@ class SpringCriteriaFieldCheckLinterInspectionTest {
                 CollectionSchema(Namespace("sample_mflix", "book"), BsonObject(emptyMap()))
             ),
         )
-
-        application.withMockedService(dbConnectionManager)
-        project.withMockedService(readModelProvider)
-        project.withMockedService(dbPsiFacade)
 
         fixture.enableInspections(FieldCheckInspectionBridge::class.java)
         fixture.testHighlighting()
@@ -297,32 +258,7 @@ class SpringCriteriaFieldCheckLinterInspectionTest {
         project: Project,
         fixture: CodeInsightTestFixture,
     ) {
-        val dbPsiFacade = mock<DbPsiFacade>()
-        val dbDataSource = mock<DbDataSource>()
-        val dataSource = mockDataSource()
-        val application = ApplicationManager.getApplication()
-        val realConnectionManager = DatabaseConnectionManager.getInstance()
-        val dbConnectionManager =
-            mock<DatabaseConnectionManager>().also { cm ->
-                `when`(cm.build(any(), any())).thenAnswer {
-                    realConnectionManager.build(
-                        it.arguments[0] as Project,
-                        it.arguments[1] as DatabaseConnectionPoint
-                    )
-                }
-            }
-        val connection = mockDatabaseConnection(dataSource)
-        val readModelProvider = mock<DataGripBasedReadModelProvider>()
-
-        `when`(dbDataSource.localDataSource).thenReturn(dataSource)
-        `when`(dbPsiFacade.findDataSource(any())).thenReturn(dbDataSource)
-        `when`(dbConnectionManager.activeConnections).thenReturn(listOf(connection))
-
-        fixture.file.virtualFile.putUserData(
-            MongoDbVirtualFileDataSourceProvider.Keys.attachedDataSource,
-            dataSource,
-        )
-
+        val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(SpringCriteriaDialect)
 
         fixture.file.virtualFile.putUserData(
@@ -337,10 +273,6 @@ class SpringCriteriaFieldCheckLinterInspectionTest {
                 CollectionSchema(Namespace("bad_db", "book"), BsonObject(emptyMap()))
             ),
         )
-
-        application.withMockedService(dbConnectionManager)
-        project.withMockedService(readModelProvider)
-        project.withMockedService(dbPsiFacade)
 
         fixture.enableInspections(FieldCheckInspectionBridge::class.java)
         fixture.testHighlighting()
@@ -373,32 +305,7 @@ class SpringCriteriaFieldCheckLinterInspectionTest {
         project: Project,
         fixture: CodeInsightTestFixture,
     ) {
-        val dbPsiFacade = mock<DbPsiFacade>()
-        val dbDataSource = mock<DbDataSource>()
-        val dataSource = mockDataSource()
-        val application = ApplicationManager.getApplication()
-        val realConnectionManager = DatabaseConnectionManager.getInstance()
-        val dbConnectionManager =
-            mock<DatabaseConnectionManager>().also { cm ->
-                `when`(cm.build(any(), any())).thenAnswer {
-                    realConnectionManager.build(
-                        it.arguments[0] as Project,
-                        it.arguments[1] as DatabaseConnectionPoint
-                    )
-                }
-            }
-        val connection = mockDatabaseConnection(dataSource)
-        val readModelProvider = mock<DataGripBasedReadModelProvider>()
-
-        `when`(dbDataSource.localDataSource).thenReturn(dataSource)
-        `when`(dbPsiFacade.findDataSource(any())).thenReturn(dbDataSource)
-        `when`(dbConnectionManager.activeConnections).thenReturn(listOf(connection))
-
-        fixture.file.virtualFile.putUserData(
-            MongoDbVirtualFileDataSourceProvider.Keys.attachedDataSource,
-            dataSource,
-        )
-
+        val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(SpringCriteriaDialect)
 
         fixture.file.virtualFile.putUserData(
@@ -416,10 +323,6 @@ class SpringCriteriaFieldCheckLinterInspectionTest {
                 )
             ),
         )
-
-        application.withMockedService(dbConnectionManager)
-        project.withMockedService(readModelProvider)
-        project.withMockedService(dbPsiFacade)
 
         fixture.enableInspections(FieldCheckInspectionBridge::class.java)
         fixture.testHighlighting()
@@ -452,32 +355,7 @@ class SpringCriteriaFieldCheckLinterInspectionTest {
         project: Project,
         fixture: CodeInsightTestFixture,
     ) {
-        val dbPsiFacade = mock<DbPsiFacade>()
-        val dbDataSource = mock<DbDataSource>()
-        val dataSource = mockDataSource()
-        val application = ApplicationManager.getApplication()
-        val realConnectionManager = DatabaseConnectionManager.getInstance()
-        val dbConnectionManager =
-            mock<DatabaseConnectionManager>().also { cm ->
-                `when`(cm.build(any(), any())).thenAnswer {
-                    realConnectionManager.build(
-                        it.arguments[0] as Project,
-                        it.arguments[1] as DatabaseConnectionPoint
-                    )
-                }
-            }
-        val connection = mockDatabaseConnection(dataSource)
-        val readModelProvider = mock<DataGripBasedReadModelProvider>()
-
-        `when`(dbDataSource.localDataSource).thenReturn(dataSource)
-        `when`(dbPsiFacade.findDataSource(any())).thenReturn(dbDataSource)
-        `when`(dbConnectionManager.activeConnections).thenReturn(listOf(connection))
-
-        fixture.file.virtualFile.putUserData(
-            MongoDbVirtualFileDataSourceProvider.Keys.attachedDataSource,
-            dataSource,
-        )
-
+        val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(SpringCriteriaDialect)
 
         fixture.file.virtualFile.putUserData(
@@ -495,10 +373,6 @@ class SpringCriteriaFieldCheckLinterInspectionTest {
                 )
             ),
         )
-
-        application.withMockedService(dbConnectionManager)
-        project.withMockedService(readModelProvider)
-        project.withMockedService(dbPsiFacade)
 
         fixture.enableInspections(FieldCheckInspectionBridge::class.java)
         fixture.testHighlighting()
