@@ -21,7 +21,30 @@ import org.junit.jupiter.api.Test
 @OptIn(ExperimentalTestApi::class)
 class ConnectionBootstrapCardTest {
     @Test
-    fun `shows the list of connections when disconnected`() = runComposeUiTest {
+    fun `shows a button to create a new data source when disconnected`() = runComposeUiTest {
+        var requestedDataSourceCreation = false
+
+        setContentWithTheme {
+            CompositionLocalProvider(
+                LocalConnectionCallbacks provides ConnectionCallbacks(
+                    onRequestCreateDataSource = { requestedDataSourceCreation = true }
+                )
+            ) {
+                _ConnectionBootstrapCard(
+                    ConnectionState(emptyList(), SelectedConnectionState.Empty)
+                )
+            }
+        }
+
+        onNodeWithText("Add a MongoDB Data Source")
+            .assertExists()
+            .performClick()
+
+        assertTrue(requestedDataSourceCreation)
+    }
+
+    @Test
+    fun `shows the list of connections when disconnected if there is any`() = runComposeUiTest {
         val dataSource = mockDataSource()
 
         setContentWithTheme {
@@ -30,6 +53,7 @@ class ConnectionBootstrapCardTest {
             )
         }
 
+        onNodeWithText("Add a MongoDB Data Source").assertDoesNotExist()
         onNodeWithTag("Card::Connect to MongoDB").assertExists()
         onNodeWithTag("ConnectionComboBox").performClick()
         onNodeWithTag("ConnectionItem::${dataSource.uniqueId}").assertExists()

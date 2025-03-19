@@ -39,6 +39,7 @@ import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState.Failed
 import org.jetbrains.jewel.ui.Outline
 import org.jetbrains.jewel.ui.component.CircularProgressIndicator
 import org.jetbrains.jewel.ui.component.ComboBox
+import org.jetbrains.jewel.ui.component.DefaultButton
 import org.jetbrains.jewel.ui.component.Icon
 import org.jetbrains.jewel.ui.component.Text
 import org.jetbrains.jewel.ui.component.styling.CircularProgressStyle
@@ -51,9 +52,11 @@ import kotlin.time.Duration.Companion.milliseconds
 fun ConnectionBootstrapCard() {
     val connectionState by useViewModelState(ConnectionStateViewModel::connectionState, ConnectionState.default())
     val connect by useViewModelMutator(ConnectionStateViewModel::selectDataSource)
+    val requestDataSourceCreation by useViewModelMutator(ConnectionStateViewModel::requestDataSourceCreation)
 
     val connectionCallbacks = ConnectionCallbacks(
-        onConnect = connect
+        onConnect = connect,
+        onRequestCreateDataSource = requestDataSourceCreation
     )
 
     CompositionLocalProvider(LocalConnectionCallbacks provides connectionCallbacks) {
@@ -74,6 +77,8 @@ internal fun _ConnectionBootstrapCard(
 
 @Composable
 internal fun ConnectionCardWhenNotConnected(connectionState: ConnectionState) {
+    val callbacks = useConnectionCallbacks()
+
     Card(CardCategory.LOGO, useTranslation("side-panel.connection.ConnectionBootstrapCard.title")) {
         Column {
             Box { Text(useTranslation("side-panel.connection.ConnectionBootstrapCard.subtitle")) }
@@ -83,7 +88,13 @@ internal fun ConnectionCardWhenNotConnected(connectionState: ConnectionState) {
                 BulletItem(useTranslation("side-panel.connection.ConnectionBootstrapCard.3st-bullet-point"))
             }
             Column(modifier = Modifier.padding(top = 8.dp)) {
-                ConnectionComboBox(connectionState.selectedConnectionState, connectionState.connections)
+                if (connectionState.connections.isEmpty()) {
+                    DefaultButton(onClick = { callbacks.onRequestCreateDataSource() }) {
+                        Text(useTranslation("side-panel.connection.ConnectionBootstrapCard.add-datasource"))
+                    }
+                } else {
+                    ConnectionComboBox(connectionState.selectedConnectionState, connectionState.connections)
+                }
             }
         }
     }
@@ -150,7 +161,7 @@ internal fun ConnectionComboBox(selectedConnectionState: SelectedConnectionState
     ComboBox(
         modifier = Modifier.testTag("ConnectionComboBox"),
         labelText = when (selectedConnectionState) {
-            is Empty -> "Choose a connection"
+            is Empty -> useTranslation("side-panel.connection.ConnectionBootstrapCard.combobox.choose-a-connection")
             is Connected -> selectedConnectionState.dataSource.name
             is Connecting -> selectedConnectionState.dataSource.name
             is Failed -> selectedConnectionState.dataSource.name
@@ -186,7 +197,7 @@ internal fun DisconnectItem() {
     ) {
         Row {
             Icon(AllIconsKeys.General.Close, "", modifier = Modifier.padding(end = 8.dp))
-            Text("Disconnect")
+            Text(useTranslation("side-panel.connection.ConnectionBootstrapCard.combobox.disconnect"))
         }
     }
 }
@@ -218,7 +229,8 @@ internal fun ConnectionItem(dataSource: LocalDataSource) {
 }
 
 internal data class ConnectionCallbacks(
-    val onConnect: (LocalDataSource?) -> Unit = {}
+    val onConnect: (LocalDataSource?) -> Unit = {},
+    val onRequestCreateDataSource: () -> Unit = {}
 )
 
 internal val LocalConnectionCallbacks = compositionLocalOf { ConnectionCallbacks() }
