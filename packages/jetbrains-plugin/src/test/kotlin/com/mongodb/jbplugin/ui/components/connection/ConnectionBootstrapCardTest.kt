@@ -108,6 +108,30 @@ class ConnectionBootstrapCardTest {
     }
 
     @Test
+    fun `can edit a data source when connected`() = runComposeUiTest {
+        val dataSource = mockDataSource()
+        var askedForEdit = false
+
+        setContentWithTheme {
+            CompositionLocalProvider(
+                LocalConnectionCallbacks provides ConnectionCallbacks(
+                    onRequestEditDataSource = { askedForEdit = true }
+                )
+            ) {
+                _ConnectionBootstrapCard(
+                    ConnectionState(listOf(dataSource), SelectedConnectionState.Connected(dataSource))
+                )
+            }
+        }
+
+        onNodeWithText("Edit connection")
+            .assertExists()
+            .performClick()
+
+        assertTrue(askedForEdit)
+    }
+
+    @Test
     fun `ConnectionItem should show the data source name`() = runComposeUiTest {
         val dataSource = mockDataSource(MongoDbServerUrl("mongodb://localhost:27017"))
 

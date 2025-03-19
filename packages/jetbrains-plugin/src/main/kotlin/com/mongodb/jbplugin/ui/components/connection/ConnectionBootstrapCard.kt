@@ -1,14 +1,13 @@
 package com.mongodb.jbplugin.ui.components.connection
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -19,11 +18,11 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.intellij.database.dataSource.LocalDataSource
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
+import com.mongodb.jbplugin.ui.components.utilities.ActionLink
 import com.mongodb.jbplugin.ui.components.utilities.Card
 import com.mongodb.jbplugin.ui.components.utilities.CardCategory
 import com.mongodb.jbplugin.ui.components.utilities.hooks.useTranslation
@@ -37,26 +36,25 @@ import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState.Connecting
 import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState.Empty
 import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState.Failed
 import org.jetbrains.jewel.ui.Outline
-import org.jetbrains.jewel.ui.component.CircularProgressIndicator
 import org.jetbrains.jewel.ui.component.ComboBox
 import org.jetbrains.jewel.ui.component.DefaultButton
 import org.jetbrains.jewel.ui.component.Icon
 import org.jetbrains.jewel.ui.component.Text
-import org.jetbrains.jewel.ui.component.styling.CircularProgressStyle
 import org.jetbrains.jewel.ui.icons.AllIconsKeys
 import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
-import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun ConnectionBootstrapCard() {
     val connectionState by useViewModelState(ConnectionStateViewModel::connectionState, ConnectionState.default())
     val connect by useViewModelMutator(ConnectionStateViewModel::selectDataSource)
     val requestDataSourceCreation by useViewModelMutator(ConnectionStateViewModel::requestDataSourceCreation)
+    val requestEditDataSource by useViewModelMutator(ConnectionStateViewModel::requestEditDataSource)
 
     val connectionCallbacks = ConnectionCallbacks(
         onConnect = connect,
-        onRequestCreateDataSource = requestDataSourceCreation
+        onRequestCreateDataSource = requestDataSourceCreation,
+        onRequestEditDataSource = requestEditDataSource
     )
 
     CompositionLocalProvider(LocalConnectionCallbacks provides connectionCallbacks) {
@@ -132,20 +130,23 @@ internal fun ConnectionCardWhenConnectionFailed(connectionState: ConnectionState
 
 @Composable
 internal fun LightweightConnectionSection(connectionState: ConnectionState) {
+    val callbacks = useConnectionCallbacks()
+
     Column {
         if (connectionState.selectedConnectionState is Connecting) {
-            Box { Text(useTranslation("side-panel.connection.ConnectionBootstrapCard.connecting-to")) }
+            Text(useTranslation("side-panel.connection.ConnectionBootstrapCard.connecting-to"))
         } else {
-            Box { Text(useTranslation("side-panel.connection.ConnectionBootstrapCard.connected-to")) }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(useTranslation("side-panel.connection.ConnectionBootstrapCard.connected-to"))
+                ActionLink(text = useTranslation("side-panel.connection.ConnectionBootstrapCard.edit-connection")) {
+                    callbacks.onRequestEditDataSource()
+                }
+            }
         }
 
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
-            Column(modifier = Modifier.fillMaxWidth(0.9f)) {
+            Column(modifier = Modifier.fillMaxWidth()) {
                 ConnectionComboBox(connectionState.selectedConnectionState, connectionState.connections)
-            }
-
-            if (connectionState.selectedConnectionState is Connecting) {
-                CircularProgressIndicator(modifier = Modifier.padding(start = 8.dp).height(18.dp).width(18.dp).align(Alignment.CenterVertically), style = CircularProgressStyle(250.milliseconds, Color.Gray))
             }
         }
     }
@@ -230,7 +231,8 @@ internal fun ConnectionItem(dataSource: LocalDataSource) {
 
 internal data class ConnectionCallbacks(
     val onConnect: (LocalDataSource?) -> Unit = {},
-    val onRequestCreateDataSource: () -> Unit = {}
+    val onRequestCreateDataSource: () -> Unit = {},
+    val onRequestEditDataSource: () -> Unit = {}
 )
 
 internal val LocalConnectionCallbacks = compositionLocalOf { ConnectionCallbacks() }

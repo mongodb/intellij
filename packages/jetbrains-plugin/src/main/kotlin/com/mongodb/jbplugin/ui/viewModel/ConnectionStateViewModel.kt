@@ -124,6 +124,13 @@ class ConnectionStateViewModel(
         }
     }
 
+    suspend fun requestEditDataSource() {
+        val selectedConnectionState = connectionState.value.selectedConnectionState
+        if (selectedConnectionState is Connected) {
+            connectionSaga.requestEditDataSource(selectedConnectionState.dataSource)
+        }
+    }
+
     internal suspend fun onSelectedConnectionChanges(newState: SelectedConnectionState) {
         when (newState) {
             is Connected -> withContext(Dispatchers.IO) {
@@ -242,6 +249,12 @@ internal class ConnectionSaga(val project: Project, val emitConnectionChange: su
             DataSourceManagerDialog.showDialog(project, selection, null)
         }
         return result.firstNotNullOfOrNull { it.localDataSource }
+    }
+
+    suspend fun requestEditDataSource(dataSource: LocalDataSource) {
+        withContext(Dispatchers.EDT) {
+            DataSourceManagerDialog.showDialog(project, dataSource, null)
+        }
     }
 
     suspend fun doDisconnect() {
