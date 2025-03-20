@@ -19,7 +19,7 @@ import kotlinx.coroutines.CoroutineScope
  * @param dataSource Data Source to open console from.
  * @param codeToAppend Provider of a string with the code to append. It's a function so it's lazily evaluated.
  */
-class OpenDataSourceConsoleAppendingCode(
+open class OpenDataSourceConsoleAppendingCode(
     private val coroutineScope: CoroutineScope,
     private val message: String,
     private val dataSource: LocalDataSource,

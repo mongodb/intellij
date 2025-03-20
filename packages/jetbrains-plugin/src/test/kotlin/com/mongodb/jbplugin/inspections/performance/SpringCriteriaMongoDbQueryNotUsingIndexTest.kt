@@ -1,17 +1,20 @@
-package com.mongodb.jbplugin.inspections.impl
+package com.mongodb.jbplugin.inspections.performance
 
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.mongodb.jbplugin.accessadapter.slice.ExplainPlan
 import com.mongodb.jbplugin.accessadapter.slice.ExplainQuery
 import com.mongodb.jbplugin.dialects.springcriteria.SpringCriteriaDialect
-import com.mongodb.jbplugin.fixtures.*
-import com.mongodb.jbplugin.mql.*
+import com.mongodb.jbplugin.fixtures.DefaultSetup
+import com.mongodb.jbplugin.fixtures.IntegrationTest
+import com.mongodb.jbplugin.fixtures.ParsingTest
+import com.mongodb.jbplugin.fixtures.setupConnection
+import com.mongodb.jbplugin.fixtures.specifyDialect
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 
 @IntegrationTest
-class SpringCriteriaIndexCheckLinterInspectionTest {
+class SpringCriteriaMongoDbQueryNotUsingIndexTest {
     @ParsingTest(
         setup = DefaultSetup.SPRING_DATA,
         value = """
@@ -24,7 +27,7 @@ class BookRepository {
     }
 
     public void allReleasedBooks() {
-        <warning descr="This query will run without an index. If you plan on using this query heavily in your application, you should create an index that covers this query.">template.find(
+        <warning descr="Query does not use an index.">template.find(
             query(
             where("released")
             .is(true)),
@@ -45,7 +48,7 @@ class BookRepository {
             ExplainQuery(ExplainPlan.CollectionScan)
         )
 
-        fixture.enableInspections(IndexCheckInspectionBridge::class.java)
+        fixture.enableInspections(MongoDbQueryNotUsingIndex::class.java)
         fixture.testHighlighting()
     }
 
@@ -61,18 +64,18 @@ class BookRepository {
     }
 
     public void allReleasedBooks() {
-        <warning descr="This query is using an index, but it still requires to filter or sort an important amount of documents in memory. If you plan on using this query heavily in your application, you should create an index that covers this query better.">template.find(
+        template.find(
             query(
             where("released")
             .is(true)),
             Book.class
-        )</warning>;
+        );
     }
 }
         
         """,
     )
-    fun `shows an inspection when the query has an ineffective index usage`(
+    fun `does not show an inspection when the query has an ineffective index usage`(
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
@@ -82,7 +85,7 @@ class BookRepository {
             ExplainQuery(ExplainPlan.IneffectiveIndexUsage)
         )
 
-        fixture.enableInspections(IndexCheckInspectionBridge::class.java)
+        fixture.enableInspections(MongoDbQueryNotUsingIndex::class.java)
         fixture.testHighlighting()
     }
 }

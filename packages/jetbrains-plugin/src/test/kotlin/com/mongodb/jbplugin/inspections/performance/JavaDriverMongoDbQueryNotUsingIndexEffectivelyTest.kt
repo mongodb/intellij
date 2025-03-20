@@ -1,4 +1,4 @@
-package com.mongodb.jbplugin.inspections.impl
+package com.mongodb.jbplugin.inspections.performance
 
 import com.intellij.openapi.application.Application
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
@@ -17,22 +17,20 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
 
 @IntegrationTest
-class JavaDriverIndexCheckLinterInspectionTest {
+class JavaDriverMongoDbQueryNotUsingIndexEffectivelyTest {
     @ParsingTest(
-"""
+        """
 public FindIterable<Document> exampleFind() {
-    return <warning descr="This query will run without an index. If you plan on using this query heavily in your application, you should create an index that covers this query.">client.getDatabase("myDatabase")
+    return client.getDatabase("myDatabase")
             .getCollection("myCollection")
-            .find()</warning>;
+            .find();
 }
 """,
     )
-    fun `shows an inspection when the query is a collscan`(
+    fun `does not show an inspection when the query is a collscan`(
         app: Application,
         fixture: CodeInsightTestFixture,
     ) {
-        val telemetryService = app.getService(TelemetryService::class.java)
-
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
@@ -40,16 +38,14 @@ public FindIterable<Document> exampleFind() {
             ExplainQuery(ExplainPlan.CollectionScan)
         )
 
-        fixture.enableInspections(IndexCheckInspectionBridge::class.java)
+        fixture.enableInspections(MongoDbQueryNotUsingIndexEffectively::class.java)
         fixture.testHighlighting()
-
-        verify(telemetryService, atLeastOnce()).sendEvent(any())
     }
 
     @ParsingTest(
         """
 public FindIterable<Document> exampleFind() {
-    return <warning descr="This query is using an index, but it still requires to filter or sort an important amount of documents in memory. If you plan on using this query heavily in your application, you should create an index that covers this query better.">client.getDatabase("myDatabase")
+    return <warning descr="Query does not use an index effectively.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .find()</warning>;
 }
@@ -68,7 +64,7 @@ public FindIterable<Document> exampleFind() {
             ExplainQuery(ExplainPlan.IneffectiveIndexUsage)
         )
 
-        fixture.enableInspections(IndexCheckInspectionBridge::class.java)
+        fixture.enableInspections(MongoDbQueryNotUsingIndexEffectively::class.java)
         fixture.testHighlighting()
 
         verify(telemetryService, atLeastOnce()).sendEvent(any())

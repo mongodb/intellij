@@ -60,6 +60,26 @@
                 nameKey="inlay.namespace.name"
                 bundle="messages.InspectionsAndInlaysBundle"
                 providerId="com.mongodb.jbplugin#JAVA" />
+        <!-- Performance Inspections -->
+        <localInspection implementationClass="com.mongodb.jbplugin.inspections.performance.MongoDbQueryNotUsingIndex"
+            language="JAVA"
+            bundle="messages.InspectionsAndInlaysBundle"
+            groupPath="MongoDB"
+            groupBundle="messages.InspectionsAndInlaysBundle"
+            groupKey="group.names.probable.bugs"
+            key="query-not-using-index"
+            enabledByDefault="true"
+        />
+        <localInspection implementationClass="com.mongodb.jbplugin.inspections.performance.MongoDbQueryNotUsingIndexEffectively"
+            language="JAVA"
+            bundle="messages.InspectionsAndInlaysBundle"
+            groupPath="MongoDB"
+            groupBundle="messages.InspectionsAndInlaysBundle"
+            groupKey="group.names.probable.bugs"
+            key="query-not-using-index-effectively"
+            enabledByDefault="true"
+        />
+        <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: -->
         <localInspection language="JAVA"
                          bundle="messages.InspectionsAndInlaysBundle"
                          key="inspection.field.checking"
@@ -78,15 +98,7 @@
                          enabledByDefault="true"
                          level="WARNING"
                          implementationClass="com.mongodb.jbplugin.inspections.impl.NamespaceCheckInspectionBridge"/>
-        <localInspection language="JAVA"
-                         bundle="messages.InspectionsAndInlaysBundle"
-                         key="inspection.index.checking"
-                         groupPath="MongoDB"
-                         groupBundle="messages.InspectionsAndInlaysBundle"
-                         groupKey="group.names.probable.bugs"
-                         enabledByDefault="true"
-                         level="WARNING"
-                         implementationClass="com.mongodb.jbplugin.inspections.impl.IndexCheckInspectionBridge"/>
+
         <codeInsight.lineMarkerProvider
                 language="JAVA"
                 implementationClass="com.mongodb.jbplugin.codeActions.impl.RunQueryCodeActionBridge" />
