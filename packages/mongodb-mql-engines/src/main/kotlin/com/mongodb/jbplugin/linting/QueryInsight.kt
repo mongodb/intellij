@@ -2,13 +2,7 @@ package com.mongodb.jbplugin.linting
 
 import com.mongodb.jbplugin.linting.Inspection.NotUsingIndex
 import com.mongodb.jbplugin.linting.Inspection.NotUsingIndexEffectively
-import com.mongodb.jbplugin.linting.InspectionAction.ChooseConnection
 import com.mongodb.jbplugin.linting.InspectionAction.CreateIndexSuggestionScript
-import com.mongodb.jbplugin.linting.InspectionAction.NoAction
-import com.mongodb.jbplugin.linting.InspectionAction.RunQuery
-import com.mongodb.jbplugin.linting.InspectionCategory.CORRECTNESS
-import com.mongodb.jbplugin.linting.InspectionCategory.ENVIRONMENT_MISMATCH
-import com.mongodb.jbplugin.linting.InspectionCategory.OTHER
 import com.mongodb.jbplugin.linting.InspectionCategory.PERFORMANCE
 import com.mongodb.jbplugin.mql.Node
 
@@ -48,49 +42,6 @@ sealed interface Inspection {
         override val primaryAction = CreateIndexSuggestionScript
         override val secondaryActions = emptyArray<InspectionAction>()
         override val category = PERFORMANCE
-    }
-
-    // Correctness Warnings
-    data object FieldDoesNotExist : Inspection {
-        override val displayName = "inspection.field-does-not-exist.display-name"
-        override val shortName = "inspection.field-does-not-exist.short-name"
-        override val primaryAction = RunQuery
-        override val secondaryActions = emptyArray<InspectionAction>()
-        override val category = CORRECTNESS
-    }
-
-    data object FieldValueTypeMismatch : Inspection {
-        override val displayName = "inspection.field-value-type-mismatch.display-name"
-        override val shortName = "inspection.field-value-type-mismatch.short-name"
-        override val primaryAction = RunQuery
-        override val secondaryActions = emptyArray<InspectionAction>()
-        override val category = CORRECTNESS
-    }
-
-    // Environment mismatch
-    data object DatabaseDoesNotExist : Inspection {
-        override val displayName = "inspection.database-does-not-exist.display-name"
-        override val shortName = "inspection.database-does-not-exist.short-name"
-        override val primaryAction = ChooseConnection
-        override val secondaryActions = emptyArray<InspectionAction>()
-        override val category = ENVIRONMENT_MISMATCH
-    }
-
-    data object CollectionDoesNotExist : Inspection {
-        override val displayName = "inspection.collection-does-not-exist.display-name"
-        override val shortName = "inspection.collection-does-not-exist.short-name"
-        override val primaryAction = ChooseConnection
-        override val secondaryActions = emptyArray<InspectionAction>()
-        override val category = ENVIRONMENT_MISMATCH
-    }
-
-    // Other
-    data object NoNamespaceInferred : Inspection {
-        override val displayName = "inspection.no-namespace-inferred.display-name"
-        override val shortName = "inspection.no-namespace-inferred.short-name"
-        override val primaryAction = NoAction
-        override val secondaryActions = emptyArray<InspectionAction>()
-        override val category = OTHER
     }
 }
 
