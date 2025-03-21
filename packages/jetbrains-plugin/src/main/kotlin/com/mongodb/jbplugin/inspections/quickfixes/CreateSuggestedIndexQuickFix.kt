@@ -17,10 +17,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
 
 /**
- * This quickfix opens a modal with the connection chooser.
- *
- * @param message
- * @param coroutineScope
+ * This quickfix opens the console editor with the suggested index for the query.
  */
 class CreateSuggestedIndexQuickFix(
     coroutineScope: CoroutineScope,

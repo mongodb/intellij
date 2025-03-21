@@ -8,9 +8,6 @@ import com.mongodb.jbplugin.mql.Node
 
 enum class InspectionCategory(val displayName: String) {
     PERFORMANCE("inspection.category.performance"),
-    CORRECTNESS("inspection.category.correctness"),
-    ENVIRONMENT_MISMATCH("inspection.category.environment"),
-    OTHER("inspection.category.other")
 }
 
 sealed interface InspectionAction {
