@@ -109,9 +109,15 @@ class ConnectionStateViewModel(
         messageBusConnection.subscribe(JdbcDriverManager.TOPIC, this)
     }
 
-    suspend fun selectDataSource(dataSource: LocalDataSource?) {
+    suspend fun selectDataSource(dataSource: LocalDataSource?, background: Boolean = true) {
         if (dataSource != null) {
-            connectionSaga.doConnect(dataSource)
+            if (background) {
+                coroutineScope.launch {
+                    connectionSaga.doConnect(dataSource)
+                }.join()
+            } else {
+                connectionSaga.doConnect(dataSource)
+            }
         } else {
             connectionSaga.doDisconnect()
         }

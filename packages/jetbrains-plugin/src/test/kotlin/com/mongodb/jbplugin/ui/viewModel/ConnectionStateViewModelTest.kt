@@ -87,7 +87,7 @@ class ConnectionStateViewModelTest {
         viewModel.connectionSaga = mock()
         val dataSource = mockDataSource()
 
-        viewModel.selectDataSource(dataSource)
+        viewModel.selectDataSource(dataSource, background = false)
         verify(viewModel.connectionSaga, timeout(1000)).doConnect(dataSource)
     }
 
