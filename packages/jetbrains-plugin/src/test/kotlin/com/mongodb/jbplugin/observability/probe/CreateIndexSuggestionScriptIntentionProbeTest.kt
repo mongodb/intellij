@@ -14,7 +14,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 
 @IntegrationTest
-internal class CreateIndexIntentionProbeTest {
+internal class CreateIndexSuggestionScriptIntentionProbeTest {
     @Test
     fun `should send a CreateIndexIntentionEvent event`(application: Application) {
         val telemetryService = mock<TelemetryService>()

@@ -26,6 +26,7 @@ import kotlinx.coroutines.CoroutineScope
  * @param inspection
  * @param coroutineScope
  */
+@Deprecated("Use AbstractMongoDbInspectionBridgeV2 instead.")
 abstract class AbstractMongoDbInspectionBridge(
     private val coroutineScope: CoroutineScope,
     private val inspection: MongoDbInspection,
