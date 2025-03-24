@@ -20,12 +20,13 @@ import org.jetbrains.jewel.ui.icon.IconKey
 import org.jetbrains.jewel.ui.icons.AllIconsKeys
 
 enum class CardCategory(internal val icon: IconKey, internal val contentDescription: String) {
-    LOGO(AllIconsKeys.Providers.MongoDB, "MongoDB")
+    LOGO(AllIconsKeys.Providers.MongoDB, "MongoDB"),
+    ERROR(AllIconsKeys.General.Error, "Error")
 }
 
 @Composable
 fun Card(category: CardCategory, title: String, body: @Composable () -> Unit) {
-    Box(modifier = Modifier.testTag("Card::$title").padding(vertical = 4.dp, horizontal = 8.dp)) {
+    Box(modifier = Modifier.testTag("Card::$title")) {
         Column(
             modifier = Modifier
                 .fillMaxWidth(1f)

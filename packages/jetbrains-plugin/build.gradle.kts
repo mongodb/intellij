@@ -44,6 +44,13 @@ tasks {
     }
 }
 
+configurations {
+    runtimeOnly {
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib")
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-reflect")
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
+    }
+}
 dependencies {
     implementation(project(":packages:mongodb-access-adapter"))
     implementation(project(":packages:mongodb-access-adapter:datagrip-access-adapter"))
@@ -81,5 +88,5 @@ dependencies {
         exclude(group = "org.jetbrains.kotlinx")
     }
     testImplementation(libs.kotlin.coroutines.core)
-    testImplementation(libs.kotlin.coroutines.test)
+    testImplementation(libs.testing.kotlin.coroutines.test)
 }

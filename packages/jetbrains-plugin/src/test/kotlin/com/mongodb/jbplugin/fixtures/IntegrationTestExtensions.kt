@@ -42,6 +42,7 @@ import com.intellij.psi.PsiJavaFile
 import com.intellij.psi.PsiMethodCallExpression
 import com.intellij.testFramework.IdeaTestUtil
 import com.intellij.testFramework.PsiTestUtil
+import com.intellij.testFramework.TestApplicationManager
 import com.intellij.testFramework.common.cleanApplicationState
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.fixtures.DefaultLightProjectDescriptor
@@ -63,7 +64,11 @@ import com.mongodb.jbplugin.observability.RuntimeInformationService
 import com.mongodb.jbplugin.observability.TelemetryService
 import com.mongodb.jbplugin.settings.PluginSettings
 import com.mongodb.jbplugin.settings.PluginSettingsStateComponent
+import com.mongodb.jbplugin.ui.viewModel.ConnectionState
+import com.mongodb.jbplugin.ui.viewModel.ConnectionStateViewModel
+import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.TestScope
 import org.assertj.swing.core.BasicRobot
 import org.assertj.swing.core.Robot
@@ -75,6 +80,9 @@ import org.mockito.Mockito
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
+import java.awt.Toolkit
+import java.awt.datatransfer.DataFlavor
+import java.awt.datatransfer.StringSelection
 import java.util.*
 import kotlin.io.path.Path
 import kotlin.io.path.absolutePathString
@@ -266,10 +274,7 @@ private class IntegrationTestExtension :
         settings.isTelemetryEnabled = true
         testScope = TestScope()
 
-        val parsingTest = context.requiredTestMethod.getAnnotation(ParsingTest::class.java)
-        if (parsingTest == null) {
-            return
-        }
+        val parsingTest = context.requiredTestMethod.getAnnotation(ParsingTest::class.java) ?: return
 
         application.withMockedService(mock(TelemetryService::class.java))
         application.invokeAndWait {
@@ -283,6 +288,7 @@ private class IntegrationTestExtension :
                 "$className.java"
             ).absolutePathString()
 
+            testFixture.resetConnection()
             testFixture.configureByText(
                 fileName,
                 """
@@ -546,12 +552,14 @@ private class MongoDbProjectDescriptor(
     }
 }
 
-fun CodeInsightTestFixture.setupConnection(): Pair<LocalDataSource, DataGripBasedReadModelProvider> {
+fun CodeInsightTestFixture.resetConnection() {
     val dbPsiFacade = mock<DbPsiFacade>()
     val dbDataSource = mock<DbDataSource>()
     val dataSource = mockDataSource()
     val application = ApplicationManager.getApplication()
     val realConnectionManager = DatabaseConnectionManager.getInstance()
+    val connectionStateViewModel = mock<ConnectionStateViewModel>()
+
     val dbConnectionManager =
         mock<DatabaseConnectionManager>().also { cm ->
             `when`(cm.build(any(), any())).thenAnswer {
@@ -567,6 +575,46 @@ fun CodeInsightTestFixture.setupConnection(): Pair<LocalDataSource, DataGripBase
     `when`(dbDataSource.localDataSource).thenReturn(dataSource)
     `when`(dbPsiFacade.findDataSource(any())).thenReturn(dbDataSource)
     `when`(dbConnectionManager.activeConnections).thenReturn(listOf(connection))
+    `when`(connectionStateViewModel.connectionState).thenReturn(
+        MutableStateFlow(
+            ConnectionState(emptyList(), SelectedConnectionState.Empty)
+        )
+    )
+
+    application.withMockedService(dbConnectionManager)
+    project.withMockedService(readModelProvider)
+    project.withMockedService(dbPsiFacade)
+    project.withMockedService(connectionStateViewModel)
+}
+
+fun CodeInsightTestFixture.setupConnection(): Pair<LocalDataSource, DataGripBasedReadModelProvider> {
+    val dbPsiFacade = mock<DbPsiFacade>()
+    val dbDataSource = mock<DbDataSource>()
+    val dataSource = mockDataSource()
+    val application = ApplicationManager.getApplication()
+    val realConnectionManager = DatabaseConnectionManager.getInstance()
+    val connectionStateViewModel = mock<ConnectionStateViewModel>()
+
+    val dbConnectionManager =
+        mock<DatabaseConnectionManager>().also { cm ->
+            `when`(cm.build(any(), any())).thenAnswer {
+                realConnectionManager.build(
+                    it.arguments[0] as Project,
+                    it.arguments[1] as DatabaseConnectionPoint
+                )
+            }
+        }
+    val connection = mockDatabaseConnection(dataSource)
+    val readModelProvider = mock<DataGripBasedReadModelProvider>()
+
+    `when`(dbDataSource.localDataSource).thenReturn(dataSource)
+    `when`(dbPsiFacade.findDataSource(any())).thenReturn(dbDataSource)
+    `when`(dbConnectionManager.activeConnections).thenReturn(listOf(connection))
+    `when`(connectionStateViewModel.connectionState).thenReturn(
+        MutableStateFlow(
+            ConnectionState(emptyList(), SelectedConnectionState.Connected(dataSource))
+        )
+    )
 
     file.virtualFile.putUserData(
         MongoDbVirtualFileDataSourceProvider.Keys.attachedDataSource,
@@ -576,6 +624,7 @@ fun CodeInsightTestFixture.setupConnection(): Pair<LocalDataSource, DataGripBase
     application.withMockedService(dbConnectionManager)
     project.withMockedService(readModelProvider)
     project.withMockedService(dbPsiFacade)
+    project.withMockedService(connectionStateViewModel)
 
     return Pair(dataSource, readModelProvider)
 }
@@ -609,7 +658,18 @@ fun CodeInsightTestFixture.specifyDialect(dialect: Dialect<PsiElement, Project>)
  */
 @OptIn(ExperimentalTestApi::class)
 fun ComposeUiTest.setContentWithTheme(composable: @Composable () -> Unit) {
+    TestApplicationManager.getInstance()
+    resetClipboard()
+
     setContent {
         IntUiTheme(isDark = true) { composable() }
     }
+}
+
+fun resetClipboard() {
+    Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(""), null)
+}
+
+fun readClipboard(flavor: DataFlavor = DataFlavor.stringFlavor): String? {
+    return Toolkit.getDefaultToolkit().systemClipboard.getData(flavor)?.toString()
 }

@@ -40,7 +40,6 @@ assertj-swing="3.17.1"
 kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlin-stdlib" }
 kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "kotlin-stdlib" }
 kotlin-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
-kotlin-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 ## Compose libraries
 compose-jewel-laf-bridge = { group = "org.jetbrains.jewel", name="jewel-ide-laf-bridge-243", version.ref="jewel"}
 compose-jewel-laf-standalone = { group = "org.jetbrains.jewel", name="jewel-int-ui-standalone-243", version.ref="jewel"}
@@ -66,6 +65,7 @@ testing-testContainers-mongodb = { group = "org.testcontainers", name = "mongodb
 testing-testContainers-jupiter = { group = "org.testcontainers", name = "junit-jupiter", version.ref = "test-containers" }
 testing-spring-mongodb = { group = "org.springframework.data", name="spring-data-mongodb", version.ref="spring-mongodb" }
 testing-assertj-swing = { group = "org.assertj", name="assertj-swing", version.ref="assertj-swing" }
+testing-kotlin-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 
 ######################################################
 ## Libraries and plugins only used for the buildScript.

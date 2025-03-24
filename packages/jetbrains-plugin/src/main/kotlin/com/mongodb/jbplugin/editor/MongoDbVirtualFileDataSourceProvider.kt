@@ -11,6 +11,9 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.mongodb.jbplugin.dialects.Dialect
+import com.mongodb.jbplugin.meta.service
+import com.mongodb.jbplugin.ui.viewModel.ConnectionStateViewModel
+import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState
 
 private const val KEY_PREFIX = "com.mongodb.jbplugin"
 
@@ -61,9 +64,13 @@ class MongoDbVirtualFileDataSourceProvider : VirtualFileDataSourceProvider() {
         file: VirtualFile,
     ): DbDataSource? {
         val facade = DbPsiFacade.getInstance(project)
-        val attachedDataSource = file.getUserData(Keys.attachedDataSource) ?: return null
+        val connectionViewModel by project.service<ConnectionStateViewModel>()
 
-        return facade.findDataSource(attachedDataSource.uniqueId)
+        val selectedConnection = connectionViewModel.connectionState.value.selectedConnectionState
+        return when (selectedConnection) {
+            is SelectedConnectionState.Connected -> facade.findDataSource(selectedConnection.dataSource.uniqueId)
+            else -> null
+        }
     }
 
     fun getDatabase(

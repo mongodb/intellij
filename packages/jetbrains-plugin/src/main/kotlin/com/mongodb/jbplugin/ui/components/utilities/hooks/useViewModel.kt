@@ -33,6 +33,19 @@ inline fun <reified V, reified S> useViewModelState(prop: (V) -> StateFlow<S>, i
 }
 
 @Composable
+inline fun <reified V> useViewModelMutator(crossinline prop: suspend V.() -> Unit): State<() -> Unit> {
+    val coroutineContext by useCoroutineContext()
+    val viewModel by useViewModel<V>()
+    val coroutineScope = rememberCoroutineScope { coroutineContext }
+
+    val callback = {
+        coroutineScope.launch { prop(viewModel) }
+        Unit
+    }
+    return remember { derivedStateOf { callback } }
+}
+
+@Composable
 inline fun <reified V, reified P> useViewModelMutator(crossinline prop: suspend V.(P) -> Unit): State<(P) -> Unit> {
     val coroutineContext by useCoroutineContext()
     val viewModel by useViewModel<V>()

@@ -4,6 +4,8 @@
 
 package com.mongodb.jbplugin.fixtures
 
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceUntilIdle
 import java.time.Duration
 
 /**
@@ -61,11 +63,14 @@ fun waitFor(timeout: Duration, interval: Duration, condition: () -> Boolean) {
  */
 fun eventually(
     timeout: Duration = Duration.ofSeconds(10),
+    coroutineScope: TestScope? = null,
     recovery: () -> Unit = {},
     fn: (Int) -> Unit,
 ) {
     var attempt = 1
     waitFor(timeout, Duration.ofMillis(50)) {
+        coroutineScope?.advanceUntilIdle()
+
         val result = runCatching {
             fn(attempt++)
         }
