@@ -28,22 +28,21 @@ public class JavaDriverRepository {
         this.client = client;
     }
 
-    public Document notIndexedQuery(String lang) {
+    public Document notIndexedQuery(Language lang) {
         return client
             .getDatabase("sample_mflix")
             .getCollection("movies")
             .find(
                 Filters.and(
-                    Filters.gt("tomatoes.critic.numReviews", 1),
-                    Filters.eq("rated", "r"),
-                    Filters.eq("languages", 12),
-                    Filters.gt("deliveredx", 1993)
+                    Filters.gt("tomatoes.critic.numReviews", "asd"),
+                    Filters.eq("rated", 1),
+                    Filters.eq("languages", 123)
                 )
             ).sort(Sorts.ascending("year"))
             .first();
     }
 //
-//    public Document notIndexedAnotherQuery(Language lang) {
+//    public Document notIndexedAnotherQuery(Language lan3g) {
 //        return client
 //            .getDatabase("sample_mflix")
 //            .getCollection("movies")

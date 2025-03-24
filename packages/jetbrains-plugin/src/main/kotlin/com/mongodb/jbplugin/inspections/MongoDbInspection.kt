@@ -2,6 +2,7 @@ package com.mongodb.jbplugin.inspections
 
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.psi.PsiElement
+import com.mongodb.jbplugin.Inspection
 import com.mongodb.jbplugin.dialects.DialectFormatter
 import com.mongodb.jbplugin.mql.Node
 import kotlinx.coroutines.CoroutineScope
@@ -13,11 +14,11 @@ import kotlinx.coroutines.CoroutineScope
  *
  * @see com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionBridge for the actual implementation.
  */
-interface MongoDbInspection {
+interface MongoDbInspection<I: Inspection> {
     suspend fun visitMongoDbQuery(
         coroutineScope: CoroutineScope,
         dataSource: LocalDataSource,
-        problems: IntelliJBasedQueryInsightsHolder,
+        problems: IntelliJBasedQueryInsightsHolder<I>,
         query: Node<PsiElement>,
         formatter: DialectFormatter,
     )

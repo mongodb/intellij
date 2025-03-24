@@ -8,6 +8,7 @@ package com.mongodb.jbplugin.inspections.impl
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.psi.PsiElement
+import com.mongodb.jbplugin.Inspection
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
 import com.mongodb.jbplugin.editor.dataSource
 import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionBridge
@@ -23,7 +24,7 @@ import kotlinx.coroutines.CoroutineScope
  * @param coroutineScope
  */
 class NamespaceCheckInspectionBridge(coroutineScope: CoroutineScope) :
-    AbstractMongoDbInspectionBridge<NamespaceCheckingSettings<LocalDataSource>>(
+    AbstractMongoDbInspectionBridge<NamespaceCheckingSettings<LocalDataSource>, Inspection.NamespaceCheckInspection>(
         coroutineScope,
         NamespaceCheckingLinter(),
     ) {

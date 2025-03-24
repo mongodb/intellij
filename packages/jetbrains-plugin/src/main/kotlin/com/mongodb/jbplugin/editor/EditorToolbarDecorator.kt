@@ -1,6 +1,7 @@
 package com.mongodb.jbplugin.editor
 
 import com.intellij.database.console.JdbcDriverManager
+import com.intellij.database.dataSource.DatabaseDriverManager
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.database.model.RawDataSource
 import com.intellij.database.psi.DataSourceManager
@@ -10,9 +11,13 @@ import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
 import com.intellij.psi.util.PsiModificationTracker
+import com.mongodb.jbplugin.Inspection
 import com.mongodb.jbplugin.editor.models.getToolbarModel
 import com.mongodb.jbplugin.editor.models.maybeGetToolbarModel
 import com.mongodb.jbplugin.editor.services.MdbPluginDisposable
+import com.mongodb.jbplugin.inspections.AnalysisScopeViewModel
+import com.mongodb.jbplugin.inspections.InspectionsViewModel
+import com.mongodb.jbplugin.meta.service
 import kotlinx.coroutines.CoroutineScope
 import org.jetbrains.annotations.TestOnly
 

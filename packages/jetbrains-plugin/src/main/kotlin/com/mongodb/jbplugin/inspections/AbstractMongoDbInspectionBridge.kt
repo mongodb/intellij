@@ -33,9 +33,9 @@ import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.mql.Node
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * This class is used to connect a MongoDB inspection to IntelliJ.
@@ -54,34 +54,16 @@ abstract class AbstractMongoDbInspectionBridge<Settings, I : Inspection>(
     private val coroutineScope: CoroutineScope,
     private val inspection: QueryInspection<Settings, I>,
 ) : AbstractBaseJavaLocalInspectionTool() {
+    private val isRunning = AtomicBoolean(false)
 
     protected abstract fun buildSettings(query: Node<PsiElement>): Settings
 
     protected abstract fun emitFinishedInspectionTelemetryEvent(problemsHolder: ProblemsHolder)
 
-    override fun inspectionStarted(
-        session: LocalInspectionToolSession,
-        isOnTheFly: Boolean
-    ) {
-        val viewModel by session.file.project.service<InspectionsViewModel<I>>()
-
-        super.inspectionStarted(session, isOnTheFly)
-        coroutineScope.launch(viewModel.insightsContext) {
-            viewModel.currentSessionInsights.clear()
-        }
-    }
-
     override fun inspectionFinished(
         session: LocalInspectionToolSession,
         problemsHolder: ProblemsHolder
     ) {
-        val viewModel by session.file.project.service<InspectionsViewModel<I>>()
-        coroutineScope.launch(viewModel.insightsContext) {
-            if (viewModel.insights.value != viewModel.currentSessionInsights) {
-                viewModel.insights.emit(viewModel.currentSessionInsights)
-            }
-        }
-
         super.inspectionFinished(session, problemsHolder)
         emitFinishedInspectionTelemetryEvent(problemsHolder)
     }
