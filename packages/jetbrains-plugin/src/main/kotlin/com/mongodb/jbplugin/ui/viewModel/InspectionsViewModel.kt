@@ -5,17 +5,19 @@ import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.linting.QueryInsight
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 
 @Service(Service.Level.PROJECT)
 class InspectionsViewModel {
-    val insights: MutableStateFlow<List<QueryInsight<PsiElement, *>>> = MutableStateFlow(emptyList())
+    private val mutableInsights = MutableStateFlow<List<QueryInsight<PsiElement, *>>>(emptyList())
+    val insights get() = mutableInsights.asStateFlow()
 
     suspend fun addInsight(insight: QueryInsight<PsiElement, *>) {
         withContext(Dispatchers.IO) {
-            val currentState = insights.value
+            val currentState = mutableInsights.value
             val withoutExistingInsight = currentState.filter { !areEquivalent(insight, it) }
-            insights.emit(withoutExistingInsight + insight)
+            mutableInsights.emit(withoutExistingInsight + insight)
         }
     }
 
