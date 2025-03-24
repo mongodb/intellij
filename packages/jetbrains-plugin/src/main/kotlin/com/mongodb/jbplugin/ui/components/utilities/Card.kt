@@ -21,7 +21,7 @@ import org.jetbrains.jewel.ui.icons.AllIconsKeys
 
 enum class CardCategory(internal val icon: IconKey, internal val contentDescription: String) {
     LOGO(AllIconsKeys.Providers.MongoDB, "MongoDB"),
-    ERROR(AllIconsKeys.General.Error, "Error")
+    ERROR(AllIconsKeys.General.Error, "Error"),
 }
 
 @Composable
