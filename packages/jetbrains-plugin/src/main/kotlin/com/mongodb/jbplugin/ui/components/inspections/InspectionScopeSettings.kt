@@ -43,7 +43,7 @@ fun _InspectionScopeSettings(currentScope: AnalysisScope) {
 }
 
 @Composable
-private fun InspectionScopeComboBox(currentScope: AnalysisScope, modifier: Modifier = Modifier,) {
+private fun InspectionScopeComboBox(currentScope: AnalysisScope, modifier: Modifier = Modifier) {
     Row(modifier = modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(text = useTranslation("side-panel.scope.scope-to"))
         ComboBox(

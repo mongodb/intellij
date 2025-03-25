@@ -131,8 +131,8 @@ private fun Separator() {
 }
 
 internal data class InspectionAccordionCallbacks(
-    val onToggleInspectionCategory: (InspectionCategory) -> Unit = { _, -> },
-    val onNavigateToQueryOfInsight: (QueryInsight<PsiElement, *>) -> Unit = { _, -> }
+    val onToggleInspectionCategory: (InspectionCategory) -> Unit = { _ -> },
+    val onNavigateToQueryOfInsight: (QueryInsight<PsiElement, *>) -> Unit = { _ -> }
 )
 
 internal val LocalInspectionAccordionCallbacks = compositionLocalOf { InspectionAccordionCallbacks() }
