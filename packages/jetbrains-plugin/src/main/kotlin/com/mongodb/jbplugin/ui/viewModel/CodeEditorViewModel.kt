@@ -12,7 +12,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
 data class EditorState(
@@ -55,7 +55,7 @@ class CodeEditorViewModel(
     }
 
     private fun rebuildEditorState(manager: FileEditorManager) {
-        coroutineScope.launch {
+        runBlocking {
             withContext(Dispatchers.EDT) {
                 val openFiles = manager.openFiles.toList().distinctBy { it.canonicalPath }
                 val focusedFiles = manager.selectedEditors.mapNotNull { it.file }.distinctBy { it.canonicalPath }.toList()
