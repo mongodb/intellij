@@ -1,6 +1,5 @@
 package com.mongodb.jbplugin.ui.viewModel
 
-import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent
@@ -9,11 +8,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.mongodb.jbplugin.editor.services.MdbPluginDisposable
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 
 data class EditorState(
     val focusedFiles: List<VirtualFile>,
@@ -55,15 +51,9 @@ class CodeEditorViewModel(
     }
 
     private fun rebuildEditorState(manager: FileEditorManager) {
-        runBlocking {
-            withContext(Dispatchers.EDT) {
-                val openFiles = manager.openFiles.toList().distinctBy { it.canonicalPath }
-                val focusedFiles = manager.selectedEditors.mapNotNull { it.file }.distinctBy { it.canonicalPath }.toList()
+        val openFiles = manager.openFiles.toList().distinctBy { it.canonicalPath }
+        val focusedFiles = manager.selectedEditors.mapNotNull { it.file }.distinctBy { it.canonicalPath }.toList()
 
-                mutableEditorState.emit(
-                    EditorState(focusedFiles, openFiles)
-                )
-            }
-        }
+        mutableEditorState.tryEmit(EditorState(focusedFiles, openFiles))
     }
 }
