@@ -19,6 +19,7 @@ import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isMongoDbDataSource
 import com.mongodb.jbplugin.editor.services.MdbPluginDisposable
 import com.mongodb.jbplugin.editor.services.implementations.MdbEditorService
 import com.mongodb.jbplugin.editor.services.implementations.getDataSourceService
+import com.mongodb.jbplugin.editor.services.implementations.getToolbarSettings
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.observability.useLogMessage
 import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState.Connected
@@ -28,6 +29,7 @@ import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState.Failed
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.map
@@ -87,16 +89,23 @@ class ConnectionStateViewModel(
     private val coroutineScope: CoroutineScope
 ) : DataSourceManager.Listener, JdbcDriverManager.Listener {
     internal var connectionSaga = ConnectionSaga(project, ::emitSelectedConnectionChanged)
-    val connectionState = MutableStateFlow(ConnectionState.default())
+    internal val mutableConnectionState = MutableStateFlow(ConnectionState.default())
+    val connectionState: StateFlow<ConnectionState> = mutableConnectionState
 
     init {
         coroutineScope.launch {
             val dataSources = project.getDataSourceService().listMongoDbDataSources()
-            connectionState.emit(ConnectionState(dataSources, Empty))
+            mutableConnectionState.emit(ConnectionState(dataSources, Empty))
+
+            val toolbarSettings = project.getToolbarSettings()
+            val selectedDataSource = dataSources.find { it.uniqueId == toolbarSettings.dataSourceId }
+            if (selectedDataSource != null) {
+                selectDataSource(selectedDataSource, background = false)
+            }
         }
 
         coroutineScope.launch {
-            connectionState.distinctUntilChangedBy { it.selectedConnectionState }
+            mutableConnectionState.distinctUntilChangedBy { it.selectedConnectionState }
                 .map { it.selectedConnectionState }
                 .collectLatest(::onSelectedConnectionChanges)
         }
@@ -131,7 +140,7 @@ class ConnectionStateViewModel(
     }
 
     suspend fun requestEditDataSource() {
-        val selectedConnectionState = connectionState.value.selectedConnectionState
+        val selectedConnectionState = mutableConnectionState.value.selectedConnectionState
         if (selectedConnectionState is Connected) {
             connectionSaga.requestEditDataSource(selectedConnectionState.dataSource)
         }
@@ -149,7 +158,7 @@ class ConnectionStateViewModel(
     }
 
     private suspend fun emitSelectedConnectionChanged(newState: SelectedConnectionState) {
-        connectionState.emit(connectionState.value.withConnectionState(newState))
+        mutableConnectionState.emit(mutableConnectionState.value.withConnectionState(newState))
     }
 
     override fun <T : RawDataSource?> dataSourceAdded(
@@ -158,7 +167,7 @@ class ConnectionStateViewModel(
     ) {
         if (dataSource is LocalDataSource) {
             coroutineScope.launch {
-                connectionState.emit(connectionState.value.withDataSource(dataSource))
+                mutableConnectionState.emit(mutableConnectionState.value.withDataSource(dataSource))
             }
         }
     }
@@ -169,7 +178,7 @@ class ConnectionStateViewModel(
     ) {
         if (dataSource is LocalDataSource) {
             coroutineScope.launch {
-                connectionState.emit(connectionState.value.withoutDataSource(dataSource))
+                mutableConnectionState.emit(mutableConnectionState.value.withoutDataSource(dataSource))
             }
         }
     }
@@ -179,7 +188,7 @@ class ConnectionStateViewModel(
         configuration: ConsoleRunConfiguration?
     ) {
         coroutineScope.launch {
-            connectionState.emit(connectionState.value.whenDisconnected(dataSource))
+            mutableConnectionState.emit(mutableConnectionState.value.whenDisconnected(dataSource))
         }
     }
 
@@ -189,7 +198,7 @@ class ConnectionStateViewModel(
     ) {
         if (dataSource is LocalDataSource) {
             coroutineScope.launch {
-                connectionState.emit(connectionState.value.withDataSource(dataSource))
+                mutableConnectionState.emit(mutableConnectionState.value.withDataSource(dataSource))
             }
         }
     }
