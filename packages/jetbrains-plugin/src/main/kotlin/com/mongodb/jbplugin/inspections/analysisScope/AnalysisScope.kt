@@ -3,6 +3,7 @@ package com.mongodb.jbplugin.inspections.analysisScope
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.linting.QueryInsight
+import org.jetbrains.annotations.PropertyKey
 
 sealed interface AnalysisScope {
     val displayName: String
@@ -18,7 +19,8 @@ sealed interface AnalysisScope {
     }
 
     data class CurrentFile(val files: List<VirtualFile>) : AnalysisScope {
-        override val displayName = "Current File"
+        @PropertyKey(resourceBundle = "messages.SidePanelBundle")
+        override val displayName = "side-panel.scope.current-file"
 
         override fun getFilteredInsights(allInsights: List<QueryInsight<PsiElement, *>>): List<QueryInsight<PsiElement, *>> {
             return allInsights.filter {
