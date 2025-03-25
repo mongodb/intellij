@@ -24,10 +24,10 @@ import com.mongodb.jbplugin.editor.models.ToolbarEvent.DatabasesLoadingSuccessfu
 import com.mongodb.jbplugin.editor.models.ToolbarEvent.ModificationCountChanged
 import com.mongodb.jbplugin.editor.models.ToolbarEvent.ProjectExecuted
 import com.mongodb.jbplugin.editor.models.ToolbarEvent.SelectionChanged
-import com.mongodb.jbplugin.editor.services.ToolbarSettings.Companion.UNINITIALIZED_DATABASE
+import com.mongodb.jbplugin.editor.services.ConnectionPreferences.Companion.UNINITIALIZED_DATABASE
+import com.mongodb.jbplugin.editor.services.implementations.getConnectionPreferences
 import com.mongodb.jbplugin.editor.services.implementations.getDataSourceService
 import com.mongodb.jbplugin.editor.services.implementations.getEditorService
-import com.mongodb.jbplugin.editor.services.implementations.getToolbarSettings
 import com.mongodb.jbplugin.meta.eventCount
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -173,9 +173,9 @@ class ToolbarModel(
 
     fun loadInitialData() {
         if (initialDataLoaded.compareAndSet(false, true)) {
-            val toolbarSettings = project.getToolbarSettings()
+            val connectionPreferences = project.getConnectionPreferences()
             _toolbarState.value.dataSources.find {
-                it.uniqueId == toolbarSettings.dataSourceId
+                it.uniqueId == connectionPreferences.dataSourceId
             }?.let {
                 coroutineScope.launchChildBackground {
                     toolbarEvents.emit(DataSourceSelected(it, true))
@@ -314,9 +314,9 @@ class ToolbarModel(
     }
 
     private fun afterDataSourceUnselected(oldDataSource: LocalDataSource, oldDatabase: String?) {
-        val toolbarSettings = project.getToolbarSettings()
-        toolbarSettings.dataSourceId = null
-        toolbarSettings.database = null
+        val connectionPreferences = project.getConnectionPreferences()
+        connectionPreferences.dataSourceId = null
+        connectionPreferences.database = null
 
         val editorService = project.getEditorService()
         editorService.detachDataSourceFromSelectedEditor(oldDataSource)
@@ -358,7 +358,7 @@ class ToolbarModel(
             // We would detach the previous selection only when it is not an initial selection
             !isInitialSelection
         ) {
-            project.getToolbarSettings().database = null
+            project.getConnectionPreferences().database = null
             val editorService = project.getEditorService()
             oldState.selectedDatabase?.let { editorService.detachDatabaseFromSelectedEditor(it) }
             editorService.reAnalyzeSelectedEditor(applyReadAction = true)
@@ -385,7 +385,7 @@ class ToolbarModel(
         }
 
         if (newState.selectedDataSource?.uniqueId == dataSource.uniqueId) {
-            project.getToolbarSettings().dataSourceId = dataSource.uniqueId
+            project.getConnectionPreferences().dataSourceId = dataSource.uniqueId
             val editorService = project.getEditorService()
             editorService.attachDataSourceToSelectedEditor(dataSource)
             editorService.reAnalyzeSelectedEditor(applyReadAction = true)
@@ -421,14 +421,14 @@ class ToolbarModel(
         dataSource: LocalDataSource,
         databases: List<String>
     ) {
-        val toolbarSettings = project.getToolbarSettings()
+        val connectionPreferences = project.getConnectionPreferences()
         val editorService = project.getEditorService()
         val newState = _toolbarState.updateAndGet { previousState ->
             if (previousState.selectedDataSource?.uniqueId == dataSource.uniqueId) {
-                val databaseToBeSelected = if (toolbarSettings.database == UNINITIALIZED_DATABASE) {
+                val databaseToBeSelected = if (connectionPreferences.database == UNINITIALIZED_DATABASE) {
                     editorService.inferredDatabase
                 } else {
-                    toolbarSettings.database
+                    connectionPreferences.database
                 }.takeIf { databases.contains(it) }
 
                 previousState.copy(
@@ -442,7 +442,7 @@ class ToolbarModel(
         }
 
         if (newState.selectedDatabase != null) {
-            project.getToolbarSettings().database = newState.selectedDatabase
+            project.getConnectionPreferences().database = newState.selectedDatabase
             editorService.attachDatabaseToSelectedEditor(newState.selectedDatabase)
             editorService.reAnalyzeSelectedEditor(applyReadAction = true)
         }
@@ -475,7 +475,7 @@ class ToolbarModel(
 
         if (newState.selectedDatabase == database) {
             val editorService = project.getEditorService()
-            project.getToolbarSettings().database = database
+            project.getConnectionPreferences().database = database
             editorService.attachDatabaseToSelectedEditor(database)
             editorService.reAnalyzeSelectedEditor(applyReadAction = true)
         }
@@ -494,7 +494,7 @@ class ToolbarModel(
         }
 
         if (newState.selectedDatabase == null) {
-            project.getToolbarSettings().database = null
+            project.getConnectionPreferences().database = null
             val editorService = project.getEditorService()
             editorService.detachDatabaseFromSelectedEditor(database)
             editorService.reAnalyzeSelectedEditor(applyReadAction = true)

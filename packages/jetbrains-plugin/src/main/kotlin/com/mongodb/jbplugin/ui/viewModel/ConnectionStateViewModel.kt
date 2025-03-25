@@ -18,8 +18,8 @@ import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isMongoDbDataSource
 import com.mongodb.jbplugin.editor.services.MdbPluginDisposable
 import com.mongodb.jbplugin.editor.services.implementations.MdbEditorService
+import com.mongodb.jbplugin.editor.services.implementations.getConnectionPreferences
 import com.mongodb.jbplugin.editor.services.implementations.getDataSourceService
-import com.mongodb.jbplugin.editor.services.implementations.getToolbarSettings
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.observability.useLogMessage
 import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState.Connected
@@ -29,7 +29,7 @@ import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState.Failed
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.map
@@ -90,15 +90,15 @@ class ConnectionStateViewModel(
 ) : DataSourceManager.Listener, JdbcDriverManager.Listener {
     internal var connectionSaga = ConnectionSaga(project, ::emitSelectedConnectionChanged)
     internal val mutableConnectionState = MutableStateFlow(ConnectionState.default())
-    val connectionState: StateFlow<ConnectionState> = mutableConnectionState
+    val connectionState = mutableConnectionState.asStateFlow()
 
     init {
         coroutineScope.launch {
             val dataSources = project.getDataSourceService().listMongoDbDataSources()
             mutableConnectionState.emit(ConnectionState(dataSources, Empty))
 
-            val toolbarSettings = project.getToolbarSettings()
-            val selectedDataSource = dataSources.find { it.uniqueId == toolbarSettings.dataSourceId }
+            val connectionPreferences = project.getConnectionPreferences()
+            val selectedDataSource = dataSources.find { it.uniqueId == connectionPreferences.dataSourceId }
             if (selectedDataSource != null) {
                 selectDataSource(selectedDataSource, background = false)
             }

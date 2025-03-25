@@ -4,10 +4,10 @@ import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.database.psi.DataSourceManager
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.assertInstanceOf
+import com.mongodb.jbplugin.editor.services.implementations.ConnectionPreferencesStateComponent
 import com.mongodb.jbplugin.editor.services.implementations.MdbDataSourceService
 import com.mongodb.jbplugin.editor.services.implementations.MdbEditorService
-import com.mongodb.jbplugin.editor.services.implementations.PersistentToolbarSettings
-import com.mongodb.jbplugin.editor.services.implementations.ToolbarSettingsStateComponent
+import com.mongodb.jbplugin.editor.services.implementations.PersistentConnectionPreferences
 import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.eventually
 import com.mongodb.jbplugin.fixtures.mockDataSource
@@ -32,21 +32,21 @@ class ConnectionStateViewModelTest {
     lateinit var dataSource: LocalDataSource
     private lateinit var dataSourceService: MdbDataSourceService
     private lateinit var editorService: MdbEditorService
-    private lateinit var toolbarSettings: PersistentToolbarSettings
+    private lateinit var connectionPreferences: PersistentConnectionPreferences
 
     @BeforeEach
     fun setUp(project: Project) {
         dataSource = mockDataSource()
         dataSourceService = mock()
         editorService = mock()
-        toolbarSettings = mock()
-        val toolbarSettingsStateComponent = mock<ToolbarSettingsStateComponent>()
-        whenever(toolbarSettingsStateComponent.state).thenReturn(toolbarSettings)
+        connectionPreferences = mock()
+        val connectionPreferencesStateComponent = mock<ConnectionPreferencesStateComponent>()
+        whenever(connectionPreferencesStateComponent.state).thenReturn(connectionPreferences)
 
         whenever(dataSourceService.listMongoDbDataSources()).thenReturn(listOf(dataSource))
         project.withMockedService(dataSourceService)
             .withMockedService(editorService)
-            .withMockedService(toolbarSettingsStateComponent)
+            .withMockedService(connectionPreferencesStateComponent)
     }
 
     @Test
@@ -68,7 +68,7 @@ class ConnectionStateViewModelTest {
         coroutineScope: TestScope
     ) = runTest {
         val dataSourceId = dataSource.uniqueId
-        whenever(toolbarSettings.dataSourceId).thenReturn(dataSourceId)
+        whenever(connectionPreferences.dataSourceId).thenReturn(dataSourceId)
 
         val viewModel = ConnectionStateViewModel(project, coroutineScope)
         eventually(coroutineScope = coroutineScope) {
