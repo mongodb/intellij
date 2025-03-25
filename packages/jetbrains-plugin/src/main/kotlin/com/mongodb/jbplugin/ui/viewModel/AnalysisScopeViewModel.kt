@@ -29,9 +29,7 @@ class AnalysisScopeViewModel(
     private fun refreshAnalysisScopeIfNecessary(editorState: EditorState) {
         val currentScope = mutableAnalysisScope.value
         if (currentScope is AnalysisScope.CurrentFile) {
-            coroutineScope.launch {
-                mutableAnalysisScope.emit(AnalysisScope.CurrentFile(editorState.focusedFiles))
-            }
+            mutableAnalysisScope.tryEmit(AnalysisScope.CurrentFile(editorState.focusedFiles))
         }
     }
 }

@@ -82,26 +82,26 @@ class CodeEditorViewModelTest {
             assertEquals(editorState.focusedFiles[0], file2)
         }
     }
+}
 
-    private fun fileAt(path: String): VirtualFile {
-        val file = mock<VirtualFile>()
-        whenever(file.canonicalPath).thenReturn(path)
+internal fun fileAt(path: String): VirtualFile {
+    val file = mock<VirtualFile>()
+    whenever(file.canonicalPath).thenReturn(path)
 
-        return file
-    }
+    return file
+}
 
-    private fun fileManagerWith(openFiles: List<VirtualFile>, filesInEditor: List<VirtualFile>): FileEditorManager {
-        val manager = mock<FileEditorManager>()
-        val openFilesArray = openFiles.toTypedArray()
-        val editorsArray = filesInEditor.map {
-            val editor = mock<FileEditor>()
-            whenever(editor.file).thenReturn(it)
-            editor
-        }.toTypedArray()
+internal fun fileManagerWith(openFiles: List<VirtualFile>, filesInEditor: List<VirtualFile>): FileEditorManager {
+    val manager = mock<FileEditorManager>()
+    val openFilesArray = openFiles.toTypedArray()
+    val editorsArray = filesInEditor.map {
+        val editor = mock<FileEditor>()
+        whenever(editor.file).thenReturn(it)
+        editor
+    }.toTypedArray()
 
-        whenever(manager.openFiles).thenReturn(openFilesArray)
-        whenever(manager.selectedEditors).thenReturn(editorsArray)
+    whenever(manager.openFiles).thenReturn(openFilesArray)
+    whenever(manager.selectedEditors).thenReturn(editorsArray)
 
-        return manager
-    }
+    return manager
 }
