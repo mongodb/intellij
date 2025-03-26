@@ -3,12 +3,16 @@ package com.mongodb.jbplugin.ui.viewModel
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.database.psi.DataSourceManager
 import com.intellij.openapi.project.Project
+import com.intellij.testFramework.assertInstanceOf
+import com.mongodb.jbplugin.editor.services.implementations.ConnectionPreferencesStateComponent
 import com.mongodb.jbplugin.editor.services.implementations.MdbDataSourceService
 import com.mongodb.jbplugin.editor.services.implementations.MdbEditorService
+import com.mongodb.jbplugin.editor.services.implementations.PersistentConnectionPreferences
 import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.eventually
 import com.mongodb.jbplugin.fixtures.mockDataSource
 import com.mongodb.jbplugin.fixtures.withMockedService
+import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState.Connecting
 import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState.Empty
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
@@ -26,18 +30,23 @@ import org.mockito.kotlin.whenever
 @IntegrationTest
 class ConnectionStateViewModelTest {
     lateinit var dataSource: LocalDataSource
-    lateinit var dataSourceService: MdbDataSourceService
-    lateinit var editorService: MdbEditorService
+    private lateinit var dataSourceService: MdbDataSourceService
+    private lateinit var editorService: MdbEditorService
+    private lateinit var connectionPreferences: PersistentConnectionPreferences
 
     @BeforeEach
     fun setUp(project: Project) {
         dataSource = mockDataSource()
         dataSourceService = mock()
         editorService = mock()
+        connectionPreferences = mock()
+        val connectionPreferencesStateComponent = mock<ConnectionPreferencesStateComponent>()
+        whenever(connectionPreferencesStateComponent.state).thenReturn(connectionPreferences)
 
         whenever(dataSourceService.listMongoDbDataSources()).thenReturn(listOf(dataSource))
         project.withMockedService(dataSourceService)
             .withMockedService(editorService)
+            .withMockedService(connectionPreferencesStateComponent)
     }
 
     @Test
@@ -50,6 +59,22 @@ class ConnectionStateViewModelTest {
             val connectionState = viewModel.connectionState.value
             assertEquals(1, connectionState.connections.size)
             assertEquals(dataSource, connectionState.connections.first())
+        }
+    }
+
+    @Test
+    fun `restores the last selected DataSource and attempts to connect to it`(
+        project: Project,
+        coroutineScope: TestScope
+    ) = runTest {
+        val dataSourceId = dataSource.uniqueId
+        whenever(connectionPreferences.dataSourceId).thenReturn(dataSourceId)
+
+        val viewModel = ConnectionStateViewModel(project, coroutineScope)
+        eventually(coroutineScope = coroutineScope) {
+            val connectionState = viewModel.connectionState.value
+            assertInstanceOf<Connecting>(connectionState.selectedConnectionState)
+            assertEquals(dataSource, (connectionState.selectedConnectionState as Connecting).dataSource)
         }
     }
 
@@ -135,7 +160,7 @@ class ConnectionStateViewModelTest {
         val dataSourceManager = mock<DataSourceManager<LocalDataSource>>()
 
         coroutineScope.launch {
-            viewModel.connectionState.emit(
+            viewModel.mutableConnectionState.emit(
                 ConnectionState.default()
                     .withDataSource(dataSource)
                     .withConnectionState(SelectedConnectionState.Connected(dataSource))
@@ -164,7 +189,7 @@ class ConnectionStateViewModelTest {
         val dataSource = mockDataSource()
 
         coroutineScope.launch {
-            viewModel.connectionState.emit(
+            viewModel.mutableConnectionState.emit(
                 ConnectionState.default()
                     .withDataSource(dataSource)
                     .withConnectionState(SelectedConnectionState.Connected(dataSource))

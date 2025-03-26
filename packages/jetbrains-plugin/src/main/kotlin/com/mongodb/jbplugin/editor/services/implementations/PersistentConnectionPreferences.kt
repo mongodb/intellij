@@ -7,32 +7,32 @@ package com.mongodb.jbplugin.editor.services.implementations
 
 import com.intellij.openapi.components.*
 import com.intellij.openapi.project.Project
-import com.mongodb.jbplugin.editor.services.ToolbarSettings
+import com.mongodb.jbplugin.editor.services.ConnectionPreferences
 import java.io.Serializable
 
 // Setting this service as a PROJECT service ensures that our state is saved per Project
 @Service(Service.Level.PROJECT)
 @State(
-    name = "com.mongodb.jbplugin.editor.ToolbarSettings",
+    name = "com.mongodb.jbplugin.editor.ConnectionPreferences",
     storages = [
         Storage(
             // File used to persist these settings per project
-            value = "MongodbToolbarSettings.xml",
+            value = "MongodbConnectionPreferences.xml",
             // Setting roamingType to DEFAULT ensures that these settings are carried forward during IntelliJ updates
             // as well
             roamingType = RoamingType.DEFAULT
         )
     ]
 )
-internal class ToolbarSettingsStateComponent :
-    SimplePersistentStateComponent<PersistentToolbarSettings>(PersistentToolbarSettings())
+internal class ConnectionPreferencesStateComponent :
+    SimplePersistentStateComponent<PersistentConnectionPreferences>(PersistentConnectionPreferences())
 
-internal class PersistentToolbarSettings :
+internal class PersistentConnectionPreferences :
     BaseState(),
     Serializable,
-    ToolbarSettings {
+    ConnectionPreferences {
     override var dataSourceId by string(null)
-    override var database by string(ToolbarSettings.UNINITIALIZED_DATABASE)
+    override var database by string(ConnectionPreferences.UNINITIALIZED_DATABASE)
 }
 
 /**
@@ -40,6 +40,6 @@ internal class PersistentToolbarSettings :
  *
  * @return
  */
-fun Project.getToolbarSettings(): ToolbarSettings = getService(
-    ToolbarSettingsStateComponent::class.java
+fun Project.getConnectionPreferences(): ConnectionPreferences = getService(
+    ConnectionPreferencesStateComponent::class.java
 ).state

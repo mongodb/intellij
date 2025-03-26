@@ -3,7 +3,7 @@ package com.mongodb.jbplugin.editor.services
 /**
  * Interface to work with data saved as part of Toolbar
  */
-interface ToolbarSettings {
+interface ConnectionPreferences {
     // Implementations are supposed to define the getters and setters for this
     var dataSourceId: String?
 
