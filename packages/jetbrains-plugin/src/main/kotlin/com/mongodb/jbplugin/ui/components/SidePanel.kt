@@ -14,6 +14,7 @@ import com.mongodb.jbplugin.settings.pluginSetting
 import com.mongodb.jbplugin.ui.components.connection.ConnectionBootstrapCard
 import com.mongodb.jbplugin.ui.components.connection.OnlyWhenConnected
 import com.mongodb.jbplugin.ui.components.inspections.InspectionAccordion
+import com.mongodb.jbplugin.ui.components.inspections.InspectionScopeSettings
 import com.mongodb.jbplugin.ui.components.utilities.hooks.LocalProject
 import org.jetbrains.jewel.bridge.addComposeTab
 
@@ -41,6 +42,7 @@ class SidePanel : ToolWindowFactory, DumbAware {
         Column(Modifier.padding(vertical = 4.dp, horizontal = 12.dp)) {
             ConnectionBootstrapCard()
             OnlyWhenConnected {
+                InspectionScopeSettings()
                 InspectionAccordion()
             }
         }
