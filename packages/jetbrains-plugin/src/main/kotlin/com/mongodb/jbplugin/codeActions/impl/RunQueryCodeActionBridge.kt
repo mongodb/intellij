@@ -29,8 +29,8 @@ import com.mongodb.jbplugin.dialects.OutputQuery
 import com.mongodb.jbplugin.dialects.javadriver.glossary.findAllChildrenOfType
 import com.mongodb.jbplugin.dialects.mongosh.MongoshDialect
 import com.mongodb.jbplugin.editor.DatagripConsoleEditor
-import com.mongodb.jbplugin.editor.DatagripConsoleEditor.appendText
 import com.mongodb.jbplugin.editor.MdbJavaEditorToolbar
+import com.mongodb.jbplugin.editor.appendText
 import com.mongodb.jbplugin.editor.services.implementations.MdbEditorService
 import com.mongodb.jbplugin.i18n.CodeActionsMessages
 import com.mongodb.jbplugin.i18n.Icons

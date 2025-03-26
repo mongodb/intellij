@@ -5,6 +5,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -33,6 +34,7 @@ import com.mongodb.jbplugin.inspections.analysisScope.AnalysisScope
 import com.mongodb.jbplugin.linting.InspectionCategory
 import com.mongodb.jbplugin.linting.InspectionCategory.PERFORMANCE
 import com.mongodb.jbplugin.linting.QueryInsight
+import com.mongodb.jbplugin.meta.withinReadActionBlocking
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.ui.components.utilities.ActionLink
 import com.mongodb.jbplugin.ui.components.utilities.hooks.useTranslation
@@ -161,6 +163,9 @@ internal fun InsightCard(insight: QueryInsight<PsiElement, *>) {
                 .padding(12.dp)
         ) {
             LinkToQueryInsight(insight)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                InsightActions(insight)
+            }
         }
     }
 }
@@ -175,7 +180,7 @@ private fun LinkToQueryInsight(insight: QueryInsight<PsiElement, *>) {
 }
 
 private fun queryLocation(query: Node<PsiElement>): String {
-    return ApplicationManager.getApplication().runReadAction<String> {
+    return withinReadActionBlocking {
         val fileName = query.source.containingFile.name
         val lineNumber = ApplicationManager.getApplication().runReadAction<Int> {
             query.source.containingFile.fileDocument.getLineNumber(
@@ -194,7 +199,9 @@ internal fun useInspectionAccordionCallbacks(): InspectionAccordionCallbacks {
 
 @Composable
 private fun useFilteredInsights(analysisScope: AnalysisScope, allInsights: List<QueryInsight<PsiElement, *>>): List<QueryInsight<PsiElement, *>> {
-    return analysisScope.getFilteredInsights(allInsights)
+    return ApplicationManager.getApplication().runReadAction<List<QueryInsight<PsiElement, *>>> {
+        analysisScope.getFilteredInsights(allInsights)
+    }
 }
 
 @Composable
