@@ -75,7 +75,7 @@ class CodeEditorViewModel(
         val focusedFiles = manager.selectedEditors.mapNotNull { it.file }.distinctBy { it.canonicalPath }.toList()
 
         coroutineScope.launch(Dispatchers.IO) {
-            mutableEditorState.tryEmit(EditorState(focusedFiles, openFiles))
+            mutableEditorState.emit(EditorState(focusedFiles, openFiles))
         }
     }
 }
