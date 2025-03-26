@@ -1,12 +1,10 @@
 package com.mongodb.jbplugin.ui.viewModel
 
-import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.Service
-import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.linting.InspectionCategory
 import com.mongodb.jbplugin.linting.QueryInsight
+import com.mongodb.jbplugin.meta.service
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -37,16 +35,8 @@ class InspectionsViewModel {
     }
 
     suspend fun visitQueryOfInsightInEditor(insight: QueryInsight<PsiElement, *>) {
-        withContext(Dispatchers.EDT) {
-            val vFile = insight.query.source.containingFile.virtualFile
-
-            val manager = FileEditorManager.getInstance(insight.query.source.project)
-            val editorOfFile = manager.selectedTextEditor?.takeIf { it.virtualFile == vFile }
-                ?: manager.openTextEditor(OpenFileDescriptor(insight.query.source.project, vFile, 0), true)
-                ?: return@withContext
-
-            editorOfFile.caretModel.moveToOffset(insight.query.source.textOffset)
-        }
+        val codeEditorViewModel by insight.query.source.project.service<CodeEditorViewModel>()
+        codeEditorViewModel.focusQueryInEditor(insight.query)
     }
 
     private fun areEquivalent(a: QueryInsight<PsiElement, *>, b: QueryInsight<PsiElement, *>): Boolean {

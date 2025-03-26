@@ -1,16 +1,25 @@
 package com.mongodb.jbplugin.ui.viewModel
 
+import com.intellij.openapi.editor.CaretModel
+import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
 import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.eventually
+import com.mongodb.jbplugin.fixtures.withMockedService
+import com.mongodb.jbplugin.mql.Node
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 @IntegrationTest
@@ -82,6 +91,66 @@ class CodeEditorViewModelTest {
             assertEquals(editorState.focusedFiles[0], file2)
         }
     }
+
+    @Test
+    fun `should open the query in the editor when the editor is already open`(
+        project: Project,
+        coroutineScope: TestScope
+    ) = coroutineScope.runTest {
+        val file = fileAt("MyFile.java")
+        val viewModel = CodeEditorViewModel(project, coroutineScope)
+
+        val manager = fileManagerWith(
+            openFiles = listOf(file),
+            filesInEditor = listOf(file)
+        )
+
+        project.withMockedService(manager)
+
+        val query = queryAt(file, project, 25)
+        viewModel.focusQueryInEditor(query)
+
+        eventually(coroutineScope = coroutineScope) {
+            verify(manager.selectedTextEditor!!.caretModel).moveToOffset(25)
+        }
+    }
+
+    @Test
+    fun `should open a new editor and move the caret to the correct position`(
+        project: Project,
+        coroutineScope: TestScope
+    ) = coroutineScope.runTest {
+        val file = fileAt("MyFile.java")
+        val viewModel = CodeEditorViewModel(project, coroutineScope)
+
+        val manager = fileManagerWith(
+            openFiles = listOf(file),
+            filesInEditor = listOf()
+        )
+
+        val newEditor = editorForFile(manager, file)
+        whenever(manager.openTextEditor(any(), any())).thenReturn(newEditor)
+        project.withMockedService(manager)
+
+        val query = queryAt(file, project, 25)
+        viewModel.focusQueryInEditor(query)
+
+        eventually(coroutineScope = coroutineScope) {
+            verify(newEditor.caretModel).moveToOffset(25)
+        }
+    }
+}
+
+internal fun queryAt(file: VirtualFile, project: Project, offset: Int): Node<PsiElement> {
+    val psiElement = mock<PsiElement>()
+    val psiFile = mock<PsiFile>()
+
+    whenever(psiElement.containingFile).thenReturn(psiFile)
+    whenever(psiFile.virtualFile).thenReturn(file)
+    whenever(psiElement.project).thenReturn(project)
+    whenever(psiElement.textOffset).thenReturn(offset)
+
+    return Node(psiElement, emptyList())
 }
 
 internal fun fileAt(path: String): VirtualFile {
@@ -100,8 +169,24 @@ internal fun fileManagerWith(openFiles: List<VirtualFile>, filesInEditor: List<V
         editor
     }.toTypedArray()
 
+    if (filesInEditor.isNotEmpty()) {
+        val editor = editorForFile(manager, filesInEditor.first())
+        whenever(manager.selectedTextEditor).thenReturn(editor)
+    }
+
     whenever(manager.openFiles).thenReturn(openFilesArray)
     whenever(manager.selectedEditors).thenReturn(editorsArray)
 
     return manager
+}
+
+private fun editorForFile(
+    manager: FileEditorManager,
+    file: VirtualFile
+): Editor {
+    val caretModel = mock<CaretModel>()
+    val selectedTextEditor = mock<Editor>()
+    whenever(selectedTextEditor.caretModel).thenReturn(caretModel)
+    whenever(selectedTextEditor.virtualFile).thenReturn(file)
+    return selectedTextEditor
 }
