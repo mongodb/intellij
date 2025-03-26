@@ -22,7 +22,7 @@ interface InsightAction {
         private fun resolveSingle(action: InspectionAction): InsightAction? {
             return when (action) {
                 ChooseConnection -> null
-                CreateIndexSuggestionScript -> CreateSuggestedIndexInsightAction()
+                CreateIndexSuggestionScript -> CreateSuggestedIndexInsightAction
                 NoAction -> null
                 RunQuery -> null
             }

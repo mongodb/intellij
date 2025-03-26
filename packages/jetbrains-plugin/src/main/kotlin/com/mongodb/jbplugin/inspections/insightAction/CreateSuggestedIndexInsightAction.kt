@@ -17,7 +17,7 @@ import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.observability.probe.CreateIndexIntentionProbe
 
-class CreateSuggestedIndexInsightAction : InsightAction {
+object CreateSuggestedIndexInsightAction : InsightAction {
     override val displayName = SidePanelMessages.message("insight.action.create-index")
 
     override suspend fun apply(
