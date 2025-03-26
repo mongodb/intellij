@@ -2,11 +2,11 @@ package com.mongodb.jbplugin.editor.models
 
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.openapi.project.Project
-import com.mongodb.jbplugin.editor.services.ToolbarSettings.Companion.UNINITIALIZED_DATABASE
+import com.mongodb.jbplugin.editor.services.ConnectionPreferences.Companion.UNINITIALIZED_DATABASE
+import com.mongodb.jbplugin.editor.services.implementations.ConnectionPreferencesStateComponent
 import com.mongodb.jbplugin.editor.services.implementations.MdbDataSourceService
 import com.mongodb.jbplugin.editor.services.implementations.MdbEditorService
-import com.mongodb.jbplugin.editor.services.implementations.PersistentToolbarSettings
-import com.mongodb.jbplugin.editor.services.implementations.ToolbarSettingsStateComponent
+import com.mongodb.jbplugin.editor.services.implementations.PersistentConnectionPreferences
 import com.mongodb.jbplugin.fixtures.eventually
 import com.mongodb.jbplugin.fixtures.mockDataSource
 import kotlinx.coroutines.CoroutineScope
@@ -28,7 +28,7 @@ class ToolbarModelTest {
 
     private lateinit var project: Project
     private lateinit var coroutineScope: CoroutineScope
-    private lateinit var toolbarSettings: PersistentToolbarSettings
+    private lateinit var connectionPreferences: PersistentConnectionPreferences
     private lateinit var dataSourceService: MdbDataSourceService
     private lateinit var editorService: MdbEditorService
     private lateinit var toolbarModel: ToolbarModel
@@ -39,12 +39,12 @@ class ToolbarModelTest {
         project = mock<Project>()
         coroutineScope = TestScope()
 
-        toolbarSettings = mock<PersistentToolbarSettings>()
-        val toolbarSettingsStateComponent = mock<ToolbarSettingsStateComponent>()
-        `when`(project.getService(ToolbarSettingsStateComponent::class.java)).thenReturn(
-            toolbarSettingsStateComponent
+        connectionPreferences = mock<PersistentConnectionPreferences>()
+        val connectionPreferencesStateComponent = mock<ConnectionPreferencesStateComponent>()
+        `when`(project.getService(ConnectionPreferencesStateComponent::class.java)).thenReturn(
+            connectionPreferencesStateComponent
         )
-        `when`(toolbarSettingsStateComponent.state).thenReturn(toolbarSettings)
+        `when`(connectionPreferencesStateComponent.state).thenReturn(connectionPreferences)
 
         dataSourceService = mock<MdbDataSourceService>()
         `when`(project.getService(MdbDataSourceService::class.java)).thenReturn(dataSourceService)
@@ -65,7 +65,7 @@ class ToolbarModelTest {
     inner class ToolbarModelInitialDataLoaded {
         @Test
         fun `restores last selected dataSource and initiate a connection attempt`() {
-            `when`(toolbarSettings.dataSourceId).thenReturn("mocked-data-source-unique-id")
+            `when`(connectionPreferences.dataSourceId).thenReturn("mocked-data-source-unique-id")
             `when`(dataSourceService.listMongoDbDataSources()).thenReturn(listOf(dataSource))
 
             toolbarModel.setupEventsSubscription()
@@ -82,7 +82,7 @@ class ToolbarModelTest {
 
         @Test
         fun `will not attempt to detach the datasource and database from Editor for restored selection`() {
-            `when`(toolbarSettings.dataSourceId).thenReturn("mocked-data-source-unique-id")
+            `when`(connectionPreferences.dataSourceId).thenReturn("mocked-data-source-unique-id")
             `when`(dataSourceService.listMongoDbDataSources()).thenReturn(listOf(dataSource))
             toolbarModel.setupEventsSubscription()
             toolbarModel.loadInitialData()
@@ -101,7 +101,7 @@ class ToolbarModelTest {
 
         @Test
         fun `will not restore the last selection if the selected data source is not present`() {
-            `when`(toolbarSettings.dataSourceId).thenReturn("mocked-data-source-unique-id")
+            `when`(connectionPreferences.dataSourceId).thenReturn("mocked-data-source-unique-id")
             `when`(dataSourceService.listMongoDbDataSources()).thenReturn(emptyList())
 
             toolbarModel.setupEventsSubscription()
@@ -137,7 +137,7 @@ class ToolbarModelTest {
         fun `should attempt to detach the previously selected datasource and database from Editor`() {
             val previousDataSource = mockDataSource()
             `when`(previousDataSource.uniqueId).thenReturn("previous-data-source-unique-id")
-            `when`(toolbarSettings.dataSourceId).thenReturn("previous-data-source-unique-id")
+            `when`(connectionPreferences.dataSourceId).thenReturn("previous-data-source-unique-id")
             `when`(
                 dataSourceService.listMongoDbDataSources()
             ).thenReturn(listOf(dataSource, previousDataSource))
@@ -231,7 +231,7 @@ class ToolbarModelTest {
                 assertEquals(toolbarState.selectedDataSourceConnecting, false)
             }
 
-            verify(toolbarSettings).dataSourceId = dataSource.uniqueId
+            verify(connectionPreferences).dataSourceId = dataSource.uniqueId
             verify(editorService).attachDataSourceToSelectedEditor(dataSource)
             verify(editorService, times(2)).reAnalyzeSelectedEditor(applyReadAction = true)
             verify(dataSourceService, timeout(1000)).listDatabasesForDataSource(dataSource)
@@ -260,8 +260,8 @@ class ToolbarModelTest {
                 assertEquals(toolbarState.databases, emptyList<String>())
             }
 
-            verify(toolbarSettings).dataSourceId = null
-            verify(toolbarSettings, times(2)).database = null
+            verify(connectionPreferences).dataSourceId = null
+            verify(connectionPreferences, times(2)).database = null
             verify(editorService).detachDataSourceFromSelectedEditor(dataSource)
             verify(editorService, times(2)).reAnalyzeSelectedEditor(applyReadAction = true)
         }
@@ -436,7 +436,7 @@ class ToolbarModelTest {
                 assertEquals(toolbarState.databasesLoadingForSelectedDataSource, true)
             }
 
-            `when`(toolbarSettings.database).thenReturn("mongodb")
+            `when`(connectionPreferences.database).thenReturn("mongodb")
             toolbarModel.databasesLoadingSuccessful(dataSource, listOf("mongodb", "mangodb"))
             eventually {
                 val toolbarState = toolbarModel.toolbarState.value
@@ -446,7 +446,7 @@ class ToolbarModelTest {
                 assertEquals(toolbarState.selectedDatabase, "mongodb")
             }
 
-            verify(toolbarSettings).database = "mongodb"
+            verify(connectionPreferences).database = "mongodb"
             verify(editorService).attachDatabaseToSelectedEditor("mongodb")
             verify(editorService, times(3)).reAnalyzeSelectedEditor(applyReadAction = true)
         }
@@ -483,7 +483,7 @@ class ToolbarModelTest {
                 assertEquals(toolbarState.databasesLoadingForSelectedDataSource, true)
             }
 
-            `when`(toolbarSettings.database).thenReturn("bongodb")
+            `when`(connectionPreferences.database).thenReturn("bongodb")
             toolbarModel.databasesLoadingSuccessful(dataSource, listOf("mongodb", "mangodb"))
             eventually {
                 val toolbarState = toolbarModel.toolbarState.value
@@ -526,7 +526,7 @@ class ToolbarModelTest {
                 assertEquals(toolbarState.databasesLoadingForSelectedDataSource, true)
             }
 
-            `when`(toolbarSettings.database).thenReturn(UNINITIALIZED_DATABASE)
+            `when`(connectionPreferences.database).thenReturn(UNINITIALIZED_DATABASE)
             `when`(editorService.inferredDatabase).thenReturn("mangodb")
             toolbarModel.databasesLoadingSuccessful(dataSource, listOf("mongodb", "mangodb"))
             eventually {
@@ -537,7 +537,7 @@ class ToolbarModelTest {
                 assertEquals(toolbarState.selectedDatabase, "mangodb")
             }
 
-            verify(toolbarSettings).database = "mangodb"
+            verify(connectionPreferences).database = "mangodb"
             verify(editorService).attachDatabaseToSelectedEditor("mangodb")
             verify(editorService, times(3)).reAnalyzeSelectedEditor(applyReadAction = true)
         }
@@ -569,8 +569,8 @@ class ToolbarModelTest {
                 assertEquals(toolbarState.databases, emptyList<String>())
             }
 
-            verify(toolbarSettings).dataSourceId = null
-            verify(toolbarSettings, times(2)).database = null
+            verify(connectionPreferences).dataSourceId = null
+            verify(connectionPreferences, times(2)).database = null
             verify(editorService).detachDataSourceFromSelectedEditor(dataSource)
             verify(editorService, times(2)).reAnalyzeSelectedEditor(applyReadAction = true)
         }
@@ -602,8 +602,8 @@ class ToolbarModelTest {
                 assertEquals(toolbarState.databases, emptyList<String>())
             }
 
-            verify(toolbarSettings).dataSourceId = null
-            verify(toolbarSettings, times(2)).database = null
+            verify(connectionPreferences).dataSourceId = null
+            verify(connectionPreferences, times(2)).database = null
             verify(editorService).detachDataSourceFromSelectedEditor(dataSource)
             verify(editorService, times(2)).reAnalyzeSelectedEditor(applyReadAction = true)
         }
@@ -635,8 +635,8 @@ class ToolbarModelTest {
                 assertEquals(toolbarState.databases, emptyList<String>())
             }
 
-            verify(toolbarSettings).dataSourceId = null
-            verify(toolbarSettings, times(2)).database = null
+            verify(connectionPreferences).dataSourceId = null
+            verify(connectionPreferences, times(2)).database = null
             verify(editorService).detachDataSourceFromSelectedEditor(dataSource)
             verify(editorService, times(2)).reAnalyzeSelectedEditor(applyReadAction = true)
         }
@@ -713,7 +713,7 @@ class ToolbarModelTest {
                 assertEquals(toolbarState.databases, listOf("mongodb", "bongodb"))
             }
 
-            verify(toolbarSettings, times(1)).database = "mongodb"
+            verify(connectionPreferences, times(1)).database = "mongodb"
             verify(editorService).attachDatabaseToSelectedEditor("mongodb")
         }
     }
@@ -764,7 +764,7 @@ class ToolbarModelTest {
                 assertEquals(toolbarState.databases, listOf("mongodb", "bongodb"))
             }
 
-            verify(toolbarSettings, times(1)).database = "mongodb"
+            verify(connectionPreferences, times(1)).database = "mongodb"
             verify(editorService).attachDatabaseToSelectedEditor("mongodb")
 
             toolbarModel.unselectDatabase("mongodb")
@@ -780,7 +780,7 @@ class ToolbarModelTest {
                 assertEquals(toolbarState.databases, listOf("mongodb", "bongodb"))
             }
 
-            verify(toolbarSettings, times(2)).database = null
+            verify(connectionPreferences, times(2)).database = null
             verify(editorService).detachDatabaseFromSelectedEditor("mongodb")
         }
     }
