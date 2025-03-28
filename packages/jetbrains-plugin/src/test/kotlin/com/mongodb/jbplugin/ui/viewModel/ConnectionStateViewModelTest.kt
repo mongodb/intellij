@@ -53,7 +53,7 @@ class ConnectionStateViewModelTest {
     fun `emits the list of already existing data sources`(
         project: Project,
         coroutineScope: TestScope
-    ) = runTest {
+    ) = coroutineScope.runTest {
         val viewModel = ConnectionStateViewModel(project, coroutineScope)
         eventually(coroutineScope = coroutineScope) {
             val connectionState = viewModel.connectionState.value
@@ -66,7 +66,7 @@ class ConnectionStateViewModelTest {
     fun `restores the last selected DataSource and attempts to connect to it`(
         project: Project,
         coroutineScope: TestScope
-    ) = runTest {
+    ) = coroutineScope.runTest {
         val dataSourceId = dataSource.uniqueId
         whenever(connectionPreferences.dataSourceId).thenReturn(dataSourceId)
 
@@ -82,7 +82,7 @@ class ConnectionStateViewModelTest {
     fun `when connected triggers code analysis on the current editor`(
         project: Project,
         coroutineScope: TestScope
-    ) = runTest {
+    ) = coroutineScope.runTest {
         val viewModel = ConnectionStateViewModel(project, coroutineScope)
         viewModel.onSelectedConnectionChanges(
             SelectedConnectionState.Connected(mockDataSource())
@@ -95,7 +95,7 @@ class ConnectionStateViewModelTest {
     fun `when selecting a null data source disconnects`(
         project: Project,
         coroutineScope: TestScope
-    ) = runTest {
+    ) = coroutineScope.runTest {
         val viewModel = ConnectionStateViewModel(project, coroutineScope)
         viewModel.connectionSaga = mock()
 
@@ -107,7 +107,7 @@ class ConnectionStateViewModelTest {
     fun `when selecting a non-null data source connects to it`(
         project: Project,
         coroutineScope: TestScope
-    ) = runTest {
+    ) = coroutineScope.runTest {
         val viewModel = ConnectionStateViewModel(project, coroutineScope)
         viewModel.connectionSaga = mock()
         val dataSource = mockDataSource()
@@ -120,7 +120,7 @@ class ConnectionStateViewModelTest {
     fun `when a new data source is created tracks it`(
         project: Project,
         coroutineScope: TestScope
-    ) = runTest {
+    ) = coroutineScope.runTest {
         val viewModel = ConnectionStateViewModel(project, coroutineScope)
         viewModel.connectionSaga = mock()
         val dataSource = mockDataSource()
@@ -136,7 +136,7 @@ class ConnectionStateViewModelTest {
     fun `when a new data source is removed it is dropped`(
         project: Project,
         coroutineScope: TestScope
-    ) = runTest {
+    ) = coroutineScope.runTest {
         val viewModel = ConnectionStateViewModel(project, coroutineScope)
         viewModel.connectionSaga = mock()
         val dataSource = mockDataSource()
@@ -153,7 +153,7 @@ class ConnectionStateViewModelTest {
     fun `when a new data source is removed it is dropped and disconnected if it was connected`(
         project: Project,
         coroutineScope: TestScope
-    ) = runTest {
+    ) = coroutineScope.runTest {
         val viewModel = ConnectionStateViewModel(project, coroutineScope)
         viewModel.connectionSaga = mock()
         val dataSource = mockDataSource()
@@ -183,7 +183,7 @@ class ConnectionStateViewModelTest {
     fun `when the data source is disconnected it unlinks the connection`(
         project: Project,
         coroutineScope: TestScope
-    ) = runTest {
+    ) = coroutineScope.runTest {
         val viewModel = ConnectionStateViewModel(project, coroutineScope)
         viewModel.connectionSaga = mock()
         val dataSource = mockDataSource()

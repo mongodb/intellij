@@ -28,7 +28,7 @@ class CodeEditorViewModelTest {
     fun `should emit the open files when a file is opened`(
         project: Project,
         coroutineScope: TestScope
-    ) {
+    ) = coroutineScope.runTest {
         val file1 = fileAt("MyFile.java")
         val file2 = fileAt("MyOpenFile.java")
         val viewModel = CodeEditorViewModel(project, coroutineScope)
@@ -51,7 +51,7 @@ class CodeEditorViewModelTest {
     fun `should emit the open files when a file is closed`(
         project: Project,
         coroutineScope: TestScope
-    ) {
+    ) = coroutineScope.runTest {
         val file1 = fileAt("MyFile.java")
         val file2 = fileAt("MyOpenFile.java")
         val viewModel = CodeEditorViewModel(project, coroutineScope)
@@ -73,7 +73,7 @@ class CodeEditorViewModelTest {
     fun `should emit the open files when the selected editor changed`(
         project: Project,
         coroutineScope: TestScope
-    ) {
+    ) = coroutineScope.runTest {
         val file1 = fileAt("MyFile.java")
         val file2 = fileAt("MyOpenFile.java")
         val viewModel = CodeEditorViewModel(project, coroutineScope)
