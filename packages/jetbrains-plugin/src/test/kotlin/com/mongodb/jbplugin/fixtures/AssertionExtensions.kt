@@ -4,6 +4,7 @@
 
 package com.mongodb.jbplugin.fixtures
 
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import java.time.Duration
@@ -83,4 +84,35 @@ fun eventually(
 
         result.isSuccess
     }
+}
+
+/**
+ * Waits until the block function finishes successfully up to 1 second (or the provided timeout).
+ *
+ * Example usages:
+ *
+ * ```kt
+ * eventually {
+ *    verify(mock).myFunction()
+ * }
+ * // with custom timeout
+ * eventually(timeout = Duration.ofSeconds(5)) {
+ *    verify(mock).myFunction()
+ * }
+ * ```
+ *
+ * @param timeout
+ * @param fn
+ * @param recovery
+ */
+fun TestScope.eventually(
+    timeout: Duration = Duration.ofSeconds(10),
+    recovery: () -> Unit = {},
+    fn: suspend (Int) -> Unit,
+) {
+    eventually(
+        timeout,
+        this,
+        recovery
+    ) { n -> runBlocking(this.coroutineContext) { fn(n) } }
 }
