@@ -21,7 +21,6 @@ import com.intellij.database.remote.jdbc.RemoteConnection
 import com.intellij.lang.java.JavaLanguage
 import com.intellij.openapi.application.Application
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.ex.ApplicationEx
 import com.intellij.openapi.components.ComponentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.module.Module
@@ -189,7 +188,6 @@ private class IntegrationTestExtension :
     AfterTestExecutionCallback,
     ParameterResolver {
     private lateinit var testFixture: CodeInsightTestFixture
-    private lateinit var application: ApplicationEx
     private lateinit var settings: PluginSettings
     private lateinit var project: Project
     private lateinit var testScope: TestScope
@@ -222,13 +220,13 @@ private class IntegrationTestExtension :
         testFixture.setUp()
 
         project = testFixture.project
-        application = ApplicationManager.getApplication() as ApplicationEx
     }
 
     private fun tearDownProject() {
-        application.invokeAndWait {
+        ApplicationManager.getApplication().invokeAndWait {
             runCatching {
-                val fileEditorManager = FileEditorManager.getInstance(testFixture.project)
+                val fileEditorManager by project.service<FileEditorManager>()
+
                 fileEditorManager.openFiles.forEach {
                     fileEditorManager.closeFile(it)
                 }
@@ -240,7 +238,7 @@ private class IntegrationTestExtension :
             }
         }
 
-        application.cleanApplicationState()
+        ApplicationManager.getApplication().cleanApplicationState()
     }
 
     override fun beforeAll(context: ExtensionContext) {
@@ -276,8 +274,8 @@ private class IntegrationTestExtension :
 
         val parsingTest = context.requiredTestMethod.getAnnotation(ParsingTest::class.java) ?: return
 
-        application.withMockedService(mock(TelemetryService::class.java))
-        application.invokeAndWait {
+        ApplicationManager.getApplication().withMockedService(mock(TelemetryService::class.java))
+        ApplicationManager.getApplication().invokeAndWait {
             val className = context.displayName.replace(Regex("[\\s().#,]"), "_")
             val tmpRootDir = testFixture.tempDirFixture.getFile(".")!!
             val fileName = Path(
@@ -321,7 +319,7 @@ public class $className {
             tearDownProject()
         }
 
-        application.cleanApplicationState()
+        ApplicationManager.getApplication().cleanApplicationState()
     }
 
     override fun supportsParameter(
@@ -345,7 +343,7 @@ public class $className {
         extensionContext: ExtensionContext?,
     ): Any =
         when (parameterContext?.parameter?.type) {
-            Application::class.java -> application
+            Application::class.java -> ApplicationManager.getApplication()
             Project::class.java -> project
             PluginSettings::class.java -> settings
             TestScope::class.java -> testScope

@@ -2,7 +2,6 @@ package com.mongodb.jbplugin.inspections
 
 import com.intellij.codeInspection.AbstractBaseJavaLocalInspectionTool
 import com.intellij.codeInspection.LocalInspectionToolSession
-import com.intellij.codeInspection.LocalQuickFix
 import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.openapi.application.ApplicationManager
@@ -13,13 +12,8 @@ import com.mongodb.jbplugin.editor.CachedQueryService
 import com.mongodb.jbplugin.editor.dataSource
 import com.mongodb.jbplugin.editor.dialect
 import com.mongodb.jbplugin.i18n.InspectionsAndInlaysMessages
-import com.mongodb.jbplugin.inspections.quickfixes.CreateSuggestedIndexQuickFix
+import com.mongodb.jbplugin.inspections.quickfixes.LocalQuickFixBridge
 import com.mongodb.jbplugin.linting.Inspection
-import com.mongodb.jbplugin.linting.InspectionAction
-import com.mongodb.jbplugin.linting.InspectionAction.ChooseConnection
-import com.mongodb.jbplugin.linting.InspectionAction.CreateIndexSuggestionScript
-import com.mongodb.jbplugin.linting.InspectionAction.NoAction
-import com.mongodb.jbplugin.linting.InspectionAction.RunQuery
 import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.linting.QueryInsightsHolder
 import com.mongodb.jbplugin.linting.QueryInspection
@@ -106,27 +100,9 @@ internal class IntelliJBasedQueryInsightsHolder<I : Inspection>(
                 insight.query.source,
                 problemDescription,
                 ProblemHighlightType.WARNING,
-                *toQuickFixes(insight)
+                *LocalQuickFixBridge.allQuickFixes(insight)
             )
             onAfterInsight(insight)
-        }
-    }
-
-    private fun toQuickFixes(insight: QueryInsight<PsiElement, I>): Array<LocalQuickFix> {
-        val allActions = listOf(insight.inspection.primaryAction) + insight.inspection.secondaryActions
-        return allActions.mapNotNull { toQuickFix(insight, it) }.toTypedArray()
-    }
-
-    private fun toQuickFix(insight: QueryInsight<PsiElement, I>, action: InspectionAction): LocalQuickFix? {
-        return when (action) {
-            NoAction -> null
-            RunQuery -> null
-            ChooseConnection -> null
-            CreateIndexSuggestionScript -> CreateSuggestedIndexQuickFix(
-                coroutineScope,
-                insight.query.source.containingFile.dataSource!!,
-                insight.query
-            )
         }
     }
 }

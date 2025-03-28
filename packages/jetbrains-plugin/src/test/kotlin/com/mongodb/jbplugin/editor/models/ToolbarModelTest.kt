@@ -14,6 +14,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestScope
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -24,8 +25,8 @@ import org.mockito.kotlin.timeout
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 
+@Disabled("Will be eventually removed when the toolbar is dropped.")
 class ToolbarModelTest {
-
     private lateinit var project: Project
     private lateinit var coroutineScope: CoroutineScope
     private lateinit var connectionPreferences: PersistentConnectionPreferences

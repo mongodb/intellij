@@ -13,7 +13,6 @@ import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.eventually
 import com.mongodb.jbplugin.fixtures.withMockedService
 import com.mongodb.jbplugin.mql.Node
-import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -27,11 +26,10 @@ class CodeEditorViewModelTest {
     @Test
     fun `should emit the open files when a file is opened`(
         project: Project,
-        coroutineScope: TestScope
-    ) {
+    ) = runTest {
         val file1 = fileAt("MyFile.java")
         val file2 = fileAt("MyOpenFile.java")
-        val viewModel = CodeEditorViewModel(project, coroutineScope)
+        val viewModel = CodeEditorViewModel(project, this)
 
         val manager = fileManagerWith(
             openFiles = listOf(file1, file2),
@@ -39,7 +37,7 @@ class CodeEditorViewModelTest {
         )
 
         viewModel.fileOpened(manager, file1)
-        eventually(coroutineScope = coroutineScope) {
+        eventually {
             val editorState = viewModel.editorState.value
             assertEquals(editorState.openFiles[0], file1)
             assertEquals(editorState.openFiles[1], file2)
@@ -49,12 +47,11 @@ class CodeEditorViewModelTest {
 
     @Test
     fun `should emit the open files when a file is closed`(
-        project: Project,
-        coroutineScope: TestScope
-    ) {
+        project: Project
+    ) = runTest {
         val file1 = fileAt("MyFile.java")
         val file2 = fileAt("MyOpenFile.java")
-        val viewModel = CodeEditorViewModel(project, coroutineScope)
+        val viewModel = CodeEditorViewModel(project, this)
 
         val manager = fileManagerWith(
             openFiles = listOf(file2),
@@ -62,7 +59,7 @@ class CodeEditorViewModelTest {
         )
 
         viewModel.fileClosed(manager, file1)
-        eventually(coroutineScope = coroutineScope) {
+        eventually {
             val editorState = viewModel.editorState.value
             assertEquals(editorState.openFiles[0], file2)
             assertEquals(editorState.focusedFiles[0], file2)
@@ -71,12 +68,11 @@ class CodeEditorViewModelTest {
 
     @Test
     fun `should emit the open files when the selected editor changed`(
-        project: Project,
-        coroutineScope: TestScope
-    ) {
+        project: Project
+    ) = runTest {
         val file1 = fileAt("MyFile.java")
         val file2 = fileAt("MyOpenFile.java")
-        val viewModel = CodeEditorViewModel(project, coroutineScope)
+        val viewModel = CodeEditorViewModel(project, this)
 
         val manager = fileManagerWith(
             openFiles = listOf(file1, file2),
@@ -84,7 +80,7 @@ class CodeEditorViewModelTest {
         )
 
         viewModel.selectionChanged(FileEditorManagerEvent(manager, null, null))
-        eventually(coroutineScope = coroutineScope) {
+        eventually {
             val editorState = viewModel.editorState.value
             assertEquals(editorState.openFiles[0], file1)
             assertEquals(editorState.openFiles[1], file2)
@@ -95,10 +91,9 @@ class CodeEditorViewModelTest {
     @Test
     fun `should open the query in the editor when the editor is already open`(
         project: Project,
-        coroutineScope: TestScope
-    ) = coroutineScope.runTest {
+    ) = runTest {
         val file = fileAt("MyFile.java")
-        val viewModel = CodeEditorViewModel(project, coroutineScope)
+        val viewModel = CodeEditorViewModel(project, this)
 
         val manager = fileManagerWith(
             openFiles = listOf(file),
@@ -110,32 +105,31 @@ class CodeEditorViewModelTest {
         val query = queryAt(file, project, 25)
         viewModel.focusQueryInEditor(query)
 
-        eventually(coroutineScope = coroutineScope) {
+        eventually {
             verify(manager.selectedTextEditor!!.caretModel).moveToOffset(25)
         }
     }
 
     @Test
     fun `should open a new editor and move the caret to the correct position`(
-        project: Project,
-        coroutineScope: TestScope
-    ) = coroutineScope.runTest {
+        project: Project
+    ) = runTest {
         val file = fileAt("MyFile.java")
-        val viewModel = CodeEditorViewModel(project, coroutineScope)
+        val viewModel = CodeEditorViewModel(project, this)
 
         val manager = fileManagerWith(
             openFiles = listOf(file),
             filesInEditor = listOf()
         )
 
-        val newEditor = editorForFile(manager, file)
+        val newEditor = editorForFile(file)
         whenever(manager.openTextEditor(any(), any())).thenReturn(newEditor)
         project.withMockedService(manager)
 
         val query = queryAt(file, project, 25)
         viewModel.focusQueryInEditor(query)
 
-        eventually(coroutineScope = coroutineScope) {
+        eventually {
             verify(newEditor.caretModel).moveToOffset(25)
         }
     }
@@ -170,7 +164,7 @@ internal fun fileManagerWith(openFiles: List<VirtualFile>, filesInEditor: List<V
     }.toTypedArray()
 
     if (filesInEditor.isNotEmpty()) {
-        val editor = editorForFile(manager, filesInEditor.first())
+        val editor = editorForFile(filesInEditor.first())
         whenever(manager.selectedTextEditor).thenReturn(editor)
     }
 
@@ -181,7 +175,6 @@ internal fun fileManagerWith(openFiles: List<VirtualFile>, filesInEditor: List<V
 }
 
 private fun editorForFile(
-    manager: FileEditorManager,
     file: VirtualFile
 ): Editor {
     val caretModel = mock<CaretModel>()
