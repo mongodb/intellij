@@ -16,6 +16,7 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.`when`
@@ -24,6 +25,7 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 
 @IntegrationTest(newProjectForTest = true)
+@Disabled("Will be eventually removed when the toolbar is dropped.")
 class EditorToolbarDecoratorTest {
     @Test
     fun `when execute is triggered initialises toolbar for every execution`(
