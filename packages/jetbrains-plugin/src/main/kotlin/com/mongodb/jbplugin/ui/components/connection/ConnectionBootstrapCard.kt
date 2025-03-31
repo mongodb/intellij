@@ -31,9 +31,7 @@ import com.mongodb.jbplugin.ui.components.utilities.hooks.useViewModelState
 import com.mongodb.jbplugin.ui.viewModel.ConnectionState
 import com.mongodb.jbplugin.ui.viewModel.ConnectionStateViewModel
 import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState
-import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState.Connected
 import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState.Connecting
-import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState.Empty
 import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState.Failed
 import org.jetbrains.jewel.ui.Outline
 import org.jetbrains.jewel.ui.component.ComboBox
@@ -46,15 +44,24 @@ import java.awt.datatransfer.StringSelection
 
 @Composable
 fun ConnectionBootstrapCard() {
-    val connectionState by useViewModelState(ConnectionStateViewModel::connectionState, ConnectionState.default())
-    val connect by useViewModelMutator(ConnectionStateViewModel::selectDataSource)
-    val requestDataSourceCreation by useViewModelMutator(ConnectionStateViewModel::requestDataSourceCreation)
-    val requestEditDataSource by useViewModelMutator(ConnectionStateViewModel::requestEditDataSource)
+    val connectionState by useViewModelState(
+        ConnectionStateViewModel::connectionState,
+        ConnectionState.initial()
+    )
+    val selectConnection by useViewModelMutator(ConnectionStateViewModel::selectConnection)
+    val unselectSelectedConnection by useViewModelMutator(
+        ConnectionStateViewModel::unselectSelectedConnection
+    )
+    val addNewConnection by useViewModelMutator(ConnectionStateViewModel::addNewConnection)
+    val editSelectedConnection by useViewModelMutator(
+        ConnectionStateViewModel::editSelectedConnection
+    )
 
     val connectionCallbacks = ConnectionCallbacks(
-        onConnect = connect,
-        onRequestCreateDataSource = requestDataSourceCreation,
-        onRequestEditDataSource = requestEditDataSource
+        selectConnection = selectConnection,
+        unselectSelectedConnection = unselectSelectedConnection,
+        addNewConnection = addNewConnection,
+        editSelectedConnection = editSelectedConnection,
     )
 
     CompositionLocalProvider(LocalConnectionCallbacks provides connectionCallbacks) {
@@ -66,10 +73,12 @@ fun ConnectionBootstrapCard() {
 internal fun _ConnectionBootstrapCard(
     connectionState: ConnectionState
 ) {
-    when (connectionState.selectedConnectionState) {
-        is Empty -> ConnectionCardWhenNotConnected(connectionState)
-        is Failed -> ConnectionCardWhenConnectionFailed(connectionState)
-        is Connected, is Connecting -> LightweightConnectionSection(connectionState)
+    if (connectionState.selectedConnection == null) {
+        ConnectionCardWhenNotConnected(connectionState)
+    } else if (connectionState.selectedConnectionState is Failed) {
+        ConnectionCardWhenConnectionFailed(connectionState)
+    } else {
+        LightweightConnectionSection(connectionState)
     }
 }
 
@@ -87,11 +96,15 @@ internal fun ConnectionCardWhenNotConnected(connectionState: ConnectionState) {
             }
             Column(modifier = Modifier.padding(top = 8.dp)) {
                 if (connectionState.connections.isEmpty()) {
-                    DefaultButton(onClick = { callbacks.onRequestCreateDataSource() }) {
+                    DefaultButton(onClick = { callbacks.addNewConnection() }) {
                         Text(useTranslation("side-panel.connection.ConnectionBootstrapCard.add-datasource"))
                     }
                 } else {
-                    ConnectionComboBox(connectionState.selectedConnectionState, connectionState.connections)
+                    ConnectionComboBox(
+                        connections = connectionState.connections,
+                        selectedConnection = connectionState.selectedConnection,
+                        selectedConnectionState = connectionState.selectedConnectionState,
+                    )
                 }
             }
         }
@@ -108,13 +121,19 @@ internal fun ConnectionCardWhenConnectionFailed(connectionState: ConnectionState
             Box { Text(useTranslation("side-panel.connection.ConnectionBootstrapCard.subtitle-when-failure")) }
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
                 Row {
-                    Text(modifier = Modifier.fillMaxWidth(0.95f).heightIn(max = 120.dp).verticalScroll(scrollState), text = errorInfo.error)
+                    Text(
+                        modifier = Modifier
+                            .fillMaxWidth(0.95f)
+                            .heightIn(max = 120.dp)
+                            .verticalScroll(scrollState),
+                        text = errorInfo.errorMessage
+                    )
                     Icon(
                         AllIconsKeys.General.Copy,
                         "Copy",
                         modifier = Modifier.testTag("CopyToClipboard").clickable {
                             Toolkit.getDefaultToolkit().systemClipboard.setContents(
-                                StringSelection(errorInfo.error),
+                                StringSelection(errorInfo.errorMessage),
                                 null
                             )
                         }
@@ -122,7 +141,11 @@ internal fun ConnectionCardWhenConnectionFailed(connectionState: ConnectionState
                 }
             }
             Column(modifier = Modifier.padding(top = 8.dp)) {
-                ConnectionComboBox(connectionState.selectedConnectionState, connectionState.connections)
+                ConnectionComboBox(
+                    connections = connectionState.connections,
+                    selectedConnection = connectionState.selectedConnection,
+                    selectedConnectionState = connectionState.selectedConnectionState,
+                )
             }
         }
     }
@@ -139,14 +162,18 @@ internal fun LightweightConnectionSection(connectionState: ConnectionState) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(useTranslation("side-panel.connection.ConnectionBootstrapCard.connected-to"))
                 ActionLink(text = useTranslation("side-panel.connection.ConnectionBootstrapCard.edit-connection")) {
-                    callbacks.onRequestEditDataSource()
+                    callbacks.editSelectedConnection()
                 }
             }
         }
 
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
             Column(modifier = Modifier.fillMaxWidth()) {
-                ConnectionComboBox(connectionState.selectedConnectionState, connectionState.connections)
+                ConnectionComboBox(
+                    connections = connectionState.connections,
+                    selectedConnection = connectionState.selectedConnection,
+                    selectedConnectionState = connectionState.selectedConnectionState,
+                )
             }
         }
     }
@@ -158,15 +185,15 @@ internal fun BulletItem(text: String) {
 }
 
 @Composable
-internal fun ConnectionComboBox(selectedConnectionState: SelectedConnectionState, dataSources: List<LocalDataSource>) {
+internal fun ConnectionComboBox(
+    connections: List<LocalDataSource>,
+    selectedConnection: LocalDataSource?,
+    selectedConnectionState: SelectedConnectionState,
+) {
     ComboBox(
         modifier = Modifier.testTag("ConnectionComboBox"),
-        labelText = when (selectedConnectionState) {
-            is Empty -> useTranslation("side-panel.connection.ConnectionBootstrapCard.combobox.choose-a-connection")
-            is Connected -> selectedConnectionState.dataSource.name
-            is Connecting -> selectedConnectionState.dataSource.name
-            is Failed -> selectedConnectionState.dataSource.name
-        },
+        labelText = selectedConnection?.name
+            ?: useTranslation("side-panel.connection.ConnectionBootstrapCard.combobox.choose-a-connection"),
         outline = if (selectedConnectionState is Failed) {
             Outline.Error
         } else {
@@ -174,12 +201,12 @@ internal fun ConnectionComboBox(selectedConnectionState: SelectedConnectionState
         }
     ) {
         Column {
-            if (selectedConnectionState !is Empty) {
+            if (selectedConnection != null) {
                 DisconnectItem()
             }
 
-            for (dataSource in dataSources) {
-                ConnectionItem(dataSource)
+            for (connection in connections) {
+                ConnectionItem(connection)
             }
         }
     }
@@ -192,7 +219,7 @@ internal fun DisconnectItem() {
     Box(
         modifier = Modifier
             .testTag("DisconnectItem")
-            .clickable { connectionCallback.onConnect(null) }
+            .clickable { connectionCallback.unselectSelectedConnection() }
             .padding(4.dp)
             .fillMaxWidth(1f)
     ) {
@@ -204,35 +231,36 @@ internal fun DisconnectItem() {
 }
 
 @Composable
-internal fun ConnectionItem(dataSource: LocalDataSource) {
+internal fun ConnectionItem(connection: LocalDataSource) {
     val connectionCallback = useConnectionCallbacks()
-    val status by useLocalDataSourceStatus(dataSource)
+    val status by useConnectionStatus(connection)
 
     Box(
         modifier = Modifier
-            .testTag("ConnectionItem::${dataSource.uniqueId}")
-            .clickable { connectionCallback.onConnect(dataSource) }
+            .testTag("ConnectionItem::${connection.uniqueId}")
+            .clickable { connectionCallback.selectConnection(connection) }
             .padding(4.dp)
             .fillMaxWidth(1f)
     ) {
         Row {
             Icon(
                 when (status) {
-                    LocalDataSourceStatus.Connected -> AllIconsKeys.General.GreenCheckmark
-                    LocalDataSourceStatus.Disconnected -> AllIconsKeys.Providers.MongoDB
+                    ConnectionStatus.Connected -> AllIconsKeys.General.GreenCheckmark
+                    ConnectionStatus.Disconnected -> AllIconsKeys.Providers.MongoDB
                 },
                 "",
                 modifier = Modifier.padding(end = 8.dp)
             )
-            Text(dataSource.name)
+            Text(connection.name)
         }
     }
 }
 
 internal data class ConnectionCallbacks(
-    val onConnect: (LocalDataSource?) -> Unit = {},
-    val onRequestCreateDataSource: () -> Unit = {},
-    val onRequestEditDataSource: () -> Unit = {}
+    val selectConnection: (LocalDataSource) -> Unit = {},
+    val unselectSelectedConnection: () -> Unit = {},
+    val addNewConnection: () -> Unit = {},
+    val editSelectedConnection: () -> Unit = {}
 )
 
 internal val LocalConnectionCallbacks = compositionLocalOf { ConnectionCallbacks() }
@@ -242,19 +270,19 @@ internal fun useConnectionCallbacks(): ConnectionCallbacks {
     return LocalConnectionCallbacks.current
 }
 
-internal enum class LocalDataSourceStatus {
+internal enum class ConnectionStatus {
     Disconnected,
     Connected
 }
 
 @Composable
-internal fun useLocalDataSourceStatus(localDataSource: LocalDataSource): State<LocalDataSourceStatus> {
-    val isConnected = localDataSource.isConnected()
+internal fun useConnectionStatus(connection: LocalDataSource): State<ConnectionStatus> {
+    val isConnected = connection.isConnected()
     return derivedStateOf {
         if (isConnected) {
-            LocalDataSourceStatus.Connected
+            ConnectionStatus.Connected
         } else {
-            LocalDataSourceStatus.Disconnected
+            ConnectionStatus.Disconnected
         }
     }
 }

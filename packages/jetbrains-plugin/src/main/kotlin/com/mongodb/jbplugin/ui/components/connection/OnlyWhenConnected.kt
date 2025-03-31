@@ -26,7 +26,10 @@ import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun OnlyWhenConnected(body: @Composable () -> Unit) {
-    val connectionState by useViewModelState(ConnectionStateViewModel::connectionState, ConnectionState.default())
+    val connectionState by useViewModelState(
+        ConnectionStateViewModel::connectionState,
+        ConnectionState.initial()
+    )
     _OnlyWhenConnected(connectionState.selectedConnectionState, body)
 }
 
@@ -47,7 +50,7 @@ internal fun _OnlyWhenConnected(state: SelectedConnectionState, body: @Composabl
                     Text(
                         useTranslation(
                             "side-panel.connection.ConnectionBootstrapCard.connecting-to-detailed",
-                            state.dataSource.name
+                            state.connection.name
                         )
                     )
                 }

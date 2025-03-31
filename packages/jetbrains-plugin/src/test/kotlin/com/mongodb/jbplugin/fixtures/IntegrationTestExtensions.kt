@@ -575,7 +575,7 @@ fun CodeInsightTestFixture.resetConnection() {
     `when`(dbConnectionManager.activeConnections).thenReturn(listOf(connection))
     `when`(connectionStateViewModel.connectionState).thenReturn(
         MutableStateFlow(
-            ConnectionState(emptyList(), SelectedConnectionState.Empty)
+            ConnectionState(emptyList(), null, SelectedConnectionState.Initial)
         )
     )
 
@@ -610,7 +610,7 @@ fun CodeInsightTestFixture.setupConnection(): Pair<LocalDataSource, DataGripBase
     `when`(dbConnectionManager.activeConnections).thenReturn(listOf(connection))
     `when`(connectionStateViewModel.connectionState).thenReturn(
         MutableStateFlow(
-            ConnectionState(emptyList(), SelectedConnectionState.Connected(dataSource))
+            ConnectionState(emptyList(), dataSource, SelectedConnectionState.Connected(dataSource))
         )
     )
 

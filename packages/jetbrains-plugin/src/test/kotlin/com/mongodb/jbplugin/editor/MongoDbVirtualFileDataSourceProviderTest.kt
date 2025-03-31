@@ -37,7 +37,13 @@ class MongoDbVirtualFileDataSourceProviderTest {
         `when`(
             viewModel.connectionState
         ).thenReturn(
-            MutableStateFlow(ConnectionState(emptyList(), Connected(dataSource)))
+            MutableStateFlow(
+                ConnectionState(
+                    emptyList(),
+                    dataSource,
+                    Connected(dataSource)
+                )
+            )
         )
 
         `when`(

@@ -103,12 +103,13 @@ class CreateSuggestedIndexInsightActionTest {
 
         val viewModel = mock<ConnectionStateViewModel>()
         val connectionState = MutableStateFlow(
-            ConnectionState.default().withConnectionState(
-                SelectedConnectionState.Connected(dataSource)
+            ConnectionState(
+                connections = listOf(dataSource),
+                selectedConnection = dataSource,
+                selectedConnectionState = SelectedConnectionState.Connected(dataSource),
             )
         )
 
-        whenever(viewModel.mutableConnectionState).thenReturn(connectionState)
         whenever(viewModel.connectionState).thenReturn(connectionState)
 
         withMockedService(viewModel)
