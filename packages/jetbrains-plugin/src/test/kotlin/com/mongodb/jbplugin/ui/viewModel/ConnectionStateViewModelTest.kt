@@ -259,4 +259,56 @@ class ConnectionStateViewModelTest {
             assertEquals(null, viewModel.connectionState.value.selectedConnection)
         }
     }
+
+    @Test
+    fun `DataSourcesChangesAuditor triggers a data source change when a script that mutates a cluster is run`(
+        project: Project,
+        coroutineScope: TestScope
+    ) {
+        val dataSource = mockDataSource()
+        val auditor = DataSourcesChangesAuditor()
+        val analysisScope = mock<AnalysisScopeViewModel>()
+
+        project.withMockedService(analysisScope)
+
+        auditor.readContext = { _ ->
+            Triple(
+                dataSource,
+                project,
+                "db[\"myColl\"].createIndex({})"
+            )
+        }
+
+        auditor.requestFinished(mock())
+        verify(dataSource).incModificationCount()
+        runBlocking {
+            verify(analysisScope).reanalyzeCurrentScope()
+        }
+    }
+
+    @Test
+    fun `DataSourcesChangesAuditor does not trigger a data source change when a script does not mutate the cluster`(
+        project: Project,
+        coroutineScope: TestScope
+    ) {
+        val dataSource = mockDataSource()
+        val auditor = DataSourcesChangesAuditor()
+        val analysisScope = mock<AnalysisScopeViewModel>()
+
+        project.withMockedService(analysisScope)
+
+        auditor.readContext = { _ ->
+            Triple(
+                dataSource,
+                project,
+                "db[\"myColl\"].find({})"
+            )
+        }
+
+        auditor.requestFinished(mock())
+        verify(dataSource, never()).incModificationCount()
+        runBlocking {
+            verify(analysisScope, never()).reanalyzeCurrentScope()
+        }
+    }
 }

@@ -294,15 +294,25 @@ class ConnectionStateViewModel(
  * analysis of the scope.
  */
 class DataSourcesChangesAuditor : DataAuditor {
-    override fun requestFinished(context: Context) {
-        val dataSource = context.connection?.connectionPoint?.dataSource ?: return
-        val project = dataSource.findProjectWhereActive(null)
+    @VisibleForTesting
+    internal var readContext: (Context) -> Triple<LocalDataSource, Project, String>? = { context ->
+        val dataSource = context.connection?.connectionPoint?.dataSource
+        val project = dataSource?.findProjectWhereActive(null)
+        val query = context.query
 
-        if (likelyChangesDataSource(context.query)) {
-            dataSource.incModificationCount()
+        if (dataSource == null || project == null || query == null) {
+            null
+        } else {
+            Triple(dataSource, project, query)
         }
+    }
 
-        if (project != null) {
+    override fun requestFinished(context: Context) {
+        val (dataSource, project, query) = readContext(context) ?: return
+
+        if (likelyChangesDataSource(query)) {
+            dataSource.incModificationCount()
+
             val codeEditorViewModel by project.service<AnalysisScopeViewModel>()
             runBlocking {
                 codeEditorViewModel.reanalyzeCurrentScope()
