@@ -10,6 +10,7 @@ import com.mongodb.jbplugin.editor.MdbJavaEditorToolbar
 /**
  * Interface that outlines helpers to interact with IntelliJ's editors
  */
+@Deprecated("Use the CodeEditorViewModel")
 interface EditorService {
     val inferredDatabase: String?
     val selectedEditor: Editor?

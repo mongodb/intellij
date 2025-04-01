@@ -37,6 +37,7 @@ private val log = logger<MdbEditorService>()
 /**
  * @param project
  */
+@Deprecated("Use the CodeEditorViewModel")
 @Service(Service.Level.PROJECT)
 class MdbEditorService(private val project: Project) : EditorService {
     override val selectedEditor: Editor?

@@ -5,7 +5,6 @@ import com.intellij.database.psi.DataSourceManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.mongodb.jbplugin.editor.services.implementations.ConnectionPreferencesStateComponent
-import com.mongodb.jbplugin.editor.services.implementations.MdbEditorService
 import com.mongodb.jbplugin.editor.services.implementations.PersistentConnectionPreferences
 import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.eventually
@@ -28,13 +27,13 @@ import org.mockito.kotlin.whenever
 class ConnectionStateViewModelTest {
     lateinit var dataSource: LocalDataSource
     private lateinit var connectionSaga: ConnectionSaga
-    private lateinit var editorService: MdbEditorService
+    private lateinit var codeEditorViewModel: CodeEditorViewModel
     private lateinit var connectionPreferences: PersistentConnectionPreferences
     private lateinit var mongoDBToolWindow: ToolWindow
 
     @BeforeEach
     fun setUp(project: Project) {
-        editorService = mock()
+        codeEditorViewModel = mock()
         dataSource = mockDataSource()
         connectionSaga = mock()
         whenever(connectionSaga.listMongoDbConnections()).thenReturn(listOf(dataSource))
@@ -47,7 +46,7 @@ class ConnectionStateViewModelTest {
         whenever(mongoDBToolWindow.id).thenReturn("MongoDB")
 
         project
-            .withMockedService(editorService)
+            .withMockedService(codeEditorViewModel)
             .withMockedService(connectionPreferencesStateComponent)
     }
 
@@ -141,13 +140,13 @@ class ConnectionStateViewModelTest {
         viewModel.connectionSaga = connectionSaga
         runBlocking {
             viewModel.selectConnection(dataSource)
+            verify(codeEditorViewModel, timeout(1000)).reanalyzeRelevantEditors()
         }
-        verify(editorService, timeout(1000)).reAnalyzeSelectedEditor(true)
 
         runBlocking {
             viewModel.unselectSelectedConnection()
+            verify(codeEditorViewModel, timeout(1000).times(2)).reanalyzeRelevantEditors()
         }
-        verify(editorService, timeout(1000).times(2)).reAnalyzeSelectedEditor(true)
     }
 
     @Test
