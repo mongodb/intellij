@@ -70,11 +70,8 @@ private object QueriesInFileCollector : InlayHintsCollector {
         editor: Editor,
         sink: InlayHintsSink
     ): Boolean {
-        val dataSource = element.containingFile.dataSource
-        if (dataSource == null || !dataSource.isConnected()) {
-            // this might happen if we disconnected while the collection is happening
-            return false
-        }
+        // this might happen if we disconnected while the collection is happening
+        val dataSource = element.containingFile.dataSource ?: return false
 
         val isFullExplainPlanEnabled by pluginSetting { ::isFullExplainPlanEnabled }
         val explainPlanType = if (isFullExplainPlanEnabled) {
