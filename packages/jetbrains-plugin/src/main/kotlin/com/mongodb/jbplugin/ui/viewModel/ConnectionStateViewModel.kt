@@ -390,7 +390,6 @@ class ConnectionStateViewModel(
     private fun emitDatabasesLoadingStateChange(
         newDatabasesLoadingState: DatabasesLoadingState
     ) {
-        println("????????????? emitDatabasesLoadingStateChange $newDatabasesLoadingState")
         val editorService by project.service<MdbEditorService>()
         val connectionPreferences = project.getConnectionPreferences()
         mutableDatabaseState.update { currentDatabaseState ->
