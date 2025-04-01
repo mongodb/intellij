@@ -5,7 +5,11 @@ import com.intellij.database.dataSource.DatabaseConnectionManager
 import com.intellij.database.dataSource.DatabaseDriverManager
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.database.dataSource.connection.ConnectionRequestor
+import com.intellij.database.dataSource.findProjectWhereActive
 import com.intellij.database.dataSource.localDataSource
+import com.intellij.database.datagrid.DataAuditor
+import com.intellij.database.datagrid.DataRequest.Context
+import com.intellij.database.dialects.base.ProcessDbmsOutputAction.Companion.connection
 import com.intellij.database.model.RawDataSource
 import com.intellij.database.psi.DataSourceManager
 import com.intellij.database.run.ConsoleRunConfiguration
@@ -17,7 +21,6 @@ import com.intellij.openapi.project.Project
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isMongoDbDataSource
 import com.mongodb.jbplugin.editor.services.MdbPluginDisposable
-import com.mongodb.jbplugin.editor.services.implementations.MdbEditorService
 import com.mongodb.jbplugin.editor.services.implementations.getConnectionPreferences
 import com.mongodb.jbplugin.editor.services.implementations.getDataSourceService
 import com.mongodb.jbplugin.meta.service
@@ -34,6 +37,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
 private val log = logger<ConnectionStateViewModel>()
@@ -149,8 +153,8 @@ class ConnectionStateViewModel(
     internal suspend fun onSelectedConnectionChanges(newState: SelectedConnectionState) {
         when (newState) {
             is Connected -> withContext(Dispatchers.IO) {
-                val mdbEditorService by project.service<MdbEditorService>()
-                mdbEditorService.reAnalyzeSelectedEditor(true)
+                val codeEditorViewModel by project.service<CodeEditorViewModel>()
+                codeEditorViewModel.reanalyzeRelevantEditors()
             }
             else -> {
             }
@@ -200,6 +204,38 @@ class ConnectionStateViewModel(
             coroutineScope.launch {
                 mutableConnectionState.emit(mutableConnectionState.value.withDataSource(dataSource))
             }
+        }
+    }
+}
+
+/**
+ * When we modify the target cluster somehow through DataGrip, we might want to retrigger the
+ * analysis of the scope.
+ */
+class DataSourcesChangesAuditor : DataAuditor {
+    override fun requestFinished(context: Context) {
+        val dataSource = context.connection?.connectionPoint?.dataSource ?: return
+        val project = dataSource.findProjectWhereActive(null)
+
+        if (likelyChangesDataSource(context.query)) {
+            dataSource.incModificationCount()
+        }
+
+        if (project != null) {
+            val codeEditorViewModel by project.service<AnalysisScopeViewModel>()
+            runBlocking {
+                codeEditorViewModel.reanalyzeCurrentScope()
+            }
+        }
+    }
+
+    private fun likelyChangesDataSource(script: String): Boolean {
+        return script.let {
+            it.contains("createIndex") ||
+                it.contains("dropIndex") ||
+                it.contains("update") ||
+                it.contains("delete") ||
+                it.contains("insert")
         }
     }
 }

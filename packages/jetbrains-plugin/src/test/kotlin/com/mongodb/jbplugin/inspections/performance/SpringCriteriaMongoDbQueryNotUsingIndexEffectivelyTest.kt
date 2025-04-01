@@ -64,7 +64,7 @@ class SpringCriteriaMongoDbQueryNotUsingIndexEffectivelyTest {
         fixture.specifyDialect(SpringCriteriaDialect)
 
         `when`(readModelProvider.slice(eq(dataSource), any<ExplainQuery.Slice<Any>>())).thenReturn(
-            ExplainQuery(ExplainPlan.IneffectiveIndexUsage)
+            ExplainQuery(ExplainPlan.IneffectiveIndexUsage(""))
         )
 
         fixture.enableInspections(MongoDbQueryNotUsingIndexEffectively::class.java)

@@ -32,15 +32,24 @@ import kotlinx.coroutines.withContext
  * do the necessary dependency injection to make the inspection work.
  *
  * @param coroutineScope
- * @param inspection
+ * @param queryInspection
  */
 abstract class AbstractMongoDbInspectionBridgeV2<Settings, I : Inspection>(
     private val coroutineScope: CoroutineScope,
-    private val inspection: QueryInspection<Settings, I>,
+    private val queryInspection: QueryInspection<Settings, I>,
+    private val inspection: I
 ) : AbstractBaseJavaLocalInspectionTool() {
     protected abstract fun buildSettings(query: Node<PsiElement>): Settings
     protected abstract fun emitFinishedInspectionTelemetryEvent(problemsHolder: ProblemsHolder)
     protected open fun afterInsight(queryInsight: QueryInsight<PsiElement, I>) {}
+
+    override fun inspectionStarted(
+        session: LocalInspectionToolSession,
+        isOnTheFly: Boolean
+    ) {
+        val inspectionViewModel by session.file.project.service<InspectionsViewModel>()
+        inspectionViewModel.startInspectionSessionOf(session.file, inspection)
+    }
 
     override fun buildVisitor(
         holder: ProblemsHolder,
@@ -75,7 +84,7 @@ abstract class AbstractMongoDbInspectionBridgeV2<Settings, I : Inspection>(
                         val settings = buildSettings(query)
                         val problems = IntelliJBasedQueryInsightsHolder(coroutineScope, holder, inspectionsViewModel, ::afterInsight)
 
-                        runBlocking { inspection.run(query, problems, settings) }
+                        runBlocking { queryInspection.run(query, problems, settings) }
                     }
                 }
             }

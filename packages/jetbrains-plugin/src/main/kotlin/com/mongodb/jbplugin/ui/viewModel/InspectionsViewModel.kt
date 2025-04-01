@@ -2,6 +2,8 @@ package com.mongodb.jbplugin.ui.viewModel
 
 import com.intellij.openapi.components.Service
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
+import com.mongodb.jbplugin.linting.Inspection
 import com.mongodb.jbplugin.linting.InspectionCategory
 import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.meta.service
@@ -17,6 +19,14 @@ class InspectionsViewModel {
 
     private val mutableOpenCategories = MutableStateFlow<InspectionCategory?>(null)
     val openCategories = mutableOpenCategories.asStateFlow()
+
+    fun startInspectionSessionOf(psiFile: PsiFile, inspection: Inspection) {
+        val allOtherInspections = insights.value.filter {
+            !(it.inspection == inspection && it.query.source.containingFile.isEquivalentTo(psiFile))
+        }
+
+        mutableInsights.tryEmit(allOtherInspections)
+    }
 
     suspend fun addInsight(insight: QueryInsight<PsiElement, *>) {
         withContext(Dispatchers.IO) {

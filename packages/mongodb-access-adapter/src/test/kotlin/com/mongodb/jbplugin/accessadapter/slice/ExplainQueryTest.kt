@@ -58,7 +58,8 @@ class ExplainQueryTest {
                         "winningPlan" to mapOf(
                             "stage" to "FETCH",
                             "inputStage" to mapOf(
-                                "stage" to "IXSCAN"
+                                "stage" to "IXSCAN",
+                                "indexName" to "abc"
                             )
                         )
                     )
@@ -77,7 +78,7 @@ class ExplainQueryTest {
         val explainPlanResult = ExplainQuery.Slice(query, QueryContext(emptyMap(), false, true))
             .queryUsingDriver(driver)
 
-        assertEquals(ExplainQuery(ExplainPlan.IndexScan), explainPlanResult)
+        assertEquals(ExplainQuery(ExplainPlan.IndexScan("abc")), explainPlanResult)
     }
 
     @Test
@@ -92,7 +93,8 @@ class ExplainQueryTest {
                         "winningPlan" to mapOf(
                             "stage" to "FILTER",
                             "inputStage" to mapOf(
-                                "stage" to "IXSCAN"
+                                "stage" to "IXSCAN",
+                                "indexName" to "abc",
                             )
                         )
                     )
@@ -111,7 +113,7 @@ class ExplainQueryTest {
         val explainPlanResult = ExplainQuery.Slice(query, QueryContext(emptyMap(), false, true))
             .queryUsingDriver(driver)
 
-        assertEquals(ExplainQuery(ExplainPlan.IneffectiveIndexUsage), explainPlanResult)
+        assertEquals(ExplainQuery(ExplainPlan.IneffectiveIndexUsage("abc")), explainPlanResult)
     }
 
     @Test
@@ -130,7 +132,8 @@ class ExplainQueryTest {
                         "winningPlan" to mapOf(
                             "stage" to "FETCH",
                             "inputStage" to mapOf(
-                                "stage" to "IXSCAN"
+                                "stage" to "IXSCAN",
+                                "indexName" to "abc",
                             )
                         )
                     )
@@ -149,7 +152,7 @@ class ExplainQueryTest {
         val explainPlanResult = ExplainQuery.Slice(query, QueryContext(emptyMap(), false, true))
             .queryUsingDriver(driver)
 
-        assertEquals(ExplainQuery(ExplainPlan.IneffectiveIndexUsage), explainPlanResult)
+        assertEquals(ExplainQuery(ExplainPlan.IneffectiveIndexUsage("abc")), explainPlanResult)
     }
 
     @Test
@@ -168,7 +171,8 @@ class ExplainQueryTest {
                         "winningPlan" to mapOf(
                             "stage" to "FETCH",
                             "inputStage" to mapOf(
-                                "stage" to "IXSCAN"
+                                "stage" to "IXSCAN",
+                                "indexName" to "abc"
                             )
                         )
                     )
@@ -187,7 +191,7 @@ class ExplainQueryTest {
         val explainPlanResult = ExplainQuery.Slice(query, QueryContext(emptyMap(), false, true))
             .queryUsingDriver(driver)
 
-        assertEquals(ExplainQuery(ExplainPlan.IndexScan), explainPlanResult)
+        assertEquals(ExplainQuery(ExplainPlan.IndexScan("abc")), explainPlanResult)
     }
 
     @Test
@@ -202,7 +206,8 @@ class ExplainQueryTest {
                         "winningPlan" to mapOf(
                             "stage" to "SORT",
                             "inputStage" to mapOf(
-                                "stage" to "IXSCAN"
+                                "stage" to "IXSCAN",
+                                "indexName" to "abc",
                             )
                         )
                     )
@@ -221,7 +226,7 @@ class ExplainQueryTest {
         val explainPlanResult = ExplainQuery.Slice(query, QueryContext(emptyMap(), false, true))
             .queryUsingDriver(driver)
 
-        assertEquals(ExplainQuery(ExplainPlan.IneffectiveIndexUsage), explainPlanResult)
+        assertEquals(ExplainQuery(ExplainPlan.IneffectiveIndexUsage("abc")), explainPlanResult)
     }
 
     @Test
@@ -237,7 +242,8 @@ class ExplainQueryTest {
                             "queryPlan" to mapOf(
                                 "stage" to "FILTER",
                                 "inputStage" to mapOf(
-                                    "stage" to "IXSCAN"
+                                    "stage" to "IXSCAN",
+                                    "indexName" to "abc",
                                 )
                             ),
                             "slotBasedPlan" to mapOf(
@@ -261,6 +267,6 @@ class ExplainQueryTest {
         val explainPlanResult = ExplainQuery.Slice(query, QueryContext(emptyMap(), false, true))
             .queryUsingDriver(driver)
 
-        assertEquals(ExplainQuery(ExplainPlan.IneffectiveIndexUsage), explainPlanResult)
+        assertEquals(ExplainQuery(ExplainPlan.IneffectiveIndexUsage("abc")), explainPlanResult)
     }
 }
