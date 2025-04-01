@@ -27,11 +27,15 @@ class ConnectionBootstrapCardTest {
         setContentWithTheme {
             CompositionLocalProvider(
                 LocalConnectionCallbacks provides ConnectionCallbacks(
-                    onRequestCreateDataSource = { requestedDataSourceCreation = true }
+                    addNewConnection = { requestedDataSourceCreation = true },
                 )
             ) {
                 _ConnectionBootstrapCard(
-                    ConnectionState(emptyList(), SelectedConnectionState.Empty)
+                    ConnectionState(
+                        emptyList(),
+                        null,
+                        SelectedConnectionState.Initial
+                    )
                 )
             }
         }
@@ -49,7 +53,11 @@ class ConnectionBootstrapCardTest {
 
         setContentWithTheme {
             _ConnectionBootstrapCard(
-                ConnectionState(listOf(dataSource), SelectedConnectionState.Empty)
+                ConnectionState(
+                    listOf(dataSource),
+                    null,
+                    SelectedConnectionState.Initial
+                )
             )
         }
 
@@ -65,7 +73,11 @@ class ConnectionBootstrapCardTest {
 
         setContentWithTheme {
             _ConnectionBootstrapCard(
-                ConnectionState(listOf(dataSource), SelectedConnectionState.Failed(dataSource, "Error message."))
+                ConnectionState(
+                    listOf(dataSource),
+                    dataSource,
+                    SelectedConnectionState.Failed(dataSource, "Error message.")
+                )
             )
         }
 
@@ -83,7 +95,11 @@ class ConnectionBootstrapCardTest {
 
         setContentWithTheme {
             _ConnectionBootstrapCard(
-                ConnectionState(listOf(dataSource), SelectedConnectionState.Connecting(dataSource))
+                ConnectionState(
+                    listOf(dataSource),
+                    dataSource,
+                    SelectedConnectionState.Connecting(dataSource)
+                )
             )
         }
 
@@ -98,7 +114,11 @@ class ConnectionBootstrapCardTest {
 
         setContentWithTheme {
             _ConnectionBootstrapCard(
-                ConnectionState(listOf(dataSource), SelectedConnectionState.Connected(dataSource))
+                ConnectionState(
+                    listOf(dataSource),
+                    dataSource,
+                    SelectedConnectionState.Connected(dataSource)
+                )
             )
         }
 
@@ -115,11 +135,15 @@ class ConnectionBootstrapCardTest {
         setContentWithTheme {
             CompositionLocalProvider(
                 LocalConnectionCallbacks provides ConnectionCallbacks(
-                    onRequestEditDataSource = { askedForEdit = true }
+                    editSelectedConnection = { askedForEdit = true }
                 )
             ) {
                 _ConnectionBootstrapCard(
-                    ConnectionState(listOf(dataSource), SelectedConnectionState.Connected(dataSource))
+                    ConnectionState(
+                        listOf(dataSource),
+                        dataSource,
+                        SelectedConnectionState.Connected(dataSource)
+                    )
                 )
             }
         }
@@ -143,14 +167,14 @@ class ConnectionBootstrapCardTest {
     }
 
     @Test
-    fun `ConnectionItem should trigger onSelectItem when clicked`() = runComposeUiTest {
+    fun `ConnectionItem should trigger selectConnection when clicked`() = runComposeUiTest {
         val dataSource = mockDataSource(MongoDbServerUrl("mongodb://localhost:27017"))
         var clickedDataSource: LocalDataSource? = null
 
         setContentWithTheme {
             CompositionLocalProvider(
                 LocalConnectionCallbacks provides ConnectionCallbacks(
-                    onConnect = { clickedDataSource = it }
+                    selectConnection = { clickedDataSource = it }
                 )
             ) {
                 ConnectionItem(dataSource)
@@ -171,13 +195,13 @@ class ConnectionBootstrapCardTest {
     }
 
     @Test
-    fun `DisconnectItem should trigger onSelectItem with null when clicked`() = runComposeUiTest {
-        var clickedWithNull = false
+    fun `DisconnectItem should trigger unselectSelectedConnection when clicked`() = runComposeUiTest {
+        var clicked = false
 
         setContentWithTheme {
             CompositionLocalProvider(
                 LocalConnectionCallbacks provides ConnectionCallbacks(
-                    onConnect = { clickedWithNull = it == null }
+                    unselectSelectedConnection = { clicked = true }
                 )
             ) {
                 DisconnectItem()
@@ -185,6 +209,6 @@ class ConnectionBootstrapCardTest {
         }
 
         onNodeWithTag("DisconnectItem").performClick()
-        assertTrue(clickedWithNull)
+        assertTrue(clicked)
     }
 }

@@ -66,9 +66,12 @@ class MongoDbVirtualFileDataSourceProvider : VirtualFileDataSourceProvider() {
         val facade = DbPsiFacade.getInstance(project)
         val connectionViewModel by project.service<ConnectionStateViewModel>()
 
-        val selectedConnection = connectionViewModel.connectionState.value.selectedConnectionState
-        return when (selectedConnection) {
-            is SelectedConnectionState.Connected -> facade.findDataSource(selectedConnection.dataSource.uniqueId)
+        val (_, selectedConnection, selectedConnectionState) =
+            connectionViewModel.connectionState.value
+        return when (selectedConnectionState) {
+            is SelectedConnectionState.Connected -> facade.findDataSource(
+                selectedConnection?.uniqueId
+            )
             else -> null
         }
     }
