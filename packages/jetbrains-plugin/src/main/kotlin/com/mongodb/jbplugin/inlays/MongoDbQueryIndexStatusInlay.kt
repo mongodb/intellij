@@ -87,15 +87,17 @@ private object QueriesInFileCollector : InlayHintsCollector {
         val queryWithExplainPlan = query.with(HasExplain(explainPlanType))
         val queryContext = QueryContext.empty(automaticallyRun = true)
 
-        val indexStatus = readModelProvider.slice(
-            dataSource,
-            ExplainQuery.Slice(
-                queryWithExplainPlan,
-                queryContext
-            )
-        )
+        val explainPlan = runCatching {
+            readModelProvider.slice(
+                dataSource,
+                ExplainQuery.Slice(
+                    queryWithExplainPlan,
+                    queryContext
+                )
+            ).explainPlan
+        }.getOrDefault(NotRun)
 
-        val (icon, text, tooltip) = when (indexStatus.explainPlan) {
+        val (icon, text, tooltip) = when (explainPlan) {
             CollectionScan ->
                 Triple(
                     Icons.indexWarningIcon,
@@ -106,13 +108,13 @@ private object QueriesInFileCollector : InlayHintsCollector {
                 Triple(
                     Icons.indexOkIcon,
                     InspectionsAndInlaysMessages.message("inlay.indexing.index-scan.text"),
-                    indexStatus.explainPlan.indexName
+                    explainPlan.indexName
                 )
             is IneffectiveIndexUsage ->
                 Triple(
                     Icons.indexWarningIcon,
                     InspectionsAndInlaysMessages.message("inlay.indexing.ineffective-index-scan.text"),
-                    indexStatus.explainPlan.indexName
+                    explainPlan.indexName
                 )
             NotRun ->
                 Triple(
