@@ -65,6 +65,8 @@ import com.mongodb.jbplugin.settings.PluginSettings
 import com.mongodb.jbplugin.settings.PluginSettingsStateComponent
 import com.mongodb.jbplugin.ui.viewModel.ConnectionState
 import com.mongodb.jbplugin.ui.viewModel.ConnectionStateViewModel
+import com.mongodb.jbplugin.ui.viewModel.DatabaseState
+import com.mongodb.jbplugin.ui.viewModel.DatabasesLoadingState
 import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -614,11 +616,6 @@ fun CodeInsightTestFixture.setupConnection(): Pair<LocalDataSource, DataGripBase
         )
     )
 
-    file.virtualFile.putUserData(
-        MongoDbVirtualFileDataSourceProvider.Keys.attachedDataSource,
-        dataSource,
-    )
-
     application.withMockedService(dbConnectionManager)
     project.withMockedService(readModelProvider)
     project.withMockedService(dbPsiFacade)
@@ -632,10 +629,18 @@ fun CodeInsightTestFixture.setupConnection(): Pair<LocalDataSource, DataGripBase
  *
  * @param name
  */
-fun CodeInsightTestFixture.specifyDatabase(name: String) {
-    file.virtualFile.putUserData(
-        MongoDbVirtualFileDataSourceProvider.Keys.attachedDatabase,
-        name
+fun CodeInsightTestFixture.specifyDatabase(dataSource: LocalDataSource, name: String) {
+    val connectionStateViewModel by file.project.service<ConnectionStateViewModel>()
+    `when`(connectionStateViewModel.databaseState).thenReturn(
+        MutableStateFlow(
+            DatabaseState(
+                DatabasesLoadingState.Loaded(
+                    dataSource,
+                    listOf(name)
+                ),
+                name
+            )
+        )
     )
 }
 
