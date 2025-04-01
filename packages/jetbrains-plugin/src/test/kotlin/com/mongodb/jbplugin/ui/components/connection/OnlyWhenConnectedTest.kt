@@ -14,7 +14,7 @@ class OnlyWhenConnectedTest {
     @Test
     fun `body is hidden when no connection`() = runComposeUiTest {
         setContentWithTheme {
-            _OnlyWhenConnected(SelectedConnectionState.Empty) {
+            _OnlyWhenConnected(SelectedConnectionState.Initial) {
                 Text("Connected!")
             }
         }

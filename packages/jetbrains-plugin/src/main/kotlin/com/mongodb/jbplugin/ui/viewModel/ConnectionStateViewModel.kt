@@ -16,193 +16,274 @@ import com.intellij.database.run.ConsoleRunConfiguration
 import com.intellij.database.view.ui.DataSourceManagerDialog
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.Service
-import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.wm.ToolWindow
+import com.intellij.openapi.wm.ex.ToolWindowManagerListener
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isMongoDbDataSource
 import com.mongodb.jbplugin.editor.services.MdbPluginDisposable
 import com.mongodb.jbplugin.editor.services.implementations.getConnectionPreferences
-import com.mongodb.jbplugin.editor.services.implementations.getDataSourceService
 import com.mongodb.jbplugin.meta.service
-import com.mongodb.jbplugin.observability.useLogMessage
-import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState.Connected
-import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState.Connecting
-import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState.Empty
-import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState.Failed
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.distinctUntilChangedBy
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.getAndUpdate
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-
-private val log = logger<ConnectionStateViewModel>()
+import org.jetbrains.annotations.VisibleForTesting
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
+import kotlin.coroutines.cancellation.CancellationException
 
 sealed interface SelectedConnectionState {
-    data object Empty : SelectedConnectionState
-    data class Connecting(val dataSource: LocalDataSource) : SelectedConnectionState
-    data class Connected(val dataSource: LocalDataSource) : SelectedConnectionState
-    data class Failed(val dataSource: LocalDataSource, val error: String) : SelectedConnectionState
+    val connection: LocalDataSource?
+
+    fun isForConnection(selectedConnection: LocalDataSource?): Boolean {
+        return selectedConnection?.uniqueId == connection?.uniqueId
+    }
+
+    data object Initial : SelectedConnectionState {
+        override var connection: LocalDataSource? = null
+        override fun isForConnection(selectedConnection: LocalDataSource?): Boolean {
+            return selectedConnection == null
+        }
+    }
+
+    data class Connecting(override val connection: LocalDataSource) : SelectedConnectionState
+
+    data class Connected(override val connection: LocalDataSource) : SelectedConnectionState
+
+    data class Failed(
+        override val connection: LocalDataSource,
+        val errorMessage: String
+    ) : SelectedConnectionState
 }
 
 data class ConnectionState(
     val connections: List<LocalDataSource>,
+    val selectedConnection: LocalDataSource?,
     val selectedConnectionState: SelectedConnectionState
 ) {
-    fun withDataSource(dataSource: LocalDataSource): ConnectionState {
-        if (!dataSource.isMongoDbDataSource()) {
-            return this
-        }
-
-        val dataSources = connections.filter { it.uniqueId != dataSource.uniqueId } + dataSource
-        return copy(connections = dataSources)
-    }
-
-    fun withoutDataSource(dataSource: LocalDataSource): ConnectionState {
-        val dataSources = connections.filter { it.uniqueId != dataSource.uniqueId }
-        return copy(connections = dataSources).whenDisconnected(dataSource)
-    }
-
-    fun withConnectionState(newState: SelectedConnectionState): ConnectionState {
-        return copy(selectedConnectionState = newState)
-    }
-
-    fun whenDisconnected(dataSource: LocalDataSource): ConnectionState {
-        return when (selectedConnectionState) {
-            Empty, is Failed, is Connecting -> this
-            is Connected -> if (selectedConnectionState.dataSource.uniqueId == dataSource.uniqueId) {
-                copy(selectedConnectionState = Empty)
-            } else {
-                this
-            }
-        }
-    }
-
     companion object {
-        fun default() = ConnectionState(emptyList(), Empty)
+        fun initial() = ConnectionState(
+            connections = emptyList(),
+            selectedConnection = null,
+            selectedConnectionState = SelectedConnectionState.Initial,
+        )
     }
 }
 
 @Service(Service.Level.PROJECT)
 class ConnectionStateViewModel(
     private val project: Project,
-    private val coroutineScope: CoroutineScope
-) : DataSourceManager.Listener, JdbcDriverManager.Listener {
-    internal var connectionSaga = ConnectionSaga(project, ::emitSelectedConnectionChanged)
-    internal val mutableConnectionState = MutableStateFlow(ConnectionState.default())
+    private val coroutineScope: CoroutineScope,
+) : DataSourceManager.Listener, JdbcDriverManager.Listener, ToolWindowManagerListener {
+    @VisibleForTesting
+    internal val initialStateLoaded = AtomicBoolean(false)
+
+    @VisibleForTesting
+    internal var connectionSaga = ConnectionSaga(
+        project = project,
+        coroutineScope = coroutineScope,
+        emitSelectedConnectionStateChange = ::emitSelectedConnectionStateChange
+    )
+
+    private val mutableConnectionState = MutableStateFlow(ConnectionState.initial())
     val connectionState = mutableConnectionState.asStateFlow()
 
     init {
-        coroutineScope.launch {
-            val dataSources = project.getDataSourceService().listMongoDbDataSources()
-            mutableConnectionState.emit(ConnectionState(dataSources, Empty))
+        setupListeners()
+        coroutineScope.launch(Dispatchers.IO) {
+            connectionState.distinctUntilChanged { old, new ->
+                old.selectedConnection?.uniqueId == new.selectedConnection?.uniqueId &&
+                    old.selectedConnectionState == new.selectedConnectionState
+            }.collectLatest { (_, selectedConnection, selectedConnectionState) ->
+                val isDisconnected = selectedConnection == null
+                val isConnected =
+                    selectedConnection != null && selectedConnectionState is SelectedConnectionState.Connected
 
-            val connectionPreferences = project.getConnectionPreferences()
-            val selectedDataSource = dataSources.find { it.uniqueId == connectionPreferences.dataSourceId }
-            if (selectedDataSource != null) {
-                selectDataSource(selectedDataSource, background = false)
-            }
-        }
-
-        coroutineScope.launch {
-            mutableConnectionState.distinctUntilChangedBy { it.selectedConnectionState }
-                .map { it.selectedConnectionState }
-                .collectLatest(::onSelectedConnectionChanges)
-        }
-
-        val messageBusConnection = project.messageBus.connect(
-            MdbPluginDisposable.getInstance(project)
-        )
-
-        messageBusConnection.subscribe(DataSourceManager.TOPIC, this)
-        messageBusConnection.subscribe(JdbcDriverManager.TOPIC, this)
-    }
-
-    suspend fun selectDataSource(dataSource: LocalDataSource?, background: Boolean = true) {
-        if (dataSource != null) {
-            if (background) {
-                coroutineScope.launch {
-                    connectionSaga.doConnect(dataSource)
-                }.join()
-            } else {
-                connectionSaga.doConnect(dataSource)
-            }
-        } else {
-            connectionSaga.doDisconnect()
-        }
-    }
-
-    suspend fun requestDataSourceCreation() {
-        val dataSource = connectionSaga.requestAddNewDataSource()
-        if (dataSource != null) {
-            connectionSaga.doConnect(dataSource)
-        }
-    }
-
-    suspend fun requestEditDataSource() {
-        val selectedConnectionState = mutableConnectionState.value.selectedConnectionState
-        if (selectedConnectionState is Connected) {
-            connectionSaga.requestEditDataSource(selectedConnectionState.dataSource)
-        }
-    }
-
-    internal suspend fun onSelectedConnectionChanges(newState: SelectedConnectionState) {
-        when (newState) {
-            is Connected -> withContext(Dispatchers.IO) {
-                val codeEditorViewModel by project.service<CodeEditorViewModel>()
-                codeEditorViewModel.reanalyzeRelevantEditors()
-            }
-            else -> {
+                // Doing this to account for only the relevant states that will be necessary for
+                // re-analysing the files.
+                if (isDisconnected || isConnected) {
+                    val codeEditorViewModel by project.service<CodeEditorViewModel>()
+                    codeEditorViewModel.reanalyzeRelevantEditors()
+                }
             }
         }
     }
 
-    private suspend fun emitSelectedConnectionChanged(newState: SelectedConnectionState) {
-        mutableConnectionState.emit(mutableConnectionState.value.withConnectionState(newState))
+    override fun toolWindowShown(toolWindow: ToolWindow) {
+        // We defer loading the initial state until we actually need to. MongoDB Tool window getting
+        // visible is a good sign of when we ideally would want data to be loaded. This is done to
+        // postpone immediate effects of loading data during startup, such as a connection trying
+        // to connect but failing in 10 seconds due to timeout and by the time user checks the tool
+        // window they only see the error content without any clue about what happened.
+        if (toolWindow.id == "MongoDB" &&
+            initialStateLoaded.compareAndSet(
+                false,
+                true
+            )
+        ) {
+            loadInitialState()
+        }
     }
 
     override fun <T : RawDataSource?> dataSourceAdded(
         manager: DataSourceManager<T>,
-        dataSource: T & Any
+        addedDataSource: T & Any
     ) {
-        if (dataSource is LocalDataSource) {
-            coroutineScope.launch {
-                mutableConnectionState.emit(mutableConnectionState.value.withDataSource(dataSource))
+        if (addedDataSource is LocalDataSource) {
+            coroutineScope.launch(Dispatchers.IO) {
+                mutableConnectionState.update { state ->
+                    state.copy(connections = state.connections + addedDataSource)
+                }
             }
         }
     }
 
     override fun <T : RawDataSource?> dataSourceRemoved(
         manager: DataSourceManager<T>,
-        dataSource: T & Any
+        removedDataSource: T & Any
     ) {
-        if (dataSource is LocalDataSource) {
-            coroutineScope.launch {
-                mutableConnectionState.emit(mutableConnectionState.value.withoutDataSource(dataSource))
-            }
-        }
-    }
+        if (removedDataSource is LocalDataSource) {
+            coroutineScope.launch(Dispatchers.IO) {
+                val (_, selectedConnection) = mutableConnectionState.getAndUpdate { state ->
+                    state.copy(connections = state.connections - removedDataSource)
+                }
 
-    override fun onTerminated(
-        dataSource: LocalDataSource,
-        configuration: ConsoleRunConfiguration?
-    ) {
-        coroutineScope.launch {
-            mutableConnectionState.emit(mutableConnectionState.value.whenDisconnected(dataSource))
+                if (selectedConnection?.uniqueId == removedDataSource.uniqueId) {
+                    unselectSelectedConnection()
+                }
+            }
         }
     }
 
     override fun <T : RawDataSource?> dataSourceChanged(
         manager: DataSourceManager<T>?,
-        dataSource: T?
+        changedDataSource: T?
     ) {
-        if (dataSource is LocalDataSource) {
-            coroutineScope.launch {
-                mutableConnectionState.emit(mutableConnectionState.value.withDataSource(dataSource))
+        if (changedDataSource is LocalDataSource) {
+            coroutineScope.launch(Dispatchers.IO) {
+                val (_, selectedConnection) = mutableConnectionState.getAndUpdate { state ->
+                    state.copy(
+                        connections = state.connections.filter {
+                            it.uniqueId != changedDataSource.uniqueId
+                        } + changedDataSource
+                    )
+                }
+
+                if (selectedConnection?.uniqueId == changedDataSource.uniqueId) {
+                    selectConnection(changedDataSource)
+                }
+            }
+        }
+    }
+
+    override fun onTerminated(
+        terminatedDataSource: LocalDataSource,
+        configuration: ConsoleRunConfiguration?
+    ) {
+        if (connectionState.value.selectedConnection?.uniqueId == terminatedDataSource.uniqueId) {
+            coroutineScope.launch(Dispatchers.IO) {
+                unselectSelectedConnection()
+            }
+        }
+    }
+
+    suspend fun selectConnection(connection: LocalDataSource) {
+        withContext(Dispatchers.IO) {
+            mutableConnectionState.update { state ->
+                state.copy(
+                    selectedConnection = connection,
+                    selectedConnectionState = SelectedConnectionState.Initial,
+                )
+            }
+            val connectionPreferences = project.getConnectionPreferences()
+            connectionPreferences.dataSourceId = connection.uniqueId
+
+            connectionSaga.connect(dataSource = connection)
+        }
+    }
+
+    suspend fun unselectSelectedConnection() {
+        withContext(Dispatchers.IO) {
+            mutableConnectionState.update { state ->
+                state.copy(
+                    selectedConnection = null,
+                    selectedConnectionState = SelectedConnectionState.Initial,
+                )
+            }
+            val connectionPreferences = project.getConnectionPreferences()
+            connectionPreferences.dataSourceId = null
+
+            connectionSaga.cancelOnGoingConnection()
+        }
+    }
+
+    suspend fun addNewConnection() {
+        val connection = connectionSaga.addNewConnection()
+        if (connection != null) {
+            selectConnection(connection)
+        }
+    }
+
+    suspend fun editSelectedConnection() {
+        val (_, selectedConnection, selectedConnectionState) = mutableConnectionState.value
+        if (
+            selectedConnection != null &&
+            selectedConnectionState is SelectedConnectionState.Connected
+        ) {
+            connectionSaga.editConnection(selectedConnection)
+        }
+    }
+
+    private fun setupListeners() {
+        val messageBusConnection = project.messageBus.connect(
+            MdbPluginDisposable.getInstance(project)
+        )
+        messageBusConnection.subscribe(DataSourceManager.TOPIC, this)
+        messageBusConnection.subscribe(JdbcDriverManager.TOPIC, this)
+        messageBusConnection.subscribe(ToolWindowManagerListener.TOPIC, this)
+    }
+
+    private fun loadInitialState() {
+        coroutineScope.launch(Dispatchers.IO) {
+            val connectionPreferences = project.getConnectionPreferences()
+            val connections = connectionSaga.listMongoDbConnections()
+            val selectedConnection =
+                connections.find { it.uniqueId == connectionPreferences.dataSourceId }
+            mutableConnectionState.emit(
+                ConnectionState(
+                    connections = connections,
+                    selectedConnection = null,
+                    selectedConnectionState = SelectedConnectionState.Initial
+                )
+            )
+
+            if (selectedConnection != null) {
+                selectConnection(selectedConnection)
+            }
+        }
+    }
+
+    private fun emitSelectedConnectionStateChange(
+        newSelectedConnectionState: SelectedConnectionState
+    ) {
+        mutableConnectionState.update { currentConnectionState ->
+            if (newSelectedConnectionState.isForConnection(
+                    currentConnectionState.selectedConnection
+                )
+            ) {
+                currentConnectionState.copy(selectedConnectionState = newSelectedConnectionState)
+            } else {
+                currentConnectionState
             }
         }
     }
@@ -244,71 +325,94 @@ class DataSourcesChangesAuditor : DataAuditor {
  * This is going to handle the actual connection logic. We are keeping this internal to this module
  * because we don't want to be able to connect through any other API that is not the ConnectionStateViewModel.
  */
-internal class ConnectionSaga(val project: Project, val emitConnectionChange: suspend (SelectedConnectionState) -> Unit) {
-    suspend fun doConnect(dataSource: LocalDataSource) {
-        emitConnectionChange(Connecting(dataSource))
-        if (dataSource.isConnected()) {
-            emitConnectionChange(Connected(dataSource))
-            return
-        }
+internal class ConnectionSaga(
+    private val project: Project,
+    private val coroutineScope: CoroutineScope,
+    internal val emitSelectedConnectionStateChange: suspend (SelectedConnectionState) -> Unit
+) {
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val connectionDispatcher = Dispatchers.IO.limitedParallelism(1)
 
-        try {
-            val connectionManager = DatabaseConnectionManager.getInstance()
-            val connectionHandler =
-                connectionManager
-                    .build(project, dataSource)
-                    .setRequestor(ConnectionRequestor.Anonymous())
-                    .setAskPassword(true)
-                    .setRunConfiguration(
-                        ConsoleRunConfiguration.newConfiguration(project).apply {
-                            setOptionsFromDataSource(dataSource)
-                        },
-                    )
+    private val onGoingConnection = AtomicReference<Job?>(null)
 
-            val connection = connectionHandler.create()?.get()
-            if (connection == null || !dataSource.isConnected()) {
-                emitConnectionChange(Failed(dataSource, "Could not establish connection."))
-                log.warn(
-                    useLogMessage(
-                        "Could not connect to DataSource(${dataSource.uniqueId})"
-                    ).build(),
-                )
-                return
+    fun listMongoDbConnections(): List<LocalDataSource> {
+        return DataSourceManager.byDataSource(project, LocalDataSource::class.java)
+            ?.dataSources?.filter {
+                it.isMongoDbDataSource()
             }
-            emitConnectionChange(Connected(dataSource))
-        } catch (exception: Exception) {
-            emitConnectionChange(Failed(dataSource, exception.message ?: exception.cause?.message ?: "Could not establish connection."))
-            log.warn(
-                useLogMessage(
-                    "Could not connect to DataSource(${dataSource.uniqueId})"
-                ).build(),
-            )
-        }
+            ?: emptyList()
     }
 
-    suspend fun requestAddNewDataSource(): LocalDataSource? {
-        val driverManager = DatabaseDriverManager.getInstance()
-        val mongodbDriver = driverManager.getDriver("mongo.4")
+    fun connect(dataSource: LocalDataSource) {
+        onGoingConnection.getAndSet(
+            coroutineScope.launch(connectionDispatcher) {
+                try {
+                    emitSelectedConnectionStateChange(
+                        SelectedConnectionState.Connecting(dataSource)
+                    )
+                    if (dataSource.isConnected()) {
+                        emitSelectedConnectionStateChange(
+                            SelectedConnectionState.Connected(dataSource)
+                        )
+                        return@launch
+                    }
+
+                    val connection = DatabaseConnectionManager.getInstance()
+                        .build(project, dataSource)
+                        .setRequestor(ConnectionRequestor.Anonymous())
+                        .setAskPassword(true)
+                        .setRunConfiguration(
+                            ConsoleRunConfiguration.newConfiguration(project).apply {
+                                setOptionsFromDataSource(dataSource)
+                            },
+                        ).create()?.get()
+
+                    if (connection == null || !dataSource.isConnected()) {
+                        emitSelectedConnectionStateChange(
+                            SelectedConnectionState.Failed(
+                                connection = dataSource,
+                                errorMessage = "Could not connect to Connection"
+                            )
+                        )
+                    } else {
+                        emitSelectedConnectionStateChange(
+                            SelectedConnectionState.Connected(dataSource)
+                        )
+                    }
+                } catch (_: CancellationException) {
+                    // Do nothing
+                } catch (exception: Exception) {
+                    emitSelectedConnectionStateChange(
+                        SelectedConnectionState.Failed(
+                            connection = dataSource,
+                            errorMessage = exception.cause?.message ?: "Could not establish connection."
+                        )
+                    )
+                }
+            }
+        )?.cancel()
+    }
+
+    fun cancelOnGoingConnection() {
+        onGoingConnection.getAndSet(null)?.cancel()
+    }
+
+    suspend fun addNewConnection(): LocalDataSource? {
         val selection = LocalDataSource().apply {
             url = "mongodb://localhost:27017"
             isConfiguredByUrl = true
-            databaseDriver = mongodbDriver
+            databaseDriver = DatabaseDriverManager.getInstance().getDriver("mongo.4")
             isSingleConnection = true
         }
 
-        val result = withContext(Dispatchers.EDT) {
+        return withContext(Dispatchers.EDT) {
             DataSourceManagerDialog.showDialog(project, selection, null)
-        }
-        return result.firstNotNullOfOrNull { it.localDataSource }
+        }.firstNotNullOfOrNull { it.localDataSource }
     }
 
-    suspend fun requestEditDataSource(dataSource: LocalDataSource) {
+    suspend fun editConnection(connection: LocalDataSource) {
         withContext(Dispatchers.EDT) {
-            DataSourceManagerDialog.showDialog(project, dataSource, null)
+            DataSourceManagerDialog.showDialog(project, connection, null)
         }
-    }
-
-    suspend fun doDisconnect() {
-        emitConnectionChange(Empty)
     }
 }

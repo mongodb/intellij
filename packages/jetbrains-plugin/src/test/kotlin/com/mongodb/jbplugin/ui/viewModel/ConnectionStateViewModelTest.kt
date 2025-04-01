@@ -3,17 +3,14 @@ package com.mongodb.jbplugin.ui.viewModel
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.database.psi.DataSourceManager
 import com.intellij.openapi.project.Project
-import com.intellij.testFramework.assertInstanceOf
+import com.intellij.openapi.wm.ToolWindow
 import com.mongodb.jbplugin.editor.services.implementations.ConnectionPreferencesStateComponent
-import com.mongodb.jbplugin.editor.services.implementations.MdbDataSourceService
 import com.mongodb.jbplugin.editor.services.implementations.MdbEditorService
 import com.mongodb.jbplugin.editor.services.implementations.PersistentConnectionPreferences
 import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.eventually
 import com.mongodb.jbplugin.fixtures.mockDataSource
 import com.mongodb.jbplugin.fixtures.withMockedService
-import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState.Connecting
-import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState.Empty
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestScope
@@ -23,39 +20,82 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.timeout
+import org.mockito.Mockito.*
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 @IntegrationTest
 class ConnectionStateViewModelTest {
     lateinit var dataSource: LocalDataSource
-    private lateinit var dataSourceService: MdbDataSourceService
+    private lateinit var connectionSaga: ConnectionSaga
     private lateinit var editorService: MdbEditorService
     private lateinit var connectionPreferences: PersistentConnectionPreferences
+    private lateinit var mongoDBToolWindow: ToolWindow
 
     @BeforeEach
     fun setUp(project: Project) {
-        dataSource = mockDataSource()
-        dataSourceService = mock()
         editorService = mock()
+        dataSource = mockDataSource()
+        connectionSaga = mock()
+        whenever(connectionSaga.listMongoDbConnections()).thenReturn(listOf(dataSource))
+
         connectionPreferences = mock()
         val connectionPreferencesStateComponent = mock<ConnectionPreferencesStateComponent>()
         whenever(connectionPreferencesStateComponent.state).thenReturn(connectionPreferences)
 
-        whenever(dataSourceService.listMongoDbDataSources()).thenReturn(listOf(dataSource))
-        project.withMockedService(dataSourceService)
+        mongoDBToolWindow = mock()
+        whenever(mongoDBToolWindow.id).thenReturn("MongoDB")
+
+        project
             .withMockedService(editorService)
             .withMockedService(connectionPreferencesStateComponent)
     }
 
     @Test
-    fun `emits the list of already existing data sources`(
+    fun `attempts to load initial data only when MongoDB tool window shows up`(
+        project: Project,
+        testScope: TestScope,
+    ) {
+        val viewModel = ConnectionStateViewModel(project, testScope)
+        viewModel.connectionSaga = connectionSaga
+
+        assertFalse(viewModel.initialStateLoaded.get())
+
+        viewModel.toolWindowShown(mongoDBToolWindow)
+        eventually {
+            testScope.advanceUntilIdle()
+            assertTrue(viewModel.initialStateLoaded.get())
+        }
+    }
+
+    @Test
+    fun `does not load initial data when the tool window is not MongoDB`(
+        project: Project,
+        testScope: TestScope,
+    ) {
+        val viewModel = ConnectionStateViewModel(project, testScope)
+        viewModel.connectionSaga = connectionSaga
+
+        assertFalse(viewModel.initialStateLoaded.get())
+
+        val toolWindow = mock<ToolWindow>()
+        whenever(toolWindow.id).thenReturn("SomeOtherWindow")
+
+        viewModel.toolWindowShown(toolWindow)
+        eventually {
+            testScope.advanceUntilIdle()
+            assertFalse(viewModel.initialStateLoaded.get())
+        }
+    }
+
+    @Test
+    fun `loads the list of already existing data sources when tool window shows up`(
         project: Project,
         testScope: TestScope
     ) {
         val viewModel = ConnectionStateViewModel(project, testScope)
+        viewModel.connectionSaga = connectionSaga
+        viewModel.toolWindowShown(mongoDBToolWindow)
         eventually {
             testScope.advanceUntilIdle()
             val connectionState = viewModel.connectionState.value
@@ -65,7 +105,7 @@ class ConnectionStateViewModelTest {
     }
 
     @Test
-    fun `restores the last selected DataSource and attempts to connect to it`(
+    fun `restores the last selected DataSource and attempts to connect to it when tool window shows up`(
         project: Project,
         coroutineScope: TestScope,
     ) {
@@ -73,43 +113,58 @@ class ConnectionStateViewModelTest {
         whenever(connectionPreferences.dataSourceId).thenReturn(dataSourceId)
 
         val viewModel = ConnectionStateViewModel(project, coroutineScope)
+        viewModel.connectionSaga = connectionSaga
+        viewModel.toolWindowShown(mongoDBToolWindow)
+
         eventually {
             coroutineScope.advanceUntilIdle()
             val connectionState = viewModel.connectionState.value
-            assertInstanceOf<Connecting>(connectionState.selectedConnectionState)
-            assertEquals(dataSource, (connectionState.selectedConnectionState as Connecting).dataSource)
+            assertEquals(dataSource, connectionState.selectedConnection)
+            verify(connectionSaga, times(1)).connect(dataSource)
         }
     }
 
     @Test
-    fun `when connected triggers code analysis on the current editor`(
+    fun `when connected and later disconnected, triggers code analysis on the current editor`(
         project: Project,
+        coroutineScope: TestScope,
     ) {
         val viewModel = ConnectionStateViewModel(project, TestScope())
-        runBlocking {
-            viewModel.onSelectedConnectionChanges(
-                SelectedConnectionState.Connected(mockDataSource())
-            )
+        val realConnectionSaga = viewModel.connectionSaga
+        whenever(connectionSaga.connect(dataSource)).thenAnswer {
+            coroutineScope.launch {
+                realConnectionSaga.emitSelectedConnectionStateChange(
+                    SelectedConnectionState.Connected(dataSource)
+                )
+            }
         }
-
+        viewModel.connectionSaga = connectionSaga
+        runBlocking {
+            viewModel.selectConnection(dataSource)
+        }
         verify(editorService, timeout(1000)).reAnalyzeSelectedEditor(true)
+
+        runBlocking {
+            viewModel.unselectSelectedConnection()
+        }
+        verify(editorService, timeout(1000).times(2)).reAnalyzeSelectedEditor(true)
     }
 
     @Test
-    fun `when selecting a null data source disconnects`(
+    fun `should connect to the connection after selecting it`(
         project: Project,
     ) {
         val viewModel = ConnectionStateViewModel(project, TestScope())
         viewModel.connectionSaga = mock()
 
         runBlocking {
-            viewModel.selectDataSource(null, background = false)
-            verify(viewModel.connectionSaga, timeout(100)).doDisconnect()
+            viewModel.selectConnection(dataSource)
+            verify(viewModel.connectionSaga, timeout(100)).connect(dataSource)
         }
     }
 
     @Test
-    fun `when selecting a non-null data source connects to it`(
+    fun `should attempt clearing out any ongoing connection attempt after unselecting a connection`(
         project: Project,
     ) {
         val viewModel = ConnectionStateViewModel(project, TestScope())
@@ -117,13 +172,14 @@ class ConnectionStateViewModelTest {
         val dataSource = mockDataSource()
 
         runBlocking {
-            viewModel.selectDataSource(dataSource, background = false)
-            verify(viewModel.connectionSaga, timeout(1000)).doConnect(dataSource)
+            viewModel.selectConnection(dataSource)
+            viewModel.unselectSelectedConnection()
+            verify(viewModel.connectionSaga, timeout(1000)).cancelOnGoingConnection()
         }
     }
 
     @Test
-    fun `when a new data source is created tracks it`(
+    fun `when a new data source is created, it should update the list of available connections`(
         project: Project,
         coroutineScope: TestScope
     ) {
@@ -140,8 +196,9 @@ class ConnectionStateViewModelTest {
     }
 
     @Test
-    fun `when a new data source is removed it is dropped`(
+    fun `when a new data source is removed, it should drop it from the list of available connections`(
         project: Project,
+        coroutineScope: TestScope,
     ) {
         val viewModel = ConnectionStateViewModel(project, TestScope())
         viewModel.connectionSaga = mock()
@@ -149,6 +206,11 @@ class ConnectionStateViewModelTest {
         val dataSourceManager = mock<DataSourceManager<LocalDataSource>>()
 
         viewModel.dataSourceAdded(dataSourceManager, dataSource)
+        eventually {
+            coroutineScope.advanceUntilIdle()
+            assertTrue(viewModel.connectionState.value.connections.any { it.uniqueId == dataSource.uniqueId })
+        }
+
         viewModel.dataSourceRemoved(dataSourceManager, dataSource)
         eventually {
             assertFalse(viewModel.connectionState.value.connections.any { it.uniqueId == dataSource.uniqueId })
@@ -156,21 +218,17 @@ class ConnectionStateViewModelTest {
     }
 
     @Test
-    fun `when a new data source is removed it is dropped and disconnected if it was connected`(
+    fun `when a selected data source is removed, it is dropped from the list of available connections and unselected`(
         project: Project,
         coroutineScope: TestScope
     ) {
         val viewModel = ConnectionStateViewModel(project, coroutineScope)
         viewModel.connectionSaga = mock()
-        val dataSource = mockDataSource()
         val dataSourceManager = mock<DataSourceManager<LocalDataSource>>()
 
         runBlocking {
-            viewModel.mutableConnectionState.emit(
-                ConnectionState.default()
-                    .withDataSource(dataSource)
-                    .withConnectionState(SelectedConnectionState.Connected(dataSource))
-            )
+            viewModel.selectConnection(dataSource)
+            assertEquals(dataSource, viewModel.connectionState.value.selectedConnection)
         }
 
         viewModel.dataSourceRemoved(dataSourceManager, dataSource)
@@ -178,33 +236,28 @@ class ConnectionStateViewModelTest {
         eventually {
             coroutineScope.advanceUntilIdle()
             assertFalse(viewModel.connectionState.value.connections.any { it.uniqueId == dataSource.uniqueId })
-            assertTrue(viewModel.connectionState.value.selectedConnectionState is Empty)
+            assertEquals(null, viewModel.connectionState.value.selectedConnection)
         }
     }
 
     @Test
-    fun `when the data source is disconnected it unlinks the connection`(
+    fun `when the data source is disconnected it is also also unselected`(
         project: Project,
         coroutineScope: TestScope
     ) {
         val viewModel = ConnectionStateViewModel(project, coroutineScope)
         viewModel.connectionSaga = mock()
-        val dataSource = mockDataSource()
 
-        coroutineScope.launch {
-            viewModel.mutableConnectionState.emit(
-                ConnectionState.default()
-                    .withDataSource(dataSource)
-                    .withConnectionState(SelectedConnectionState.Connected(dataSource))
-            )
+        runBlocking {
+            viewModel.selectConnection(dataSource)
+            assertEquals(dataSource, viewModel.connectionState.value.selectedConnection)
         }
 
         viewModel.onTerminated(dataSource, null)
 
         eventually {
             coroutineScope.advanceUntilIdle()
-            assertTrue(viewModel.connectionState.value.connections.any { it.uniqueId == dataSource.uniqueId })
-            assertTrue(viewModel.connectionState.value.selectedConnectionState is Empty)
+            assertEquals(null, viewModel.connectionState.value.selectedConnection)
         }
     }
 }
