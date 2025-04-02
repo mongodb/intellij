@@ -14,6 +14,7 @@ import com.mongodb.jbplugin.fixtures.readClipboard
 import com.mongodb.jbplugin.fixtures.setContentWithTheme
 import com.mongodb.jbplugin.ui.viewModel.ConnectionState
 import com.mongodb.jbplugin.ui.viewModel.DatabaseState
+import com.mongodb.jbplugin.ui.viewModel.DatabasesLoadingState
 import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -236,5 +237,107 @@ class ConnectionBootstrapCardTest {
 
         onNodeWithTag("DisconnectItem").performClick()
         assertTrue(clicked)
+    }
+
+    @Test
+    fun `shows selected database when one is selected`() = runComposeUiTest {
+        val dataSource = mockDataSource()
+
+        setContentWithTheme {
+            _ConnectionBootstrapCard(
+                ConnectionState(
+                    listOf(dataSource),
+                    dataSource,
+                    SelectedConnectionState.Connected(dataSource)
+                ),
+                DatabaseState(
+                    databasesLoadingState = DatabasesLoadingState.Loaded(dataSource, listOf("testDB")),
+                    selectedDatabase = "testDB"
+                )
+            )
+        }
+
+        onNodeWithTag("DatabaseComboBox").assertTextEquals("testDB")
+    }
+
+    @Test
+    fun `shows loading databases state when fetching databases`() = runComposeUiTest {
+        val dataSource = mockDataSource()
+
+        setContentWithTheme {
+            _ConnectionBootstrapCard(
+                ConnectionState(
+                    listOf(dataSource),
+                    dataSource,
+                    SelectedConnectionState.Connected(dataSource)
+                ),
+                DatabaseState(
+                    databasesLoadingState = DatabasesLoadingState.Loading(dataSource),
+                    selectedDatabase = null
+                )
+            )
+        }
+
+        onNodeWithTag("DatabaseComboBox").assertTextEquals("Loading databases...")
+    }
+
+    @Test
+    fun `handles database selection through UI`() = runComposeUiTest {
+        val dataSource = mockDataSource()
+        var selectedDatabase: String? = null
+
+        setContentWithTheme {
+            CompositionLocalProvider(
+                LocalDatabaseCallbacks provides DatabaseCallbacks(
+                    selectDatabase = { selectedDatabase = it }
+                )
+            ) {
+                _ConnectionBootstrapCard(
+                    ConnectionState(
+                        listOf(dataSource),
+                        dataSource,
+                        SelectedConnectionState.Connected(dataSource)
+                    ),
+                    DatabaseState(
+                        databasesLoadingState = DatabasesLoadingState.Loaded(dataSource, listOf("testDB")),
+                        selectedDatabase = null
+                    )
+                )
+            }
+        }
+
+        onNodeWithTag("DatabaseComboBox").performClick()
+        onNodeWithTag("DatabaseItem::testDB").performClick()
+        assertEquals("testDB", selectedDatabase)
+    }
+
+    @Test
+    fun `handles database unselection through UI`() = runComposeUiTest {
+        val dataSource = mockDataSource()
+        var unselectClicked = false
+
+        setContentWithTheme {
+            CompositionLocalProvider(
+                LocalDatabaseCallbacks provides DatabaseCallbacks(
+                    unselectSelectedDatabase = { unselectClicked = true }
+                )
+            ) {
+                _ConnectionBootstrapCard(
+                    ConnectionState(
+                        listOf(dataSource),
+                        dataSource,
+                        SelectedConnectionState.Connected(dataSource)
+                    ),
+                    DatabaseState(
+                        databasesLoadingState = DatabasesLoadingState.Loaded(dataSource, listOf("testDB")),
+                        selectedDatabase = "testDB"
+                    )
+                )
+            }
+        }
+
+        onNodeWithTag("DatabaseComboBox").performClick()
+        onNodeWithTag("UnselectItem").performClick()
+        assertTrue(unselectClicked)
     }
 }
