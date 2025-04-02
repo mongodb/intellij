@@ -13,7 +13,7 @@ import org.mockito.kotlin.any
 class QueryNotUsingIndexInspectionEffectivelyTest : QueryInspectionTest<NotUsingIndexEffectively> {
     @Test
     fun `warns query plans using an index but not effectively`() = runInspectionTest {
-        whenExplainPlanIs(ExplainPlan.IneffectiveIndexUsage)
+        whenExplainPlanIs(ExplainPlan.IneffectiveIndexUsage(""))
 
         val inspection = QueryNotUsingIndexEffectivelyInspection<Unit>()
         inspection.run(query, holder, QueryNotUsingIndexEffectivelyInspectionSettings(Unit, readModelProvider, SAFE))
@@ -33,7 +33,7 @@ class QueryNotUsingIndexInspectionEffectivelyTest : QueryInspectionTest<NotUsing
 
     @Test
     fun `does not warn on query plans not using an index scan`() = runInspectionTest {
-        whenExplainPlanIs(ExplainPlan.IndexScan)
+        whenExplainPlanIs(ExplainPlan.IndexScan(""))
 
         val inspection = QueryNotUsingIndexEffectivelyInspection<Unit>()
         inspection.run(query, holder, QueryNotUsingIndexEffectivelyInspectionSettings(Unit, readModelProvider, SAFE))

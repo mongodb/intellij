@@ -23,7 +23,7 @@ class QueryNotUsingIndexInspectionTest : QueryInspectionTest<NotUsingIndex> {
 
     @Test
     fun `does not warn on query plans not using an index effectively`() = runInspectionTest {
-        whenExplainPlanIs(ExplainPlan.IneffectiveIndexUsage)
+        whenExplainPlanIs(ExplainPlan.IneffectiveIndexUsage(""))
 
         val inspection = QueryNotUsingIndexInspection<Unit>()
         inspection.run(query, holder, QueryNotUsingIndexInspectionSettings(Unit, readModelProvider, SAFE))
@@ -33,7 +33,7 @@ class QueryNotUsingIndexInspectionTest : QueryInspectionTest<NotUsingIndex> {
 
     @Test
     fun `does not warn on query plans not using an index scan`() = runInspectionTest {
-        whenExplainPlanIs(ExplainPlan.IndexScan)
+        whenExplainPlanIs(ExplainPlan.IndexScan(""))
 
         val inspection = QueryNotUsingIndexInspection<Unit>()
         inspection.run(query, holder, QueryNotUsingIndexInspectionSettings(Unit, readModelProvider, SAFE))

@@ -26,6 +26,12 @@ class AnalysisScopeViewModel(
         }
     }
 
+    suspend fun reanalyzeCurrentScope() {
+        mutableAnalysisScope.tryEmit(mutableAnalysisScope.value)
+        val codeEditorViewModel by project.service<CodeEditorViewModel>()
+        codeEditorViewModel.reanalyzeRelevantEditors()
+    }
+
     private fun refreshAnalysisScopeIfNecessary(editorState: EditorState) {
         val currentScope = mutableAnalysisScope.value
         if (currentScope is AnalysisScope.CurrentFile) {

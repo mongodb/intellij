@@ -24,7 +24,8 @@ class MongoDbQueryNotUsingIndex(coroutineScope: CoroutineScope) : AbstractMongoD
     NotUsingIndex
     >(
     coroutineScope,
-    QueryNotUsingIndexInspection()
+    QueryNotUsingIndexInspection(),
+    NotUsingIndex
 ) {
     override fun buildSettings(query: Node<PsiElement>): QueryNotUsingIndexInspectionSettings<LocalDataSource> {
         val isFullExplainPlanEnabled by pluginSetting { ::isFullExplainPlanEnabled }

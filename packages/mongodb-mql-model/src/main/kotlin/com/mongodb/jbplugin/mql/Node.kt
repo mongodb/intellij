@@ -4,8 +4,15 @@
 
 package com.mongodb.jbplugin.mql
 
+import com.mongodb.jbplugin.mql.adt.Either
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
+import com.mongodb.jbplugin.mql.components.HasFieldReference
 import com.mongodb.jbplugin.mql.components.HasTargetCluster
+import com.mongodb.jbplugin.mql.parser.components.allNodesWithSchemaFieldReferences
+import com.mongodb.jbplugin.mql.parser.filterNotNullMany
+import com.mongodb.jbplugin.mql.parser.mapMany
+import com.mongodb.jbplugin.mql.parser.parse
+import kotlinx.coroutines.runBlocking
 
 /** A component represents the semantics of a Node. When a Node has some special meaning, we will attach a component
  * that adds that specific meaning. For example, take into consideration the following Java Query:
@@ -109,6 +116,26 @@ data class Node<S>(
 
     override fun toString(): String {
         return "Node(components=$components)"
+    }
+
+    fun queryHash(): Int {
+        val allFieldNamesParser = allNodesWithSchemaFieldReferences<S>()
+            .mapMany { Either.right<Any, HasFieldReference.FieldReference<S>?>(it.component<HasFieldReference<S>>()?.reference) }
+            .mapMany {
+                Either.right<Any, String?>(
+                    when (it) {
+                        is HasFieldReference.FromSchema -> it.fieldName
+                        else -> null
+                    }
+                )
+            }
+            .filterNotNullMany()
+
+        val allFieldNames = runBlocking {
+            allFieldNamesParser.parse(this@Node).orElse { emptyList() }
+        }
+
+        return allFieldNames.hashCode()
     }
 }
 
