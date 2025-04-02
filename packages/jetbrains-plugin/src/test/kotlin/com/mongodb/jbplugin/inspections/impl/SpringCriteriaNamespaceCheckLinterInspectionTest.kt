@@ -28,7 +28,7 @@ class SpringCriteriaNamespaceCheckLinterInspectionTest {
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDb")
+        fixture.specifyDatabase(dataSource, "myDb")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
@@ -75,7 +75,7 @@ class SpringCriteriaNamespaceCheckLinterInspectionTest {
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDb")
+        fixture.specifyDatabase(dataSource, "myDb")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(

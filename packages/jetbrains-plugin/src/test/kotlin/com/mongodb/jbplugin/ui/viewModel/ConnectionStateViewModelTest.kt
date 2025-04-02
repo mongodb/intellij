@@ -4,6 +4,7 @@ import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.database.psi.DataSourceManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
+import com.intellij.testFramework.assertInstanceOf
 import com.mongodb.jbplugin.editor.services.implementations.ConnectionPreferencesStateComponent
 import com.mongodb.jbplugin.editor.services.implementations.MdbEditorService
 import com.mongodb.jbplugin.editor.services.implementations.PersistentConnectionPreferences
@@ -142,12 +143,12 @@ class ConnectionStateViewModelTest {
         runBlocking {
             viewModel.selectConnection(dataSource)
         }
-        verify(editorService, timeout(1000)).reAnalyzeSelectedEditor(true)
+        verify(editorService, timeout(1000).times(2)).reAnalyzeSelectedEditor(true)
 
         runBlocking {
             viewModel.unselectSelectedConnection()
         }
-        verify(editorService, timeout(1000).times(2)).reAnalyzeSelectedEditor(true)
+        verify(editorService, timeout(1000).times(3)).reAnalyzeSelectedEditor(true)
     }
 
     @Test
@@ -258,6 +259,166 @@ class ConnectionStateViewModelTest {
         eventually {
             coroutineScope.advanceUntilIdle()
             assertEquals(null, viewModel.connectionState.value.selectedConnection)
+        }
+    }
+
+    @Test
+    fun `when selected connection is connected, attempts to load databases for the connection`(
+        project: Project,
+        coroutineScope: TestScope,
+    ) {
+        val viewModel = ConnectionStateViewModel(project, coroutineScope)
+        val realConnectionSaga = viewModel.connectionSaga
+        whenever(connectionSaga.connect(dataSource)).then {
+            coroutineScope.launch {
+                realConnectionSaga.emitSelectedConnectionStateChange(
+                    SelectedConnectionState.Connected(
+                        connection = dataSource,
+                    )
+                )
+            }
+        }
+
+        var databasesRequested: Boolean = false
+        whenever(connectionSaga.listDatabases(dataSource)).then {
+            databasesRequested = true
+            coroutineScope.launch {
+                realConnectionSaga.emitDatabasesLoadingStateChange(
+                    DatabasesLoadingState.Loaded(
+                        connection = dataSource,
+                        databases = listOf()
+                    )
+                )
+            }
+        }
+        viewModel.connectionSaga = connectionSaga
+
+        runBlocking {
+            viewModel.selectConnection(dataSource)
+        }
+
+        eventually {
+            coroutineScope.advanceUntilIdle()
+            assertTrue(databasesRequested)
+        }
+    }
+
+    @Test
+    fun `when databases are loaded, it should update the DatabaseState to reflect the available databases`(
+        project: Project,
+        coroutineScope: TestScope,
+    ) {
+        val viewModel = ConnectionStateViewModel(project, coroutineScope)
+        val realConnectionSaga = viewModel.connectionSaga
+        whenever(connectionSaga.connect(dataSource)).then {
+            coroutineScope.launch {
+                realConnectionSaga.emitSelectedConnectionStateChange(
+                    SelectedConnectionState.Connected(
+                        connection = dataSource,
+                    )
+                )
+            }
+        }
+
+        whenever(connectionSaga.listDatabases(dataSource)).then {
+            coroutineScope.launch {
+                realConnectionSaga.emitDatabasesLoadingStateChange(
+                    DatabasesLoadingState.Loaded(
+                        connection = dataSource,
+                        databases = listOf("DB1", "DB2")
+                    )
+                )
+            }
+        }
+        viewModel.connectionSaga = connectionSaga
+
+        runBlocking {
+            viewModel.selectConnection(dataSource)
+        }
+
+        eventually {
+            coroutineScope.advanceUntilIdle()
+            assertEquals(2, viewModel.databaseState.value.databasesLoadingState.databases.size)
+        }
+    }
+
+    @Test
+    fun `when databases are loaded and there was a preselected database, it should update the DatabaseState to reflect the selection`(
+        project: Project,
+        coroutineScope: TestScope,
+    ) {
+        whenever(connectionPreferences.database).thenReturn("DB1")
+        val viewModel = ConnectionStateViewModel(project, coroutineScope)
+        val realConnectionSaga = viewModel.connectionSaga
+        whenever(connectionSaga.connect(dataSource)).then {
+            coroutineScope.launch {
+                realConnectionSaga.emitSelectedConnectionStateChange(
+                    SelectedConnectionState.Connected(
+                        connection = dataSource,
+                    )
+                )
+            }
+        }
+
+        whenever(connectionSaga.listDatabases(dataSource)).then {
+            coroutineScope.launch {
+                realConnectionSaga.emitDatabasesLoadingStateChange(
+                    DatabasesLoadingState.Loaded(
+                        connection = dataSource,
+                        databases = listOf("DB1", "DB2")
+                    )
+                )
+            }
+        }
+        viewModel.connectionSaga = connectionSaga
+
+        runBlocking {
+            viewModel.selectConnection(dataSource)
+        }
+
+        eventually {
+            coroutineScope.advanceUntilIdle()
+            assertEquals(2, viewModel.databaseState.value.databasesLoadingState.databases.size)
+            assertEquals("DB1", viewModel.databaseState.value.selectedDatabase)
+        }
+    }
+
+    @Test
+    fun `when databases loading fails, it should update the DatabaseState to reflect the state`(
+        project: Project,
+        coroutineScope: TestScope,
+    ) {
+        val viewModel = ConnectionStateViewModel(project, coroutineScope)
+        val realConnectionSaga = viewModel.connectionSaga
+        whenever(connectionSaga.connect(dataSource)).then {
+            coroutineScope.launch {
+                realConnectionSaga.emitSelectedConnectionStateChange(
+                    SelectedConnectionState.Connected(
+                        connection = dataSource,
+                    )
+                )
+            }
+        }
+
+        whenever(connectionSaga.listDatabases(dataSource)).then {
+            coroutineScope.launch {
+                realConnectionSaga.emitDatabasesLoadingStateChange(
+                    DatabasesLoadingState.Failed(
+                        connection = dataSource,
+                        errorMessage = "An error occurred"
+                    )
+                )
+            }
+        }
+        viewModel.connectionSaga = connectionSaga
+
+        runBlocking {
+            viewModel.selectConnection(dataSource)
+        }
+
+        eventually {
+            coroutineScope.advanceUntilIdle()
+            assertInstanceOf<DatabasesLoadingState.Failed>(viewModel.databaseState.value.databasesLoadingState)
         }
     }
 }

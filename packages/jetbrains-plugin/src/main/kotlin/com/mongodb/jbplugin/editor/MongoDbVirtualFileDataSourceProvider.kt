@@ -11,6 +11,8 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.mongodb.jbplugin.dialects.Dialect
+import com.mongodb.jbplugin.dialects.springcriteria.SpringCriteriaDialect
+import com.mongodb.jbplugin.dialects.springquery.SpringAtQueryDialect
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.ui.viewModel.ConnectionStateViewModel
 import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState
@@ -29,9 +31,10 @@ val PsiFile.dataSource: LocalDataSource?
 val PsiFile.database: String?
     get() = runCatching {
         MongoDbVirtualFileDataSourceProvider()
-            .getDatabase(
-                virtualFile,
-            )
+            .getDatabase(project)
+            .takeIf {
+                dialect is SpringCriteriaDialect || dialect is SpringAtQueryDialect
+            }
     }.getOrNull()
 
 val PsiFile.dialect: Dialect<PsiElement, Project>?
@@ -77,8 +80,13 @@ class MongoDbVirtualFileDataSourceProvider : VirtualFileDataSourceProvider() {
     }
 
     fun getDatabase(
-        file: VirtualFile
-    ): String? = file.getUserData(Keys.attachedDatabase)
+        project: Project,
+    ): String? {
+        val connectionViewModel by project.service<ConnectionStateViewModel>()
+        val (_, selectedDatabase) =
+            connectionViewModel.databaseState.value
+        return selectedDatabase
+    }
 
     fun getDialect(
         file: VirtualFile
