@@ -83,7 +83,7 @@ data class QueryInsight<S, I : Inspection>(
         }
 
         fun <S> typeMismatch(query: Node<S>, field: String, fieldType: String, valueType: String): QueryInsight<S, TypeMismatch> {
-            return QueryInsight(query, "insight.type-mismatch", listOf(field, fieldType), TypeMismatch)
+            return QueryInsight(query, "insight.type-mismatch", listOf(field, fieldType, valueType), TypeMismatch)
         }
     }
 }

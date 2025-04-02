@@ -12,16 +12,8 @@ import com.mongodb.jbplugin.mql.CollectionSchema
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.adt.Either
 import com.mongodb.jbplugin.mql.components.HasFieldReference
-import com.mongodb.jbplugin.mql.parser.components.ParsedValueReference
-import com.mongodb.jbplugin.mql.parser.components.allNodesWithSchemaFieldReferences
-import com.mongodb.jbplugin.mql.parser.components.extractValueReference
-import com.mongodb.jbplugin.mql.parser.components.knownCollection
-import com.mongodb.jbplugin.mql.parser.components.schemaFieldReference
-import com.mongodb.jbplugin.mql.parser.filter
-import com.mongodb.jbplugin.mql.parser.map
-import com.mongodb.jbplugin.mql.parser.mapMany
-import com.mongodb.jbplugin.mql.parser.parse
-import com.mongodb.jbplugin.mql.parser.zip
+import com.mongodb.jbplugin.mql.parser.*
+import com.mongodb.jbplugin.mql.parser.components.*
 
 data class TypeMismatchInspectionSettings<D>(
     val dataSource: D,
@@ -52,16 +44,26 @@ class TypeMismatchInspection<D> : QueryInspection<
             is Either.Right -> {
                 val collectionSchema = querySchema.value
 
-                val allFieldsAndValues = allNodesWithSchemaFieldReferences<Source>()
-                    .mapMany(schemaFieldReference<Source>().zip(extractValueReference()))
-                    .parse(query).orElse { emptyList() }
+                val allFieldsAndValuesResult = allNodesWithSchemaFieldReferences<Source>()
+                    .mapMany(
+                        schemaFieldReference<Source>()
+                            .zip(
+                                first(
+                                    extractValueReferencesRelevantForIndexing<Source>().map { it },
+                                    otherwise { null }
+                                )
+                            )
+                    )
+                    .parse(query)
+
+                val allFieldsAndValues = allFieldsAndValuesResult.orElse { emptyList() }
 
                 allFieldsAndValues.filter {
-                    isCandidateForWarning(collectionSchema, it)
+                    it.second != null && isCandidateForWarning(collectionSchema, it)
                 }.forEach {
                     val fieldName = it.first.fieldName
                     val fieldType = settings.typeFormatter(collectionSchema.typeOf(fieldName))
-                    val valueType = settings.typeFormatter(it.second.type)
+                    val valueType = settings.typeFormatter(it.second!!.type)
 
                     holder.register(QueryInsight.typeMismatch(query, fieldName, fieldType, valueType))
                 }
@@ -72,10 +74,10 @@ class TypeMismatchInspection<D> : QueryInspection<
 
     private fun <S> isCandidateForWarning(
         collectionSchema: CollectionSchema,
-        pair: Pair<HasFieldReference.FromSchema<S>, ParsedValueReference<S, out Any>>
+        pair: Pair<HasFieldReference.FromSchema<S>, ParsedValueReference<S, out Any>?>
     ): Boolean {
         val fieldType = collectionSchema.typeOf(pair.first.fieldName)
-        val valueType = pair.second.type
+        val valueType = pair.second!!.type
 
         return fieldType != BsonNull && !valueType.isAssignableTo(fieldType)
     }

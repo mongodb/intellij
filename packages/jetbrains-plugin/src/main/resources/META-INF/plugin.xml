@@ -79,16 +79,27 @@
             key="query-not-using-index-effectively"
             enabledByDefault="true"
         />
+        <!-- Correctness Inspections -->
+        <localInspection implementationClass="com.mongodb.jbplugin.inspections.correctness.MongoDbFieldDoesNotExist"
+            language="JAVA"
+            bundle="messages.InspectionsAndInlaysBundle"
+            groupPath="MongoDB"
+            groupBundle="messages.InspectionsAndInlaysBundle"
+            groupKey="group.names.probable.bugs"
+            key="query-referencing-non-existing-fields"
+            enabledByDefault="true"
+        />
+        <localInspection implementationClass="com.mongodb.jbplugin.inspections.correctness.MongoDbTypeMismatch"
+            language="JAVA"
+            bundle="messages.InspectionsAndInlaysBundle"
+            groupPath="MongoDB"
+            groupBundle="messages.InspectionsAndInlaysBundle"
+            groupKey="group.names.probable.bugs"
+            key="query-using-incompatible-types"
+            enabledByDefault="true"
+        />
         <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: -->
-        <localInspection language="JAVA"
-                         bundle="messages.InspectionsAndInlaysBundle"
-                         key="inspection.field.checking"
-                         groupPath="MongoDB"
-                         groupBundle="messages.InspectionsAndInlaysBundle"
-                         groupKey="group.names.probable.bugs"
-                         enabledByDefault="true"
-                         level="WARNING"
-                         implementationClass="com.mongodb.jbplugin.inspections.impl.FieldCheckInspectionBridge"/>
+
         <localInspection language="JAVA"
                          bundle="messages.InspectionsAndInlaysBundle"
                          key="inspection.namespace.checking"

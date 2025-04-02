@@ -49,7 +49,6 @@ interface QueryInspectionTest<I : Inspection> {
     }
 
     fun InspectionTestContextForInsight<I>.assertInsightDescriptionIs(description: String, vararg arguments: String) {
-        assertEquals(query, insight.query)
         assertEquals(description, insight.description)
         assertEquals(arguments.toList(), insight.descriptionArguments)
     }

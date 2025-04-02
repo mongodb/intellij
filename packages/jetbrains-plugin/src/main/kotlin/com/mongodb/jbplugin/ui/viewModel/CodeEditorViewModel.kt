@@ -90,10 +90,15 @@ class CodeEditorViewModel(
     }
 
     private fun rebuildEditorState(manager: FileEditorManager) {
-        val openFiles = manager.openFiles.toList().distinctBy { it.canonicalPath }
-        val focusedFiles = manager.selectedEditors.mapNotNull { it.file }.distinctBy { it.canonicalPath }.toList()
-
         coroutineScope.launch(Dispatchers.IO) {
+            val openFiles = withinReadAction {
+                manager.openFiles.toList().distinctBy { it.canonicalPath }
+            }
+
+            val focusedFiles = withinReadAction {
+                manager.selectedEditors.mapNotNull { it.file }.distinctBy { it.canonicalPath }.toList()
+            }
+
             mutableEditorState.emit(EditorState(focusedFiles, openFiles))
         }
     }

@@ -1,92 +1,24 @@
-package com.mongodb.jbplugin.inspections.impl
+package com.mongodb.jbplugin.inspections.correctness
 
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.mongodb.jbplugin.accessadapter.slice.GetCollectionSchema
 import com.mongodb.jbplugin.dialects.springcriteria.SpringCriteriaDialect
-import com.mongodb.jbplugin.fixtures.*
-import com.mongodb.jbplugin.mql.*
+import com.mongodb.jbplugin.fixtures.DefaultSetup
+import com.mongodb.jbplugin.fixtures.IntegrationTest
+import com.mongodb.jbplugin.fixtures.ParsingTest
+import com.mongodb.jbplugin.fixtures.setupConnection
+import com.mongodb.jbplugin.fixtures.specifyDatabase
+import com.mongodb.jbplugin.fixtures.specifyDialect
+import com.mongodb.jbplugin.mql.BsonObject
+import com.mongodb.jbplugin.mql.CollectionSchema
+import com.mongodb.jbplugin.mql.Namespace
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 
 @IntegrationTest
-class SpringCriteriaFieldCheckLinterInspectionTest {
-    @ParsingTest(
-        setup = DefaultSetup.SPRING_DATA,
-        value = """
-    public void allReleasedBooks() {
-        <warning descr="No connection available to run this check.">template.find(
-            query(
-            where("released")
-            .is(true)),
-            Book.class
-        )</warning>;
-    }
-    
-    public void allReleasedBooksAggregate() {
-        <warning descr="No connection available to run this check.">template.aggregate(
-            Aggregation.newAggregation(
-                Aggregation.match(
-                    where("released").is(true)
-                )
-            ),
-            Book.class,
-            Book.class
-        )</warning>;
-    }
-        """,
-    )
-    fun `shows an inspection when there is no connection attached to the current editor`(
-        fixture: CodeInsightTestFixture,
-    ) {
-        fixture.specifyDialect(SpringCriteriaDialect)
-        fixture.enableInspections(FieldCheckInspectionBridge::class.java)
-        fixture.testHighlighting()
-    }
-
-    @ParsingTest(
-        setup = DefaultSetup.SPRING_DATA,
-        value = """
-    public void allReleasedBooks() {
-        <warning descr="No database selected to run this check.">template.find(
-                query(where("released").is(true)),
-                Book.class
-        )</warning>;
-    }
-    
-    public void allReleasedBooksAggregate() {
-        <warning descr="No database selected to run this check.">template.aggregate(
-            Aggregation.newAggregation(
-                Aggregation.match(
-                    where("released").is(true)
-                )
-            ),
-            Book.class,
-            Book.class
-        )</warning>;
-    }
-        """,
-    )
-    fun `shows an inspection when there is a connection but no database attached to the current editor`(
-        project: Project,
-        fixture: CodeInsightTestFixture,
-    ) {
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDialect(SpringCriteriaDialect)
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), any<GetCollectionSchema.Slice>())
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(Namespace("sample_mflix", "book"), BsonObject(emptyMap()))
-            ),
-        )
-
-        fixture.enableInspections(FieldCheckInspectionBridge::class.java)
-        fixture.testHighlighting()
-    }
-
+class SpringCriteriaMongoDbFieldDoesNotExistTest {
     @ParsingTest(
         setup = DefaultSetup.SPRING_DATA,
         value = """
@@ -269,99 +201,7 @@ class SpringCriteriaFieldCheckLinterInspectionTest {
             ),
         )
 
-        fixture.enableInspections(FieldCheckInspectionBridge::class.java)
-        fixture.testHighlighting()
-    }
-
-    @ParsingTest(
-        setup = DefaultSetup.SPRING_DATA,
-        value = """
-    public void allReleasedBooks() {
-        template.find(
-                query(where("released").is(<warning descr="A \"String\"(type of provided value) cannot be assigned to \"boolean\"(type of \"released\")">"true"</warning>)),
-                Book.class
-        );
-    }
-    
-    public void allReleasedBooksAggregate() {
-        template.aggregate(
-            Aggregation.newAggregation(
-                Aggregation.match(
-                    where("released").is(<warning descr="A \"String\"(type of provided value) cannot be assigned to \"boolean\"(type of \"released\")">"true"</warning>)
-                )
-            ),
-            Book.class,
-            Book.class
-        );
-    }
-        """,
-    )
-    fun `shows an inspection when a provided value cannot be assigned to a field because of detected type mismatch`(
-        project: Project,
-        fixture: CodeInsightTestFixture,
-    ) {
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase(dataSource, "sample_books")
-        fixture.specifyDialect(SpringCriteriaDialect)
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), any<GetCollectionSchema.Slice>())
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    Namespace("sample_books", "book"),
-                    BsonObject(mapOf("released" to BsonBoolean))
-                )
-            ),
-        )
-
-        fixture.enableInspections(FieldCheckInspectionBridge::class.java)
-        fixture.testHighlighting()
-    }
-
-    @ParsingTest(
-        setup = DefaultSetup.SPRING_DATA,
-        value = """
-    public void allReleasedBooks() {
-        template.find(
-                query(where("released").is("true")),
-                Book.class
-        );
-    }
-    
-    public void allReleasedBooksAggregate() {
-        template.aggregate(
-            Aggregation.newAggregation(
-                Aggregation.match(
-                    where("released").is("true")
-                )
-            ),
-            Book.class,
-            Book.class
-        );
-    }
-        """,
-    )
-    fun `shows no inspection when a provided value can be assigned to a field`(
-        project: Project,
-        fixture: CodeInsightTestFixture,
-    ) {
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase(dataSource, "sample_books")
-        fixture.specifyDialect(SpringCriteriaDialect)
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), any<GetCollectionSchema.Slice>())
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    Namespace("sample_books", "book"),
-                    BsonObject(mapOf("released" to BsonAnyOf(BsonString, BsonNull)))
-                )
-            ),
-        )
-
-        fixture.enableInspections(FieldCheckInspectionBridge::class.java)
+        fixture.enableInspections(MongoDbFieldDoesNotExist::class.java)
         fixture.testHighlighting()
     }
 }

@@ -1,4 +1,4 @@
-package com.mongodb.jbplugin.inspections.impl
+package com.mongodb.jbplugin.inspections.correctness
 
 import com.intellij.openapi.application.Application
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
@@ -8,7 +8,6 @@ import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.ParsingTest
 import com.mongodb.jbplugin.fixtures.setupConnection
 import com.mongodb.jbplugin.fixtures.specifyDialect
-import com.mongodb.jbplugin.mql.BsonDouble
 import com.mongodb.jbplugin.mql.BsonObject
 import com.mongodb.jbplugin.mql.BsonString
 import com.mongodb.jbplugin.mql.CollectionSchema
@@ -21,31 +20,13 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
 
 @IntegrationTest
-class JavaDriverFieldCheckLinterInspectionTest {
+class JavaDriverMongoDbFieldDoesNotExistTest {
     @ParsingTest(
-"""
-    public FindIterable<Document> exampleFind() {
-        return <warning descr="No connection available to run this check.">client.getDatabase("myDatabase")
-                .getCollection("myCollection")
-                .find()</warning>;
-    }
-""",
-    )
-    fun `shows an inspection when there is no connection attached to the current editor`(
-        fixture: CodeInsightTestFixture,
-    ) {
-        fixture.specifyDialect(JavaDriverDialect)
-
-        fixture.enableInspections(FieldCheckInspectionBridge::class.java)
-        fixture.testHighlighting()
-    }
-
-    @ParsingTest(
-"""
+        """
 public FindIterable<Document> exampleFind() {
-    return client.getDatabase("myDatabase")
+    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
-            .find(eq(<warning descr="Field \"nonExistingField\" does not exist in collection \"myDatabase.myCollection\"">"nonExistingField"</warning>, "123"));
+            .find(eq("nonExistingField", "123"))</warning>;
 }
 """,
     )
@@ -66,74 +47,44 @@ public FindIterable<Document> exampleFind() {
             ),
         )
 
-        fixture.enableInspections(FieldCheckInspectionBridge::class.java)
+        fixture.enableInspections(MongoDbFieldDoesNotExist::class.java)
         fixture.testHighlighting()
 
         verify(telemetryService, atLeastOnce()).sendEvent(any())
     }
 
     @ParsingTest(
-"""
-public FindIterable<Document> exampleFind() {
-    return client.getDatabase("myDatabase")
-            .getCollection("myCollection")
-            .find(eq("thisIsDouble", <warning descr="A \"String\"(type of provided value) cannot be assigned to \"double\"(type of \"thisIsDouble\")">"123"</warning>));
-}
-""",
-    )
-    fun `shows an inspection when a provided value cannot be assigned to a field because of detected type mismatch`(
-        fixture: CodeInsightTestFixture,
-    ) {
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDialect(JavaDriverDialect)
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), any<GetCollectionSchema.Slice>())
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    Namespace("myDatabase", "myCollection"),
-                    BsonObject(mapOf("thisIsDouble" to BsonDouble))
-                )
-            ),
-        )
-
-        fixture.enableInspections(FieldCheckInspectionBridge::class.java)
-        fixture.testHighlighting()
-    }
-
-    @ParsingTest(
-"""
+        """
 // and queries
 public FindIterable<Document> inlineAndQuery() {
-    return client.getDatabase("myDatabase")
+    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .find(
                 and(
-                    eq(<warning descr="Field \"nonExistingField\" does not exist in collection \"myDatabase.myCollection\"">"nonExistingField"</warning>, "123")
+                    eq("nonExistingField", "123")
                 )
-            );
+            )</warning>;
 }
 
 public FindIterable<Document> andQueryFromAVariableWithVariableFieldName() {
     var fieldName = "nonExistingField";
     var andQuery = and(
-        eq(<warning descr="Field \"nonExistingField\" does not exist in collection \"myDatabase.myCollection\"">fieldName</warning>, "123")
+        eq(fieldName, "123")
     );
-    return client.getDatabase("myDatabase")
+    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
-            .find(andQuery);
+            .find(andQuery)</warning>;
 }
 
 public FindIterable<Document> andQueryFromAMethodCallWithFieldNameFromMethodCall() {
-    return client.getDatabase("myDatabase")
+    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
-            .find(getAndQueryWithFieldNameFromMethodCall());
+            .find(getAndQueryWithFieldNameFromMethodCall())</warning>;
 }
 
 private Bson getAndQueryWithFieldNameFromMethodCall() {
     return and(
-        eq(<warning descr="Field \"nonExistingField\" does not exist in collection \"myDatabase.myCollection\"">getFieldName()</warning>, "123")
+        eq(getFieldName(), "123")
     );
 }
 
@@ -143,67 +94,67 @@ private String getFieldName() {
 
 // or queries
 public FindIterable<Document> inlineOrQuery() {
-    return client.getDatabase("myDatabase")
+    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .find(
                 or(
-                    eq(<warning descr="Field \"nonExistingField\" does not exist in collection \"myDatabase.myCollection\"">"nonExistingField"</warning>, "123")
+                    eq("nonExistingField", "123")
                 )
-            );
+            )</warning>;
 }
 
 public FindIterable<Document> orQueryFromAVariableWithVariableFieldName() {
     var fieldName = "nonExistingField";
     var orQuery = or(
-        eq(<warning descr="Field \"nonExistingField\" does not exist in collection \"myDatabase.myCollection\"">fieldName</warning>, "123")
+        eq(fieldName, "123")
     );
-    return client.getDatabase("myDatabase")
+    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
-            .find(orQuery);
+            .find(orQuery)</warning>;
 }
 
 public FindIterable<Document> orQueryFromAMethodCallWithFieldNameFromMethodCall() {
-    return client.getDatabase("myDatabase")
+    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
-            .find(getOrQueryWithFieldNameFromMethodCall());
+            .find(getOrQueryWithFieldNameFromMethodCall())</warning>;
 }
 
 private Bson getOrQueryWithFieldNameFromMethodCall() {
     return or(
-        eq(<warning descr="Field \"nonExistingField\" does not exist in collection \"myDatabase.myCollection\"">getFieldName()</warning>, "123")
+        eq(getFieldName(), "123")
     );
 }
 
 // nor queries
 public FindIterable<Document> inlineNorQuery() {
-    return client.getDatabase("myDatabase")
+    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .find(
                 nor(
-                    eq(<warning descr="Field \"nonExistingField\" does not exist in collection \"myDatabase.myCollection\"">"nonExistingField"</warning>, "123")
+                    eq("nonExistingField", "123")
                 )
-            );
+            )</warning>;
 }
 
 public FindIterable<Document> norQueryFromAVariableWithVariableFieldName() {
     var fieldName = "nonExistingField";
     var norQuery = nor(
-        eq(<warning descr="Field \"nonExistingField\" does not exist in collection \"myDatabase.myCollection\"">fieldName</warning>, "123")
+        eq(fieldName, "123")
     );
-    return client.getDatabase("myDatabase")
+    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
-            .find(norQuery);
+            .find(norQuery)</warning>;
 }
 
 public FindIterable<Document> norQueryFromAMethodCallWithFieldNameFromMethodCall() {
-    return client.getDatabase("myDatabase")
+    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
-            .find(getNorQueryWithFieldNameFromMethodCall());
+            .find(getNorQueryWithFieldNameFromMethodCall())</warning>;
 }
 
 private Bson getNorQueryWithFieldNameFromMethodCall() {
     return nor(
-        eq(<warning descr="Field \"nonExistingField\" does not exist in collection \"myDatabase.myCollection\"">getFieldName()</warning>, "123")
+        eq(getFieldName(), "123")
     );
 }
 """,
@@ -222,20 +173,20 @@ private Bson getNorQueryWithFieldNameFromMethodCall() {
             ),
         )
 
-        fixture.enableInspections(FieldCheckInspectionBridge::class.java)
+        fixture.enableInspections(MongoDbFieldDoesNotExist::class.java)
         fixture.testHighlighting()
     }
 
     @ParsingTest(
-"""
+        """
 public AggregateIterable<Document> exampleAggregate() {
-    return client.getDatabase("myDatabase")
+    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .aggregate(List.of(
                 Aggregates.match(
-                    eq(<warning descr="Field \"nonExistingField\" does not exist in collection \"myDatabase.myCollection\"">"nonExistingField"</warning>, "123")
+                    eq("nonExistingField", "123")
                 )
-            ));
+            ))</warning>;
 }
 """,
     )
@@ -253,24 +204,59 @@ public AggregateIterable<Document> exampleAggregate() {
             ),
         )
 
-        fixture.enableInspections(FieldCheckInspectionBridge::class.java)
+        fixture.enableInspections(MongoDbFieldDoesNotExist::class.java)
         fixture.testHighlighting()
     }
 
     @ParsingTest(
-"""
-public AggregateIterable<Document> exampleFind() {
+        """
+public AggregateIterable<Document> exampleGoodUnwind() {
     return client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .aggregate(List.of(
-                Aggregates.match(
-                    eq("thisIsDouble", <warning descr="A \"String\"(type of provided value) cannot be assigned to \"double\"(type of \"thisIsDouble\")">"123"</warning>)
+                Aggregates.unwind(
+                    "${'$'}existingField"
                 )
             ));
 }
+
+public AggregateIterable<Document> exampleUnwind1() {
+    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
+            .getCollection("myCollection")
+            .aggregate(List.of(
+                Aggregates.unwind(
+                    "${'$'}nonExistingField"
+                )
+            ))</warning>;
+}
+
+public AggregateIterable<Document> exampleUnwind2() {
+    String fieldName = "${'$'}nonExistingField";
+    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
+            .getCollection("myCollection")
+            .aggregate(List.of(
+                Aggregates.unwind(
+                    fieldName
+                )
+            ))</warning>;
+}
+
+private String getField() {
+    return "${'$'}nonExistingField";
+}
+
+public AggregateIterable<Document> exampleUnwind3() {
+    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
+            .getCollection("myCollection")
+            .aggregate(List.of(
+                Aggregates.unwind(
+                    getField()
+                )
+            ))</warning>;
+}
 """,
     )
-    fun `shows an inspection for Aggregates#match call when a provided value cannot be assigned to a field because of detected type mismatch`(
+    fun `shows an inspection for Aggregates#unwind call when the field does not exist in the current namespace`(
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
@@ -282,54 +268,58 @@ public AggregateIterable<Document> exampleFind() {
             GetCollectionSchema(
                 CollectionSchema(
                     Namespace("myDatabase", "myCollection"),
-                    BsonObject(mapOf("thisIsDouble" to BsonDouble))
+                    BsonObject(
+                        mapOf(
+                            "existingField" to BsonString
+                        )
+                    )
                 )
             ),
         )
 
-        fixture.enableInspections(FieldCheckInspectionBridge::class.java)
+        fixture.enableInspections(MongoDbFieldDoesNotExist::class.java)
         fixture.testHighlighting()
     }
 
     @ParsingTest(
-"""
+        """
 public AggregateIterable<Document> exampleAggregateInclude() {
-    return client.getDatabase("myDatabase")
+    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .aggregate(List.of(
                 Aggregates.project(
-                    Projections.include(<warning descr="Field \"nonExistingField\" does not exist in collection \"myDatabase.myCollection\"">"nonExistingField"</warning>)
+                    Projections.include("nonExistingField")
                 )
-            ));
+            ))</warning>;
 }
 
 public AggregateIterable<Document> exampleAggregateExclude() {
-    return client.getDatabase("myDatabase")
+    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .aggregate(List.of(
                 Aggregates.project(
-                    Projections.exclude(<warning descr="Field \"nonExistingField\" does not exist in collection \"myDatabase.myCollection\"">"nonExistingField"</warning>)
+                    Projections.exclude("nonExistingField")
                 )
-            ));
+            ))</warning>;
 }
 
 private Bson getAnotherProjection() {
-    return Projections.exclude(<warning descr="Field \"nonExistingField\" does not exist in collection \"myDatabase.myCollection\"">"nonExistingField"</warning>);
+    return Projections.exclude("nonExistingField");
 }
 
 public AggregateIterable<Document> exampleAggregateFields() {
-    Bson includeProject = Projections.include(<warning descr="Field \"nonExistingField\" does not exist in collection \"myDatabase.myCollection\"">"nonExistingField"</warning>);
-    return client.getDatabase("myDatabase")
+    Bson includeProject = Projections.include("nonExistingField");
+    return <warning descr="Field \"nonExistingField\" does not exist in collection."><warning descr="Field \"nonExistingField\" does not exist in collection."><warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .aggregate(List.of(
                 Aggregates.project(
                     Projections.fields(
-                        Projections.exclude(<warning descr="Field \"nonExistingField\" does not exist in collection \"myDatabase.myCollection\"">"nonExistingField"</warning>),
+                        Projections.exclude("nonExistingField"),
                         includeProject,
                         getAnotherProjection()
                     )
                 )
-            ));
+            ))</warning></warning></warning>;
 }
 """,
     )
@@ -347,49 +337,49 @@ public AggregateIterable<Document> exampleAggregateFields() {
             ),
         )
 
-        fixture.enableInspections(FieldCheckInspectionBridge::class.java)
+        fixture.enableInspections(MongoDbFieldDoesNotExist::class.java)
         fixture.testHighlighting()
     }
 
     @ParsingTest(
-"""
+        """
 public AggregateIterable<Document> exampleAggregateAscending() {
-    return client.getDatabase("myDatabase")
+    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .aggregate(List.of(
                 Aggregates.sort(
-                    Sorts.ascending(<warning descr="Field \"nonExistingField\" does not exist in collection \"myDatabase.myCollection\"">"nonExistingField"</warning>)
+                    Sorts.ascending("nonExistingField")
                 )
-            ));
+            ))</warning>;
 }
 
 public AggregateIterable<Document> exampleAggregateDescending() {
-    return client.getDatabase("myDatabase")
+    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .aggregate(List.of(
                 Aggregates.sort(
-                    Sorts.descending(<warning descr="Field \"nonExistingField\" does not exist in collection \"myDatabase.myCollection\"">"nonExistingField"</warning>)
+                    Sorts.descending("nonExistingField")
                 )
-            ));
+            ))</warning>;
 }
 
 private Bson getAnotherSort() {
-    return Sorts.descending(<warning descr="Field \"nonExistingField\" does not exist in collection \"myDatabase.myCollection\"">"nonExistingField"</warning>);
+    return Sorts.descending("nonExistingField");
 }
 
 public AggregateIterable<Document> exampleAggregateOrderBy() {
-    Bson ascendingSort = Sorts.ascending(<warning descr="Field \"nonExistingField\" does not exist in collection \"myDatabase.myCollection\"">"nonExistingField"</warning>);
-    return client.getDatabase("myDatabase")
+    Bson ascendingSort = Sorts.ascending("nonExistingField");
+    return <warning descr="Field \"nonExistingField\" does not exist in collection."><warning descr="Field \"nonExistingField\" does not exist in collection."><warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .aggregate(List.of(
                 Aggregates.sort(
                     Sorts.orderBy(
-                        Sorts.descending(<warning descr="Field \"nonExistingField\" does not exist in collection \"myDatabase.myCollection\"">"nonExistingField"</warning>),
+                        Sorts.descending("nonExistingField"),
                         ascendingSort,
                         getAnotherSort()
                     )
                 )
-            ));
+            ))</warning></warning></warning>;
 }
 """,
     )
@@ -407,12 +397,12 @@ public AggregateIterable<Document> exampleAggregateOrderBy() {
             ),
         )
 
-        fixture.enableInspections(FieldCheckInspectionBridge::class.java)
+        fixture.enableInspections(MongoDbFieldDoesNotExist::class.java)
         fixture.testHighlighting()
     }
 
     @ParsingTest(
-"""
+        """
 public AggregateIterable<Document> exampleAggregateOrderBy() {
     return client.getDatabase("myDatabase")
             .getCollection("myCollection")
@@ -438,12 +428,12 @@ public AggregateIterable<Document> exampleAggregateOrderBy() {
             ),
         )
 
-        fixture.enableInspections(FieldCheckInspectionBridge::class.java)
+        fixture.enableInspections(MongoDbFieldDoesNotExist::class.java)
         fixture.testHighlighting()
     }
 
     @ParsingTest(
-"""
+        """
 public AggregateIterable<Document> goodGroupAggregate1() {
     return client.getDatabase("myDatabase")
             .getCollection("myCollection")
@@ -484,7 +474,7 @@ private String getBadFieldName() {
 private BsonField getAvgCountAcc() {
     return Accumulators.avg(
         "avgCount",
-        <warning descr="Field \"nonExistentField\" does not exist in collection \"myDatabase.myCollection\"">getBadFieldName()</warning>
+        getBadFieldName()
     );
 }
 
@@ -492,34 +482,34 @@ public AggregateIterable<Document> badGroupAggregate1() {
     String badFieldName = "${'$'}nonExistentField";
     BsonField avgCountAcc = Accumulators.avg(
         "avgCount",
-        <warning descr="Field \"nonExistentField\" does not exist in collection \"myDatabase.myCollection\"">badFieldName</warning>
+        badFieldName
     );
-    return client.getDatabase("myDatabase")
+    return <warning descr="Field \"nonExistentField\" does not exist in collection."><warning descr="Field \"nonExistentField\" does not exist in collection."><warning descr="Field \"nonExistentField\" does not exist in collection."><warning descr="Field \"nonExistentField\" does not exist in collection."><warning descr="Field \"nonExistentField\" does not exist in collection."><warning descr="Field \"nonExistentField\" does not exist in collection."><warning descr="Field \"nonExistentField\" does not exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .aggregate(List.of(
                 Aggregates.group(
-                    <warning descr="Field \"nonExistentField\" does not exist in collection \"myDatabase.myCollection\"">"${'$'}nonExistentField"</warning>
+                    "${'$'}nonExistentField"
                 ),
                 Aggregates.group(
-                    <warning descr="Field \"nonExistentField\" does not exist in collection \"myDatabase.myCollection\"">badFieldName</warning>,
+                    badFieldName,
                     Accumulators.sum(
                         "totalCount",
-                        <warning descr="Field \"nonExistentField\" does not exist in collection \"myDatabase.myCollection\"">badFieldName</warning>
+                        badFieldName
                     ),
                     Accumulators.sum(
                         "totalCount",
-                        <warning descr="Field \"nonExistentField\" does not exist in collection \"myDatabase.myCollection\"">getBadFieldName()</warning>
+                        getBadFieldName()
                     ),
                     avgCountAcc,
                     getAvgCountAcc(),
                     Accumulators.topN(
                         "totalCount",
                         Sorts.ascending("otherField"),
-                        <warning descr="Field \"nonExistentField\" does not exist in collection \"myDatabase.myCollection\"">getBadFieldName()</warning>,
+                        getBadFieldName(),
                         3
                     )
                 )
-            ));
+            ))</warning></warning></warning></warning></warning></warning></warning>;
 }
 """,
     )
@@ -545,80 +535,7 @@ public AggregateIterable<Document> badGroupAggregate1() {
             ),
         )
 
-        fixture.enableInspections(FieldCheckInspectionBridge::class.java)
-        fixture.testHighlighting()
-    }
-
-    @ParsingTest(
-"""
-public AggregateIterable<Document> exampleGoodUnwind() {
-    return client.getDatabase("myDatabase")
-            .getCollection("myCollection")
-            .aggregate(List.of(
-                Aggregates.unwind(
-                    "${'$'}existingField"
-                )
-            ));
-}
-
-public AggregateIterable<Document> exampleUnwind1() {
-    return client.getDatabase("myDatabase")
-            .getCollection("myCollection")
-            .aggregate(List.of(
-                Aggregates.unwind(
-                    <warning descr="Field \"nonExistingField\" does not exist in collection \"myDatabase.myCollection\"">"${'$'}nonExistingField"</warning>
-                )
-            ));
-}
-
-public AggregateIterable<Document> exampleUnwind2() {
-    String fieldName = "${'$'}nonExistingField";
-    return client.getDatabase("myDatabase")
-            .getCollection("myCollection")
-            .aggregate(List.of(
-                Aggregates.unwind(
-                    <warning descr="Field \"nonExistingField\" does not exist in collection \"myDatabase.myCollection\"">fieldName</warning>
-                )
-            ));
-}
-
-private String getField() {
-    return "${'$'}nonExistingField";
-}
-
-public AggregateIterable<Document> exampleUnwind3() {
-    return client.getDatabase("myDatabase")
-            .getCollection("myCollection")
-            .aggregate(List.of(
-                Aggregates.unwind(
-                    <warning descr="Field \"nonExistingField\" does not exist in collection \"myDatabase.myCollection\"">getField()</warning>
-                )
-            ));
-}
-""",
-    )
-    fun `shows an inspection for Aggregates#unwind call when the field does not exist in the current namespace`(
-        fixture: CodeInsightTestFixture,
-    ) {
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDialect(JavaDriverDialect)
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), any<GetCollectionSchema.Slice>())
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    Namespace("myDatabase", "myCollection"),
-                    BsonObject(
-                        mapOf(
-                            "existingField" to BsonString
-                        )
-                    )
-                )
-            ),
-        )
-
-        fixture.enableInspections(FieldCheckInspectionBridge::class.java)
+        fixture.enableInspections(MongoDbFieldDoesNotExist::class.java)
         fixture.testHighlighting()
     }
 }

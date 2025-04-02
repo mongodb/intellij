@@ -217,7 +217,8 @@ sealed class TelemetryEvent(
 
         enum class TriggerLocation {
             GUTTER,
-            CONTEXT_MENU
+            CONTEXT_MENU,
+            SIDE_PANEL
         }
     }
 

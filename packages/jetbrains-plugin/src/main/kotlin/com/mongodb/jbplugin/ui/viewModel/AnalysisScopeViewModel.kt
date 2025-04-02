@@ -5,10 +5,12 @@ import com.intellij.openapi.project.Project
 import com.mongodb.jbplugin.inspections.analysisScope.AnalysisScope
 import com.mongodb.jbplugin.meta.service
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Service(Service.Level.PROJECT)
 class AnalysisScopeViewModel(
@@ -27,9 +29,11 @@ class AnalysisScopeViewModel(
     }
 
     suspend fun reanalyzeCurrentScope() {
-        mutableAnalysisScope.tryEmit(mutableAnalysisScope.value)
-        val codeEditorViewModel by project.service<CodeEditorViewModel>()
-        codeEditorViewModel.reanalyzeRelevantEditors()
+        withContext(Dispatchers.IO) {
+            mutableAnalysisScope.tryEmit(mutableAnalysisScope.value)
+            val codeEditorViewModel by project.service<CodeEditorViewModel>()
+            codeEditorViewModel.reanalyzeRelevantEditors()
+        }
     }
 
     private fun refreshAnalysisScopeIfNecessary(editorState: EditorState) {

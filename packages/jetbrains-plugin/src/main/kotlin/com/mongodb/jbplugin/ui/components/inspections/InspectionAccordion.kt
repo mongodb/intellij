@@ -19,8 +19,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,7 +32,6 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.inspections.analysisScope.AnalysisScope
 import com.mongodb.jbplugin.linting.InspectionCategory
-import com.mongodb.jbplugin.linting.InspectionCategory.PERFORMANCE
 import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.meta.withinReadActionBlocking
 import com.mongodb.jbplugin.mql.Node
@@ -72,10 +71,11 @@ fun _InspectionAccordion(
     openCategory: InspectionCategory?
 ) {
     val insights = useFilteredInsights(analysisScope, allInsights)
-
-    val sectionState = mutableStateListOf(
-        SectionState(PERFORMANCE, useInsightsOfCategory(insights, PERFORMANCE)),
-    )
+    val sectionState by derivedStateOf {
+        InspectionCategory.entries.map {
+            SectionState(it, useInsightsOfCategory(insights, it))
+        }
+    }
 
     Column {
         sectionState.forEach { section ->
@@ -204,7 +204,6 @@ private fun useFilteredInsights(analysisScope: AnalysisScope, allInsights: List<
     }
 }
 
-@Composable
 private fun useInsightsOfCategory(allInsights: List<QueryInsight<PsiElement, *>>, category: InspectionCategory): List<QueryInsight<PsiElement, *>> {
     return allInsights.filter { it.inspection.category == category }.sortedBy { queryLocation(it.query) }
 }
