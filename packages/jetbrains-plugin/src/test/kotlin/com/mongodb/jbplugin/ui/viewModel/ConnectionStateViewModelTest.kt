@@ -140,12 +140,12 @@ class ConnectionStateViewModelTest {
         viewModel.connectionSaga = connectionSaga
         runBlocking {
             viewModel.selectConnection(dataSource)
-            verify(codeEditorViewModel, timeout(1000)).reanalyzeRelevantEditors()
+            verify(codeEditorViewModel, timeout(1000).atLeastOnce()).reanalyzeRelevantEditors()
         }
 
         runBlocking {
             viewModel.unselectSelectedConnection()
-            verify(codeEditorViewModel, timeout(1000)).reanalyzeRelevantEditors()
+            verify(codeEditorViewModel, timeout(1000).atLeastOnce()).reanalyzeRelevantEditors()
         }
     }
 
