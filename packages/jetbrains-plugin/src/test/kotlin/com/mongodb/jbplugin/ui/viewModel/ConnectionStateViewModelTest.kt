@@ -16,6 +16,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -419,6 +420,139 @@ class ConnectionStateViewModelTest {
         eventually {
             coroutineScope.advanceUntilIdle()
             assertInstanceOf<DatabasesLoadingState.Failed>(viewModel.databaseState.value.databasesLoadingState)
+        }
+    }
+
+    @Test
+    fun `when a data source is changed, it updates the connection list and reconnects if selected`(
+        project: Project,
+        coroutineScope: TestScope,
+    ) {
+        val viewModel = ConnectionStateViewModel(project, coroutineScope)
+        viewModel.connectionSaga = mock()
+        val dataSourceManager = mock<DataSourceManager<LocalDataSource>>()
+        val updatedDataSource = mockDataSource(name = dataSource.name, uniqueId = dataSource.uniqueId)
+
+        runBlocking {
+            viewModel.selectConnection(dataSource)
+            assertEquals(dataSource, viewModel.connectionState.value.selectedConnection)
+        }
+
+        viewModel.dataSourceChanged(dataSourceManager, updatedDataSource)
+
+        eventually {
+            coroutineScope.advanceUntilIdle()
+            assertTrue(viewModel.connectionState.value.connections.any { it.uniqueId == updatedDataSource.uniqueId })
+            assertEquals(updatedDataSource, viewModel.connectionState.value.selectedConnection)
+            verify(viewModel.connectionSaga, timeout(1000)).connect(updatedDataSource)
+        }
+    }
+
+    @Test
+    fun `when selecting a database, it updates preferences and triggers editor reanalysis`(
+        project: Project,
+        coroutineScope: TestScope,
+    ) {
+        val viewModel = ConnectionStateViewModel(project, coroutineScope)
+        viewModel.connectionSaga = mock()
+
+        runBlocking {
+            viewModel.selectDatabase("testDB")
+        }
+
+        eventually {
+            coroutineScope.advanceUntilIdle()
+            assertEquals("testDB", viewModel.databaseState.value.selectedDatabase)
+            assertEquals("testDB", connectionPreferences.database)
+            verify(editorService, timeout(1000)).reAnalyzeSelectedEditor(true)
+        }
+    }
+
+    @Test
+    fun `when unselecting a database, it clears preferences and triggers editor reanalysis`(
+        project: Project,
+        coroutineScope: TestScope,
+    ) {
+        val viewModel = ConnectionStateViewModel(project, coroutineScope)
+        viewModel.connectionSaga = mock()
+
+        runBlocking {
+            viewModel.selectDatabase("testDB")
+            viewModel.unselectSelectedDatabase()
+        }
+
+        eventually {
+            coroutineScope.advanceUntilIdle()
+            assertEquals(null, viewModel.databaseState.value.selectedDatabase)
+            assertEquals(null, connectionPreferences.database)
+            verify(editorService, timeout(1000).times(2)).reAnalyzeSelectedEditor(true)
+        }
+    }
+
+    @Test
+    fun `when adding a new connection, it selects the connection if successfully created`(
+        project: Project,
+        coroutineScope: TestScope,
+    ) = runTest {
+        val viewModel = ConnectionStateViewModel(project, coroutineScope)
+        val newDataSource = mockDataSource()
+        whenever(connectionSaga.addNewConnection()).thenReturn(newDataSource)
+        viewModel.connectionSaga = connectionSaga
+
+        runBlocking {
+            viewModel.addNewConnection()
+        }
+
+        eventually {
+            coroutineScope.advanceUntilIdle()
+            assertEquals(newDataSource, viewModel.connectionState.value.selectedConnection)
+            verify(connectionSaga, timeout(1000)).connect(newDataSource)
+        }
+    }
+
+    @Test
+    fun `when connection fails, it updates state with error message`(
+        project: Project,
+        coroutineScope: TestScope,
+    ) {
+        val viewModel = ConnectionStateViewModel(project, coroutineScope)
+        val realConnectionSaga = viewModel.connectionSaga
+        val errorMessage = "Connection failed"
+        whenever(connectionSaga.connect(dataSource)).then {
+            coroutineScope.launch {
+                realConnectionSaga.emitSelectedConnectionStateChange(
+                    SelectedConnectionState.Failed(dataSource, errorMessage)
+                )
+            }
+        }
+        viewModel.connectionSaga = connectionSaga
+
+        runBlocking {
+            viewModel.selectConnection(dataSource)
+        }
+
+        eventually {
+            coroutineScope.advanceUntilIdle()
+            val state = viewModel.connectionState.value.selectedConnectionState
+            assertInstanceOf<SelectedConnectionState.Failed>(state)
+            assertEquals(errorMessage, (state as SelectedConnectionState.Failed).errorMessage)
+        }
+    }
+
+    @Test
+    fun `when tool window is shown multiple times, it only loads initial state once`(
+        project: Project,
+        coroutineScope: TestScope,
+    ) {
+        val viewModel = ConnectionStateViewModel(project, coroutineScope)
+        viewModel.connectionSaga = connectionSaga
+
+        viewModel.toolWindowShown(mongoDBToolWindow)
+        viewModel.toolWindowShown(mongoDBToolWindow)
+
+        eventually {
+            coroutineScope.advanceUntilIdle()
+            verify(connectionSaga, timeout(1000).times(1)).listMongoDbConnections()
         }
     }
 }
