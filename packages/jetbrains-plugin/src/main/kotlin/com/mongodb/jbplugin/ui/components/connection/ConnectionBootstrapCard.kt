@@ -30,6 +30,7 @@ import com.mongodb.jbplugin.ui.components.utilities.hooks.useViewModelMutator
 import com.mongodb.jbplugin.ui.components.utilities.hooks.useViewModelState
 import com.mongodb.jbplugin.ui.viewModel.ConnectionState
 import com.mongodb.jbplugin.ui.viewModel.ConnectionStateViewModel
+import com.mongodb.jbplugin.ui.viewModel.DatabaseState
 import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState
 import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState.Connecting
 import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState.Failed
@@ -48,6 +49,11 @@ fun ConnectionBootstrapCard() {
         ConnectionStateViewModel::connectionState,
         ConnectionState.initial()
     )
+    val databaseState by useViewModelState(
+        ConnectionStateViewModel::databaseState,
+        DatabaseState.initial()
+    )
+
     val selectConnection by useViewModelMutator(ConnectionStateViewModel::selectConnection)
     val unselectSelectedConnection by useViewModelMutator(
         ConnectionStateViewModel::unselectSelectedConnection
@@ -57,6 +63,9 @@ fun ConnectionBootstrapCard() {
         ConnectionStateViewModel::editSelectedConnection
     )
 
+    val selectDatabase by useViewModelMutator(ConnectionStateViewModel::selectDatabase)
+    val unselectSelectedDatabase by useViewModelMutator(ConnectionStateViewModel::unselectSelectedDatabase)
+
     val connectionCallbacks = ConnectionCallbacks(
         selectConnection = selectConnection,
         unselectSelectedConnection = unselectSelectedConnection,
@@ -64,21 +73,29 @@ fun ConnectionBootstrapCard() {
         editSelectedConnection = editSelectedConnection,
     )
 
+    val databaseCallbacks = DatabaseCallbacks(
+        selectDatabase = selectDatabase,
+        unselectSelectedDatabase = unselectSelectedDatabase,
+    )
+
     CompositionLocalProvider(LocalConnectionCallbacks provides connectionCallbacks) {
-        _ConnectionBootstrapCard(connectionState)
+        CompositionLocalProvider(LocalDatabaseCallbacks provides databaseCallbacks) {
+            _ConnectionBootstrapCard(connectionState, databaseState)
+        }
     }
 }
 
 @Composable
 internal fun _ConnectionBootstrapCard(
-    connectionState: ConnectionState
+    connectionState: ConnectionState,
+    databaseState: DatabaseState,
 ) {
     if (connectionState.selectedConnection == null) {
         ConnectionCardWhenNotConnected(connectionState)
     } else if (connectionState.selectedConnectionState is Failed) {
         ConnectionCardWhenConnectionFailed(connectionState)
     } else {
-        LightweightConnectionSection(connectionState)
+        LightweightConnectionSection(connectionState, databaseState)
     }
 }
 
@@ -152,7 +169,10 @@ internal fun ConnectionCardWhenConnectionFailed(connectionState: ConnectionState
 }
 
 @Composable
-internal fun LightweightConnectionSection(connectionState: ConnectionState) {
+internal fun LightweightConnectionSection(
+    connectionState: ConnectionState,
+    databaseState: DatabaseState,
+) {
     val callbacks = useConnectionCallbacks()
 
     Column {
@@ -173,6 +193,15 @@ internal fun LightweightConnectionSection(connectionState: ConnectionState) {
                     connections = connectionState.connections,
                     selectedConnection = connectionState.selectedConnection,
                     selectedConnectionState = connectionState.selectedConnectionState,
+                )
+            }
+        }
+
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                DatabaseComboBox(
+                    databasesLoadingState = databaseState.databasesLoadingState,
+                    selectedDatabase = databaseState.selectedDatabase,
                 )
             }
         }

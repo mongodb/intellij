@@ -4,7 +4,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.mongodb.jbplugin.accessadapter.slice.GetCollectionSchema
 import com.mongodb.jbplugin.dialects.springcriteria.SpringCriteriaDialect
-import com.mongodb.jbplugin.editor.MongoDbVirtualFileDataSourceProvider
 import com.mongodb.jbplugin.fixtures.*
 import com.mongodb.jbplugin.mql.*
 import org.mockito.Mockito.`when`
@@ -259,12 +258,8 @@ class SpringCriteriaFieldCheckLinterInspectionTest {
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
+        fixture.specifyDatabase(dataSource, "bad_db")
         fixture.specifyDialect(SpringCriteriaDialect)
-
-        fixture.file.virtualFile.putUserData(
-            MongoDbVirtualFileDataSourceProvider.Keys.attachedDatabase,
-            "bad_db",
-        )
 
         `when`(
             readModelProvider.slice(eq(dataSource), any<GetCollectionSchema.Slice>())
@@ -306,12 +301,8 @@ class SpringCriteriaFieldCheckLinterInspectionTest {
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
+        fixture.specifyDatabase(dataSource, "sample_books")
         fixture.specifyDialect(SpringCriteriaDialect)
-
-        fixture.file.virtualFile.putUserData(
-            MongoDbVirtualFileDataSourceProvider.Keys.attachedDatabase,
-            "sample_books",
-        )
 
         `when`(
             readModelProvider.slice(eq(dataSource), any<GetCollectionSchema.Slice>())
@@ -356,12 +347,8 @@ class SpringCriteriaFieldCheckLinterInspectionTest {
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
+        fixture.specifyDatabase(dataSource, "sample_books")
         fixture.specifyDialect(SpringCriteriaDialect)
-
-        fixture.file.virtualFile.putUserData(
-            MongoDbVirtualFileDataSourceProvider.Keys.attachedDatabase,
-            "sample_books",
-        )
 
         `when`(
             readModelProvider.slice(eq(dataSource), any<GetCollectionSchema.Slice>())

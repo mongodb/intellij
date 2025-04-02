@@ -19,9 +19,13 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ex.ToolWindowManagerListener
+import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isMongoDbDataSource
+import com.mongodb.jbplugin.accessadapter.slice.ListDatabases
+import com.mongodb.jbplugin.editor.services.ConnectionPreferences.Companion.UNINITIALIZED_DATABASE
 import com.mongodb.jbplugin.editor.services.MdbPluginDisposable
+import com.mongodb.jbplugin.editor.services.implementations.MdbEditorService
 import com.mongodb.jbplugin.editor.services.implementations.getConnectionPreferences
 import com.mongodb.jbplugin.meta.service
 import kotlinx.coroutines.CoroutineScope
@@ -80,6 +84,51 @@ data class ConnectionState(
     }
 }
 
+sealed interface DatabasesLoadingState {
+    val connection: LocalDataSource?
+    val databases: List<String>
+
+    fun isForConnection(selectedConnection: LocalDataSource?): Boolean {
+        return selectedConnection?.uniqueId == connection?.uniqueId
+    }
+
+    data object Initial : DatabasesLoadingState {
+        override val connection: LocalDataSource? = null
+        override var databases = emptyList<String>()
+        override fun isForConnection(selectedConnection: LocalDataSource?): Boolean {
+            return selectedConnection == null
+        }
+    }
+
+    data class Loading(override val connection: LocalDataSource) : DatabasesLoadingState {
+        override var databases = emptyList<String>()
+    }
+
+    data class Loaded(
+        override val connection: LocalDataSource,
+        override val databases: List<String>
+    ) : DatabasesLoadingState
+
+    data class Failed(
+        override val connection: LocalDataSource,
+        val errorMessage: String,
+    ) : DatabasesLoadingState {
+        override var databases = emptyList<String>()
+    }
+}
+
+data class DatabaseState(
+    val databasesLoadingState: DatabasesLoadingState,
+    val selectedDatabase: String?,
+) {
+    companion object {
+        fun initial() = DatabaseState(
+            databasesLoadingState = DatabasesLoadingState.Initial,
+            selectedDatabase = null,
+        )
+    }
+}
+
 @Service(Service.Level.PROJECT)
 class ConnectionStateViewModel(
     private val project: Project,
@@ -92,11 +141,15 @@ class ConnectionStateViewModel(
     internal var connectionSaga = ConnectionSaga(
         project = project,
         coroutineScope = coroutineScope,
-        emitSelectedConnectionStateChange = ::emitSelectedConnectionStateChange
+        emitSelectedConnectionStateChange = ::emitSelectedConnectionStateChange,
+        emitDatabasesLoadingStateChange = ::emitDatabasesLoadingStateChange,
     )
 
     private val mutableConnectionState = MutableStateFlow(ConnectionState.initial())
     val connectionState = mutableConnectionState.asStateFlow()
+
+    private val mutableDatabaseState = MutableStateFlow(DatabaseState.initial())
+    val databaseState = mutableDatabaseState.asStateFlow()
 
     init {
         setupListeners()
@@ -115,6 +168,34 @@ class ConnectionStateViewModel(
                     val codeEditorViewModel by project.service<CodeEditorViewModel>()
                     codeEditorViewModel.reanalyzeRelevantEditors()
                 }
+
+                if (isDisconnected) {
+                    connectionSaga.cancelOnGoingDatabasesFetch()
+                    mutableDatabaseState.update { databaseState ->
+                        databaseState.copy(
+                            databasesLoadingState = DatabasesLoadingState.Initial,
+                            selectedDatabase = null,
+                        )
+                    }
+                } else if (selectedConnectionState is SelectedConnectionState.Connecting) {
+                    mutableDatabaseState.update { databaseState ->
+                        databaseState.copy(
+                            databasesLoadingState = DatabasesLoadingState.Loading(selectedConnection!!),
+                            selectedDatabase = null,
+                        )
+                    }
+                } else if (isConnected) {
+                    connectionSaga.listDatabases(selectedConnection!!)
+                }
+            }
+        }
+
+        coroutineScope.launch(Dispatchers.IO) {
+            databaseState.distinctUntilChanged { old, new ->
+                old.selectedDatabase == new.selectedDatabase
+            }.collectLatest {
+                val codeEditorViewModel by project.service<CodeEditorViewModel>()
+                codeEditorViewModel.reanalyzeRelevantEditors()
             }
         }
     }
@@ -234,6 +315,30 @@ class ConnectionStateViewModel(
         }
     }
 
+    suspend fun selectDatabase(database: String) {
+        withContext(Dispatchers.IO) {
+            mutableDatabaseState.update { state ->
+                state.copy(
+                    selectedDatabase = database,
+                )
+            }
+            val connectionPreferences = project.getConnectionPreferences()
+            connectionPreferences.database = database
+        }
+    }
+
+    suspend fun unselectSelectedDatabase() {
+        withContext(Dispatchers.IO) {
+            mutableDatabaseState.update { state ->
+                state.copy(
+                    selectedDatabase = null,
+                )
+            }
+            val connectionPreferences = project.getConnectionPreferences()
+            connectionPreferences.database = null
+        }
+    }
+
     suspend fun editSelectedConnection() {
         val (_, selectedConnection, selectedConnectionState) = mutableConnectionState.value
         if (
@@ -284,6 +389,29 @@ class ConnectionStateViewModel(
                 currentConnectionState.copy(selectedConnectionState = newSelectedConnectionState)
             } else {
                 currentConnectionState
+            }
+        }
+    }
+
+    private fun emitDatabasesLoadingStateChange(
+        newDatabasesLoadingState: DatabasesLoadingState
+    ) {
+        val editorService by project.service<MdbEditorService>()
+        val connectionPreferences = project.getConnectionPreferences()
+        mutableDatabaseState.update { currentDatabaseState ->
+            if (newDatabasesLoadingState.isForConnection(connectionState.value.selectedConnection)) {
+                val databaseToBeSelected = if (connectionPreferences.database == UNINITIALIZED_DATABASE) {
+                    editorService.inferredDatabase
+                } else {
+                    connectionPreferences.database
+                }.takeIf { newDatabasesLoadingState.databases.contains(it) }
+
+                currentDatabaseState.copy(
+                    databasesLoadingState = newDatabasesLoadingState,
+                    selectedDatabase = databaseToBeSelected
+                )
+            } else {
+                currentDatabaseState
             }
         }
     }
@@ -338,12 +466,15 @@ class DataSourcesChangesAuditor : DataAuditor {
 internal class ConnectionSaga(
     private val project: Project,
     private val coroutineScope: CoroutineScope,
-    internal val emitSelectedConnectionStateChange: suspend (SelectedConnectionState) -> Unit
+    internal val emitSelectedConnectionStateChange: suspend (SelectedConnectionState) -> Unit,
+    internal val emitDatabasesLoadingStateChange: suspend (DatabasesLoadingState) -> Unit,
 ) {
     @OptIn(ExperimentalCoroutinesApi::class)
     private val connectionDispatcher = Dispatchers.IO.limitedParallelism(1)
 
     private val onGoingConnection = AtomicReference<Job?>(null)
+
+    private val onGoingDatabasesFetch = AtomicReference<Job?>(null)
 
     fun listMongoDbConnections(): List<LocalDataSource> {
         return DataSourceManager.byDataSource(project, LocalDataSource::class.java)
@@ -424,5 +555,38 @@ internal class ConnectionSaga(
         withContext(Dispatchers.EDT) {
             DataSourceManagerDialog.showDialog(project, connection, null)
         }
+    }
+
+    fun listDatabases(connection: LocalDataSource) {
+        onGoingDatabasesFetch.getAndSet(
+            coroutineScope.launch(connectionDispatcher) {
+                try {
+                    emitDatabasesLoadingStateChange(
+                        DatabasesLoadingState.Loading(connection)
+                    )
+                    val readModel = project.getService(DataGripBasedReadModelProvider::class.java)
+                    val databases = readModel.slice(connection, ListDatabases.Slice)
+                    emitDatabasesLoadingStateChange(
+                        DatabasesLoadingState.Loaded(
+                            connection = connection,
+                            databases = databases.databases.map { it.name }
+                        )
+                    )
+                } catch (exception: CancellationException) {
+                    // Do nothing
+                } catch (exception: Exception) {
+                    emitDatabasesLoadingStateChange(
+                        DatabasesLoadingState.Failed(
+                            connection = connection,
+                            errorMessage = exception.cause?.message ?: "Could not load databases for connection."
+                        )
+                    )
+                }
+            }
+        )?.cancel()
+    }
+
+    fun cancelOnGoingDatabasesFetch() {
+        onGoingDatabasesFetch.getAndSet(null)?.cancel()
     }
 }

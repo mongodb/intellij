@@ -13,6 +13,7 @@ import com.mongodb.jbplugin.fixtures.mockDataSource
 import com.mongodb.jbplugin.fixtures.readClipboard
 import com.mongodb.jbplugin.fixtures.setContentWithTheme
 import com.mongodb.jbplugin.ui.viewModel.ConnectionState
+import com.mongodb.jbplugin.ui.viewModel.DatabaseState
 import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -35,7 +36,8 @@ class ConnectionBootstrapCardTest {
                         emptyList(),
                         null,
                         SelectedConnectionState.Initial
-                    )
+                    ),
+                    DatabaseState.initial()
                 )
             }
         }
@@ -57,7 +59,8 @@ class ConnectionBootstrapCardTest {
                     listOf(dataSource),
                     null,
                     SelectedConnectionState.Initial
-                )
+                ),
+                DatabaseState.initial()
             )
         }
 
@@ -77,7 +80,8 @@ class ConnectionBootstrapCardTest {
                     listOf(dataSource),
                     dataSource,
                     SelectedConnectionState.Failed(dataSource, "Error message.")
-                )
+                ),
+                DatabaseState.initial()
             )
         }
 
@@ -99,7 +103,8 @@ class ConnectionBootstrapCardTest {
                     listOf(dataSource),
                     dataSource,
                     SelectedConnectionState.Connecting(dataSource)
-                )
+                ),
+                DatabaseState.initial()
             )
         }
 
@@ -118,13 +123,33 @@ class ConnectionBootstrapCardTest {
                     listOf(dataSource),
                     dataSource,
                     SelectedConnectionState.Connected(dataSource)
-                )
+                ),
+                DatabaseState.initial()
             )
         }
 
         onNodeWithText("Connected to").assertExists()
         onNodeWithTag("ConnectionComboBox").performClick()
         onNodeWithTag("ConnectionItem::${dataSource.uniqueId}").assertExists()
+    }
+
+    @Test
+    fun `shows the database combobox when connected`() = runComposeUiTest {
+        val dataSource = mockDataSource()
+
+        setContentWithTheme {
+            _ConnectionBootstrapCard(
+                ConnectionState(
+                    listOf(dataSource),
+                    dataSource,
+                    SelectedConnectionState.Connected(dataSource)
+                ),
+                DatabaseState.initial()
+            )
+        }
+
+        onNodeWithText("Connected to").assertExists()
+        onNodeWithTag("DatabaseComboBox").assertExists()
     }
 
     @Test
@@ -143,7 +168,8 @@ class ConnectionBootstrapCardTest {
                         listOf(dataSource),
                         dataSource,
                         SelectedConnectionState.Connected(dataSource)
-                    )
+                    ),
+                    DatabaseState.initial()
                 )
             }
         }

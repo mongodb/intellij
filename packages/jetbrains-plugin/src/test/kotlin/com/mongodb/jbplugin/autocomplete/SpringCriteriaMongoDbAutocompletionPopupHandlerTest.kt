@@ -26,7 +26,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         `when`(
@@ -68,7 +68,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val namespace = Namespace("myDatabase", "book")
@@ -121,7 +121,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val namespace = Namespace("myDatabase", "book")
@@ -170,7 +170,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         `when`(
@@ -212,7 +212,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         `when`(
@@ -260,7 +260,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val namespace = Namespace("myDatabase", "book")
@@ -315,7 +315,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val namespace = Namespace("myDatabase", "book")
@@ -370,7 +370,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val namespace = Namespace("myDatabase", "book")
@@ -425,7 +425,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val namespace = Namespace("myDatabase", "book")
@@ -480,7 +480,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val namespace = Namespace("myDatabase", "book")
@@ -535,7 +535,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val namespace = Namespace("myDatabase", "book")
@@ -590,7 +590,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val namespace = Namespace("myDatabase", "book")
@@ -645,7 +645,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val namespace = Namespace("myDatabase", "book")
@@ -700,7 +700,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val namespace = Namespace("myDatabase", "book")
@@ -755,7 +755,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val namespace = Namespace("myDatabase", "book")
@@ -812,7 +812,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val namespace = Namespace("myDatabase", "book")
@@ -869,7 +869,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val namespace = Namespace("myDatabase", "book")
@@ -928,7 +928,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val namespace = Namespace("myDatabase", "book")
@@ -987,7 +987,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val namespace = Namespace("myDatabase", "book")
@@ -1046,7 +1046,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val namespace = Namespace("myDatabase", "book")
@@ -1107,7 +1107,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val namespace = Namespace("myDatabase", "book")
@@ -1162,7 +1162,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val namespace = Namespace("myDatabase", "book")
@@ -1217,7 +1217,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val namespace = Namespace("myDatabase", "book")
@@ -1272,7 +1272,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val namespace = Namespace("myDatabase", "book")
@@ -1327,7 +1327,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val namespace = Namespace("myDatabase", "book")
@@ -1382,7 +1382,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val namespace = Namespace("myDatabase", "book")
@@ -1436,7 +1436,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val namespace = Namespace("myDatabase", "book")
@@ -1490,7 +1490,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val namespace = Namespace("myDatabase", "book")
@@ -1545,7 +1545,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val namespace = Namespace("myDatabase", "book")
@@ -1601,7 +1601,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val namespace = Namespace("myDatabase", "book")
@@ -1657,7 +1657,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val namespace = Namespace("myDatabase", "book")
@@ -1713,7 +1713,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val namespace = Namespace("myDatabase", "book")
@@ -1769,7 +1769,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val namespace = Namespace("myDatabase", "book")
@@ -1825,7 +1825,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val namespace = Namespace("myDatabase", "book")
@@ -1881,7 +1881,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val namespace = Namespace("myDatabase", "book")
@@ -1937,7 +1937,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val namespace = Namespace("myDatabase", "book")
@@ -1994,7 +1994,7 @@ record Entity() {}
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
-        fixture.specifyDatabase("myDatabase")
+        fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
         val namespace = Namespace("myDatabase", "book")
