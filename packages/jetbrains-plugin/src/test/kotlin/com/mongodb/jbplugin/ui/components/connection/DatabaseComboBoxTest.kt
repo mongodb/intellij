@@ -27,7 +27,7 @@ class DatabaseComboBoxTest {
             }
         }
 
-        onNodeWithTag("DatabaseComboBox").assertTextEquals("Loading...")
+        onNodeWithTag("DatabaseComboBox").assertTextEquals("Loading databases...")
     }
 
     @Test
