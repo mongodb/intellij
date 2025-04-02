@@ -5,7 +5,11 @@ import com.intellij.database.dataSource.DatabaseConnectionManager
 import com.intellij.database.dataSource.DatabaseDriverManager
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.database.dataSource.connection.ConnectionRequestor
+import com.intellij.database.dataSource.findProjectWhereActive
 import com.intellij.database.dataSource.localDataSource
+import com.intellij.database.datagrid.DataAuditor
+import com.intellij.database.datagrid.DataRequest.Context
+import com.intellij.database.dialects.base.ProcessDbmsOutputAction.Companion.connection
 import com.intellij.database.model.RawDataSource
 import com.intellij.database.psi.DataSourceManager
 import com.intellij.database.run.ConsoleRunConfiguration
@@ -35,6 +39,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.VisibleForTesting
 import java.util.concurrent.atomic.AtomicBoolean
@@ -154,13 +159,14 @@ class ConnectionStateViewModel(
                     old.selectedConnectionState == new.selectedConnectionState
             }.collectLatest { (_, selectedConnection, selectedConnectionState) ->
                 val isDisconnected = selectedConnection == null
-                val isConnected = selectedConnection != null && selectedConnectionState is SelectedConnectionState.Connected
+                val isConnected =
+                    selectedConnection != null && selectedConnectionState is SelectedConnectionState.Connected
 
                 // Doing this to account for only the relevant states that will be necessary for
                 // re-analysing the files.
                 if (isDisconnected || isConnected) {
-                    val mdbEditorService by project.service<MdbEditorService>()
-                    mdbEditorService.reAnalyzeSelectedEditor(true)
+                    val codeEditorViewModel by project.service<CodeEditorViewModel>()
+                    codeEditorViewModel.reanalyzeRelevantEditors()
                 }
 
                 if (isDisconnected) {
@@ -188,8 +194,8 @@ class ConnectionStateViewModel(
             databaseState.distinctUntilChanged { old, new ->
                 old.selectedDatabase == new.selectedDatabase
             }.collectLatest {
-                val mdbEditorService by project.service<MdbEditorService>()
-                mdbEditorService.reAnalyzeSelectedEditor(true)
+                val codeEditorViewModel by project.service<CodeEditorViewModel>()
+                codeEditorViewModel.reanalyzeRelevantEditors()
             }
         }
     }
@@ -411,6 +417,52 @@ class ConnectionStateViewModel(
     }
 }
 
+/**
+ * When we modify the target cluster somehow through DataGrip, we might want to retrigger the
+ * analysis of the scope.
+ */
+class DataSourcesChangesAuditor : DataAuditor {
+    @VisibleForTesting
+    internal var readContext: (Context) -> Triple<LocalDataSource, Project, String>? = { context ->
+        val dataSource = context.connection?.connectionPoint?.dataSource
+        val project = dataSource?.findProjectWhereActive(null)
+        val query = context.query
+
+        if (dataSource == null || project == null || query == null) {
+            null
+        } else {
+            Triple(dataSource, project, query)
+        }
+    }
+
+    override fun requestFinished(context: Context) {
+        val (dataSource, project, query) = readContext(context) ?: return
+
+        if (likelyChangesDataSource(query)) {
+            dataSource.incModificationCount()
+
+            val analysisScopeViewModel by project.service<AnalysisScopeViewModel>()
+            runBlocking {
+                analysisScopeViewModel.reanalyzeCurrentScope()
+            }
+        }
+    }
+
+    private fun likelyChangesDataSource(script: String): Boolean {
+        return script.let {
+            it.contains("createIndex") ||
+                it.contains("dropIndex") ||
+                it.contains("update") ||
+                it.contains("delete") ||
+                it.contains("insert")
+        }
+    }
+}
+
+/**
+ * This is going to handle the actual connection logic. We are keeping this internal to this module
+ * because we don't want to be able to connect through any other API that is not the ConnectionStateViewModel.
+ */
 internal class ConnectionSaga(
     private val project: Project,
     private val coroutineScope: CoroutineScope,

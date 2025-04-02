@@ -1,5 +1,7 @@
 package com.mongodb.jbplugin.ui.viewModel
 
+import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
+import com.intellij.codeInsight.daemon.impl.InlayHintsPassFactoryInternal
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -8,8 +10,10 @@ import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.findPsiFile
 import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.editor.services.MdbPluginDisposable
+import com.mongodb.jbplugin.meta.withinReadAction
 import com.mongodb.jbplugin.mql.Node
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -55,6 +59,21 @@ class CodeEditorViewModel(
 
     override fun fileClosed(source: FileEditorManager, file: VirtualFile) {
         rebuildEditorState(source)
+    }
+
+    suspend fun reanalyzeRelevantEditors() {
+        withContext(Dispatchers.IO) {
+            withinReadAction {
+                val allPsiFiles = editorState.value.focusedFiles.mapNotNull {
+                    it.findPsiFile(project)
+                }
+
+                for (psiFile in allPsiFiles) {
+                    InlayHintsPassFactoryInternal.forceHintsUpdateOnNextPass()
+                    DaemonCodeAnalyzer.getInstance(project).restart(psiFile)
+                }
+            }
+        }
     }
 
     suspend fun focusQueryInEditor(query: Node<PsiElement>) {

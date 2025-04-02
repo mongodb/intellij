@@ -52,14 +52,14 @@
                            bundle="messages.TelemetryBundle"
                            key="notification.group.name"
         />
-        <codeInsight.declarativeInlayProvider
-                group="com.mongodb.jbplugin"
-                implementationClass="com.mongodb.jbplugin.inlays.MongoDbQueryNamespaceInlay"
-                isEnabledByDefault="true"
-                language="JAVA"
-                nameKey="inlay.namespace.name"
-                bundle="messages.InspectionsAndInlaysBundle"
-                providerId="com.mongodb.jbplugin#JAVA" />
+
+        <codeInsight.inlayProvider
+            implementationClass="com.mongodb.jbplugin.inlays.MongoDbQueryIndexStatusInlay"
+            language="JAVA"
+            />
+
+        <database.dataAuditor implementation="com.mongodb.jbplugin.ui.viewModel.DataSourcesChangesAuditor" />
+
         <!-- Performance Inspections -->
         <localInspection implementationClass="com.mongodb.jbplugin.inspections.performance.MongoDbQueryNotUsingIndex"
             language="JAVA"

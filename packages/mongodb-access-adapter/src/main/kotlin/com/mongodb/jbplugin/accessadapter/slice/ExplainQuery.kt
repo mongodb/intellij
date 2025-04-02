@@ -16,6 +16,7 @@ import com.mongodb.jbplugin.mql.components.HasLimit
  */
 sealed interface ExplainPlan : Comparable<ExplainPlan> {
     val cost: Int
+    val indexName: String?
 
     override fun compareTo(other: ExplainPlan): Int {
         return cost.compareTo(other.cost)
@@ -23,17 +24,19 @@ sealed interface ExplainPlan : Comparable<ExplainPlan> {
 
     data object NotRun : ExplainPlan {
         override val cost = 0
+        override val indexName = null
     }
 
     data object CollectionScan : ExplainPlan {
         override val cost = 3
+        override val indexName = null
     }
 
-    data object IndexScan : ExplainPlan {
+    data class IndexScan(override val indexName: String) : ExplainPlan {
         override val cost = 1
     }
 
-    data object IneffectiveIndexUsage : ExplainPlan {
+    data class IneffectiveIndexUsage(override val indexName: String) : ExplainPlan {
         override val cost = 2
     }
 }
@@ -56,7 +59,7 @@ data class ExplainQuery(
         val query: Node<S>,
         val queryContext: QueryContext,
     ) : com.mongodb.jbplugin.accessadapter.Slice<ExplainQuery> {
-        override val id = "${javaClass.canonicalName}::$query"
+        override val id = "${javaClass.canonicalName}::${query.queryHash().toString(16)}"
 
         override suspend fun queryUsingDriver(from: MongoDbDriver): ExplainQuery {
             if (query.component<HasExplain>() == null) {
@@ -86,28 +89,31 @@ data class ExplainQuery(
             val stages = winningPlan.getOrDefault("queryPlan", winningPlan) as? Map<String, Any>
                 ?: return ExplainQuery(ExplainPlan.NotRun)
 
-            val resultFromExecutionStats = checkExecutionStatsEffectiveness(executionStats)
+            val resultFromExecutionStats = checkExecutionStatsEffectiveness(executionStats, stages)
             // https://www.mongodb.com/docs/manual/reference/explain-results/#explain-output-structure
             val resultFromQueryPlanner = planByMappingStage(
                 stages,
                 mapOf(
-                    "COLLSCAN" to ExplainPlan.CollectionScan,
-                    "IXSCAN" to ExplainPlan.IndexScan,
-                    "IDHACK" to ExplainPlan.IndexScan,
-                    "SORT" to ExplainPlan.IneffectiveIndexUsage,
-                    "FILTER" to ExplainPlan.IneffectiveIndexUsage,
+                    "COLLSCAN" to { ExplainPlan.CollectionScan },
+                    "IXSCAN" to { ExplainPlan.IndexScan(it ?: "unknown") },
+                    "IDHACK" to { ExplainPlan.IndexScan(it ?: "unknown") },
+                    "SORT" to { ExplainPlan.IneffectiveIndexUsage(it ?: "unknown") },
+                    "FILTER" to { ExplainPlan.IneffectiveIndexUsage(it ?: "unknown") },
                     // EXPRESS_* are basically like a generalisation of IDHACK for other fields
-                    "EXPRESS_IXSCAN" to ExplainPlan.IndexScan,
-                    "EXPRESS_CLUSTERED_IXSCAN" to ExplainPlan.IndexScan,
-                    "EXPRESS_UPDATE" to ExplainPlan.IndexScan,
-                    "EXPRESS_DELETE" to ExplainPlan.IndexScan,
+                    "EXPRESS_IXSCAN" to { ExplainPlan.IndexScan(it ?: "unknown") },
+                    "EXPRESS_CLUSTERED_IXSCAN" to { ExplainPlan.IndexScan(it ?: "unknown") },
+                    "EXPRESS_UPDATE" to { ExplainPlan.IndexScan(it ?: "unknown") },
+                    "EXPRESS_DELETE" to { ExplainPlan.IndexScan(it ?: "unknown") },
                 )
             )
 
             return ExplainQuery(maxOf(resultFromQueryPlanner, resultFromExecutionStats))
         }
 
-        private fun checkExecutionStatsEffectiveness(executionStats: Map<String, Any>?): ExplainPlan {
+        private fun checkExecutionStatsEffectiveness(
+            executionStats: Map<String, Any>?,
+            stages: Map<String, Any>
+        ): ExplainPlan {
             if (executionStats == null) {
                 return ExplainPlan.NotRun
             }
@@ -121,21 +127,33 @@ data class ExplainQuery(
 
             val ratio = totalDocsExamined / nReturned
             return if (ratio >= RATIO_FOR_INEFFECTIVE_INDEX_USAGE) {
-                ExplainPlan.IneffectiveIndexUsage
+                ExplainPlan.IneffectiveIndexUsage(findUsedIndexName(stages) ?: "unknown")
             } else {
                 ExplainPlan.NotRun
             }
         }
 
-        private fun planByMappingStage(stage: Map<String, Any>, mapping: Map<String, ExplainPlan>): ExplainPlan {
+        private fun planByMappingStage(stage: Map<String, Any>, mapping: Map<String, (String?) -> ExplainPlan>): ExplainPlan {
             val parentStage: ExplainPlan = if (stage["inputStage"] != null) {
                 planByMappingStage(stage["inputStage"] as Map<String, Any>, mapping)
             } else {
                 ExplainPlan.NotRun
             }
 
-            val currentStage = mapping.getOrDefault(stage["stage"], null) ?: ExplainPlan.NotRun
+            val currentIndex = stage.getOrDefault("indexName", null) as? String
+            val currentStage = mapping.getOrDefault(stage["stage"]) { ExplainPlan.NotRun }(parentStage.indexName ?: currentIndex)
+
             return maxOf(parentStage, currentStage)
+        }
+
+        private fun findUsedIndexName(stage: Map<String, Any>): String? {
+            val parentIndexName = if (stage["inputStage"] != null) {
+                findUsedIndexName(stage["inputStage"] as Map<String, Any>)
+            } else {
+                null
+            }
+
+            return parentIndexName ?: stage.getOrDefault("indexName", null) as? String
         }
     }
 }

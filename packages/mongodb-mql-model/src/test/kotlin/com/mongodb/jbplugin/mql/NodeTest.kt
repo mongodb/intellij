@@ -2,7 +2,6 @@ package com.mongodb.jbplugin.mql
 
 import com.mongodb.jbplugin.mql.components.*
 import com.mongodb.jbplugin.mql.components.HasCollectionReference.Known
-import com.mongodb.jbplugin.mql.components.HasCollectionReference.OnlyCollection
 import io.github.z4kn4fein.semver.Version
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -106,6 +105,44 @@ class NodeTest {
             copiedNode.components<HasCollectionReference<*>>()
                 .all { collection -> collection.reference is HasCollectionReference.Unknown }
         )
+    }
+
+    @Test
+    fun `two queries with the same field names will generate the same queryHash`() {
+        val q1 = Node<Unit?>(
+            null,
+            listOf(
+                HasFieldReference(HasFieldReference.FromSchema(Unit, "f1")),
+            )
+        )
+
+        val q2 = Node<Unit?>(
+            null,
+            listOf(
+                HasFieldReference(HasFieldReference.FromSchema(Unit, "f1")),
+            )
+        )
+
+        assertEquals(q1.queryHash(), q2.queryHash())
+    }
+
+    @Test
+    fun `two queries with different field names will generate different queryHash`() {
+        val q1 = Node<Unit?>(
+            null,
+            listOf(
+                HasFieldReference(HasFieldReference.FromSchema(Unit, "f1")),
+            )
+        )
+
+        val q2 = Node<Unit?>(
+            null,
+            listOf(
+                HasFieldReference(HasFieldReference.FromSchema(Unit, "f2")),
+            )
+        )
+
+        assertNotEquals(q1.queryHash(), q2.queryHash())
     }
 
     @Test

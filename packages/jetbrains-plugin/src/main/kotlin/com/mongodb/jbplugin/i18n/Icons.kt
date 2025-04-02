@@ -38,6 +38,24 @@ object Icons {
     val collectionAutocompleteEntry = collection
     val fieldAutocompleteEntry = field
     val information = AllIcons.General.Information
+    val warning = AllIcons.General.Warning
+    private val greenCheckmark = AllIcons.General.GreenCheckmark
+    private val questionMark = AllIcons.General.QuestionDialog
+
+    val queryNotRunIcon = LayeredIcon.layeredIcon(arrayOf(logo, questionMark)).apply {
+        val scaledGreenCircle = IconUtil.resizeSquared(questionMark, 9)
+        setIcon(scaledGreenCircle, 1, SwingConstants.SOUTH_EAST)
+    }
+
+    val indexOkIcon = LayeredIcon.layeredIcon(arrayOf(logo, greenCheckmark)).apply {
+        val scaledGreenCircle = IconUtil.resizeSquared(greenCheckmark, 9)
+        setIcon(scaledGreenCircle, 1, SwingConstants.SOUTH_EAST)
+    }
+
+    val indexWarningIcon = LayeredIcon.layeredIcon(arrayOf(logo, warning)).apply {
+        val scaledGreenCircle = IconUtil.resizeSquared(warning, 9)
+        setIcon(scaledGreenCircle, 1, SwingConstants.SOUTH_EAST)
+    }
 
     fun Icon.scaledToText(parentComponent: Component? = null): Icon {
         val settingsManager: NotRoamableUiSettings = NotRoamableUiSettings.getInstance()
