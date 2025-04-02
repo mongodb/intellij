@@ -441,7 +441,11 @@ internal fun mockLogMessage() =
  * @param url
  * @return
  */
-internal fun mockDataSource(url: MongoDbServerUrl = MongoDbServerUrl("mongodb://localhost:27017")) =
+internal fun mockDataSource(
+    url: MongoDbServerUrl = MongoDbServerUrl("mongodb://localhost:27017"),
+    name: String? = null,
+    uniqueId: String? = null,
+) =
     mock<LocalDataSource>().also { dataSource ->
         val driver = mock<DatabaseDriver>()
         `when`(driver.id).thenReturn("mongo")
@@ -450,8 +454,12 @@ internal fun mockDataSource(url: MongoDbServerUrl = MongoDbServerUrl("mongodb://
         `when`(dataSource.databaseDriver).thenReturn(driver)
         `when`(dataSource.dbms).thenReturn(Dbms.MONGO)
         val testClass = Thread.currentThread().stackTrace[2].className
-        `when`(dataSource.name).thenReturn(testClass + "_" + UUID.randomUUID().toString())
-        `when`(dataSource.uniqueId).thenReturn(testClass + "_" + UUID.randomUUID().toString())
+        `when`(dataSource.name).thenReturn(
+            name ?: (testClass + "_" + UUID.randomUUID().toString())
+        )
+        `when`(dataSource.uniqueId).thenReturn(
+            uniqueId ?: (testClass + "_" + UUID.randomUUID().toString())
+        )
     }
 
 /**
