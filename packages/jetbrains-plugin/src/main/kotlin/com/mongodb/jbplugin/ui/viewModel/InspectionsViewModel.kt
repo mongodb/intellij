@@ -20,12 +20,17 @@ class InspectionsViewModel {
     private val mutableOpenCategories = MutableStateFlow<InspectionCategory?>(null)
     val openCategories = mutableOpenCategories.asStateFlow()
 
-    fun startInspectionSessionOf(psiFile: PsiFile, inspection: Inspection) {
+    suspend fun startInspectionSessionOf(psiFile: PsiFile, inspection: Inspection) {
         val allOtherInspections = insights.value.filter {
-            !(it.inspection == inspection && it.query.source.containingFile.isEquivalentTo(psiFile))
+            !(
+                it.inspection == inspection &&
+                    it.query.source.containingFile.isEquivalentTo(
+                        psiFile
+                    )
+                )
         }
 
-        mutableInsights.tryEmit(allOtherInspections)
+        mutableInsights.emit(allOtherInspections)
     }
 
     suspend fun addInsight(insight: QueryInsight<PsiElement, *>) {

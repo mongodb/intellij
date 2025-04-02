@@ -313,9 +313,9 @@ class DataSourcesChangesAuditor : DataAuditor {
         if (likelyChangesDataSource(query)) {
             dataSource.incModificationCount()
 
-            val codeEditorViewModel by project.service<AnalysisScopeViewModel>()
+            val analysisScopeViewModel by project.service<AnalysisScopeViewModel>()
             runBlocking {
-                codeEditorViewModel.reanalyzeCurrentScope()
+                analysisScopeViewModel.reanalyzeCurrentScope()
             }
         }
     }

@@ -18,6 +18,7 @@ import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.linting.QueryInsightsHolder
 import com.mongodb.jbplugin.linting.QueryInspection
 import com.mongodb.jbplugin.meta.service
+import com.mongodb.jbplugin.meta.withinReadAction
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.ui.viewModel.InspectionsViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -48,7 +49,11 @@ abstract class AbstractMongoDbInspectionBridgeV2<Settings, I : Inspection>(
         isOnTheFly: Boolean
     ) {
         val inspectionViewModel by session.file.project.service<InspectionsViewModel>()
-        inspectionViewModel.startInspectionSessionOf(session.file, inspection)
+        runBlocking {
+            withinReadAction {
+                inspectionViewModel.startInspectionSessionOf(session.file, inspection)
+            }
+        }
     }
 
     override fun buildVisitor(
