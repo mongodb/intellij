@@ -76,11 +76,11 @@ class CodeEditorViewModel(
         }
     }
 
-    suspend fun focusQueryInEditor(query: Node<PsiElement>) {
+    suspend fun focusQueryInEditor(query: Node<PsiElement>, fileEditorManager: FileEditorManager? = null) {
         withContext(Dispatchers.EDT) {
             val vFile = query.source.containingFile.virtualFile
 
-            val manager = FileEditorManager.getInstance(query.source.project)
+            val manager = fileEditorManager ?: FileEditorManager.getInstance(query.source.project)
             val editorOfFile = manager.selectedTextEditor?.takeIf { it.virtualFile == vFile }
                 ?: manager.openTextEditor(OpenFileDescriptor(query.source.project, vFile, -1), true)
                 ?: return@withContext

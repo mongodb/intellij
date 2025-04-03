@@ -11,7 +11,6 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.eventually
-import com.mongodb.jbplugin.fixtures.withMockedService
 import com.mongodb.jbplugin.mql.Node
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.*
@@ -100,10 +99,8 @@ class CodeEditorViewModelTest {
             filesInEditor = listOf(file)
         )
 
-        project.withMockedService(manager)
-
         val query = queryAt(file, project, 25)
-        viewModel.focusQueryInEditor(query)
+        viewModel.focusQueryInEditor(query, manager)
 
         eventually {
             verify(manager.selectedTextEditor!!.caretModel).moveToOffset(25)
@@ -124,10 +121,9 @@ class CodeEditorViewModelTest {
 
         val newEditor = editorForFile(file)
         whenever(manager.openTextEditor(any(), any())).thenReturn(newEditor)
-        project.withMockedService(manager)
 
         val query = queryAt(file, project, 25)
-        viewModel.focusQueryInEditor(query)
+        viewModel.focusQueryInEditor(query, manager)
 
         eventually {
             verify(newEditor.caretModel).moveToOffset(25)
