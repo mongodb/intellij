@@ -35,6 +35,7 @@ import kotlinx.coroutines.runBlocking
 import org.bson.types.ObjectId
 import java.awt.event.ActionEvent
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.*
 import javax.swing.Action
@@ -250,7 +251,7 @@ class RunQueryModal(
             BsonDate -> QueryContext.LocalVariable(
                 BsonDate,
                 parseOrAsIs(value) {
-                    DATE_FORMATTER.parse(it)
+                    DATE_PARSER.parse(it)
                 }
             )
             BsonObjectId -> QueryContext.LocalVariable(BsonObjectId, parseOrAsIs(value, ::ObjectId))
@@ -264,9 +265,10 @@ class RunQueryModal(
     }
 
     companion object {
-        private val DATE_FORMATTER = DateTimeFormatter.ISO_DATE_TIME
+        private val DATE_FORMATTER = DateTimeFormatter.ISO_INSTANT
+        private val DATE_PARSER = DateTimeFormatter.ISO_DATE_TIME
 
-        internal fun sampleDateTime() = DATE_FORMATTER.format(LocalDateTime.now())
+        internal fun sampleDateTime() = DATE_FORMATTER.format(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant())
         internal fun sampleObjectId() = ObjectId().toHexString()
         internal fun sampleUuid() = UUID.randomUUID().toString()
     }
