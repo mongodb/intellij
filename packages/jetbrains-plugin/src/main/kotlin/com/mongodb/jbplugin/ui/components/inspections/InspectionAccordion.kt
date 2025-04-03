@@ -181,12 +181,9 @@ private fun LinkToQueryInsight(insight: QueryInsight<PsiElement, *>) {
 
 private fun queryLocation(query: Node<PsiElement>): String {
     return withinReadActionBlocking {
-        val fileName = query.source.containingFile.name
-        val lineNumber = ApplicationManager.getApplication().runReadAction<Int> {
-            query.source.containingFile.fileDocument.getLineNumber(
-                query.source.textOffset
-            ) + 1
-        }
+        val containingFile = query.source.containingFile
+        val fileName = containingFile.name
+        val lineNumber = containingFile.fileDocument.getLineNumber(query.source.textOffset) + 1
 
         "$fileName:$lineNumber"
     }
