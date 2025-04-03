@@ -76,11 +76,11 @@ class CodeEditorViewModel(
         }
     }
 
-    suspend fun focusQueryInEditor(query: Node<PsiElement>) {
+    suspend fun focusQueryInEditor(query: Node<PsiElement>, fileEditorManager: FileEditorManager? = null) {
         withContext(Dispatchers.EDT) {
             val vFile = query.source.containingFile.virtualFile
 
-            val manager = FileEditorManager.getInstance(query.source.project)
+            val manager = fileEditorManager ?: FileEditorManager.getInstance(query.source.project)
             val editorOfFile = manager.selectedTextEditor?.takeIf { it.virtualFile == vFile }
                 ?: manager.openTextEditor(OpenFileDescriptor(query.source.project, vFile, -1), true)
                 ?: return@withContext
@@ -90,10 +90,15 @@ class CodeEditorViewModel(
     }
 
     private fun rebuildEditorState(manager: FileEditorManager) {
-        val openFiles = manager.openFiles.toList().distinctBy { it.canonicalPath }
-        val focusedFiles = manager.selectedEditors.mapNotNull { it.file }.distinctBy { it.canonicalPath }.toList()
-
         coroutineScope.launch(Dispatchers.IO) {
+            val openFiles = withinReadAction {
+                manager.openFiles.toList().distinctBy { it.canonicalPath }
+            }
+
+            val focusedFiles = withinReadAction {
+                manager.selectedEditors.mapNotNull { it.file }.distinctBy { it.canonicalPath }.toList()
+            }
+
             mutableEditorState.emit(EditorState(focusedFiles, openFiles))
         }
     }

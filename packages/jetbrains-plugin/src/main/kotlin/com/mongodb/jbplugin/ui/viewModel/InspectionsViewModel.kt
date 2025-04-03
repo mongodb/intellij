@@ -7,6 +7,7 @@ import com.mongodb.jbplugin.linting.Inspection
 import com.mongodb.jbplugin.linting.InspectionCategory
 import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.meta.service
+import com.mongodb.jbplugin.meta.withinReadAction
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,31 +22,39 @@ class InspectionsViewModel {
     val openCategories = mutableOpenCategories.asStateFlow()
 
     suspend fun startInspectionSessionOf(psiFile: PsiFile, inspection: Inspection) {
-        val allOtherInspections = insights.value.filter {
-            !(
-                it.inspection == inspection &&
-                    it.query.source.containingFile.isEquivalentTo(
-                        psiFile
-                    )
-                )
-        }
+        withContext(Dispatchers.IO) {
+            val allOtherInspections = withinReadAction {
+                insights.value.filter {
+                    !(
+                        it.inspection == inspection &&
+                            it.query.source.containingFile.isEquivalentTo(
+                                psiFile
+                            )
+                        )
+                }
+            }
 
-        mutableInsights.emit(allOtherInspections)
+            mutableInsights.emit(allOtherInspections)
+        }
     }
 
     suspend fun addInsight(insight: QueryInsight<PsiElement, *>) {
         withContext(Dispatchers.IO) {
             val currentState = mutableInsights.value
-            val withoutExistingInsight = currentState.filter { !areEquivalent(insight, it) }
+            val withoutExistingInsight = withinReadAction {
+                currentState.filter { !areEquivalent(insight, it) }
+            }
             mutableInsights.emit(withoutExistingInsight + insight)
         }
     }
 
     suspend fun openCategory(category: InspectionCategory) {
-        if (mutableOpenCategories.value == category) {
-            mutableOpenCategories.emit(null)
-        } else {
-            mutableOpenCategories.emit(category)
+        withContext(Dispatchers.IO) {
+            if (mutableOpenCategories.value == category) {
+                mutableOpenCategories.emit(null)
+            } else {
+                mutableOpenCategories.emit(category)
+            }
         }
     }
 

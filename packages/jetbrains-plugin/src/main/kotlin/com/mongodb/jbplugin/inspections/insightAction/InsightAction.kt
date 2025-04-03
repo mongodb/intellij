@@ -11,6 +11,9 @@ import com.mongodb.jbplugin.linting.InspectionAction.RunQuery
 import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.observability.probe.CreateIndexIntentionProbe
+import com.mongodb.jbplugin.observability.probe.QueryRunProbe
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 
 interface InsightAction {
     val displayName: String
@@ -31,7 +34,14 @@ interface InsightAction {
                     CreateSuggestedIndexInsightAction(createIndex, DatagripConsoleEditor)
                 }
                 NoAction -> null
-                RunQuery -> null
+                RunQuery -> {
+                    val queryRun by project.service<QueryRunProbe>()
+                    RunQueryInsightAction(
+                        CoroutineScope(Dispatchers.IO),
+                        queryRun,
+                        DatagripConsoleEditor
+                    )
+                }
             }
         }
     }
