@@ -22,6 +22,7 @@ import org.assertj.swing.exception.ComponentLookupException
 import org.assertj.swing.fixture.FrameFixture
 import org.bson.types.ObjectId
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
@@ -285,6 +286,17 @@ class RunQueryModalTest {
                 boolInput.type
             )
         }
+    }
+
+    @Test
+    fun `formats the sample date with timezone info`(
+        robot: Robot,
+        project: Project,
+        coroutineScope: CoroutineScope
+    ) {
+        assertTrue(
+            RunQueryModal.sampleDateTime().endsWith("Z")
+        )
     }
 
     companion object {
