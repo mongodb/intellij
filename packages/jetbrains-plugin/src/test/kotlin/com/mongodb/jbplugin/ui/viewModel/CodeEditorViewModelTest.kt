@@ -12,7 +12,8 @@ import com.intellij.psi.PsiFile
 import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.eventually
 import com.mongodb.jbplugin.mql.Node
-import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.TestScope
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -25,10 +26,10 @@ class CodeEditorViewModelTest {
     @Test
     fun `should emit the open files when a file is opened`(
         project: Project,
-    ) = runTest {
+    ) {
         val file1 = fileAt("MyFile.java")
         val file2 = fileAt("MyOpenFile.java")
-        val viewModel = CodeEditorViewModel(project, this)
+        val viewModel = CodeEditorViewModel(project, TestScope())
 
         val manager = fileManagerWith(
             openFiles = listOf(file1, file2),
@@ -47,10 +48,10 @@ class CodeEditorViewModelTest {
     @Test
     fun `should emit the open files when a file is closed`(
         project: Project
-    ) = runTest {
+    ) {
         val file1 = fileAt("MyFile.java")
         val file2 = fileAt("MyOpenFile.java")
-        val viewModel = CodeEditorViewModel(project, this)
+        val viewModel = CodeEditorViewModel(project, TestScope())
 
         val manager = fileManagerWith(
             openFiles = listOf(file2),
@@ -68,10 +69,10 @@ class CodeEditorViewModelTest {
     @Test
     fun `should emit the open files when the selected editor changed`(
         project: Project
-    ) = runTest {
+    ) {
         val file1 = fileAt("MyFile.java")
         val file2 = fileAt("MyOpenFile.java")
-        val viewModel = CodeEditorViewModel(project, this)
+        val viewModel = CodeEditorViewModel(project, TestScope())
 
         val manager = fileManagerWith(
             openFiles = listOf(file1, file2),
@@ -90,9 +91,9 @@ class CodeEditorViewModelTest {
     @Test
     fun `should open the query in the editor when the editor is already open`(
         project: Project,
-    ) = runTest {
+    ) {
         val file = fileAt("MyFile.java")
-        val viewModel = CodeEditorViewModel(project, this)
+        val viewModel = CodeEditorViewModel(project, TestScope())
 
         val manager = fileManagerWith(
             openFiles = listOf(file),
@@ -100,7 +101,9 @@ class CodeEditorViewModelTest {
         )
 
         val query = queryAt(file, project, 25)
-        viewModel.focusQueryInEditor(query, manager)
+        runBlocking {
+            viewModel.focusQueryInEditor(query, manager)
+        }
 
         eventually {
             verify(manager.selectedTextEditor!!.caretModel).moveToOffset(25)
@@ -110,9 +113,9 @@ class CodeEditorViewModelTest {
     @Test
     fun `should open a new editor and move the caret to the correct position`(
         project: Project
-    ) = runTest {
+    ) {
         val file = fileAt("MyFile.java")
-        val viewModel = CodeEditorViewModel(project, this)
+        val viewModel = CodeEditorViewModel(project, TestScope())
 
         val manager = fileManagerWith(
             openFiles = listOf(file),
@@ -122,8 +125,10 @@ class CodeEditorViewModelTest {
         val newEditor = editorForFile(file)
         whenever(manager.openTextEditor(any(), any())).thenReturn(newEditor)
 
-        val query = queryAt(file, project, 25)
-        viewModel.focusQueryInEditor(query, manager)
+        runBlocking {
+            val query = queryAt(file, project, 25)
+            viewModel.focusQueryInEditor(query, manager)
+        }
 
         eventually {
             verify(newEditor.caretModel).moveToOffset(25)

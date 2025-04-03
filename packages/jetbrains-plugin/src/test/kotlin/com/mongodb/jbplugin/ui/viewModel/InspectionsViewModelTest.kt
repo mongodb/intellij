@@ -5,7 +5,7 @@ import com.intellij.psi.PsiFile
 import com.mongodb.jbplugin.linting.Inspection.NotUsingIndex
 import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.mql.Node
-import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
@@ -13,29 +13,33 @@ import org.mockito.kotlin.whenever
 
 class InspectionsViewModelTest {
     @Test
-    fun `deduplicates insights`() = runTest {
+    fun `deduplicates insights`() {
         val viewModel = InspectionsViewModel()
         val query = mock<Node<PsiElement>>()
 
-        viewModel.addInsight(QueryInsight.notUsingIndex(query))
-        viewModel.addInsight(QueryInsight.notUsingIndex(query))
+        runBlocking {
+            viewModel.addInsight(QueryInsight.notUsingIndex(query))
+            viewModel.addInsight(QueryInsight.notUsingIndex(query))
+        }
 
         assertEquals(1, viewModel.insights.value.size)
     }
 
     @Test
-    fun `can hold multiple insights for the same query`() = runTest {
+    fun `can hold multiple insights for the same query`() {
         val viewModel = InspectionsViewModel()
         val query = mock<Node<PsiElement>>()
 
-        viewModel.addInsight(QueryInsight.notUsingIndex(query))
-        viewModel.addInsight(QueryInsight.notUsingIndexEffectively(query))
+        runBlocking {
+            viewModel.addInsight(QueryInsight.notUsingIndex(query))
+            viewModel.addInsight(QueryInsight.notUsingIndexEffectively(query))
+        }
 
         assertEquals(2, viewModel.insights.value.size)
     }
 
     @Test
-    fun `a new session clears all insights for the same inspection and file`() = runTest {
+    fun `a new session clears all insights for the same inspection and file`() {
         val viewModel = InspectionsViewModel()
         val queryAttachment = mock<PsiElement>()
         val file = mock<PsiFile>()
@@ -44,10 +48,12 @@ class InspectionsViewModelTest {
 
         val query = Node(queryAttachment, emptyList())
 
-        viewModel.addInsight(QueryInsight.notUsingIndex(query))
-        assertEquals(1, viewModel.insights.value.size)
+        runBlocking {
+            viewModel.addInsight(QueryInsight.notUsingIndex(query))
+            assertEquals(1, viewModel.insights.value.size)
 
-        viewModel.startInspectionSessionOf(file, NotUsingIndex)
-        assertEquals(0, viewModel.insights.value.size)
+            viewModel.startInspectionSessionOf(file, NotUsingIndex)
+            assertEquals(0, viewModel.insights.value.size)
+        }
     }
 }
