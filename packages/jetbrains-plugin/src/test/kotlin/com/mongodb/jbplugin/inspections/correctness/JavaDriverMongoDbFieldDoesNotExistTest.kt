@@ -24,7 +24,7 @@ class JavaDriverMongoDbFieldDoesNotExistTest {
     @ParsingTest(
         """
 public FindIterable<Document> exampleFind() {
-    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
+    return <warning descr="Field \"nonExistingField\" does not seem to exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .find(eq("nonExistingField", "123"))</warning>;
 }
@@ -57,7 +57,7 @@ public FindIterable<Document> exampleFind() {
         """
 // and queries
 public FindIterable<Document> inlineAndQuery() {
-    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
+    return <warning descr="Field \"nonExistingField\" does not seem to exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .find(
                 and(
@@ -71,13 +71,13 @@ public FindIterable<Document> andQueryFromAVariableWithVariableFieldName() {
     var andQuery = and(
         eq(fieldName, "123")
     );
-    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
+    return <warning descr="Field \"nonExistingField\" does not seem to exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .find(andQuery)</warning>;
 }
 
 public FindIterable<Document> andQueryFromAMethodCallWithFieldNameFromMethodCall() {
-    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
+    return <warning descr="Field \"nonExistingField\" does not seem to exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .find(getAndQueryWithFieldNameFromMethodCall())</warning>;
 }
@@ -94,7 +94,7 @@ private String getFieldName() {
 
 // or queries
 public FindIterable<Document> inlineOrQuery() {
-    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
+    return <warning descr="Field \"nonExistingField\" does not seem to exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .find(
                 or(
@@ -108,13 +108,13 @@ public FindIterable<Document> orQueryFromAVariableWithVariableFieldName() {
     var orQuery = or(
         eq(fieldName, "123")
     );
-    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
+    return <warning descr="Field \"nonExistingField\" does not seem to exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .find(orQuery)</warning>;
 }
 
 public FindIterable<Document> orQueryFromAMethodCallWithFieldNameFromMethodCall() {
-    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
+    return <warning descr="Field \"nonExistingField\" does not seem to exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .find(getOrQueryWithFieldNameFromMethodCall())</warning>;
 }
@@ -127,7 +127,7 @@ private Bson getOrQueryWithFieldNameFromMethodCall() {
 
 // nor queries
 public FindIterable<Document> inlineNorQuery() {
-    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
+    return <warning descr="Field \"nonExistingField\" does not seem to exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .find(
                 nor(
@@ -141,13 +141,13 @@ public FindIterable<Document> norQueryFromAVariableWithVariableFieldName() {
     var norQuery = nor(
         eq(fieldName, "123")
     );
-    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
+    return <warning descr="Field \"nonExistingField\" does not seem to exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .find(norQuery)</warning>;
 }
 
 public FindIterable<Document> norQueryFromAMethodCallWithFieldNameFromMethodCall() {
-    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
+    return <warning descr="Field \"nonExistingField\" does not seem to exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .find(getNorQueryWithFieldNameFromMethodCall())</warning>;
 }
@@ -180,7 +180,7 @@ private Bson getNorQueryWithFieldNameFromMethodCall() {
     @ParsingTest(
         """
 public AggregateIterable<Document> exampleAggregate() {
-    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
+    return <warning descr="Field \"nonExistingField\" does not seem to exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .aggregate(List.of(
                 Aggregates.match(
@@ -221,7 +221,7 @@ public AggregateIterable<Document> exampleGoodUnwind() {
 }
 
 public AggregateIterable<Document> exampleUnwind1() {
-    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
+    return <warning descr="Field \"nonExistingField\" does not seem to exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .aggregate(List.of(
                 Aggregates.unwind(
@@ -232,7 +232,7 @@ public AggregateIterable<Document> exampleUnwind1() {
 
 public AggregateIterable<Document> exampleUnwind2() {
     String fieldName = "${'$'}nonExistingField";
-    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
+    return <warning descr="Field \"nonExistingField\" does not seem to exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .aggregate(List.of(
                 Aggregates.unwind(
@@ -246,7 +246,7 @@ private String getField() {
 }
 
 public AggregateIterable<Document> exampleUnwind3() {
-    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
+    return <warning descr="Field \"nonExistingField\" does not seem to exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .aggregate(List.of(
                 Aggregates.unwind(
@@ -284,7 +284,7 @@ public AggregateIterable<Document> exampleUnwind3() {
     @ParsingTest(
         """
 public AggregateIterable<Document> exampleAggregateInclude() {
-    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
+    return <warning descr="Field \"nonExistingField\" does not seem to exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .aggregate(List.of(
                 Aggregates.project(
@@ -294,7 +294,7 @@ public AggregateIterable<Document> exampleAggregateInclude() {
 }
 
 public AggregateIterable<Document> exampleAggregateExclude() {
-    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
+    return <warning descr="Field \"nonExistingField\" does not seem to exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .aggregate(List.of(
                 Aggregates.project(
@@ -304,12 +304,12 @@ public AggregateIterable<Document> exampleAggregateExclude() {
 }
 
 private Bson getAnotherProjection() {
-    return Projections.exclude("nonExistingField");
+    return Projections.exclude("nonExistingFieldFromReference");
 }
 
 public AggregateIterable<Document> exampleAggregateFields() {
-    Bson includeProject = Projections.include("nonExistingField");
-    return <warning descr="Field \"nonExistingField\" does not exist in collection."><warning descr="Field \"nonExistingField\" does not exist in collection."><warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
+    Bson includeProject = Projections.include("nonExistingFieldFromVariable");
+    return <warning descr="Field \"nonExistingField\" does not seem to exist in collection."><warning descr="Field \"nonExistingFieldFromReference\" does not seem to exist in collection."><warning descr="Field \"nonExistingFieldFromVariable\" does not seem to exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .aggregate(List.of(
                 Aggregates.project(
@@ -344,7 +344,7 @@ public AggregateIterable<Document> exampleAggregateFields() {
     @ParsingTest(
         """
 public AggregateIterable<Document> exampleAggregateAscending() {
-    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
+    return <warning descr="Field \"nonExistingField\" does not seem to exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .aggregate(List.of(
                 Aggregates.sort(
@@ -354,7 +354,7 @@ public AggregateIterable<Document> exampleAggregateAscending() {
 }
 
 public AggregateIterable<Document> exampleAggregateDescending() {
-    return <warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
+    return <warning descr="Field \"nonExistingField\" does not seem to exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .aggregate(List.of(
                 Aggregates.sort(
@@ -364,12 +364,12 @@ public AggregateIterable<Document> exampleAggregateDescending() {
 }
 
 private Bson getAnotherSort() {
-    return Sorts.descending("nonExistingField");
+    return Sorts.descending("nonExistingFieldFromExternalReference");
 }
 
 public AggregateIterable<Document> exampleAggregateOrderBy() {
-    Bson ascendingSort = Sorts.ascending("nonExistingField");
-    return <warning descr="Field \"nonExistingField\" does not exist in collection."><warning descr="Field \"nonExistingField\" does not exist in collection."><warning descr="Field \"nonExistingField\" does not exist in collection.">client.getDatabase("myDatabase")
+    Bson ascendingSort = Sorts.ascending("nonExistingFieldFromVariable");
+    return <warning descr="Field \"nonExistingField\" does not seem to exist in collection."><warning descr="Field \"nonExistingFieldFromVariable\" does not seem to exist in collection."><warning descr="Field \"nonExistingFieldFromExternalReference\" does not seem to exist in collection.">client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .aggregate(List.of(
                 Aggregates.sort(
@@ -447,7 +447,36 @@ public AggregateIterable<Document> goodGroupAggregate1() {
                 )
             ));
 }
+""",
+    )
+    fun `shows an inspection for Aggregates#group call when the field does not exist in the current namespace`(
+        fixture: CodeInsightTestFixture,
+    ) {
+        val (dataSource, readModelProvider) = fixture.setupConnection()
+        fixture.specifyDialect(JavaDriverDialect)
 
+        `when`(
+            readModelProvider.slice(eq(dataSource), any<GetCollectionSchema.Slice>())
+        ).thenReturn(
+            GetCollectionSchema(
+                CollectionSchema(
+                    Namespace("myDatabase", "myCollection"),
+                    BsonObject(
+                        mapOf(
+                            "possibleIdField" to BsonString,
+                            "otherField" to BsonString,
+                        )
+                    )
+                )
+            ),
+        )
+
+        fixture.enableInspections(MongoDbFieldDoesNotExist::class.java)
+        fixture.testHighlighting()
+    }
+
+    @ParsingTest(
+        """
 private String getOtherField() {
     return "${'$'}otherField";
 }
@@ -458,62 +487,15 @@ public AggregateIterable<Document> goodGroupAggregate2() {
     return client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .aggregate(List.of(
-                Aggregates.group(fieldName),
-                Aggregates.group(fieldName, totalCountAcc),
                 Aggregates.group(
                     fieldName,
                     Accumulators.sum("totalCount", getOtherField())
                 )
             ));
 }
-
-private String getBadFieldName() {
-    return "${'$'}nonExistentField";
-}
-
-private BsonField getAvgCountAcc() {
-    return Accumulators.avg(
-        "avgCount",
-        getBadFieldName()
-    );
-}
-
-public AggregateIterable<Document> badGroupAggregate1() {
-    String badFieldName = "${'$'}nonExistentField";
-    BsonField avgCountAcc = Accumulators.avg(
-        "avgCount",
-        badFieldName
-    );
-    return <warning descr="Field \"nonExistentField\" does not exist in collection."><warning descr="Field \"nonExistentField\" does not exist in collection."><warning descr="Field \"nonExistentField\" does not exist in collection."><warning descr="Field \"nonExistentField\" does not exist in collection."><warning descr="Field \"nonExistentField\" does not exist in collection."><warning descr="Field \"nonExistentField\" does not exist in collection."><warning descr="Field \"nonExistentField\" does not exist in collection.">client.getDatabase("myDatabase")
-            .getCollection("myCollection")
-            .aggregate(List.of(
-                Aggregates.group(
-                    "${'$'}nonExistentField"
-                ),
-                Aggregates.group(
-                    badFieldName,
-                    Accumulators.sum(
-                        "totalCount",
-                        badFieldName
-                    ),
-                    Accumulators.sum(
-                        "totalCount",
-                        getBadFieldName()
-                    ),
-                    avgCountAcc,
-                    getAvgCountAcc(),
-                    Accumulators.topN(
-                        "totalCount",
-                        Sorts.ascending("otherField"),
-                        getBadFieldName(),
-                        3
-                    )
-                )
-            ))</warning></warning></warning></warning></warning></warning></warning>;
-}
 """,
     )
-    fun `shows an inspection for Aggregates#group call when the field does not exist in the current namespace`(
+    fun `shows an inspection for Aggregates#group call with method refs and variables when the field does not exist in the current namespace`(
         fixture: CodeInsightTestFixture,
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()

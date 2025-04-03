@@ -1,6 +1,5 @@
 package com.mongodb.jbplugin.inspections.correctness
 
-import com.intellij.openapi.project.Project
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.mongodb.jbplugin.accessadapter.slice.GetCollectionSchema
 import com.mongodb.jbplugin.dialects.springcriteria.SpringCriteriaDialect
@@ -23,172 +22,343 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
         setup = DefaultSetup.SPRING_DATA,
         value = """
     public void allReleasedBooks() {
-        template.find(
-                query(where(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>).is(true)),
+        <warning descr="Field \"released\" does not seem to exist in collection.">template.find(
+                query(where("released").is(true)),
                 Book.class
-        );
+        )</warning>;
     }
-    
+    """,
+    )
+    fun `find_query shows inspection when field does not exist`(
+        fixture: CodeInsightTestFixture,
+    ) {
+        doRunHighlightingTest(fixture)
+    }
+
+    @ParsingTest(
+        setup = DefaultSetup.SPRING_DATA,
+        value = """
     public void allReleasedBooksSorted() {
-        template.find(
-                query(
-                    where(
-                        <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>
-                    ).is(true)
-                ).with(
-                    Sort.by(
-                        <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>
-                    )
-                ).with(
-                    Sort.by(Sort.Direction.DESC, <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>)
-                ),
+        <warning descr="Field \"released1\" does not seem to exist in collection."><warning descr="Field \"released2\" does not seem to exist in collection."><warning descr="Field \"released3\" does not seem to exist in collection.">template.find(
+                query(where("released1").is(true)
+                ).with(Sort.by("released2")
+                ).with(Sort.by(Sort.Direction.DESC, "released3")),
                 Book.class
-        );
+        )</warning></warning></warning>;
     }
-    
-    String releasedFromMethodCall() {
-        return "released";
+    """,
+    )
+    fun `find_query_with_sort shows inspection when field does not exist`(
+        fixture: CodeInsightTestFixture,
+    ) {
+        doRunHighlightingTest(fixture)
     }
-    
+
+    @ParsingTest(
+        setup = DefaultSetup.SPRING_DATA,
+        value = """
     public void allReleasedBooksAggregate() {
         String releasedAsVariable = "released";
-        template.aggregate(
+        <warning descr="Field \"released\" does not seem to exist in collection.">template.aggregate(
             Aggregation.newAggregation(
                 Aggregation.match(
-                    where(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>).is(true)
-                ),
-                Aggregation.project(
-                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>,
-                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>,
-                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>
-                ).andInclude(
-                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>,
-                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>,
-                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>
-                ).andExclude(
-                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>,
-                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>,
-                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>
-                ),
-                Aggregation.unwind(
-                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>
-                ),
-                Aggregation.sort(
-                    Sort.Direction.ASC,
-                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>,
-                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>,
-                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>
-                ).and(
-                    Sort.Direction.ASC,
-                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>
-                ).and(
-                    Sort.Direction.ASC,
-                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>
-                ),
-                Aggregation.sort(
-                    Sort.by(
-                        <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>,
-                        <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>,
-                        <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>
-                    ).and(
-                        Sort.by(
-                            Sort.Direction.ASC,
-                            <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>,
-                            <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>,
-                            <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>
-                        ).reverse()
-                    ).and(
-                        Sort.by(
-                            Sort.Order.asc(
-                                <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>
-                            ),
-                            Sort.Order.desc(
-                                <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>
-                            ),
-                            Sort.Order.by(
-                                <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>
-                            )
-                        ).ascending()
-                    ).and(
-                        Sort.by(
-                            List.of(
-                                Sort.Order.asc(
-                                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>
-                                ),
-                                Sort.Order.desc(
-                                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>
-                                ),
-                                Sort.Order.by(
-                                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>
-                                )
-                            )
-                        ).descending()
-                    )
-                ),
-                Aggregation.addFields()
-                    // no inspection here as no field reference
-                    .addFieldWithValue("addedField", "released")
-                    // field reference as computed value
-                    .addFieldWithValueOf("addedField", <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>)
-                    .addFieldWithValueOf("addedField", <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>)
-                    .addFieldWithValueOf("addedField", <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>)
-                    .addFieldWithValueOf("addedField", Fields.field(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>))
-                    .addFieldWithValueOf("addedField", Fields.field(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>))
-                    .addFieldWithValueOf("addedField", Fields.field(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>))
-                    // no inspection here as no field reference
-                    .addField("addedField").withValue("released")
-                    // field reference as computed value
-                    .addField("addedField").withValueOf(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>)
-                    .addField("addedField").withValueOf(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>)
-                    .addField("addedField").withValueOf(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>)
-                    .addField("addedField").withValueOf(Fields.field(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>))
-                    .addField("addedField").withValueOf(Fields.field(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>))
-                    .addField("addedField").withValueOf(Fields.field(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>))
-                    .build(),
-                
-                Aggregation.group(),
-                Aggregation.group(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>),
-                Aggregation.group(
-                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>,
-                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>,
-                    <warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>
-                ),
-                Aggregation.group()
-                    .sum(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>).as("accumulatedField")
-                    .sum(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>).as("accumulatedField")
-                    .sum(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>).as("accumulatedField")
-                    .avg(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>).as("accumulatedField")
-                    .avg(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>).as("accumulatedField")
-                    .avg(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>).as("accumulatedField")
-                    .max(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>).as("accumulatedField")
-                    .max(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>).as("accumulatedField")
-                    .max(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>).as("accumulatedField")
-                    .min(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>).as("accumulatedField")
-                    .min(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>).as("accumulatedField")
-                    .min(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>).as("accumulatedField")
-                    .first(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>).as("accumulatedField")
-                    .first(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>).as("accumulatedField")
-                    .first(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>).as("accumulatedField")
-                    .last(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>).as("accumulatedField")
-                    .last(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>).as("accumulatedField")
-                    .last(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>).as("accumulatedField")
-                    .push(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>).as("accumulatedField")
-                    .push(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>).as("accumulatedField")
-                    .push(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>).as("accumulatedField")
-                    .addToSet(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">"released"</warning>).as("accumulatedField")
-                    .addToSet(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedAsVariable</warning>).as("accumulatedField")
-                    .addToSet(<warning descr="Field \"released\" does not exist in collection \"bad_db.book\"">releasedFromMethodCall()</warning>).as("accumulatedField")
+                    where("released").is(true)
+                )
             ),
             Book.class,
             Book.class
-        );
+        )</warning>;
     }
-        """,
+    """,
     )
-    fun `shows an inspection when the field does not exist in the current namespace`(
-        project: Project,
+    fun `aggregate_with_match shows inspection when field does not exist`(
         fixture: CodeInsightTestFixture,
     ) {
+        doRunHighlightingTest(fixture)
+    }
+
+    @ParsingTest(
+        setup = DefaultSetup.SPRING_DATA,
+        value = """
+    String releasedFromMethodCall() {
+        return "releasedFromMethodCall";
+    }
+    
+    public void allReleasedBooksAggregate() {
+        String releasedAsVariable = "releasedAsVariable";
+        <warning descr="Field \"released\" does not seem to exist in collection."><warning descr="Field \"releasedAsVariable\" does not seem to exist in collection."><warning descr="Field \"releasedFromMethodCall\" does not seem to exist in collection.">template.aggregate(
+            Aggregation.newAggregation(
+                Aggregation.project(
+                        "released"
+                ).andInclude(
+                        releasedAsVariable
+                ).andExclude(
+                        releasedFromMethodCall()
+                )
+            ),
+            Book.class,
+            Book.class
+        )</warning></warning></warning>;
+    }
+    """,
+    )
+    fun `aggregate_with_project shows inspection when field does not exist`(
+        fixture: CodeInsightTestFixture,
+    ) {
+        doRunHighlightingTest(fixture)
+    }
+
+    @ParsingTest(
+        setup = DefaultSetup.SPRING_DATA,
+        value = """
+    String releasedFromMethodCall() {
+        return "releasedFromMethodCall";
+    }
+    
+    public void allReleasedBooksAggregate() {
+        String releasedAsVariable = "releasedAsVariable";
+        <warning descr="Field \"released\" does not seem to exist in collection.">template.aggregate(
+            Aggregation.newAggregation(
+                Aggregation.unwind("released")
+            ),
+            Book.class,
+            Book.class
+        )</warning>;
+    }
+    """,
+    )
+    fun `aggregate_with_unwind shows inspection when field does not exist`(
+        fixture: CodeInsightTestFixture,
+    ) {
+        doRunHighlightingTest(fixture)
+    }
+
+    @ParsingTest(
+        setup = DefaultSetup.SPRING_DATA,
+        value = """
+    String releasedFromMethodCall() {
+        return "releasedFromMethodCall";
+    }
+    
+    public void allReleasedBooksAggregate() {
+        String releasedAsVariable = "releasedAsVariable";
+        <warning descr="Field \"released\" does not seem to exist in collection."><warning descr="Field \"releasedAsVariable\" does not seem to exist in collection."><warning descr="Field \"releasedFromMethodCall\" does not seem to exist in collection.">template.aggregate(
+            Aggregation.newAggregation(
+                Aggregation.sort(Sort.Direction.ASC, "released", releasedAsVariable, releasedFromMethodCall())
+            ),
+            Book.class,
+            Book.class
+        )</warning></warning></warning>;
+    }
+    """,
+    )
+    fun `aggregate_with_sort shows inspection when field does not exist`(
+        fixture: CodeInsightTestFixture,
+    ) {
+        doRunHighlightingTest(fixture)
+    }
+
+    @ParsingTest(
+        setup = DefaultSetup.SPRING_DATA,
+        value = """
+    public void allReleasedBooksAggregate() {
+        <warning descr="Field \"released\" does not seem to exist in collection.">template.aggregate(
+            Aggregation.newAggregation(
+                Aggregation.addFields().addFieldWithValueOf("addedField", "released").build()
+            ),
+            Book.class,
+            Book.class
+        )</warning>;
+    }
+    """,
+    )
+    fun `aggregate_with_addFields shows inspection when field does not exist`(
+        fixture: CodeInsightTestFixture,
+    ) {
+        doRunHighlightingTest(fixture)
+    }
+
+    @ParsingTest(
+        setup = DefaultSetup.SPRING_DATA,
+        value = """
+    public void allReleasedBooksAggregate() {
+        <warning descr="Field \"released\" does not seem to exist in collection.">template.aggregate(
+            Aggregation.newAggregation(
+                Aggregation.group("released")
+            ),
+            Book.class,
+            Book.class
+        )</warning>;
+    }
+    """,
+    )
+    fun `aggregate_with_group shows inspection when field does not exist`(
+        fixture: CodeInsightTestFixture,
+    ) {
+        doRunHighlightingTest(fixture)
+    }
+
+    @ParsingTest(
+        setup = DefaultSetup.SPRING_DATA,
+        value = """
+    public void allReleasedBooksAggregate() {
+        <warning descr="Field \"released\" does not seem to exist in collection.">template.aggregate(
+            Aggregation.newAggregation(
+                Aggregation.group().sum("released").as("acc")
+            ),
+            Book.class,
+            Book.class
+        )</warning>;
+    }
+    """,
+    )
+    fun `aggregate_with_group_sum shows inspection when field does not exist`(
+        fixture: CodeInsightTestFixture,
+    ) {
+        doRunHighlightingTest(fixture)
+    }
+
+    @ParsingTest(
+        setup = DefaultSetup.SPRING_DATA,
+        value = """
+    public void allReleasedBooksAggregate() {
+        <warning descr="Field \"released\" does not seem to exist in collection.">template.aggregate(
+            Aggregation.newAggregation(
+                Aggregation.group().avg("released").as("acc")
+            ),
+            Book.class,
+            Book.class
+        )</warning>;
+    }
+    """,
+    )
+    fun `aggregate_with_group_avg shows inspection when field does not exist`(
+        fixture: CodeInsightTestFixture,
+    ) {
+        doRunHighlightingTest(fixture)
+    }
+
+    @ParsingTest(
+        setup = DefaultSetup.SPRING_DATA,
+        value = """
+    public void allReleasedBooksAggregate() {
+        <warning descr="Field \"released\" does not seem to exist in collection.">template.aggregate(
+            Aggregation.newAggregation(
+                Aggregation.group().max("released").as("acc")
+            ),
+            Book.class,
+            Book.class
+        )</warning>;
+    }
+    """,
+    )
+    fun `aggregate_with_group_max shows inspection when field does not exist`(
+        fixture: CodeInsightTestFixture,
+    ) {
+        doRunHighlightingTest(fixture)
+    }
+
+    @ParsingTest(
+        setup = DefaultSetup.SPRING_DATA,
+        value = """
+    public void allReleasedBooksAggregate() {
+        <warning descr="Field \"released\" does not seem to exist in collection.">template.aggregate(
+            Aggregation.newAggregation(
+                Aggregation.group().min("released").as("acc")
+            ),
+            Book.class,
+            Book.class
+        )</warning>;
+    }
+    """,
+    )
+    fun `aggregate_with_group_min shows inspection when field does not exist`(
+        fixture: CodeInsightTestFixture,
+    ) {
+        doRunHighlightingTest(fixture)
+    }
+
+    @ParsingTest(
+        setup = DefaultSetup.SPRING_DATA,
+        value = """
+    public void allReleasedBooksAggregate() {
+        <warning descr="Field \"released\" does not seem to exist in collection.">template.aggregate(
+            Aggregation.newAggregation(
+                Aggregation.group().first("released").as("acc")
+            ),
+            Book.class,
+            Book.class
+        )</warning>;
+    }
+    """,
+    )
+    fun `aggregate_with_group_first shows inspection when field does not exist`(
+        fixture: CodeInsightTestFixture,
+    ) {
+        doRunHighlightingTest(fixture)
+    }
+
+    @ParsingTest(
+        setup = DefaultSetup.SPRING_DATA,
+        value = """
+    public void allReleasedBooksAggregate() {
+        <warning descr="Field \"released\" does not seem to exist in collection.">template.aggregate(
+            Aggregation.newAggregation(
+                Aggregation.group().last("released").as("acc")
+            ),
+            Book.class,
+            Book.class
+        )</warning>;
+    }
+    """,
+    )
+    fun `aggregate_with_group_last shows inspection when field does not exist`(
+        fixture: CodeInsightTestFixture,
+    ) {
+        doRunHighlightingTest(fixture)
+    }
+
+    @ParsingTest(
+        setup = DefaultSetup.SPRING_DATA,
+        value = """
+    public void allReleasedBooksAggregate() {
+        <warning descr="Field \"released\" does not seem to exist in collection.">template.aggregate(
+            Aggregation.newAggregation(
+                Aggregation.group().push("released").as("acc")
+            ),
+            Book.class,
+            Book.class
+        )</warning>;
+    }
+    """,
+    )
+    fun `aggregate_with_group_push shows inspection when field does not exist`(
+        fixture: CodeInsightTestFixture,
+    ) {
+        doRunHighlightingTest(fixture)
+    }
+
+    @ParsingTest(
+        setup = DefaultSetup.SPRING_DATA,
+        value = """
+    public void allReleasedBooksAggregate() {
+        <warning descr="Field \"released\" does not seem to exist in collection.">template.aggregate(
+            Aggregation.newAggregation(
+                Aggregation.group().addToSet("released").as("acc")
+            ),
+            Book.class,
+            Book.class
+        )</warning>;
+    }
+    """,
+    )
+    fun `aggregate_with_group_addToSet shows inspection when field does not exist`(
+        fixture: CodeInsightTestFixture,
+    ) {
+        doRunHighlightingTest(fixture)
+    }
+
+    private fun doRunHighlightingTest(fixture: CodeInsightTestFixture) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "bad_db")
         fixture.specifyDialect(SpringCriteriaDialect)

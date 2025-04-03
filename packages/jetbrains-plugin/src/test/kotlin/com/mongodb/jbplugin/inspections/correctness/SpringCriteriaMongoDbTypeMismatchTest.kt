@@ -24,22 +24,22 @@ class SpringCriteriaMongoDbTypeMismatchTest {
         setup = DefaultSetup.SPRING_DATA,
         value = """
     public void allReleasedBooks() {
-        template.find(
-                query(where("released").is(<warning descr="A \"String\"(type of provided value) cannot be assigned to \"boolean\"(type of \"released\")">"true"</warning>)),
+        <warning descr="Type \"String\" is not compatible with the type of field \"released\" (boolean).">template.find(
+                query(where("released").is("true")),
                 Book.class
-        );
+        )</warning>;
     }
     
     public void allReleasedBooksAggregate() {
-        template.aggregate(
+        <warning descr="Type \"String\" is not compatible with the type of field \"released\" (boolean).">template.aggregate(
             Aggregation.newAggregation(
                 Aggregation.match(
-                    where("released").is(<warning descr="A \"String\"(type of provided value) cannot be assigned to \"boolean\"(type of \"released\")">"true"</warning>)
+                    where("released").is("true")
                 )
             ),
             Book.class,
             Book.class
-        );
+        )</warning>;
     }
         """,
     )
