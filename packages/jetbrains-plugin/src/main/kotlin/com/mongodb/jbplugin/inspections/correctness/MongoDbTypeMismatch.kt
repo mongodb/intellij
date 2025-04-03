@@ -45,7 +45,7 @@ class MongoDbTypeMismatch(coroutineScope: CoroutineScope) : AbstractMongoDbInspe
     override fun afterInsight(queryInsight: QueryInsight<PsiElement, TypeMismatch>) {
         val probe by service<InspectionStatusChangedProbe>()
         probe.inspectionChanged(
-            TelemetryEvent.InspectionStatusChangeEvent.InspectionType.FIELD_DOES_NOT_EXIST,
+            TelemetryEvent.InspectionStatusChangeEvent.InspectionType.TYPE_MISMATCH,
             queryInsight.query
         )
     }
@@ -54,7 +54,7 @@ class MongoDbTypeMismatch(coroutineScope: CoroutineScope) : AbstractMongoDbInspe
         val probe by service<InspectionStatusChangedProbe>()
 
         probe.finishedProcessingInspections(
-            TelemetryEvent.InspectionStatusChangeEvent.InspectionType.FIELD_DOES_NOT_EXIST,
+            TelemetryEvent.InspectionStatusChangeEvent.InspectionType.TYPE_MISMATCH,
             problemsHolder
         )
     }
