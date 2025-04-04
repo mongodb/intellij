@@ -71,11 +71,13 @@ import org.jetbrains.jewel.ui.util.thenIf
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-public fun JBComboBox(
+fun ControlledComboBox(
     labelText: String,
     modifier: Modifier = Modifier,
     menuModifier: Modifier = Modifier,
     isEnabled: Boolean = true,
+    comboBoxExpanded: Boolean = false,
+    setComboBoxExpanded: (Boolean) -> Unit = {},
     outline: Outline = Outline.None,
     maxPopupHeight: Dp = Dp.Unspecified,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
@@ -83,16 +85,24 @@ public fun JBComboBox(
     textStyle: TextStyle = JewelTheme.defaultTextStyle,
     onArrowDownPress: () -> Unit = {},
     onArrowUpPress: () -> Unit = {},
-    onPopupStateChange: (Boolean) -> Unit = {},
+    // Disabling this as we do not use the prop and having it alongside the lifted state was
+    // asking for un-necessary state synchronisation. If there ever comes a need for this please
+    // feel free to re-enable this but then also make sure that when the popup state is changing,
+    // this gets called - like it was in the setPopupExpanded fun below.
+    // onPopupStateChange: (Boolean) -> Unit = {},
     popupContent: @Composable () -> Unit,
 ) {
     var popupExpanded by remember { mutableStateOf(false) }
     var chevronHovered by remember { mutableStateOf(false) }
 
-    fun setPopupExpanded(expanded: Boolean) {
-        popupExpanded = expanded
-        onPopupStateChange(expanded)
+    LaunchedEffect(comboBoxExpanded) {
+        popupExpanded = comboBoxExpanded
     }
+
+    // fun setPopupExpanded(expanded: Boolean) {
+    //     popupExpanded = expanded
+    //     onPopupStateChange(expanded)
+    // }
 
     var comboBoxState by remember { mutableStateOf(ComboBoxState.of(enabled = isEnabled)) }
     val comboBoxFocusRequester = remember { FocusRequester() }
@@ -123,7 +133,7 @@ public fun JBComboBox(
             .onFocusChanged { focusState ->
                 comboBoxState = comboBoxState.copy(focused = focusState.isFocused)
                 if (!focusState.isFocused) {
-                    setPopupExpanded(false)
+                    setComboBoxExpanded(false)
                 }
             }
             .thenIf(isEnabled) {
@@ -132,29 +142,29 @@ public fun JBComboBox(
                     .pointerInput(interactionSource) {
                         detectPressAndCancel(
                             onPress = {
-                                setPopupExpanded(!popupExpanded)
+                                setComboBoxExpanded(!popupExpanded)
                                 comboBoxFocusRequester.requestFocus()
                             },
-                            onCancel = { setPopupExpanded(false) },
+                            onCancel = { setComboBoxExpanded(false) },
                         )
                     }
                     .semantics(mergeDescendants = true) { role = Role.DropdownList }
                     .onPreviewKeyEvent {
                         if (it.type == KeyEventType.KeyDown && it.key == Key.Spacebar) {
-                            setPopupExpanded(!popupExpanded)
+                            setComboBoxExpanded(!popupExpanded)
                         }
                         if (it.type == KeyEventType.KeyDown && it.key == Key.DirectionDown) {
                             if (popupExpanded) {
                                 onArrowDownPress()
                             } else {
-                                setPopupExpanded(true)
+                                setComboBoxExpanded(true)
                             }
                         }
                         if (it.type == KeyEventType.KeyDown && it.key == Key.DirectionUp && popupExpanded) {
                             onArrowUpPress()
                         }
                         if (it.type == KeyEventType.KeyDown && it.key == Key.Escape && popupExpanded) {
-                            setPopupExpanded(false)
+                            setComboBoxExpanded(false)
                         }
                         false
                     }
@@ -213,7 +223,7 @@ public fun JBComboBox(
             PopupContainer(
                 onDismissRequest = {
                     if (!chevronHovered) {
-                        setPopupExpanded(false)
+                        setComboBoxExpanded(false)
                     }
                 },
                 modifier =
@@ -222,7 +232,7 @@ public fun JBComboBox(
                     .semantics { contentDescription = "Jewel.ComboBox.PopupMenu" }
                     .heightIn(max = maxHeight)
                     .width(comboBoxWidth)
-                    .onClick { setPopupExpanded(false) },
+                    .onClick { setComboBoxExpanded(false) },
                 horizontalAlignment = Alignment.Start,
                 popupProperties = PopupProperties(focusable = false),
                 content = popupContent,
