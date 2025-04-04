@@ -37,9 +37,9 @@ class AnalysisScopeTest {
 
         project.withMockedService(codeEditorViewModel)
 
-        val vf1 = mock<VirtualFile>()
-        val vf2 = mock<VirtualFile>()
-        val vf3 = mock<VirtualFile>()
+        val vf1 = LightVirtualFile("F1.java")
+        val vf2 = LightVirtualFile("F2.java")
+        val vf3 = LightVirtualFile("F3.java")
 
         codeEditorState.tryEmit(
             codeEditorState.value.copy(
