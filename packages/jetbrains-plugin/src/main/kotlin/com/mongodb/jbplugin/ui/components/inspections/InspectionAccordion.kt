@@ -28,7 +28,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.inspections.analysisScope.AnalysisScope
 import com.mongodb.jbplugin.linting.InspectionCategory
@@ -36,6 +35,7 @@ import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.meta.withinReadActionBlocking
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.ui.components.utilities.ActionLink
+import com.mongodb.jbplugin.ui.components.utilities.hooks.LocalProject
 import com.mongodb.jbplugin.ui.components.utilities.hooks.useTranslation
 import com.mongodb.jbplugin.ui.components.utilities.hooks.useViewModelMutator
 import com.mongodb.jbplugin.ui.components.utilities.hooks.useViewModelState
@@ -196,8 +196,9 @@ internal fun useInspectionAccordionCallbacks(): InspectionAccordionCallbacks {
 
 @Composable
 private fun useFilteredInsights(analysisScope: AnalysisScope, allInsights: List<QueryInsight<PsiElement, *>>): List<QueryInsight<PsiElement, *>> {
-    return ApplicationManager.getApplication().runReadAction<List<QueryInsight<PsiElement, *>>> {
-        analysisScope.getFilteredInsights(allInsights)
+    val project = LocalProject.current ?: return emptyList()
+    return withinReadActionBlocking {
+        analysisScope.getFilteredInsights(project, allInsights)
     }
 }
 

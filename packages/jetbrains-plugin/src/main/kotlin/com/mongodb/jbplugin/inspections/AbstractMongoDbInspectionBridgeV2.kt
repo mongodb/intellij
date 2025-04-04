@@ -114,7 +114,7 @@ internal class IntelliJBasedQueryInsightsHolder<I : Inspection>(
                 insight.query.source,
                 problemDescription,
                 ProblemHighlightType.WARNING,
-                *LocalQuickFixBridge.allQuickFixes(insight)
+                *LocalQuickFixBridge.allQuickFixes(coroutineScope, insight)
             )
             onAfterInsight(insight)
         }
