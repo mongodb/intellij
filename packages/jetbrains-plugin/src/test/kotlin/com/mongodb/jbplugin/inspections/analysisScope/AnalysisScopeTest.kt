@@ -1,5 +1,6 @@
 package com.mongodb.jbplugin.inspections.analysisScope
 
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
@@ -13,11 +14,12 @@ import org.mockito.kotlin.whenever
 class AnalysisScopeTest {
     @Test
     fun `CurrentFile only accepts insights from the provided virtual files`() {
+        val project = mock<Project>()
         val vf1 = mock<VirtualFile>()
         val vf2 = mock<VirtualFile>()
         val vf3 = mock<VirtualFile>()
 
-        val scope = AnalysisScope.CurrentFile(listOf(vf1, vf2))
+        val scope = AnalysisScope.CurrentFile
 
         val insights = listOf(
             insightOnFile(vf1),
@@ -25,7 +27,7 @@ class AnalysisScopeTest {
             insightOnFile(vf3)
         )
 
-        val filteredInsights = scope.getFilteredInsights(insights)
+        val filteredInsights = scope.getFilteredInsights(project, insights)
         assertTrue(filteredInsights.all { it.query.source.containingFile.virtualFile == vf1 || it.query.source.containingFile.virtualFile == vf2 })
         assertTrue(filteredInsights.isNotEmpty())
         assertEquals(2, filteredInsights.size)

@@ -2,6 +2,7 @@ package com.mongodb.jbplugin.ui.viewModel
 
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
+import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.linting.Inspection.NotUsingIndex
 import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.mql.Node
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
+@IntegrationTest
 class InspectionsViewModelTest {
     @Test
     fun `deduplicates insights`() {
