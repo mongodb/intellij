@@ -12,6 +12,7 @@ import com.intellij.util.indexing.FileBasedIndex
 import com.intellij.util.indexing.ID
 import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.withMockedService
+import com.mongodb.jbplugin.fixtures.withMockedServiceInScope
 import com.mongodb.jbplugin.linting.Inspection
 import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.meta.withinReadActionBlocking
@@ -72,15 +73,15 @@ class AnalysisScopeTest {
         val vf3 = LightVirtualFile("F3.java", JavaFileType.INSTANCE, "import not.com.mongodb.client.MongoClient;")
 
         val fileBasedIndex = mock<FileBasedIndex>()
-        application.withMockedService(fileBasedIndex)
-
         whenever(fileBasedIndex.getContainingFiles(any<ID<FileType, *>>(), any<FileType>(), any())).thenReturn(listOf(vf1, vf2, vf3))
 
-        val result = withinReadActionBlocking {
-            AnalysisScope.AllInsights.getAdditionalFilesInScope(project)
-        }
+        application.withMockedServiceInScope(fileBasedIndex) {
+            val result = withinReadActionBlocking {
+                AnalysisScope.AllInsights.getAdditionalFilesInScope(project)
+            }
 
-        assertEquals(result.size, 2)
+            assertEquals(result.size, 2)
+        }
     }
 
     private fun insightOnFile(file: VirtualFile): QueryInsight<PsiElement, *> {

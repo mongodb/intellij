@@ -376,6 +376,25 @@ inline fun <reified S : ComponentManager, reified T : Any> S.withMockedService(s
 }
 
 /**
+ * Convenience function in application or project for tests. It mocks the implementation of a single service
+ * with whatever implementation is passed as a parameter. When out of the scope, it restore the previous
+ * version. For example:
+ *
+ * @param serviceImpl
+ * @return itself so it can be chained
+ */
+inline fun <reified S : ComponentManager, reified T : Any> S.withMockedServiceInScope(serviceImpl: T, cb: () -> Unit): S {
+    val original = getService(T::class.java)
+    try {
+        replaceService(T::class.java, serviceImpl, this)
+        cb()
+    } finally {
+        replaceService(T::class.java, original, this)
+    }
+    return this
+}
+
+/**
  * Generates a mock runtime information service, useful for testing. If you need
  * to create your own. You'll likely will build first an information service and
  * then inject it into a mock project, something like this:
