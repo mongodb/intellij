@@ -1,23 +1,52 @@
 package com.mongodb.jbplugin.inspections.analysisScope
 
+import com.intellij.ide.highlighter.JavaFileType
+import com.intellij.openapi.application.Application
+import com.intellij.openapi.fileTypes.FileType
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
+import com.intellij.testFramework.LightVirtualFile
+import com.intellij.util.indexing.FileBasedIndex
+import com.intellij.util.indexing.ID
+import com.mongodb.jbplugin.fixtures.IntegrationTest
+import com.mongodb.jbplugin.fixtures.withMockedService
 import com.mongodb.jbplugin.linting.Inspection
 import com.mongodb.jbplugin.linting.QueryInsight
-import org.junit.jupiter.api.Assertions.*
+import com.mongodb.jbplugin.meta.withinReadActionBlocking
+import com.mongodb.jbplugin.ui.viewModel.CodeEditorViewModel
+import com.mongodb.jbplugin.ui.viewModel.EditorState
+import kotlinx.coroutines.flow.MutableStateFlow
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
+import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
 
+@IntegrationTest
 class AnalysisScopeTest {
     @Test
-    fun `CurrentFile only accepts insights from the provided virtual files`() {
-        val project = mock<Project>()
+    fun `CurrentFile only accepts insights from the provided virtual files`(
+        project: Project
+    ) {
+        val codeEditorState = MutableStateFlow(EditorState.default())
+        val codeEditorViewModel = mock<CodeEditorViewModel>()
+        whenever(codeEditorViewModel.editorState).thenReturn(codeEditorState)
+
+        project.withMockedService(codeEditorViewModel)
+
         val vf1 = mock<VirtualFile>()
         val vf2 = mock<VirtualFile>()
         val vf3 = mock<VirtualFile>()
+
+        codeEditorState.tryEmit(
+            codeEditorState.value.copy(
+                focusedFiles = listOf(vf1, vf2),
+                openFiles = listOf(vf1, vf2, vf3)
+            )
+        )
 
         val scope = AnalysisScope.CurrentFile
 
@@ -31,6 +60,27 @@ class AnalysisScopeTest {
         assertTrue(filteredInsights.all { it.query.source.containingFile.virtualFile == vf1 || it.query.source.containingFile.virtualFile == vf2 })
         assertTrue(filteredInsights.isNotEmpty())
         assertEquals(2, filteredInsights.size)
+    }
+
+    @Test
+    fun `AllInsights loads all java files in the project`(
+        project: Project,
+        application: Application
+    ) {
+        val vf1 = LightVirtualFile("F1.java", JavaFileType.INSTANCE, "import com.mongodb.client.MongoClient;")
+        val vf2 = LightVirtualFile("F2.java", JavaFileType.INSTANCE, "import com.mongodb.client.MongoClient;")
+        val vf3 = LightVirtualFile("F3.java", JavaFileType.INSTANCE, "import not.com.mongodb.client.MongoClient;")
+
+        val fileBasedIndex = mock<FileBasedIndex>()
+        application.withMockedService(fileBasedIndex)
+
+        whenever(fileBasedIndex.getContainingFiles(any<ID<FileType, *>>(), any<FileType>(), any())).thenReturn(listOf(vf1, vf2, vf3))
+
+        val result = withinReadActionBlocking {
+            AnalysisScope.AllInsights.getAdditionalFilesInScope(project)
+        }
+
+        assertEquals(result.size, 2)
     }
 
     private fun insightOnFile(file: VirtualFile): QueryInsight<PsiElement, *> {
