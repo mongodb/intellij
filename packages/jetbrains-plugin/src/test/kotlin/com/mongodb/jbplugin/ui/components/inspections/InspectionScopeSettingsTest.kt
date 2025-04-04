@@ -13,7 +13,7 @@ class InspectionScopeSettingsTest {
     @Test
     fun `should add a combobox with the list of available scopes`() = runComposeUiTest {
         setContentWithTheme {
-            _InspectionScopeSettings(AnalysisScope.default())
+            _InspectionScopeSettings(AnalysisScope.default(), analysisStatus)
         }
 
         onNodeWithTag("InspectionScopeComboBox")

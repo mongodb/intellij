@@ -42,6 +42,7 @@ class InspectionsViewModel {
         withContext(Dispatchers.IO) {
             val currentState = mutableInsights.value
             val withoutExistingInsight = withinReadAction {
+                println("Received insight from file: ${insight.query.source.containingFile.name}")
                 currentState.filter { !areEquivalent(insight, it) }
             }
             mutableInsights.emit(withoutExistingInsight + insight)
