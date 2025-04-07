@@ -18,6 +18,8 @@ import com.mongodb.jbplugin.ui.components.inspections.InspectionScopeSettings
 import com.mongodb.jbplugin.ui.components.utilities.hooks.LocalProject
 import org.jetbrains.jewel.bridge.addComposeTab
 
+const val MDB_SIDEPANEL_ID = "MongoDB"
+
 class SidePanel : ToolWindowFactory, DumbAware {
     override fun createToolWindowContent(
         project: Project,

@@ -16,16 +16,24 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.intellij.database.dataSource.LocalDataSource
+import com.intellij.database.util.common.isInstanceOf
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
 import com.mongodb.jbplugin.ui.components.utilities.ActionLink
 import com.mongodb.jbplugin.ui.components.utilities.Card
 import com.mongodb.jbplugin.ui.components.utilities.CardCategory
+import com.mongodb.jbplugin.ui.components.utilities.ControlledComboBox
 import com.mongodb.jbplugin.ui.components.utilities.hooks.useTranslation
+import com.mongodb.jbplugin.ui.components.utilities.hooks.useViewModel
 import com.mongodb.jbplugin.ui.components.utilities.hooks.useViewModelMutator
 import com.mongodb.jbplugin.ui.components.utilities.hooks.useViewModelState
 import com.mongodb.jbplugin.ui.viewModel.ConnectionState
@@ -34,8 +42,9 @@ import com.mongodb.jbplugin.ui.viewModel.DatabaseState
 import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState
 import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState.Connecting
 import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState.Failed
+import com.mongodb.jbplugin.ui.viewModel.SidePanelEvents
+import com.mongodb.jbplugin.ui.viewModel.SidePanelViewModel
 import org.jetbrains.jewel.ui.Outline
-import org.jetbrains.jewel.ui.component.ComboBox
 import org.jetbrains.jewel.ui.component.DefaultButton
 import org.jetbrains.jewel.ui.component.Icon
 import org.jetbrains.jewel.ui.component.Text
@@ -219,8 +228,22 @@ internal fun ConnectionComboBox(
     selectedConnection: LocalDataSource?,
     selectedConnectionState: SelectedConnectionState,
 ) {
-    ComboBox(
-        modifier = Modifier.testTag("ConnectionComboBox"),
+    val comboBoxFocusRequester = remember { FocusRequester() }
+    var comboBoxExpanded by remember { mutableStateOf(false) }
+    useSidePanelEventSubscription(SidePanelEvents.OpenConnectionComboBox) {
+        comboBoxExpanded = true
+        // Need to run it catching because there is slight chance that FocusRequester did not have
+        // time to initialize in which case, it will throw an exception. Exception itself does
+        // not harm the UI but its worth catching so it does not bubble up to the user.
+        runCatching {
+            comboBoxFocusRequester.requestFocus()
+        }
+    }
+
+    ControlledComboBox(
+        comboBoxExpanded = comboBoxExpanded,
+        setComboBoxExpanded = { expanded -> comboBoxExpanded = expanded },
+        modifier = Modifier.testTag("ConnectionComboBox").focusRequester(comboBoxFocusRequester),
         labelText = selectedConnection?.name
             ?: useTranslation("side-panel.connection.ConnectionBootstrapCard.combobox.choose-a-connection"),
         outline = if (selectedConnectionState is Failed) {
@@ -312,6 +335,19 @@ internal fun useConnectionStatus(connection: LocalDataSource): State<ConnectionS
             ConnectionStatus.Connected
         } else {
             ConnectionStatus.Disconnected
+        }
+    }
+}
+
+@Composable
+internal fun useSidePanelEventSubscription(
+    event: SidePanelEvents,
+    onEvent: (SidePanelEvents) -> Unit,
+) {
+    val viewModel by useViewModel<SidePanelViewModel>()
+    viewModel.subscribeToSidePanelEvents { emittedEvent ->
+        if (emittedEvent == event || emittedEvent.isInstanceOf(event::class)) {
+            onEvent(event)
         }
     }
 }
