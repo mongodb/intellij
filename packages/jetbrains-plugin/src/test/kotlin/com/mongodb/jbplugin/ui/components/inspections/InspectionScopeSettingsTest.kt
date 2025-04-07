@@ -7,10 +7,10 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runComposeUiTest
+import com.intellij.testFramework.assertInstanceOf
 import com.mongodb.jbplugin.fixtures.setContentWithTheme
 import com.mongodb.jbplugin.inspections.analysisScope.AnalysisScope
 import com.mongodb.jbplugin.ui.viewModel.AnalysisStatus
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import kotlin.time.Duration.Companion.minutes
@@ -77,7 +77,7 @@ class InspectionScopeSettingsTest {
 
     @Test
     fun `detects when an scope has changed in the scope dropdown`() = runComposeUiTest {
-        var selectedScope: AnalysisScope = AnalysisScope.CurrentFile
+        var selectedScope: AnalysisScope = AnalysisScope.CurrentFile()
         val callbacks = InspectionScopeSettingsCallbacks(
             onScopeChange = { selectedScope = it }
         )
@@ -94,6 +94,6 @@ class InspectionScopeSettingsTest {
         onNodeWithTag("InspectionScopeComboBox").assertExists().performClick()
         onNodeWithTag("InspectionScopeComboBox::Item::AllInsights").assertExists().performClick()
 
-        assertEquals(selectedScope, AnalysisScope.AllInsights)
+        assertInstanceOf<AnalysisScope.AllInsights>(selectedScope)
     }
 }

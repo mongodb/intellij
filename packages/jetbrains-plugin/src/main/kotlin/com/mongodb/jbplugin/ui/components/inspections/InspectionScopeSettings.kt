@@ -18,10 +18,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import com.intellij.openapi.util.text.StringUtil
 import com.mongodb.jbplugin.inspections.analysisScope.AnalysisScope
 import com.mongodb.jbplugin.inspections.analysisScope.AnalysisScope.AllInsights
 import com.mongodb.jbplugin.inspections.analysisScope.AnalysisScope.CurrentFile
+import com.mongodb.jbplugin.inspections.analysisScope.AnalysisScope.CurrentQuery
 import com.mongodb.jbplugin.ui.components.utilities.ActionLink
+import com.mongodb.jbplugin.ui.components.utilities.Separator
 import com.mongodb.jbplugin.ui.components.utilities.hooks.useTranslation
 import com.mongodb.jbplugin.ui.components.utilities.hooks.useViewModelMutator
 import com.mongodb.jbplugin.ui.components.utilities.hooks.useViewModelState
@@ -37,8 +40,8 @@ import org.jetbrains.jewel.ui.component.Icon
 import org.jetbrains.jewel.ui.component.Text
 import org.jetbrains.jewel.ui.component.styling.CircularProgressStyle
 import org.jetbrains.jewel.ui.icons.AllIconsKeys
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.toJavaDuration
 
 @Composable
 fun InspectionScopeSettings() {
@@ -82,8 +85,6 @@ fun _InspectionScopeSettings(
 
 @Composable
 private fun InspectionScopeComboBox(currentScope: AnalysisScope, modifier: Modifier = Modifier) {
-    val callbacks = useInspectionScopeCallbacks()
-
     Row(modifier = modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(text = useTranslation("side-panel.scope.scope-to"))
         ComboBox(
@@ -91,29 +92,10 @@ private fun InspectionScopeComboBox(currentScope: AnalysisScope, modifier: Modif
             labelText = useTranslation(currentScope.displayName)
         ) {
             Column {
-                Box(
-                    modifier = Modifier
-                        .testTag("InspectionScopeComboBox::Item::AllInsights")
-                        .clickable { callbacks.onScopeChange(AllInsights) }
-                        .padding(4.dp)
-                        .fillMaxWidth(1f)
-                ) {
-                    Row {
-                        Text(useTranslation(AllInsights.displayName))
-                    }
-                }
-
-                Box(
-                    modifier = Modifier
-                        .testTag("InspectionScopeComboBox::Item::CurrentFile")
-                        .clickable { callbacks.onScopeChange(CurrentFile) }
-                        .padding(4.dp)
-                        .fillMaxWidth(1f)
-                ) {
-                    Row {
-                        Text(useTranslation(CurrentFile.displayName))
-                    }
-                }
+                ScopeOption(AllInsights())
+                Separator()
+                ScopeOption(CurrentFile())
+                ScopeOption(CurrentQuery())
             }
         }
     }
@@ -152,7 +134,8 @@ private fun InspectionAnalysisProgress(analysisStatus: AnalysisStatus) {
                     )
                 )
 
-                Text(useTranslation("side-panel.scope.status.done", analysisStatus.fileCount, formatDuration(analysisStatus.duration)))
+                val duration = StringUtil.formatDuration(analysisStatus.duration.toJavaDuration())
+                Text(useTranslation("side-panel.scope.status.done", analysisStatus.fileCount, duration))
             }
             NoAnalysis -> {
             }
@@ -160,22 +143,23 @@ private fun InspectionAnalysisProgress(analysisStatus: AnalysisStatus) {
     }
 }
 
-internal fun formatDuration(duration: Duration): String {
-    val seconds = duration.inWholeSeconds.toInt()
-    val hours = duration.inWholeHours.toInt()
+@Composable
+fun ScopeOption(option: AnalysisScope) {
+    val callbacks = useInspectionScopeCallbacks()
 
-    return when {
-        seconds < 60 -> {
-            "$seconds seconds"
-        }
-        seconds < 3600 -> {
-            "${seconds / 60} minutes"
-        }
-        else -> {
-            "$hours hours"
+    Box(
+        modifier = Modifier
+            .testTag("InspectionScopeComboBox::Item::${option.javaClass.simpleName}")
+            .clickable { callbacks.onScopeChange(option) }
+            .padding(4.dp)
+            .fillMaxWidth(1f)
+    ) {
+        Row {
+            Text(useTranslation(option.displayName))
         }
     }
 }
+
 internal data class InspectionScopeSettingsCallbacks(
     val onScopeChange: (AnalysisScope) -> Unit = { _ -> },
     val onRefreshAnalysis: () -> Unit = {}

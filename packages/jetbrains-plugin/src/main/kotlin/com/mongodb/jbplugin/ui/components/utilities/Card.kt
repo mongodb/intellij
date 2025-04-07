@@ -14,6 +14,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.intellij.ui.JBColor
+import org.jetbrains.jewel.bridge.toComposeColor
 import org.jetbrains.jewel.ui.component.Icon
 import org.jetbrains.jewel.ui.component.Text
 import org.jetbrains.jewel.ui.icon.IconKey
@@ -31,7 +33,7 @@ fun Card(category: CardCategory, title: String, body: @Composable () -> Unit) {
             modifier = Modifier
                 .fillMaxWidth(1f)
                 .clip(RoundedCornerShape(8.dp))
-                .background(Color.DarkGray)
+                .background(Card.backgroundColor)
                 .padding(12.dp)
                 .padding(bottom = 16.dp)
         ) {
@@ -45,4 +47,9 @@ fun Card(category: CardCategory, title: String, body: @Composable () -> Unit) {
             }
         }
     }
+}
+
+object Card {
+    val backgroundColor = if (JBColor.isBright()) JBColor.GRAY.toComposeColor() else Color(0x39, 0x3B, 0x40)
+    val secondaryBackgroundColor = if (JBColor.isBright()) JBColor.DARK_GRAY.toComposeColor() else Color(0x2B, 0x2D, 0x30)
 }

@@ -1,11 +1,13 @@
 package com.mongodb.jbplugin.ui.viewModel
 
+import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.linting.Inspection.NotUsingIndex
 import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.mql.Node
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -15,8 +17,8 @@ import org.mockito.kotlin.whenever
 @IntegrationTest
 class InspectionsViewModelTest {
     @Test
-    fun `deduplicates insights`() {
-        val viewModel = InspectionsViewModel()
+    fun `deduplicates insights`(project: Project, coroutineScope: CoroutineScope) {
+        val viewModel = InspectionsViewModel(project, coroutineScope)
         val query = mock<Node<PsiElement>>()
 
         runBlocking {
@@ -28,8 +30,8 @@ class InspectionsViewModelTest {
     }
 
     @Test
-    fun `can hold multiple insights for the same query`() {
-        val viewModel = InspectionsViewModel()
+    fun `can hold multiple insights for the same query`(project: Project, coroutineScope: CoroutineScope) {
+        val viewModel = InspectionsViewModel(project, coroutineScope)
         val query = mock<Node<PsiElement>>()
 
         runBlocking {
@@ -41,8 +43,8 @@ class InspectionsViewModelTest {
     }
 
     @Test
-    fun `a new session clears all insights for the same inspection and file`() {
-        val viewModel = InspectionsViewModel()
+    fun `a new session clears all insights for the same inspection and file`(project: Project, coroutineScope: CoroutineScope) {
+        val viewModel = InspectionsViewModel(project, coroutineScope)
         val queryAttachment = mock<PsiElement>()
         val file = mock<PsiFile>()
         whenever(queryAttachment.containingFile).thenReturn(file)

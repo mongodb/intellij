@@ -32,7 +32,8 @@ class AnalysisScopeViewModelTest {
         editorState.tryEmit(
             EditorState(
                 focusedFiles = focusedFiles,
-                openFiles = emptyList()
+                openFiles = emptyList(),
+                carets = emptyList()
             )
         )
 

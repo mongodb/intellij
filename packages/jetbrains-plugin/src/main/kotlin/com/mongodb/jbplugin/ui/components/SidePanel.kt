@@ -6,10 +6,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
+import com.intellij.openapi.wm.ToolWindowManager
+import com.mongodb.jbplugin.i18n.Icons
 import com.mongodb.jbplugin.settings.pluginSetting
 import com.mongodb.jbplugin.ui.components.connection.ConnectionBootstrapCard
 import com.mongodb.jbplugin.ui.components.connection.OnlyWhenConnected
@@ -23,6 +26,7 @@ class SidePanel : ToolWindowFactory, DumbAware {
         project: Project,
         toolWindow: ToolWindow
     ) {
+        toolWindow.setAttentionIcon()
         toolWindow.addComposeTab(isLockable = true, isCloseable = false) {
             CompositionLocalProvider(
                 LocalProject provides project
@@ -46,5 +50,20 @@ class SidePanel : ToolWindowFactory, DumbAware {
                 InspectionAccordion()
             }
         }
+    }
+}
+
+val Project.mongoDbSidePanel: ToolWindow
+    get() = ToolWindowManager.getInstance(this).getToolWindow("MongoDB")!!
+
+fun ToolWindow.setOkIcon() {
+    ApplicationManager.getApplication().invokeLater {
+        setIcon(Icons.SidePanel.logo)
+    }
+}
+
+fun ToolWindow.setAttentionIcon() {
+    ApplicationManager.getApplication().invokeLater {
+        setIcon(Icons.SidePanel.logoAttention)
     }
 }

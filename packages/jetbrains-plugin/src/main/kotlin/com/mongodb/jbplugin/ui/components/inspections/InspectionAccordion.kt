@@ -1,16 +1,13 @@
 package com.mongodb.jbplugin.ui.components.inspections
 
 import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -35,6 +32,8 @@ import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.meta.withinReadActionBlocking
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.ui.components.utilities.ActionLink
+import com.mongodb.jbplugin.ui.components.utilities.Card
+import com.mongodb.jbplugin.ui.components.utilities.Separator
 import com.mongodb.jbplugin.ui.components.utilities.hooks.LocalProject
 import com.mongodb.jbplugin.ui.components.utilities.hooks.useTranslation
 import com.mongodb.jbplugin.ui.components.utilities.hooks.useViewModelMutator
@@ -127,11 +126,6 @@ fun InspectionAccordionSection(modifier: Modifier, category: InspectionCategory,
     }
 }
 
-@Composable
-private fun Separator() {
-    Box(modifier = Modifier.fillMaxWidth().height(1.dp).border(BorderStroke(1.dp, Color.DarkGray)))
-}
-
 internal data class InspectionAccordionCallbacks(
     val onToggleInspectionCategory: (InspectionCategory) -> Unit = { _ -> },
     val onNavigateToQueryOfInsight: (QueryInsight<PsiElement, *>) -> Unit = { _ -> }
@@ -147,7 +141,7 @@ internal fun InsightCard(insight: QueryInsight<PsiElement, *>) {
             .padding(bottom = 16.dp)
             .fillMaxWidth(1f)
             .clip(RoundedCornerShape(8.dp))
-            .background(Color.DarkGray)
+            .background(Card.backgroundColor)
             .padding(12.dp)
     ) {
         Row(Modifier.padding(bottom = 8.dp)) {
@@ -159,7 +153,7 @@ internal fun InsightCard(insight: QueryInsight<PsiElement, *>) {
             modifier = Modifier
                 .fillMaxWidth(1f)
                 .clip(RoundedCornerShape(8.dp))
-                .background(Color(0x2B, 0x2D, 0x30))
+                .background(Card.secondaryBackgroundColor)
                 .padding(12.dp)
         ) {
             LinkToQueryInsight(insight)

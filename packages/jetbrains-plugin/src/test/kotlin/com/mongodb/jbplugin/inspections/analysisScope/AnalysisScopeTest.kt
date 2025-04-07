@@ -49,7 +49,7 @@ class AnalysisScopeTest {
             )
         )
 
-        val scope = AnalysisScope.CurrentFile
+        val scope = AnalysisScope.CurrentFile()
 
         val insights = listOf(
             insightOnFile(vf1),
@@ -77,7 +77,7 @@ class AnalysisScopeTest {
 
         application.withMockedServiceInScope(fileBasedIndex) {
             val result = withinReadActionBlocking {
-                AnalysisScope.AllInsights.getAdditionalFilesInScope(project)
+                AnalysisScope.AllInsights().getAdditionalFilesInScope(project)
             }
 
             assertEquals(result.size, 2)
