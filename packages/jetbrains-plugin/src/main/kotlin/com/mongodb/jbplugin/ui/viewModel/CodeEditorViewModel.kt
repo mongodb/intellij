@@ -8,10 +8,18 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
+import com.intellij.openapi.fileTypes.FileTypeManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.findPsiFile
 import com.intellij.psi.PsiElement
+import com.intellij.psi.search.FileTypeIndex
+import com.intellij.psi.search.GlobalSearchScope
+import com.mongodb.jbplugin.dialects.Dialect
+import com.mongodb.jbplugin.dialects.javadriver.glossary.JavaDriverDialect
+import com.mongodb.jbplugin.dialects.springcriteria.SpringCriteriaDialect
+import com.mongodb.jbplugin.dialects.springquery.SpringAtQueryDialect
+import com.mongodb.jbplugin.editor.MongoDbVirtualFileDataSourceProvider.Keys
 import com.mongodb.jbplugin.editor.services.MdbPluginDisposable
 import com.mongodb.jbplugin.meta.withinReadAction
 import com.mongodb.jbplugin.mql.Node
@@ -32,6 +40,12 @@ data class EditorState(
         }
     }
 }
+
+private val allDialects: List<Dialect<PsiElement, Project>> = listOf(
+    JavaDriverDialect,
+    SpringAtQueryDialect,
+    SpringCriteriaDialect
+)
 
 @Service(Service.Level.PROJECT)
 class CodeEditorViewModel(
@@ -86,6 +100,23 @@ class CodeEditorViewModel(
                 ?: return@withContext
 
             editorOfFile.caretModel.moveToOffset(query.source.textOffset)
+        }
+    }
+
+    suspend fun allProjectFiles(project: Project): List<VirtualFile> = withContext(Dispatchers.IO) {
+        withinReadAction {
+            val scope = GlobalSearchScope.projectScope(project)
+            val javaFileType = FileTypeManager.getInstance().getStdFileType("JAVA")
+
+            FileTypeIndex.getFiles(javaFileType, scope)
+                .mapNotNull { it.findPsiFile(project) }
+                .map { file -> file to allDialects.firstOrNull { it.isUsableForSource(file) } }
+                .filter { it.second != null }
+                .map {
+                    it.first.virtualFile.apply {
+                        putUserData(Keys.attachedDialect, it.second!!)
+                    }
+                }
         }
     }
 

@@ -15,6 +15,7 @@ import com.mongodb.jbplugin.inspections.correctness.MongoDbTypeMismatch
 import com.mongodb.jbplugin.inspections.performance.MongoDbQueryNotUsingIndex
 import com.mongodb.jbplugin.inspections.performance.MongoDbQueryNotUsingIndexEffectively
 import com.mongodb.jbplugin.meta.service
+import com.mongodb.jbplugin.meta.singleExecutionJob
 import com.mongodb.jbplugin.meta.withinReadAction
 import com.mongodb.jbplugin.meta.withinReadActionBlocking
 import com.mongodb.jbplugin.observability.useLogMessage
@@ -22,9 +23,11 @@ import com.mongodb.jbplugin.ui.viewModel.AnalysisStatus.NoAnalysis
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.toKotlinInstant
@@ -67,23 +70,35 @@ class AnalysisScopeViewModel(
     val analysisScope = mutableAnalysisScope.asStateFlow()
     val analysisStatus = mutableAnalysisStatus.asStateFlow()
 
+    private val changeScopeJob = coroutineScope.singleExecutionJob("AnalysisScopeViewModel::ChangeScope")
+
     init {
-        coroutineScope.launch {
-            val codeEditorViewModel by project.service<CodeEditorViewModel>()
-            codeEditorViewModel.editorState.value.run { refreshAnalysisScopeIfNecessary() }
-            codeEditorViewModel.editorState.collectLatest { refreshAnalysisScopeIfNecessary() }
-        }
+        val codeEditorViewModel by project.service<CodeEditorViewModel>()
+        codeEditorViewModel.editorState.value.run { refreshAnalysisScopeIfNecessary() }
+        codeEditorViewModel.editorState.onEach { refreshAnalysisScopeIfNecessary() }.launchIn(coroutineScope)
     }
 
-    suspend fun changeScope(scope: AnalysisScope) = withContext(Dispatchers.IO) {
+    suspend fun changeScope(scope: AnalysisScope) = changeScopeJob.launch(onCancel = {
+        mutableAnalysisStatus.emit(NoAnalysis)
+    }) {
+        /**
+         * We use ensureActive in specific points here because it will stop the execution of the
+         * coroutine in that point when the job is cancelled. If we don't do that, the coroutine
+         * will continue executing even if we cancel.
+         */
         log.info(useLogMessage("Changed Scope to ${scope.displayName}").build())
         mutableAnalysisScope.emit(scope)
         mutableAnalysisStatus.emit(AnalysisStatus.CollectingFiles)
         log.info(useLogMessage("Collecting files...").build())
-        val files = withinReadAction { scope.getAdditionalFilesInScope(project) }
+        ensureActive()
+
+        val files = withinReadAction {
+            scope.getAdditionalFilesInScope(project)
+        }
+
         if (files.isEmpty()) {
             mutableAnalysisStatus.emit(NoAnalysis)
-            return@withContext
+            return@launch
         }
 
         log.info(useLogMessage("Collected ${files.size} to process.").build())
@@ -98,13 +113,16 @@ class AnalysisScopeViewModel(
             )
         }
 
+        ensureActive()
         log.info(useLogMessage("Analysis in progress...").build())
         withinReadActionBlocking {
             val inspectionContext = InspectionManager.getInstance(project).createNewGlobalContext()
             val tools = getEnabledToolWrappers()
 
             for (file in files) {
+                ensureActive()
                 val psiFile = file.findPsiFile(project)
+
                 if (psiFile != null) {
                     log.info(useLogMessage("Running inspection for file ${psiFile.name}").build())
 
