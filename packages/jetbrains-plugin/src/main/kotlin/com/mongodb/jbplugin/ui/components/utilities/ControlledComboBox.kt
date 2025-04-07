@@ -1,5 +1,18 @@
 package com.mongodb.jbplugin.ui.components.utilities
 
+/**
+ * The ControlledComboBox is a patch implementation on top of ComboBox implementation available
+ * in Jewel theme v0.27.0. This was done so that we could control the ComboBox's expanded state
+ * from outside the component as well. For more details on what exactly was patched please check
+ * out this PR - https://github.com/mongodb/intellij/pull/180 and particularly the first two
+ * commits that:
+ * 1. copies the source of ComboBox
+ * 2. applies the patch on it
+ *
+ * The next release of Jewel theme exposes some good APIs that can be used as it is and should we
+ * ever decide to upgrade to those releases, this component and its usage can safely be replaced.
+ */
+
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
