@@ -29,12 +29,14 @@ class DatabaseDoesNotExistInspection<D> : QueryInspection<
         val parsingResult = knownCollection<Source>()
             .filter { knownRef ->
                 val detectedDatabase = knownRef.namespace.database
-                val availableDatabases = settings.readModelProvider.slice(
-                    settings.dataSource,
-                    ListDatabases.Slice
-                ).databases.map { it.name }
+                val availableDatabases = runCatching {
+                    settings.readModelProvider.slice(
+                        settings.dataSource,
+                        ListDatabases.Slice
+                    ).databases.map { it.name }
+                }.getOrDefault(emptyList())
 
-                detectedDatabase.isNotBlank() && !availableDatabases.contains(detectedDatabase)
+                !availableDatabases.contains(detectedDatabase)
             }
             .parse(query)
 
