@@ -5,7 +5,7 @@ import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.ui.viewModel.SidePanelViewModel
 
-class ChooseConnectionInsightAction() : InsightAction {
+class ChooseConnectionInsightAction : InsightAction {
     override val displayName = "Choose a connection"
 
     override suspend fun apply(insight: QueryInsight<PsiElement, *>) {
