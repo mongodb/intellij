@@ -137,7 +137,7 @@ private object QueriesInFileCollector : InlayHintsCollector {
         }.let {
             inlayFactory.withCursorOnHover(it, Cursor(Cursor.HAND_CURSOR))
         }.let {
-            inlayFactory.onClick(it, Left) { _, _, ->
+            inlayFactory.onClick(it, Left) { _, _ ->
                 val analysisScopeViewModel by element.project.service<AnalysisScopeViewModel>()
                 runBlocking {
                     element.project.mongoDbSidePanel.show()
