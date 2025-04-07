@@ -254,7 +254,8 @@ sealed class TelemetryEvent(
             FIELD_DOES_NOT_EXIST,
             TYPE_MISMATCH,
             QUERY_NOT_COVERED_BY_INDEX,
-            NO_NAMESPACE_INFERRED,
+            NO_DATABASE_INFERRED,
+            NO_COLLECTION_SPECIFIED,
             COLLECTION_DOES_NOT_EXIST,
             DATABASE_DOES_NOT_EXIST
         }

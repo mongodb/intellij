@@ -75,11 +75,11 @@ internal class InspectionStatusChangedProbeTest {
             query
         )
         probe.inspectionChanged(
-            TelemetryEvent.InspectionStatusChangeEvent.InspectionType.NO_NAMESPACE_INFERRED,
+            TelemetryEvent.InspectionStatusChangeEvent.InspectionType.NO_DATABASE_INFERRED,
             query
         )
         probe.inspectionChanged(
-            TelemetryEvent.InspectionStatusChangeEvent.InspectionType.NO_NAMESPACE_INFERRED,
+            TelemetryEvent.InspectionStatusChangeEvent.InspectionType.NO_DATABASE_INFERRED,
             query
         )
 
