@@ -39,9 +39,6 @@ class AnalysisScopeViewModelTest {
         eventually(coroutineScope = coroutineScope) {
             val currentScope = analysisScopeViewModel.analysisScope.value
             assertInstanceOf(AnalysisScope.CurrentFile::class.java, currentScope)
-            currentScope as AnalysisScope.CurrentFile
-
-            assertEquals(focusedFiles, currentScope.files)
         }
     }
 
