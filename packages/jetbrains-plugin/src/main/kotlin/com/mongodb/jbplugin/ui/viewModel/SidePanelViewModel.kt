@@ -1,5 +1,6 @@
 package com.mongodb.jbplugin.ui.viewModel
 
+import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindowManager
@@ -37,7 +38,9 @@ class SidePanelViewModel(
     }
 
     fun openSidePanel() {
-        ToolWindowManager.getInstance(project).getToolWindow(MDB_SIDEPANEL_ID)?.show()
+        coroutineScope.launch(Dispatchers.EDT) {
+            ToolWindowManager.getInstance(project).getToolWindow(MDB_SIDEPANEL_ID)?.show()
+        }
     }
 
     fun openConnectionComboBox() {
