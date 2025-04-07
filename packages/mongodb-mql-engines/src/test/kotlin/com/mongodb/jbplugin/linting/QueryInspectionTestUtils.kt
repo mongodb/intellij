@@ -44,7 +44,7 @@ interface QueryInspectionTest<I : Inspection> {
 
     fun InspectionTestContext<I>.onInsight(n: Int): InspectionTestContextForInsight<I> {
         val insight = holder.results.getOrNull(n)
-        assertNotNull(insight)
+        assertNotNull(insight, "Expected an insight at position $n but was null")
         return InspectionTestContextForInsight(query, insight!!)
     }
 
