@@ -1,18 +1,22 @@
 package com.mongodb.jbplugin.linting
 
+import com.mongodb.jbplugin.linting.Inspection.DatabaseDoesNotExist
 import com.mongodb.jbplugin.linting.Inspection.FieldDoesNotExist
 import com.mongodb.jbplugin.linting.Inspection.NotUsingIndex
 import com.mongodb.jbplugin.linting.Inspection.NotUsingIndexEffectively
 import com.mongodb.jbplugin.linting.Inspection.TypeMismatch
+import com.mongodb.jbplugin.linting.InspectionAction.ChooseConnection
 import com.mongodb.jbplugin.linting.InspectionAction.CreateIndexSuggestionScript
 import com.mongodb.jbplugin.linting.InspectionAction.RunQuery
 import com.mongodb.jbplugin.linting.InspectionCategory.CORRECTNESS
+import com.mongodb.jbplugin.linting.InspectionCategory.ENVIRONMENT_MISMATCH
 import com.mongodb.jbplugin.linting.InspectionCategory.PERFORMANCE
 import com.mongodb.jbplugin.mql.Node
 
 enum class InspectionCategory(val displayName: String) {
     PERFORMANCE("inspection.category.performance"),
     CORRECTNESS("inspection.category.correctness"),
+    ENVIRONMENT_MISMATCH("inspection.category.environment")
 }
 
 sealed interface InspectionAction {
@@ -61,6 +65,14 @@ sealed interface Inspection {
         override val secondaryActions = emptyArray<InspectionAction>()
         override val category = CORRECTNESS
     }
+
+    data object DatabaseDoesNotExist : Inspection {
+        override val displayName = "inspection.database-does-not-exist.display-name"
+        override val shortName = "inspection.database-does-not-exist.short-name"
+        override val primaryAction = ChooseConnection
+        override val secondaryActions = emptyArray<InspectionAction>()
+        override val category = ENVIRONMENT_MISMATCH
+    }
 }
 
 data class QueryInsight<S, I : Inspection>(
@@ -71,19 +83,61 @@ data class QueryInsight<S, I : Inspection>(
 ) {
     companion object {
         fun <S> notUsingIndex(query: Node<S>): QueryInsight<S, NotUsingIndex> {
-            return QueryInsight(query, "insight.not-using-index", emptyList(), NotUsingIndex)
+            return QueryInsight(
+                query,
+                "insight.not-using-index",
+                emptyList(),
+                NotUsingIndex
+            )
         }
 
-        fun <S> notUsingIndexEffectively(query: Node<S>): QueryInsight<S, NotUsingIndexEffectively> {
-            return QueryInsight(query, "insight.not-using-index-effectively", emptyList(), NotUsingIndexEffectively)
+        fun <S> notUsingIndexEffectively(
+            query: Node<S>
+        ): QueryInsight<S, NotUsingIndexEffectively> {
+            return QueryInsight(
+                query,
+                "insight.not-using-index-effectively",
+                emptyList(),
+                NotUsingIndexEffectively
+            )
         }
 
-        fun <S> nonExistingField(query: Node<S>, field: String): QueryInsight<S, FieldDoesNotExist> {
-            return QueryInsight(query, "insight.field-does-not-exist", listOf(field), FieldDoesNotExist)
+        fun <S> nonExistingField(
+            query: Node<S>,
+            field: String
+        ): QueryInsight<S, FieldDoesNotExist> {
+            return QueryInsight(
+                query,
+                "insight.field-does-not-exist",
+                listOf(field),
+                FieldDoesNotExist
+            )
         }
 
-        fun <S> typeMismatch(query: Node<S>, field: String, fieldType: String, valueType: String): QueryInsight<S, TypeMismatch> {
-            return QueryInsight(query, "insight.type-mismatch", listOf(field, fieldType, valueType), TypeMismatch)
+        fun <S> typeMismatch(
+            query: Node<S>,
+            field: String,
+            fieldType: String,
+            valueType: String
+        ): QueryInsight<S, TypeMismatch> {
+            return QueryInsight(
+                query,
+                "insight.type-mismatch",
+                listOf(field, fieldType, valueType),
+                TypeMismatch
+            )
+        }
+
+        fun <S> nonExistentDatabase(
+            query: Node<S>,
+            database: String
+        ): QueryInsight<S, DatabaseDoesNotExist> {
+            return QueryInsight(
+                query,
+                "insight.database-does-not-exist",
+                listOf(database),
+                DatabaseDoesNotExist
+            )
         }
     }
 }

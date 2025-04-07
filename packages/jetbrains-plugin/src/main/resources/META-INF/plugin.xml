@@ -98,17 +98,16 @@
             key="query-using-incompatible-types"
             enabledByDefault="true"
         />
+        <localInspection implementationClass="com.mongodb.jbplugin.inspections.environmentmismatch.MongoDbDatabaseDoesNotExist"
+            language="JAVA"
+            bundle="messages.InspectionsAndInlaysBundle"
+            groupPath="MongoDB"
+            groupBundle="messages.InspectionsAndInlaysBundle"
+            groupKey="group.names.probable.bugs"
+            key="query-using-incompatible-types"
+            enabledByDefault="true"
+        />
         <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: -->
-
-        <localInspection language="JAVA"
-                         bundle="messages.InspectionsAndInlaysBundle"
-                         key="inspection.namespace.checking"
-                         groupPath="MongoDB"
-                         groupBundle="messages.InspectionsAndInlaysBundle"
-                         groupKey="group.names.probable.bugs"
-                         enabledByDefault="true"
-                         level="WARNING"
-                         implementationClass="com.mongodb.jbplugin.inspections.impl.NamespaceCheckInspectionBridge"/>
 
         <codeInsight.lineMarkerProvider
                 language="JAVA"
