@@ -10,7 +10,6 @@ class ChooseConnectionInsightAction : InsightAction {
 
     override suspend fun apply(insight: QueryInsight<PsiElement, *>) {
         val viewModel by insight.query.source.project.service<SidePanelViewModel>()
-        viewModel.openSidePanel()
         viewModel.openConnectionComboBox()
     }
 }

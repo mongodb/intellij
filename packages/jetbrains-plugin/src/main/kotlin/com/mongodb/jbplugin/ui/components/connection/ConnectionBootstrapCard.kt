@@ -12,6 +12,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.derivedStateOf
@@ -26,7 +27,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.intellij.database.dataSource.LocalDataSource
-import com.intellij.database.util.common.isInstanceOf
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
 import com.mongodb.jbplugin.ui.components.utilities.ActionLink
 import com.mongodb.jbplugin.ui.components.utilities.Card
@@ -88,13 +88,18 @@ fun ConnectionBootstrapCard() {
     )
 
     val connectionComboBoxState = ConnectionComboBoxState.default()
-    useSidePanelEventSubscription(SidePanelEvents.OpenConnectionComboBox) {
-        connectionComboBoxState.setComboBoxExpanded(true)
-        // Need to run it catching because there is slight chance that FocusRequester did not have
-        // time to initialize in which case, it will throw an exception. Exception itself does
-        // not harm the UI but its worth catching so it does not bubble up to the user.
-        runCatching {
-            connectionComboBoxState.focusRequester.requestFocus()
+    val viewModel by useViewModel<SidePanelViewModel>()
+    LaunchedEffect(Unit) {
+        viewModel.subscribeToSidePanelEvents { emittedEvent ->
+            if (emittedEvent == SidePanelEvents.OpenConnectionComboBox) {
+                connectionComboBoxState.setComboBoxExpanded(true)
+                // Need to run it catching because there is slight chance that FocusRequester did not have
+                // time to initialize in which case, it will throw an exception. Exception itself does
+                // not harm the UI but its worth catching so it does not bubble up to the user.
+                runCatching {
+                    connectionComboBoxState.focusRequester.requestFocus()
+                }
+            }
         }
     }
 
@@ -377,17 +382,4 @@ internal val LocalConnectionComboBoxState = compositionLocalOf<ConnectionComboBo
 @Composable
 internal fun useConnectionComboBoxState(): ConnectionComboBoxState {
     return LocalConnectionComboBoxState.current ?: ConnectionComboBoxState.default()
-}
-
-@Composable
-internal fun useSidePanelEventSubscription(
-    event: SidePanelEvents,
-    onEvent: (SidePanelEvents) -> Unit,
-) {
-    val viewModel by useViewModel<SidePanelViewModel>()
-    viewModel.subscribeToSidePanelEvents { emittedEvent ->
-        if (emittedEvent == event || emittedEvent.isInstanceOf(event::class)) {
-            onEvent(event)
-        }
-    }
 }

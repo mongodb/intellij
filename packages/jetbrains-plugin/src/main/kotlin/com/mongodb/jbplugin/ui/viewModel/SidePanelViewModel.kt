@@ -13,6 +13,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import org.jetbrains.annotations.VisibleForTesting
 import kotlin.time.Duration.Companion.milliseconds
 
 interface SidePanelEvents {
@@ -37,13 +38,15 @@ class SidePanelViewModel(
         }
     }
 
-    fun openSidePanel() {
+    @VisibleForTesting
+    internal fun openSidePanel() {
         coroutineScope.launch(Dispatchers.EDT) {
             ToolWindowManager.getInstance(project).getToolWindow(MDB_SIDEPANEL_ID)?.show()
         }
     }
 
     fun openConnectionComboBox() {
+        openSidePanel()
         coroutineScope.launch(sidePanelEventsDispatcher) {
             // A small delay just in case SidePanel is still opening up.
             // Unfortunately there is no way around this even with listening to ToolWindow.shown
