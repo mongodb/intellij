@@ -23,6 +23,7 @@ import com.mongodb.jbplugin.inspections.analysisScope.AnalysisScope
 import com.mongodb.jbplugin.inspections.analysisScope.AnalysisScope.AllInsights
 import com.mongodb.jbplugin.inspections.analysisScope.AnalysisScope.CurrentFile
 import com.mongodb.jbplugin.inspections.analysisScope.AnalysisScope.CurrentQuery
+import com.mongodb.jbplugin.inspections.analysisScope.AnalysisScope.RecommendedInsights
 import com.mongodb.jbplugin.ui.components.utilities.ActionLink
 import com.mongodb.jbplugin.ui.components.utilities.Separator
 import com.mongodb.jbplugin.ui.components.utilities.hooks.useTranslation
@@ -93,6 +94,7 @@ private fun InspectionScopeComboBox(currentScope: AnalysisScope, modifier: Modif
         ) {
             Column {
                 ScopeOption(AllInsights())
+                ScopeOption(RecommendedInsights())
                 Separator()
                 ScopeOption(CurrentFile())
                 ScopeOption(CurrentQuery())
