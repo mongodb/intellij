@@ -34,9 +34,8 @@ import com.mongodb.jbplugin.mql.components.HasExplain
 import com.mongodb.jbplugin.mql.components.HasExplain.ExplainPlanType.FULL
 import com.mongodb.jbplugin.mql.components.HasExplain.ExplainPlanType.SAFE
 import com.mongodb.jbplugin.settings.pluginSetting
-import com.mongodb.jbplugin.ui.components.mongoDbSidePanel
 import com.mongodb.jbplugin.ui.viewModel.AnalysisScopeViewModel
-import kotlinx.coroutines.runBlocking
+import com.mongodb.jbplugin.ui.viewModel.SidePanelViewModel
 import org.jetbrains.jewel.bridge.JewelComposePanel
 import java.awt.Cursor
 import javax.swing.JComponent
@@ -139,8 +138,9 @@ private object QueriesInFileCollector : InlayHintsCollector {
         }.let {
             inlayFactory.onClick(it, Left) { _, _ ->
                 val analysisScopeViewModel by element.project.service<AnalysisScopeViewModel>()
-                runBlocking {
-                    element.project.mongoDbSidePanel.show()
+                val sidePanelViewModel by element.project.service<SidePanelViewModel>()
+
+                sidePanelViewModel.withOpenSidePanel {
                     analysisScopeViewModel.changeScopeToCurrentQuery()
                 }
             }

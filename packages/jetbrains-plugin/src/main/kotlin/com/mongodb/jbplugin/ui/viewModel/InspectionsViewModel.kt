@@ -9,9 +9,6 @@ import com.mongodb.jbplugin.linting.InspectionCategory
 import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.meta.withinReadAction
-import com.mongodb.jbplugin.ui.components.mongoDbSidePanel
-import com.mongodb.jbplugin.ui.components.setAttentionIcon
-import com.mongodb.jbplugin.ui.components.setOkIcon
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -91,14 +88,15 @@ class InspectionsViewModel(
     }
 
     private fun refreshSidePanelStatusOnInsights(connectionState: ConnectionState, insights: List<QueryInsight<*, *>>) {
+        val viewModel by project.service<SidePanelViewModel>()
         if (connectionState.selectedConnectionState is SelectedConnectionState.Initial ||
             connectionState.selectedConnectionState is SelectedConnectionState.Failed
         ) {
-            project.mongoDbSidePanel.setAttentionIcon()
+            viewModel.setStatus(SidePanelStatus.Warning)
         } else if (insights.isNotEmpty()) {
-            project.mongoDbSidePanel.setAttentionIcon()
+            viewModel.setStatus(SidePanelStatus.Warning)
         } else {
-            project.mongoDbSidePanel.setOkIcon()
+            viewModel.setStatus(SidePanelStatus.Ok)
         }
     }
 }
