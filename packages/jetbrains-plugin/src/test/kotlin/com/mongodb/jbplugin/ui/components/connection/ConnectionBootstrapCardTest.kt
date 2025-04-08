@@ -237,4 +237,32 @@ class ConnectionBootstrapCardTest {
         onNodeWithTag("DisconnectItem").performClick()
         assertTrue(clicked)
     }
+
+    @Test
+    fun `connection combobox should respond to external triggers in state`() = runComposeUiTest {
+        val dataSource = mockDataSource()
+        lateinit var expandComboBox: () -> Unit
+        setContentWithTheme {
+            val connectionComboBoxState = ConnectionComboBoxState.default()
+            expandComboBox = {
+                connectionComboBoxState.setComboBoxExpanded(true)
+            }
+            CompositionLocalProvider(
+                LocalConnectionComboBoxState provides connectionComboBoxState
+            ) {
+                _ConnectionBootstrapCard(
+                    ConnectionState(
+                        listOf(dataSource),
+                        dataSource,
+                        SelectedConnectionState.Connected(dataSource)
+                    ),
+                    DatabaseState.initial()
+                )
+            }
+        }
+
+        onNodeWithTag("ConnectionItem::${dataSource.uniqueId}").assertDoesNotExist()
+        expandComboBox()
+        onNodeWithTag("ConnectionItem::${dataSource.uniqueId}").assertExists()
+    }
 }

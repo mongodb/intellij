@@ -87,9 +87,24 @@ fun ConnectionBootstrapCard() {
         unselectSelectedDatabase = unselectSelectedDatabase,
     )
 
+    val connectionComboBoxState = ConnectionComboBoxState.default()
+    useSidePanelEventSubscription(SidePanelEvents.OpenConnectionComboBox) {
+        connectionComboBoxState.setComboBoxExpanded(true)
+        // Need to run it catching because there is slight chance that FocusRequester did not have
+        // time to initialize in which case, it will throw an exception. Exception itself does
+        // not harm the UI but its worth catching so it does not bubble up to the user.
+        runCatching {
+            connectionComboBoxState.focusRequester.requestFocus()
+        }
+    }
+
     CompositionLocalProvider(LocalConnectionCallbacks provides connectionCallbacks) {
         CompositionLocalProvider(LocalDatabaseCallbacks provides databaseCallbacks) {
-            _ConnectionBootstrapCard(connectionState, databaseState)
+            CompositionLocalProvider(
+                LocalConnectionComboBoxState provides connectionComboBoxState
+            ) {
+                _ConnectionBootstrapCard(connectionState, databaseState)
+            }
         }
     }
 }
@@ -228,22 +243,12 @@ internal fun ConnectionComboBox(
     selectedConnection: LocalDataSource?,
     selectedConnectionState: SelectedConnectionState,
 ) {
-    val comboBoxFocusRequester = remember { FocusRequester() }
-    var comboBoxExpanded by remember { mutableStateOf(false) }
-    useSidePanelEventSubscription(SidePanelEvents.OpenConnectionComboBox) {
-        comboBoxExpanded = true
-        // Need to run it catching because there is slight chance that FocusRequester did not have
-        // time to initialize in which case, it will throw an exception. Exception itself does
-        // not harm the UI but its worth catching so it does not bubble up to the user.
-        runCatching {
-            comboBoxFocusRequester.requestFocus()
-        }
-    }
+    val (comboBoxExpanded, setComboBoxExpanded, focusRequester) = useConnectionComboBoxState()
 
     ControlledComboBox(
         comboBoxExpanded = comboBoxExpanded,
-        setComboBoxExpanded = { expanded -> comboBoxExpanded = expanded },
-        modifier = Modifier.testTag("ConnectionComboBox").focusRequester(comboBoxFocusRequester),
+        setComboBoxExpanded = setComboBoxExpanded,
+        modifier = Modifier.testTag("ConnectionComboBox").focusRequester(focusRequester),
         labelText = selectedConnection?.name
             ?: useTranslation("side-panel.connection.ConnectionBootstrapCard.combobox.choose-a-connection"),
         outline = if (selectedConnectionState is Failed) {
@@ -337,6 +342,41 @@ internal fun useConnectionStatus(connection: LocalDataSource): State<ConnectionS
             ConnectionStatus.Disconnected
         }
     }
+}
+
+internal data class ConnectionComboBoxState(
+    val comboBoxExpanded: Boolean = false,
+    val setComboBoxExpanded: (Boolean) -> Unit = {},
+    val focusRequester: FocusRequester = FocusRequester(),
+) {
+    companion object {
+        @Composable
+        internal fun default(): ConnectionComboBoxState {
+            var comboBoxExpanded by remember { mutableStateOf(false) }
+            val setComboBoxExpanded = { expanded: Boolean -> comboBoxExpanded = expanded }
+            val comboBoxFocusRequester = remember { FocusRequester() }
+
+            return ConnectionComboBoxState(
+                comboBoxExpanded = comboBoxExpanded,
+                setComboBoxExpanded = setComboBoxExpanded,
+                focusRequester = comboBoxFocusRequester
+            )
+        }
+    }
+}
+
+/**
+ * We purposely initialise this to null to reduce pain when testing these components otherwise
+ * for each test that directly / indirectly triggers connection combobox state changes will have
+ * to initialise the CompositionLocalProvider. We evade that by doing a small check in
+ * useConnectionComboBoxState below - where we either return the current value if its present which
+ * in test cases won't be (unless specified) or we return a newly built ConnectionComboBoxState.
+ */
+internal val LocalConnectionComboBoxState = compositionLocalOf<ConnectionComboBoxState?> { null }
+
+@Composable
+internal fun useConnectionComboBoxState(): ConnectionComboBoxState {
+    return LocalConnectionComboBoxState.current ?: ConnectionComboBoxState.default()
 }
 
 @Composable
