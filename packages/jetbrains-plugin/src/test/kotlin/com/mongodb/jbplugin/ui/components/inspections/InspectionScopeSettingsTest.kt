@@ -13,7 +13,7 @@ import com.mongodb.jbplugin.inspections.analysisScope.AnalysisScope
 import com.mongodb.jbplugin.ui.viewModel.AnalysisStatus
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalTestApi::class)
 class InspectionScopeSettingsTest {
@@ -49,10 +49,10 @@ class InspectionScopeSettingsTest {
     @Test
     fun `should show when the analysis is done`() = runComposeUiTest {
         setContentWithTheme {
-            _InspectionScopeSettings(AnalysisScope.default(), AnalysisStatus.Done(10, 5.minutes))
+            _InspectionScopeSettings(AnalysisScope.default(), AnalysisStatus.Done(10, 250.milliseconds))
         }
 
-        onNodeWithText("Processed 10 files in 5 minutes.").assertExists()
+        onNodeWithText("Processed 10 files in 250 ms.").assertExists()
     }
 
     @Test
