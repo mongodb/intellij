@@ -28,7 +28,9 @@ interface InsightAction {
 
         private fun resolveSingle(project: Project, action: InspectionAction): InsightAction? {
             return when (action) {
-                ChooseConnection -> null
+                ChooseConnection -> {
+                    ChooseConnectionInsightAction()
+                }
                 CreateIndexSuggestionScript -> {
                     val createIndex by project.service<CreateIndexIntentionProbe>()
                     CreateSuggestedIndexInsightAction(createIndex, DatagripConsoleEditor)
