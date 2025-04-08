@@ -4,6 +4,7 @@ import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindowManager
+import com.mongodb.jbplugin.i18n.Icons
 import com.mongodb.jbplugin.ui.components.MDB_SIDEPANEL_ID
 import com.mongodb.jbplugin.ui.viewModel.SidePanelEvents.OpenConnectionComboBox
 import kotlinx.coroutines.CoroutineScope
@@ -13,11 +14,18 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.VisibleForTesting
+import javax.swing.Icon
 import kotlin.time.Duration.Companion.milliseconds
 
 interface SidePanelEvents {
     data object OpenConnectionComboBox : SidePanelEvents
+}
+
+enum class SidePanelStatus(val icon: Icon) {
+    Ok(Icons.SidePanel.logo),
+    Warning(Icons.SidePanel.logoAttention)
 }
 
 @Service(Service.Level.PROJECT)
@@ -46,13 +54,28 @@ class SidePanelViewModel(
     }
 
     fun openConnectionComboBox() {
+        withOpenSidePanel {
+            mutableSidePanelEvents.emit(OpenConnectionComboBox)
+        }
+    }
+
+    fun withOpenSidePanel(cb: suspend () -> Unit) {
         openSidePanel()
         coroutineScope.launch(sidePanelEventsDispatcher) {
             // A small delay just in case SidePanel is still opening up.
             // Unfortunately there is no way around this even with listening to ToolWindow.shown
             // event because that event still emits way before ToolWindow actually appears.
             delay(250.milliseconds)
-            mutableSidePanelEvents.emit(OpenConnectionComboBox)
+            cb()
+        }
+    }
+
+    fun setStatus(status: SidePanelStatus) {
+        coroutineScope.launch(sidePanelEventsDispatcher) {
+            withContext(Dispatchers.EDT) {
+                val panel = ToolWindowManager.getInstance(project).getToolWindow(MDB_SIDEPANEL_ID)
+                panel?.setIcon(status.icon)
+            }
         }
     }
 }

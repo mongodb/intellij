@@ -1,6 +1,7 @@
 package com.mongodb.jbplugin.ui.viewModel
 
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.mongodb.jbplugin.linting.Inspection
@@ -8,18 +9,34 @@ import com.mongodb.jbplugin.linting.InspectionCategory
 import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.meta.withinReadAction
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.zip
 import kotlinx.coroutines.withContext
 
 @Service(Service.Level.PROJECT)
-class InspectionsViewModel {
+class InspectionsViewModel(
+    val project: Project,
+    val coroutineScope: CoroutineScope
+) {
     private val mutableInsights = MutableStateFlow<List<QueryInsight<PsiElement, *>>>(emptyList())
     val insights = mutableInsights.asStateFlow()
 
     private val mutableOpenCategories = MutableStateFlow<InspectionCategory?>(null)
     val openCategories = mutableOpenCategories.asStateFlow()
+
+    init {
+        val connectionStateViewModel by project.service<ConnectionStateViewModel>()
+
+        connectionStateViewModel.connectionState
+            .zip(insights) { state, insight -> state to insight }
+            .onEach { refreshSidePanelStatusOnInsights(it.first, it.second) }
+            .launchIn(coroutineScope)
+    }
 
     suspend fun startInspectionSessionOf(psiFile: PsiFile, inspection: Inspection) {
         withContext(Dispatchers.IO) {
@@ -68,5 +85,18 @@ class InspectionsViewModel {
             a.descriptionArguments == b.descriptionArguments &&
             a.inspection == b.inspection &&
             (a.query.source == b.query.source || a.query.source.isEquivalentTo(b.query.source))
+    }
+
+    private fun refreshSidePanelStatusOnInsights(connectionState: ConnectionState, insights: List<QueryInsight<*, *>>) {
+        val viewModel by project.service<SidePanelViewModel>()
+        if (connectionState.selectedConnectionState is SelectedConnectionState.Initial ||
+            connectionState.selectedConnectionState is SelectedConnectionState.Failed
+        ) {
+            viewModel.setStatus(SidePanelStatus.Warning)
+        } else if (insights.isNotEmpty()) {
+            viewModel.setStatus(SidePanelStatus.Warning)
+        } else {
+            viewModel.setStatus(SidePanelStatus.Ok)
+        }
     }
 }

@@ -13,6 +13,7 @@ import javax.swing.SwingConstants
 
 object Icons {
     private val greenCircle = IconLoader.getIcon("/icons/GreenCircle.svg", javaClass)
+    private val redCircle = IconLoader.getIcon("/icons/RedCircle.svg", javaClass)
     val loading = AnimatedIcon.Default()
     val logo = AllIcons.Providers.MongoDB
     val logoConnected =
@@ -41,6 +42,20 @@ object Icons {
     val warning = AllIcons.General.Warning
     private val greenCheckmark = AllIcons.General.GreenCheckmark
     private val questionMark = AllIcons.General.QuestionDialog
+
+    object SidePanel {
+        private object LogoRaw {
+            val logoLight = IconLoader.getIcon("/icons/SidePanelLogo.svg", javaClass)
+            val logoDark = IconLoader.getIcon("/icons/SidePanelLogoDark.svg", javaClass)
+        }
+
+        val logo = if (JBColor.isBright()) LogoRaw.logoLight else LogoRaw.logoDark
+        val logoAttention =
+            LayeredIcon.layeredIcon(arrayOf(logo, redCircle)).apply {
+                val scaledRedCircle = IconUtil.resizeSquared(redCircle, 10)
+                setIcon(scaledRedCircle, 1, SwingConstants.NORTH_EAST)
+            }
+    }
 
     val queryNotRunIcon = LayeredIcon.layeredIcon(arrayOf(logo, questionMark)).apply {
         val scaledGreenCircle = IconUtil.resizeSquared(questionMark, 9)

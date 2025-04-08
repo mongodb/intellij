@@ -32,13 +32,45 @@ class AnalysisScopeViewModelTest {
         editorState.tryEmit(
             EditorState(
                 focusedFiles = focusedFiles,
-                openFiles = emptyList()
+                openFiles = emptyList(),
+                carets = emptyList()
             )
         )
 
         eventually(coroutineScope = coroutineScope) {
             val currentScope = analysisScopeViewModel.analysisScope.value
             assertInstanceOf(AnalysisScope.CurrentFile::class.java, currentScope)
+        }
+    }
+
+    @Test
+    fun `when the scope is current query it reemits the new scope when the editor state changes`(
+        project: Project,
+        coroutineScope: TestScope
+    ) {
+        val editorState = MutableStateFlow(EditorState.default())
+        val editorViewModel = mock<CodeEditorViewModel>()
+        whenever(editorViewModel.editorState).thenReturn(editorState)
+
+        project.withMockedService(editorViewModel)
+        val analysisScopeViewModel = AnalysisScopeViewModel(project, coroutineScope)
+
+        runBlocking {
+            analysisScopeViewModel.changeScope(AnalysisScope.CurrentQuery())
+        }
+
+        val focusedFiles = listOf(fileAt("File1.java"), fileAt("File2.java"))
+        editorState.tryEmit(
+            EditorState(
+                focusedFiles = focusedFiles,
+                openFiles = emptyList(),
+                carets = emptyList()
+            )
+        )
+
+        eventually(coroutineScope = coroutineScope) {
+            val currentScope = analysisScopeViewModel.analysisScope.value
+            assertInstanceOf(AnalysisScope.CurrentQuery::class.java, currentScope)
         }
     }
 

@@ -163,16 +163,24 @@ class AnalysisScopeViewModel(
 
     suspend fun reanalyzeCurrentScope() {
         withContext(Dispatchers.IO) {
-            mutableAnalysisScope.tryEmit(mutableAnalysisScope.value)
+            mutableAnalysisScope.emit(mutableAnalysisScope.value)
             val codeEditorViewModel by project.service<CodeEditorViewModel>()
             codeEditorViewModel.reanalyzeRelevantEditors()
+        }
+    }
+
+    suspend fun changeScopeToCurrentQuery() {
+        withContext(Dispatchers.IO) {
+            mutableAnalysisScope.emit(AnalysisScope.CurrentQuery())
         }
     }
 
     private fun refreshAnalysisScopeIfNecessary() {
         val currentScope = mutableAnalysisScope.value
         if (currentScope is AnalysisScope.CurrentFile) {
-            mutableAnalysisScope.tryEmit(AnalysisScope.CurrentFile)
+            mutableAnalysisScope.tryEmit(AnalysisScope.CurrentFile())
+        } else if (currentScope is AnalysisScope.CurrentQuery) {
+            mutableAnalysisScope.tryEmit(AnalysisScope.CurrentQuery())
         }
     }
 }

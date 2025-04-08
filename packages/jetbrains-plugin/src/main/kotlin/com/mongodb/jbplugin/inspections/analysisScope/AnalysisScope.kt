@@ -5,6 +5,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.meta.service
+import com.mongodb.jbplugin.meta.withinReadActionBlocking
 import com.mongodb.jbplugin.ui.viewModel.CodeEditorViewModel
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.annotations.PropertyKey
@@ -20,10 +21,10 @@ sealed interface AnalysisScope {
     fun getAdditionalFilesInScope(project: Project): List<VirtualFile>
 
     companion object {
-        fun default(): AnalysisScope = CurrentFile
+        fun default(): AnalysisScope = CurrentFile()
     }
 
-    data object CurrentFile : AnalysisScope {
+    class CurrentFile : AnalysisScope {
         @PropertyKey(resourceBundle = "messages.SidePanelBundle")
         override val displayName = "side-panel.scope.current-file"
 
@@ -41,7 +42,25 @@ sealed interface AnalysisScope {
         }
     }
 
-    data object AllInsights : AnalysisScope {
+    class CurrentQuery : AnalysisScope {
+        @PropertyKey(resourceBundle = "messages.SidePanelBundle")
+        override val displayName = "side-panel.scope.current-query"
+
+        override fun getFilteredInsights(project: Project, allInsights: List<QueryInsight<PsiElement, *>>): List<QueryInsight<PsiElement, *>> {
+            val codeEditorViewModel by project.service<CodeEditorViewModel>()
+            val allFocusedQueries = withinReadActionBlocking {
+                codeEditorViewModel.queriesAtCaret().map { it.queryHash() }.toSet()
+            }
+
+            return allInsights.filter { allFocusedQueries.contains(it.query.queryHash()) }
+        }
+
+        override fun getAdditionalFilesInScope(project: Project): List<VirtualFile> {
+            return emptyList()
+        }
+    }
+
+    class AllInsights : AnalysisScope {
         @PropertyKey(resourceBundle = "messages.SidePanelBundle")
         override val displayName = "side-panel.scope.all-insights"
 

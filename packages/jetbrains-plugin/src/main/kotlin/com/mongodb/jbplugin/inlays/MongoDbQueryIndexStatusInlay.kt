@@ -11,6 +11,7 @@ import com.intellij.codeInsight.hints.InlayHintsCollector
 import com.intellij.codeInsight.hints.InlayHintsProvider
 import com.intellij.codeInsight.hints.InlayHintsSink
 import com.intellij.codeInsight.hints.SettingsKey
+import com.intellij.codeInsight.hints.presentation.MouseButton.Left
 import com.intellij.codeInsight.hints.presentation.PresentationFactory
 import com.intellij.openapi.editor.Editor
 import com.intellij.psi.PsiElement
@@ -33,8 +34,10 @@ import com.mongodb.jbplugin.mql.components.HasExplain
 import com.mongodb.jbplugin.mql.components.HasExplain.ExplainPlanType.FULL
 import com.mongodb.jbplugin.mql.components.HasExplain.ExplainPlanType.SAFE
 import com.mongodb.jbplugin.settings.pluginSetting
-import fleet.util.letIf
+import com.mongodb.jbplugin.ui.viewModel.AnalysisScopeViewModel
+import com.mongodb.jbplugin.ui.viewModel.SidePanelViewModel
 import org.jetbrains.jewel.bridge.JewelComposePanel
+import java.awt.Cursor
 import javax.swing.JComponent
 
 class MongoDbQueryIndexStatusInlay : InlayHintsProvider<Unit> {
@@ -128,8 +131,19 @@ private object QueriesInFileCollector : InlayHintsCollector {
         val inlay = inlayFactory.seq(
             inlayFactory.smallScaledIcon(icon),
             inlayFactory.text(text),
-        ).letIf(tooltip != null) {
-            inlayFactory.withTooltip(tooltip!!, it)
+        ).let {
+            inlayFactory.withTooltip(tooltip, it)
+        }.let {
+            inlayFactory.withCursorOnHover(it, Cursor(Cursor.HAND_CURSOR))
+        }.let {
+            inlayFactory.onClick(it, Left) { _, _ ->
+                val analysisScopeViewModel by element.project.service<AnalysisScopeViewModel>()
+                val sidePanelViewModel by element.project.service<SidePanelViewModel>()
+
+                sidePanelViewModel.withOpenSidePanel {
+                    analysisScopeViewModel.changeScopeToCurrentQuery()
+                }
+            }
         }
 
         sink.addInlineElement(query.source.textOffset, true, inlay, true)
