@@ -16,6 +16,7 @@ import com.mongodb.jbplugin.fixtures.withMockedServiceInScope
 import com.mongodb.jbplugin.linting.Inspection
 import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.meta.withinReadActionBlocking
+import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.ui.viewModel.CodeEditorViewModel
 import com.mongodb.jbplugin.ui.viewModel.EditorState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -64,6 +65,27 @@ class AnalysisScopeTest {
     }
 
     @Test
+    fun `CurrentQuery only accepts insights from the query at caret`(
+        project: Project
+    ) {
+        val queryAtCaret = queryWithHash(0xC0FFEE)
+
+        val codeEditorViewModel = mock<CodeEditorViewModel>()
+        whenever(codeEditorViewModel.queriesAtCaret()).thenReturn(listOf(queryAtCaret))
+
+        project.withMockedService(codeEditorViewModel)
+
+        val insights = listOf(
+            insightOnQuery(queryAtCaret),
+            insightOnQuery(queryWithHash(0xFABADA)),
+        )
+
+        val filteredInsights = AnalysisScope.CurrentQuery().getFilteredInsights(project, insights)
+        assertTrue(filteredInsights.all { it.query.queryHash() == queryAtCaret.queryHash() })
+        assertEquals(1, filteredInsights.size)
+    }
+
+    @Test
     fun `AllInsights loads all java files in the project`(
         project: Project,
         application: Application
@@ -92,7 +114,7 @@ class AnalysisScopeTest {
         whenever(psiFile.virtualFile).thenReturn(file)
 
         val qi = QueryInsight(
-            com.mongodb.jbplugin.mql.Node(
+            Node(
                 source,
                 emptyList()
             ),
@@ -102,5 +124,16 @@ class AnalysisScopeTest {
         )
 
         return qi
+    }
+
+    private fun insightOnQuery(query: Node<PsiElement>): QueryInsight<PsiElement, *> {
+        return QueryInsight(query, "Some", emptyList(), Inspection.NotUsingIndex)
+    }
+
+    private fun queryWithHash(hash: Int): Node<PsiElement> {
+        val query = mock<Node<PsiElement>>()
+        whenever(query.queryHash()).thenReturn(hash)
+
+        return query
     }
 }
