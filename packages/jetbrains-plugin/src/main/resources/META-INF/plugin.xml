@@ -98,17 +98,44 @@
             key="query-using-incompatible-types"
             enabledByDefault="true"
         />
+        <!-- Environment Mismatch Inspections -->
+        <localInspection implementationClass="com.mongodb.jbplugin.inspections.environmentmismatch.MongoDbDatabaseDoesNotExist"
+            language="JAVA"
+            bundle="messages.InspectionsAndInlaysBundle"
+            groupPath="MongoDB"
+            groupBundle="messages.InspectionsAndInlaysBundle"
+            groupKey="group.names.probable.bugs"
+            key="query-referencing-non-existent-database"
+            enabledByDefault="true"
+        />
+        <localInspection implementationClass="com.mongodb.jbplugin.inspections.environmentmismatch.MongoDbCollectionDoesNotExist"
+            language="JAVA"
+            bundle="messages.InspectionsAndInlaysBundle"
+            groupPath="MongoDB"
+            groupBundle="messages.InspectionsAndInlaysBundle"
+            groupKey="group.names.probable.bugs"
+            key="query-referencing-non-existent-collection"
+            enabledByDefault="true"
+        />
+        <localInspection implementationClass="com.mongodb.jbplugin.inspections.environmentmismatch.MongoDbNoDatabaseInferred"
+            language="JAVA"
+            bundle="messages.InspectionsAndInlaysBundle"
+            groupPath="MongoDB"
+            groupBundle="messages.InspectionsAndInlaysBundle"
+            groupKey="group.names.probable.bugs"
+            key="query-referencing-unknown-database"
+            enabledByDefault="true"
+        />
+        <localInspection implementationClass="com.mongodb.jbplugin.inspections.environmentmismatch.MongoDbNoCollectionSpecified"
+            language="JAVA"
+            bundle="messages.InspectionsAndInlaysBundle"
+            groupPath="MongoDB"
+            groupBundle="messages.InspectionsAndInlaysBundle"
+            groupKey="group.names.probable.bugs"
+            key="query-referencing-unspecified-collection"
+            enabledByDefault="true"
+        />
         <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: -->
-
-        <localInspection language="JAVA"
-                         bundle="messages.InspectionsAndInlaysBundle"
-                         key="inspection.namespace.checking"
-                         groupPath="MongoDB"
-                         groupBundle="messages.InspectionsAndInlaysBundle"
-                         groupKey="group.names.probable.bugs"
-                         enabledByDefault="true"
-                         level="WARNING"
-                         implementationClass="com.mongodb.jbplugin.inspections.impl.NamespaceCheckInspectionBridge"/>
 
         <codeInsight.lineMarkerProvider
                 language="JAVA"

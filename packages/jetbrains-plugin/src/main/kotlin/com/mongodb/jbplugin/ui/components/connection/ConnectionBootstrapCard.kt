@@ -12,12 +12,18 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.intellij.database.dataSource.LocalDataSource
@@ -25,7 +31,9 @@ import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
 import com.mongodb.jbplugin.ui.components.utilities.ActionLink
 import com.mongodb.jbplugin.ui.components.utilities.Card
 import com.mongodb.jbplugin.ui.components.utilities.CardCategory
+import com.mongodb.jbplugin.ui.components.utilities.ControlledComboBox
 import com.mongodb.jbplugin.ui.components.utilities.hooks.useTranslation
+import com.mongodb.jbplugin.ui.components.utilities.hooks.useViewModel
 import com.mongodb.jbplugin.ui.components.utilities.hooks.useViewModelMutator
 import com.mongodb.jbplugin.ui.components.utilities.hooks.useViewModelState
 import com.mongodb.jbplugin.ui.viewModel.ConnectionState
@@ -34,8 +42,9 @@ import com.mongodb.jbplugin.ui.viewModel.DatabaseState
 import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState
 import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState.Connecting
 import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState.Failed
+import com.mongodb.jbplugin.ui.viewModel.SidePanelEvents
+import com.mongodb.jbplugin.ui.viewModel.SidePanelViewModel
 import org.jetbrains.jewel.ui.Outline
-import org.jetbrains.jewel.ui.component.ComboBox
 import org.jetbrains.jewel.ui.component.DefaultButton
 import org.jetbrains.jewel.ui.component.Icon
 import org.jetbrains.jewel.ui.component.Text
@@ -78,9 +87,29 @@ fun ConnectionBootstrapCard() {
         unselectSelectedDatabase = unselectSelectedDatabase,
     )
 
+    val connectionComboBoxState = ConnectionComboBoxState.default()
+    val viewModel by useViewModel<SidePanelViewModel>()
+    LaunchedEffect(Unit) {
+        viewModel.subscribeToSidePanelEvents { emittedEvent ->
+            if (emittedEvent == SidePanelEvents.OpenConnectionComboBox) {
+                connectionComboBoxState.setComboBoxExpanded(true)
+                // Need to run it catching because there is slight chance that FocusRequester did not have
+                // time to initialize in which case, it will throw an exception. Exception itself does
+                // not harm the UI but its worth catching so it does not bubble up to the user.
+                runCatching {
+                    connectionComboBoxState.focusRequester.requestFocus()
+                }
+            }
+        }
+    }
+
     CompositionLocalProvider(LocalConnectionCallbacks provides connectionCallbacks) {
         CompositionLocalProvider(LocalDatabaseCallbacks provides databaseCallbacks) {
-            _ConnectionBootstrapCard(connectionState, databaseState)
+            CompositionLocalProvider(
+                LocalConnectionComboBoxState provides connectionComboBoxState
+            ) {
+                _ConnectionBootstrapCard(connectionState, databaseState)
+            }
         }
     }
 }
@@ -219,8 +248,12 @@ internal fun ConnectionComboBox(
     selectedConnection: LocalDataSource?,
     selectedConnectionState: SelectedConnectionState,
 ) {
-    ComboBox(
-        modifier = Modifier.testTag("ConnectionComboBox"),
+    val (comboBoxExpanded, setComboBoxExpanded, focusRequester) = useConnectionComboBoxState()
+
+    ControlledComboBox(
+        comboBoxExpanded = comboBoxExpanded,
+        setComboBoxExpanded = setComboBoxExpanded,
+        modifier = Modifier.testTag("ConnectionComboBox").focusRequester(focusRequester),
         labelText = selectedConnection?.name
             ?: useTranslation("side-panel.connection.ConnectionBootstrapCard.combobox.choose-a-connection"),
         outline = if (selectedConnectionState is Failed) {
@@ -314,4 +347,39 @@ internal fun useConnectionStatus(connection: LocalDataSource): State<ConnectionS
             ConnectionStatus.Disconnected
         }
     }
+}
+
+internal data class ConnectionComboBoxState(
+    val comboBoxExpanded: Boolean = false,
+    val setComboBoxExpanded: (Boolean) -> Unit = {},
+    val focusRequester: FocusRequester = FocusRequester(),
+) {
+    companion object {
+        @Composable
+        internal fun default(): ConnectionComboBoxState {
+            var comboBoxExpanded by remember { mutableStateOf(false) }
+            val setComboBoxExpanded = { expanded: Boolean -> comboBoxExpanded = expanded }
+            val comboBoxFocusRequester = remember { FocusRequester() }
+
+            return ConnectionComboBoxState(
+                comboBoxExpanded = comboBoxExpanded,
+                setComboBoxExpanded = setComboBoxExpanded,
+                focusRequester = comboBoxFocusRequester
+            )
+        }
+    }
+}
+
+/**
+ * We purposely initialise this to null to reduce pain when testing these components otherwise
+ * for each test that directly / indirectly triggers connection combobox state changes will have
+ * to initialise the CompositionLocalProvider. We evade that by doing a small check in
+ * useConnectionComboBoxState below - where we either return the current value if its present which
+ * in test cases won't be (unless specified) or we return a newly built ConnectionComboBoxState.
+ */
+internal val LocalConnectionComboBoxState = compositionLocalOf<ConnectionComboBoxState?> { null }
+
+@Composable
+internal fun useConnectionComboBoxState(): ConnectionComboBoxState {
+    return LocalConnectionComboBoxState.current ?: ConnectionComboBoxState.default()
 }

@@ -39,3 +39,31 @@ will trigger this inspection.
 
 Provides insights whether a query is using an index but MAY perform poorly in the target cluster
 under considerably load.
+
+### Correctness
+
+#### FieldDoesNotExist
+
+Provides insights when a query references a field that does not exist in the target collection's schema.
+
+#### TypeMismatch
+
+Provides insights when a query attempts to compare or operate on fields with incompatible types in the target collection's schema.
+
+### Environment
+
+#### DatabaseDoesNotExist
+
+Provides insights when a query references a database that does not exist in the target cluster.
+
+#### CollectionDoesNotExist
+
+Provides insights when a query references a collection that does not exist in the specified database.
+
+#### NoDatabaseInferred
+
+Provides insights when a query specifies a collection without a database context.
+
+#### NoCollectionSpecified
+
+Provides insights when a query does not specify a target collection.
