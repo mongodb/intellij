@@ -39,33 +39,39 @@ import com.mongodb.jbplugin.ui.components.utilities.hooks.useTranslation
 import com.mongodb.jbplugin.ui.components.utilities.hooks.useViewModelMutator
 import com.mongodb.jbplugin.ui.components.utilities.hooks.useViewModelState
 import com.mongodb.jbplugin.ui.viewModel.AnalysisScopeViewModel
+import com.mongodb.jbplugin.ui.viewModel.AnalysisStatus
 import com.mongodb.jbplugin.ui.viewModel.InspectionsViewModel
-import fleet.util.letIf
+import org.jetbrains.jewel.ui.component.DefaultButton
 import org.jetbrains.jewel.ui.component.Icon
 import org.jetbrains.jewel.ui.component.Text
 import org.jetbrains.jewel.ui.icons.AllIconsKeys
+import org.jetbrains.jewel.ui.util.thenIf
 
 @Composable
 fun InspectionAccordion() {
     val analysisScope by useViewModelState(AnalysisScopeViewModel::analysisScope, AnalysisScope.default())
+    val analysisStatus by useViewModelState(AnalysisScopeViewModel::analysisStatus, AnalysisStatus.default())
     val allInsights by useViewModelState(InspectionsViewModel::insights, emptyList())
     val openCategory by useViewModelState(InspectionsViewModel::openCategories, null)
     val onOpenCategory by useViewModelMutator(InspectionsViewModel::openCategory)
     val onNavigateToQueryOfInsight by useViewModelMutator(InspectionsViewModel::visitQueryOfInsightInEditor)
+    val onChangeScope by useViewModelMutator(AnalysisScopeViewModel::changeScope)
 
     val accordionCallbacks = InspectionAccordionCallbacks(
         onToggleInspectionCategory = onOpenCategory,
-        onNavigateToQueryOfInsight = onNavigateToQueryOfInsight
+        onNavigateToQueryOfInsight = onNavigateToQueryOfInsight,
+        onChangeScope = onChangeScope
     )
 
     CompositionLocalProvider(LocalInspectionAccordionCallbacks provides accordionCallbacks) {
-        _InspectionAccordion(analysisScope, allInsights, openCategory)
+        _InspectionAccordion(analysisScope, analysisStatus, allInsights, openCategory)
     }
 }
 
 @Composable
 fun _InspectionAccordion(
     analysisScope: AnalysisScope,
+    analysisStatus: AnalysisStatus,
     allInsights: List<QueryInsight<PsiElement, *>>,
     openCategory: InspectionCategory?
 ) {
@@ -76,18 +82,22 @@ fun _InspectionAccordion(
         }
     }
 
-    Column {
-        sectionState.forEach { section ->
-            val isOpen = section.category == openCategory
+    if (insights.isEmpty() && analysisStatus == AnalysisStatus.NoAnalysis) {
+        NoInsightsNotification(analysisScope)
+    } else {
+        Column {
+            sectionState.forEach { section ->
+                val isOpen = section.category == openCategory
 
-            val modifier = Modifier.animateContentSize()
-                .padding(vertical = 8.dp)
-                .letIf(isOpen) { it.weight(1f) }
+                val modifier = Modifier.animateContentSize()
+                    .padding(vertical = 8.dp)
+                    .thenIf(isOpen) { weight(1f) }
 
-            InspectionAccordionSection(modifier, section.category, section.insights.size, isOpen) {
-                Column {
-                    for (insight in section.insights) {
-                        InsightCard(insight)
+                InspectionAccordionSection(modifier, section.category, section.insights.size, isOpen) {
+                    Column {
+                        for (insight in section.insights) {
+                            InsightCard(insight)
+                        }
                     }
                 }
             }
@@ -96,7 +106,44 @@ fun _InspectionAccordion(
 }
 
 @Composable
-fun InspectionAccordionSection(modifier: Modifier, category: InspectionCategory, count: Int, open: Boolean, body: @Composable () -> Unit) {
+private fun NoInsightsNotification(scope: AnalysisScope) {
+    val callbacks = useInspectionAccordionCallbacks()
+
+    Box(Modifier.testTag("NoInsightsNotification")) {
+        when (scope) {
+            is AnalysisScope.CurrentFile, is AnalysisScope.CurrentQuery -> {
+                Column {
+                    Text(useTranslation("side-panel.scope.no-insights-message.change-to-recommended.text"))
+                    DefaultButton(
+                        modifier = Modifier.padding(top = 8.dp),
+                        onClick = { callbacks.onChangeScope(AnalysisScope.RecommendedInsights()) }
+                    ) {
+                        Text(useTranslation("side-panel.scope.no-insights-message.change-to-recommended.button"))
+                    }
+                }
+            }
+
+            is AnalysisScope.RecommendedInsights -> {
+                Column {
+                    Text(useTranslation("side-panel.scope.no-insights-message.change-to-all.text"))
+                    DefaultButton(
+                        modifier = Modifier.padding(top = 8.dp),
+                        onClick = { callbacks.onChangeScope(AnalysisScope.AllInsights()) }
+                    ) {
+                        Text(useTranslation("side-panel.scope.no-insights-message.change-to-all.button"))
+                    }
+                }
+            }
+
+            else -> {
+                Text(useTranslation("side-panel.scope.no-insights-message.generic.text"))
+            }
+        }
+    }
+}
+
+@Composable
+private fun InspectionAccordionSection(modifier: Modifier, category: InspectionCategory, count: Int, open: Boolean, body: @Composable () -> Unit) {
     val callbacks = useInspectionAccordionCallbacks()
     val scrollState = rememberScrollState()
 
@@ -128,13 +175,14 @@ fun InspectionAccordionSection(modifier: Modifier, category: InspectionCategory,
 
 internal data class InspectionAccordionCallbacks(
     val onToggleInspectionCategory: (InspectionCategory) -> Unit = { _ -> },
-    val onNavigateToQueryOfInsight: (QueryInsight<PsiElement, *>) -> Unit = { _ -> }
+    val onNavigateToQueryOfInsight: (QueryInsight<PsiElement, *>) -> Unit = { _ -> },
+    val onChangeScope: (AnalysisScope) -> Unit = { _ -> },
 )
 
 internal val LocalInspectionAccordionCallbacks = compositionLocalOf { InspectionAccordionCallbacks() }
 
 @Composable
-internal fun InsightCard(insight: QueryInsight<PsiElement, *>) {
+private fun InsightCard(insight: QueryInsight<PsiElement, *>) {
     Column(
         modifier = Modifier
             .testTag("InsightCard::${insight.description}::${queryLocation(insight.query)}")
@@ -184,7 +232,7 @@ private fun queryLocation(query: Node<PsiElement>): String {
 }
 
 @Composable
-internal fun useInspectionAccordionCallbacks(): InspectionAccordionCallbacks {
+private fun useInspectionAccordionCallbacks(): InspectionAccordionCallbacks {
     return LocalInspectionAccordionCallbacks.current
 }
 
@@ -200,4 +248,4 @@ private fun useInsightsOfCategory(allInsights: List<QueryInsight<PsiElement, *>>
     return allInsights.filter { it.inspection.category == category }.sortedBy { queryLocation(it.query) }
 }
 
-internal data class SectionState(val category: InspectionCategory, val insights: List<QueryInsight<PsiElement, *>>)
+private data class SectionState(val category: InspectionCategory, val insights: List<QueryInsight<PsiElement, *>>)
