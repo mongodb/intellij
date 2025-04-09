@@ -24,6 +24,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.inspections.analysisScope.AnalysisScope
@@ -94,7 +95,7 @@ fun _InspectionAccordion(
                     .thenIf(isOpen) { weight(1f) }
 
                 InspectionAccordionSection(modifier, section.category, section.insights.size, isOpen) {
-                    Column {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         for (insight in section.insights) {
                             InsightCard(insight)
                         }
@@ -184,25 +185,30 @@ internal val LocalInspectionAccordionCallbacks = compositionLocalOf { Inspection
 @Composable
 private fun InsightCard(insight: QueryInsight<PsiElement, *>) {
     Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier
             .testTag("InsightCard::${insight.description}::${queryLocation(insight.query)}")
-            .padding(bottom = 16.dp)
             .fillMaxWidth(1f)
             .clip(RoundedCornerShape(8.dp))
             .background(Card.backgroundColor)
-            .padding(12.dp)
+            .padding(vertical = 12.dp, horizontal = 8.dp)
     ) {
-        Row(Modifier.padding(bottom = 8.dp)) {
+        Row {
             Icon(AllIconsKeys.General.Warning, "Warning")
-            Text(useTranslation(insight.description, *insight.descriptionArguments.toTypedArray()), modifier = Modifier.padding(horizontal = 8.dp), fontWeight = FontWeight.Bold)
+            Text(
+                useTranslation(insight.description, *insight.descriptionArguments.toTypedArray()),
+                modifier = Modifier.padding(horizontal = 8.dp),
+                fontWeight = FontWeight.Bold
+            )
         }
 
         Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier
                 .fillMaxWidth(1f)
                 .clip(RoundedCornerShape(8.dp))
                 .background(Card.secondaryBackgroundColor)
-                .padding(12.dp)
+                .padding(8.dp)
         ) {
             LinkToQueryInsight(insight)
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
@@ -216,7 +222,11 @@ private fun InsightCard(insight: QueryInsight<PsiElement, *>) {
 private fun LinkToQueryInsight(insight: QueryInsight<PsiElement, *>) {
     val callbacks = LocalInspectionAccordionCallbacks.current
 
-    ActionLink(text = queryLocation(insight.query)) {
+    ActionLink(
+        text = queryLocation(insight.query),
+        overflow = TextOverflow.Ellipsis,
+        maxLines = 1,
+    ) {
         callbacks.onNavigateToQueryOfInsight(insight)
     }
 }
