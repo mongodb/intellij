@@ -34,6 +34,8 @@ import com.mongodb.jbplugin.meta.withinReadActionBlocking
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.ui.components.utilities.ActionLink
 import com.mongodb.jbplugin.ui.components.utilities.Card
+import com.mongodb.jbplugin.ui.components.utilities.MoreActionItem
+import com.mongodb.jbplugin.ui.components.utilities.MoreActionsButton
 import com.mongodb.jbplugin.ui.components.utilities.Separator
 import com.mongodb.jbplugin.ui.components.utilities.hooks.LocalProject
 import com.mongodb.jbplugin.ui.components.utilities.hooks.useTranslation
@@ -193,12 +195,31 @@ private fun InsightCard(insight: QueryInsight<PsiElement, *>) {
             .background(Card.backgroundColor)
             .padding(vertical = 12.dp, horizontal = 8.dp)
     ) {
-        Row {
-            Icon(AllIconsKeys.General.Warning, "Warning")
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Icon(
+                key = AllIconsKeys.General.Warning,
+                contentDescription = "Warning",
+            )
+
             Text(
-                useTranslation(insight.description, *insight.descriptionArguments.toTypedArray()),
-                modifier = Modifier.padding(horizontal = 8.dp),
-                fontWeight = FontWeight.Bold
+                text = useTranslation(
+                    insight.description,
+                    *insight.descriptionArguments.toTypedArray()
+                ),
+                fontWeight = FontWeight.Bold,
+                overflow = TextOverflow.Ellipsis,
+                maxLines = 1,
+                modifier = Modifier.weight(1f, fill = true)
+            )
+
+            MoreActionsButton(
+                actions = listOf(
+                    MoreActionItem(label = "Disable inspection") {},
+                ),
             )
         }
 
