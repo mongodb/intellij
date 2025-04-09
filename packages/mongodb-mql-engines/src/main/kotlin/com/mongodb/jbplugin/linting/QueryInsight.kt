@@ -30,72 +30,54 @@ sealed interface InspectionAction {
 }
 
 sealed interface Inspection {
-    val displayName: String
-    val shortName: String
     val primaryAction: InspectionAction
     val secondaryActions: Array<InspectionAction>
     val category: InspectionCategory
 
     // Performance Warnings
     data object NotUsingIndex : Inspection {
-        override val displayName = "inspection.not-using-index.display-name"
-        override val shortName = "inspection.not-using-index.short-name"
         override val primaryAction = CreateIndexSuggestionScript
         override val secondaryActions = emptyArray<InspectionAction>()
         override val category = PERFORMANCE
     }
 
     data object NotUsingIndexEffectively : Inspection {
-        override val displayName = "inspection.not-using-index-effectively.display-name"
-        override val shortName = "inspection.not-using-index-effectively.short-name"
         override val primaryAction = CreateIndexSuggestionScript
         override val secondaryActions = emptyArray<InspectionAction>()
         override val category = PERFORMANCE
     }
 
     data object FieldDoesNotExist : Inspection {
-        override val displayName = "inspection.field-does-not-exist.display-name"
-        override val shortName = "inspection.field-does-not-exist.short-name"
         override val primaryAction = RunQuery
         override val secondaryActions = emptyArray<InspectionAction>()
         override val category = CORRECTNESS
     }
 
     data object TypeMismatch : Inspection {
-        override val displayName = "inspection.type-mismatch.display-name"
-        override val shortName = "inspection.type-mismatch.short-name"
         override val primaryAction = RunQuery
         override val secondaryActions = emptyArray<InspectionAction>()
         override val category = CORRECTNESS
     }
 
     data object DatabaseDoesNotExist : Inspection {
-        override val displayName = "inspection.database-does-not-exist.display-name"
-        override val shortName = "inspection.database-does-not-exist.short-name"
         override val primaryAction = ChooseConnection
         override val secondaryActions = emptyArray<InspectionAction>()
         override val category = ENVIRONMENT_MISMATCH
     }
 
     data object CollectionDoesNotExist : Inspection {
-        override val displayName = "inspection.collection-does-not-exist.display-name"
-        override val shortName = "inspection.collection-does-not-exist.short-name"
         override val primaryAction = ChooseConnection
         override val secondaryActions = emptyArray<InspectionAction>()
         override val category = ENVIRONMENT_MISMATCH
     }
 
     data object NoDatabaseInferred : Inspection {
-        override val displayName = "inspection.no-database-inferred.display-name"
-        override val shortName = "inspection.no-database-inferred.short-name"
         override val primaryAction = ChooseConnection
         override val secondaryActions = emptyArray<InspectionAction>()
         override val category = ENVIRONMENT_MISMATCH
     }
 
     data object NoCollectionSpecified : Inspection {
-        override val displayName = "inspection.no-collection-specified.display-name"
-        override val shortName = "inspection.no-collection-specified.short-name"
         override val primaryAction = ChooseConnection
         override val secondaryActions = emptyArray<InspectionAction>()
         override val category = ENVIRONMENT_MISMATCH
