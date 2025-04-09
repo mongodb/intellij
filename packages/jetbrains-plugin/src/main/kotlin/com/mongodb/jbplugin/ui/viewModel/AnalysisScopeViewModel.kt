@@ -177,10 +177,11 @@ class AnalysisScopeViewModel(
 
     private fun refreshAnalysisScopeIfNecessary() {
         val currentScope = mutableAnalysisScope.value
-        if (currentScope is AnalysisScope.CurrentFile) {
-            mutableAnalysisScope.tryEmit(AnalysisScope.CurrentFile())
-        } else if (currentScope is AnalysisScope.CurrentQuery) {
-            mutableAnalysisScope.tryEmit(AnalysisScope.CurrentQuery())
+        when (currentScope) {
+            is AnalysisScope.CurrentFile -> coroutineScope.launch { refreshAnalysis() }
+            is AnalysisScope.CurrentQuery -> coroutineScope.launch { refreshAnalysis() }
+            is AnalysisScope.RecommendedInsights -> coroutineScope.launch { refreshAnalysis() }
+            else -> {}
         }
     }
 }

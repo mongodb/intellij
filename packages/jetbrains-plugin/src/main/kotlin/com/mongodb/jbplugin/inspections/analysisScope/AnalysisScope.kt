@@ -73,4 +73,50 @@ sealed interface AnalysisScope {
             return runBlocking { codeEditorViewModel.allProjectFiles(project) }
         }
     }
+
+    class RecommendedInsights : AnalysisScope {
+        @PropertyKey(resourceBundle = "messages.SidePanelBundle")
+        override val displayName = "side-panel.scope.recommended-insights"
+
+        override fun getFilteredInsights(project: Project, allInsights: List<QueryInsight<PsiElement, *>>): List<QueryInsight<PsiElement, *>> {
+            val codeEditorViewModel by project.service<CodeEditorViewModel>()
+            val sharedParent = findOpenFilesCommonPrefix(codeEditorViewModel) ?: return emptyList()
+
+            return allInsights.filter {
+                it.query.source.containingFile.virtualFile.path.startsWith(sharedParent)
+            }
+        }
+
+        override fun getAdditionalFilesInScope(project: Project): List<VirtualFile> {
+            val codeEditorViewModel by project.service<CodeEditorViewModel>()
+            val sharedParent = findOpenFilesCommonPrefix(codeEditorViewModel) ?: return emptyList()
+            val allProjectFiles = runBlocking { codeEditorViewModel.allProjectFiles(project) }
+
+            return allProjectFiles.filter { it.path.startsWith(sharedParent) }
+        }
+
+        private fun findOpenFilesCommonPrefix(codeEditorViewModel: CodeEditorViewModel): String? {
+            val openFiles = codeEditorViewModel.editorState.value.openFiles
+
+            return openFiles.map { it.path }
+                .fold(null as String?) { acc, new ->
+                    when {
+                        acc == null -> new
+                        acc.startsWith(new) -> new
+                        new.startsWith(acc) -> acc
+                        else -> findCommonPrefix(acc, new)
+                    }
+                }
+        }
+        private fun findCommonPrefix(a: String, b: String): String {
+            val minLen = minOf(a.length, b.length)
+            for (i in 0..minLen) {
+                if (a[i] != b[i]) {
+                    return a.substring(0, i)
+                }
+            }
+
+            return a.substring(minLen)
+        }
+    }
 }
