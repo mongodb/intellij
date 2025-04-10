@@ -56,7 +56,7 @@ class InspectionsViewModelTest {
             viewModel.addInsight(QueryInsight.notUsingIndex(query))
             assertEquals(1, viewModel.insights.value.size)
 
-            viewModel.startInspectionSessionOf(file, NotUsingIndex)
+            viewModel.flushOldInsightsFor(file, NotUsingIndex)
             assertEquals(0, viewModel.insights.value.size)
         }
     }

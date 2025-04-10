@@ -29,6 +29,17 @@ sealed interface InspectionAction {
     data object ChooseConnection : InspectionAction
 }
 
+val ALL_MDB_INSPECTIONS = listOf(
+    NotUsingIndex,
+    NotUsingIndexEffectively,
+    FieldDoesNotExist,
+    TypeMismatch,
+    DatabaseDoesNotExist,
+    CollectionDoesNotExist,
+    NoDatabaseInferred,
+    NoCollectionSpecified,
+)
+
 sealed interface Inspection {
     val primaryAction: InspectionAction
     val secondaryActions: Array<InspectionAction>

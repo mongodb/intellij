@@ -1,6 +1,5 @@
 package com.mongodb.jbplugin.ui.viewModel
 
-import com.intellij.codeInsight.daemon.HighlightDisplayKey
 import com.intellij.codeInspection.InspectionEngine
 import com.intellij.codeInspection.InspectionManager
 import com.intellij.codeInspection.ex.InspectionToolWrapper
@@ -8,12 +7,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.findPsiFile
-import com.intellij.profile.codeInspection.InspectionProfileManager
 import com.mongodb.jbplugin.inspections.analysisScope.AnalysisScope
-import com.mongodb.jbplugin.inspections.correctness.MongoDbFieldDoesNotExist
-import com.mongodb.jbplugin.inspections.correctness.MongoDbTypeMismatch
-import com.mongodb.jbplugin.inspections.performance.MongoDbQueryNotUsingIndex
-import com.mongodb.jbplugin.inspections.performance.MongoDbQueryNotUsingIndexEffectively
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.meta.singleExecutionJob
 import com.mongodb.jbplugin.meta.withinReadAction
@@ -26,6 +20,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -50,13 +45,6 @@ sealed interface AnalysisStatus {
     }
 }
 
-private val MDB_INSPECTIONS: Array<String> = arrayOf(
-    MongoDbFieldDoesNotExist::class.simpleName!!,
-    MongoDbTypeMismatch::class.simpleName!!,
-    MongoDbQueryNotUsingIndex::class.simpleName!!,
-    MongoDbQueryNotUsingIndexEffectively::class.simpleName!!
-)
-
 private val log = logger<AnalysisScopeViewModel>()
 
 @Service(Service.Level.PROJECT)
@@ -76,6 +64,13 @@ class AnalysisScopeViewModel(
         val codeEditorViewModel by project.service<CodeEditorViewModel>()
         codeEditorViewModel.editorState.value.run { refreshAnalysisScopeIfNecessary() }
         codeEditorViewModel.editorState.onEach { refreshAnalysisScopeIfNecessary() }.launchIn(coroutineScope)
+
+        val inspectionsViewModel by project.service<InspectionsViewModel>()
+        coroutineScope.launch(Dispatchers.IO) {
+            inspectionsViewModel.inspectionsWithStatus.collectLatest {
+                refreshAnalysis()
+            }
+        }
     }
 
     suspend fun changeScope(scope: AnalysisScope) = changeScopeJob.launch(onCancel = {
@@ -149,16 +144,10 @@ class AnalysisScopeViewModel(
     }
 
     private fun getEnabledToolWrappers(): List<InspectionToolWrapper<*, *>> {
-        return MDB_INSPECTIONS.mapNotNull { inspection ->
-            val profile = InspectionProfileManager.getInstance(project).currentProfile
-            val toolWrapper = profile.getInspectionTool(inspection, project)
-            toolWrapper?.takeIf {
-                profile.isToolEnabled(
-                    HighlightDisplayKey.find(inspection),
-                    null
-                )
-            }
-        }
+        val inspectionsViewModel by project.service<InspectionsViewModel>()
+        return inspectionsViewModel.inspectionsWithStatus.value
+            .filter { it.value }
+            .mapNotNull { it.key.getToolWrapper(project) }
     }
 
     suspend fun reanalyzeCurrentScope() {
