@@ -8,8 +8,12 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runComposeUiTest
 import com.mongodb.jbplugin.fixtures.setContentWithTheme
 import com.mongodb.jbplugin.inspections.analysisScope.AnalysisScope
+import com.mongodb.jbplugin.linting.Inspection.NotUsingIndex
+import com.mongodb.jbplugin.linting.InspectionCategory.CORRECTNESS
 import com.mongodb.jbplugin.linting.InspectionCategory.PERFORMANCE
+import com.mongodb.jbplugin.ui.components.utilities.MoreActionItem
 import com.mongodb.jbplugin.ui.viewModel.AnalysisStatus
+import com.mongodb.jbplugin.ui.viewModel.getToolShortName
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -146,5 +150,85 @@ class InspectionAccordionTest {
 
         onNodeWithText("Change to All Insights").performClick()
         assertTrue(newScope is AnalysisScope.AllInsights)
+    }
+
+    @Test
+    fun `shows an action link for showing disabled inspection in each category if there are any`() = runComposeUiTest {
+        setContentWithTheme {
+            _InspectionAccordion(
+                AnalysisScope.default(),
+                AnalysisStatus.CollectingFiles,
+                emptyList(),
+                setOf(NotUsingIndex),
+                PERFORMANCE
+            )
+        }
+
+        onNodeWithTag("InspectionAccordionSection::Body::PERFORMANCE").assertExists()
+        onNodeWithText("Show disabled inspections").assertExists()
+
+        setContentWithTheme {
+            _InspectionAccordion(
+                AnalysisScope.default(),
+                AnalysisStatus.CollectingFiles,
+                emptyList(),
+                setOf(NotUsingIndex),
+                CORRECTNESS
+            )
+        }
+
+        onNodeWithTag("InspectionAccordionSection::Body::CORRECTNESS").assertExists()
+        onNodeWithText("Show disabled inspections").assertDoesNotExist()
+    }
+
+    @Test
+    fun `shows the disabled inspections, after clicking Show disabled inspection and hides it after clicking Hide disabled inspection`() = runComposeUiTest {
+        setContentWithTheme {
+            _InspectionAccordion(
+                AnalysisScope.default(),
+                AnalysisStatus.CollectingFiles,
+                emptyList(),
+                setOf(NotUsingIndex),
+                PERFORMANCE
+            )
+        }
+
+        onNodeWithTag("InspectionAccordionSection::Body::PERFORMANCE").assertExists()
+
+        onNodeWithText("Show disabled inspections").performClick()
+        onNodeWithText("Hide disabled inspections").assertExists()
+        onNodeWithTag("DisabledInspectionCard::${NotUsingIndex.getToolShortName()}").assertExists()
+
+        onNodeWithText("Hide disabled inspections").performClick()
+        onNodeWithText("Show disabled inspections").assertExists()
+        onNodeWithTag("DisabledInspectionCard::${NotUsingIndex.getToolShortName()}").assertDoesNotExist()
+    }
+
+    @Test
+    fun `should render InsightCard structure with provided MoreActionItems`() = runComposeUiTest {
+        var enableInspectionCalled = false
+        var disableInspectionCalled = false
+        setContentWithTheme {
+            InsightCardStructure(
+                title = "Test Title",
+                testTag = "TestCard",
+                moreActionItems = listOf(
+                    MoreActionItem("Enable inspection") {
+                        enableInspectionCalled = true
+                    },
+                    MoreActionItem("Disable inspection") {
+                        disableInspectionCalled = true
+                    },
+                )
+            )
+        }
+
+        onNodeWithTag("TestCard::MoreActionsButton").performClick()
+        onNodeWithText("Enable inspection").performClick()
+        assertTrue(enableInspectionCalled)
+
+        onNodeWithTag("TestCard::MoreActionsButton").performClick()
+        onNodeWithText("Disable inspection").performClick()
+        assertTrue(disableInspectionCalled)
     }
 }

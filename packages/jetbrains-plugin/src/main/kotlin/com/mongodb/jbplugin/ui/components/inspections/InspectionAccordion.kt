@@ -346,7 +346,7 @@ fun InsightCardStructure(
                 modifier = Modifier.weight(1f, fill = true)
             )
 
-            MoreActionsButton(actions = moreActionItems)
+            MoreActionsButton(actions = moreActionItems, testTagPrefix = testTag)
         }
 
         if (content != null) {

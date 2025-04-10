@@ -15,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.jetbrains.jewel.ui.component.Icon
@@ -29,7 +30,10 @@ data class MoreActionItem(
 )
 
 @Composable
-fun MoreActionsButton(actions: List<MoreActionItem>) {
+fun MoreActionsButton(
+    actions: List<MoreActionItem>,
+    testTagPrefix: String = "",
+) {
     var showMenu by remember { mutableStateOf(false) }
     val interactionSource = remember { MutableInteractionSource() }
 
@@ -37,6 +41,7 @@ fun MoreActionsButton(actions: List<MoreActionItem>) {
         IconButton(
             onClick = { showMenu = true },
             interactionSource = interactionSource,
+            modifier = Modifier.testTag("$testTagPrefix::MoreActionsButton")
         ) {
             Icon(
                 key = AllIconsKeys.Actions.More,
