@@ -12,7 +12,6 @@ import kotlinx.coroutines.test.TestScope
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 @IntegrationTest
@@ -84,6 +83,16 @@ class AnalysisScopeViewModelTest {
         val editorViewModel = mock<CodeEditorViewModel>()
         whenever(editorViewModel.editorState).thenReturn(editorState)
 
+        var reAnalyzeCalled = false
+        val reanalyzeRelevantEditorsStub = {
+            reAnalyzeCalled = true
+        }
+        runBlocking {
+            whenever(editorViewModel.reanalyzeRelevantEditors()).then {
+                reanalyzeRelevantEditorsStub()
+            }
+        }
+
         project.withMockedService(editorViewModel)
         val analysisScopeViewModel = AnalysisScopeViewModel(project, coroutineScope)
 
@@ -94,11 +103,10 @@ class AnalysisScopeViewModelTest {
         eventually(coroutineScope = coroutineScope) {
             val currentScope = analysisScopeViewModel.analysisScope.value
             assertInstanceOf(AnalysisScope.CurrentFile::class.java, currentScope)
-            currentScope as AnalysisScope.CurrentFile
+        }
 
-            runBlocking {
-                verify(editorViewModel).reanalyzeRelevantEditors()
-            }
+        eventually(coroutineScope = coroutineScope) {
+            assertTrue(reAnalyzeCalled)
         }
     }
 
