@@ -145,7 +145,7 @@ class AnalysisScopeViewModel(
     }
 
     suspend fun refreshAnalysis() {
-        changeScope(analysisScope.value)
+        changeScope(analysisScope.value.refreshed())
     }
 
     private fun getEnabledToolWrappers(): List<InspectionToolWrapper<*, *>> {
@@ -176,12 +176,8 @@ class AnalysisScopeViewModel(
     }
 
     private fun refreshAnalysisScopeIfNecessary() {
-        val currentScope = mutableAnalysisScope.value
-        when (currentScope) {
-            is AnalysisScope.CurrentFile -> coroutineScope.launch { refreshAnalysis() }
-            is AnalysisScope.CurrentQuery -> coroutineScope.launch { refreshAnalysis() }
-            is AnalysisScope.RecommendedInsights -> coroutineScope.launch { refreshAnalysis() }
-            else -> {}
+        if (mutableAnalysisScope.value.needsRefreshOnEditorChange) {
+            coroutineScope.launch { refreshAnalysis() }
         }
     }
 }

@@ -13,6 +13,9 @@ import org.jetbrains.annotations.PropertyKey
 sealed interface AnalysisScope {
     val displayName: String
 
+    val needsRefreshOnEditorChange: Boolean
+    fun refreshed(): AnalysisScope
+
     fun getFilteredInsights(
         project: Project,
         allInsights: List<QueryInsight<PsiElement, *>>
@@ -27,6 +30,9 @@ sealed interface AnalysisScope {
     class CurrentFile : AnalysisScope {
         @PropertyKey(resourceBundle = "messages.SidePanelBundle")
         override val displayName = "side-panel.scope.current-file"
+
+        override val needsRefreshOnEditorChange = true
+        override fun refreshed() = CurrentFile()
 
         override fun getFilteredInsights(project: Project, allInsights: List<QueryInsight<PsiElement, *>>): List<QueryInsight<PsiElement, *>> {
             val codeEditorViewModel by project.service<CodeEditorViewModel>()
@@ -46,6 +52,9 @@ sealed interface AnalysisScope {
         @PropertyKey(resourceBundle = "messages.SidePanelBundle")
         override val displayName = "side-panel.scope.current-query"
 
+        override val needsRefreshOnEditorChange = true
+        override fun refreshed() = CurrentQuery()
+
         override fun getFilteredInsights(project: Project, allInsights: List<QueryInsight<PsiElement, *>>): List<QueryInsight<PsiElement, *>> {
             val codeEditorViewModel by project.service<CodeEditorViewModel>()
             val allFocusedQueries = withinReadActionBlocking {
@@ -64,6 +73,9 @@ sealed interface AnalysisScope {
         @PropertyKey(resourceBundle = "messages.SidePanelBundle")
         override val displayName = "side-panel.scope.all-insights"
 
+        override val needsRefreshOnEditorChange = false
+        override fun refreshed() = AllInsights()
+
         override fun getFilteredInsights(project: Project, allInsights: List<QueryInsight<PsiElement, *>>): List<QueryInsight<PsiElement, *>> {
             return allInsights
         }
@@ -77,6 +89,9 @@ sealed interface AnalysisScope {
     class RecommendedInsights : AnalysisScope {
         @PropertyKey(resourceBundle = "messages.SidePanelBundle")
         override val displayName = "side-panel.scope.recommended-insights"
+
+        override val needsRefreshOnEditorChange = true
+        override fun refreshed() = RecommendedInsights()
 
         override fun getFilteredInsights(project: Project, allInsights: List<QueryInsight<PsiElement, *>>): List<QueryInsight<PsiElement, *>> {
             val codeEditorViewModel by project.service<CodeEditorViewModel>()
@@ -108,6 +123,7 @@ sealed interface AnalysisScope {
                     }
                 }
         }
+
         private fun findCommonPrefix(a: String, b: String): String {
             val minLen = minOf(a.length, b.length)
             for (i in 0..minLen) {

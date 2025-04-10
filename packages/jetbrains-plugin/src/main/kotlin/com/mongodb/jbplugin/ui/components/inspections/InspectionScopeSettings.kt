@@ -68,7 +68,7 @@ fun _InspectionScopeSettings(
 ) {
     val callbacks = useInspectionScopeCallbacks()
 
-    Column(modifier = Modifier.padding(top = 16.dp, bottom = 16.dp)) {
+    Column(modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)) {
         Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
             Text(text = useTranslation("side-panel.scope.insights") + " ")
             ActionLink(
