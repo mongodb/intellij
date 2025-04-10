@@ -6,7 +6,6 @@ import com.intellij.codeInspection.ex.InspectionToolWrapper
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.intellij.profile.ProfileChangeAdapter
-import com.intellij.profile.codeInspection.InspectionProfileManager
 import com.intellij.profile.codeInspection.ProjectInspectionProfileManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
@@ -59,7 +58,7 @@ fun Inspection.getToolShortName(): String {
 
 fun Inspection.getToolWrapper(
     project: Project,
-    profile: InspectionProfile = InspectionProfileManager.getInstance().currentProfile
+    profile: InspectionProfile = ProjectInspectionProfileManager.getInstance(project).currentProfile
 ): InspectionToolWrapper<*, *>? {
     return profile.getInspectionTool(getToolShortName(), project)
 }
@@ -75,7 +74,7 @@ class InspectionsViewModel(
     private val mutableOpenCategories = MutableStateFlow<InspectionCategory?>(null)
     val openCategories = mutableOpenCategories.asStateFlow()
 
-    private val mutableInspectionsWithStatus = MutableStateFlow(getEnabledMdbInspections())
+    private val mutableInspectionsWithStatus = MutableStateFlow(getMdbInspectionsWithStatus())
     val inspectionsWithStatus = mutableInspectionsWithStatus.asStateFlow()
 
     init {
@@ -97,7 +96,7 @@ class InspectionsViewModel(
 
     override fun profileChanged(profile: InspectionProfile) {
         coroutineScope.launch(Dispatchers.IO) {
-            mutableInspectionsWithStatus.emit(getEnabledMdbInspections())
+            mutableInspectionsWithStatus.emit(getMdbInspectionsWithStatus())
         }
     }
 
@@ -156,7 +155,17 @@ class InspectionsViewModel(
         codeEditorViewModel.focusQueryInEditor(insight.query)
     }
 
-    private fun getEnabledMdbInspections(): Map<Inspection, Boolean> {
+    fun enableInspection(inspection: Inspection) {
+        val profile = ProjectInspectionProfileManager.getInstance(project).currentProfile
+        profile.setToolEnabled(inspection.getToolShortName(), true)
+    }
+
+    fun disableInspection(inspection: Inspection) {
+        val profile = ProjectInspectionProfileManager.getInstance(project).currentProfile
+        profile.setToolEnabled(inspection.getToolShortName(), false)
+    }
+
+    private fun getMdbInspectionsWithStatus(): Map<Inspection, Boolean> {
         val profile = ProjectInspectionProfileManager.getInstance(project).currentProfile
         return ALL_MDB_INSPECTIONS.associateWith { inspection ->
             profile.isToolEnabled(

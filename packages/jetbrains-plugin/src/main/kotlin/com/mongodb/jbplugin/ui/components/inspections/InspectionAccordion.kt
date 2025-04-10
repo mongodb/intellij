@@ -28,6 +28,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.inspections.analysisScope.AnalysisScope
+import com.mongodb.jbplugin.linting.Inspection
 import com.mongodb.jbplugin.linting.InspectionCategory
 import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.meta.withinReadActionBlocking
@@ -59,11 +60,15 @@ fun InspectionAccordion() {
     val onOpenCategory by useViewModelMutator(InspectionsViewModel::openCategory)
     val onNavigateToQueryOfInsight by useViewModelMutator(InspectionsViewModel::visitQueryOfInsightInEditor)
     val onChangeScope by useViewModelMutator(AnalysisScopeViewModel::changeScope)
+    val onEnableInspection by useViewModelMutator(InspectionsViewModel::enableInspection)
+    val onDisableInspection by useViewModelMutator(InspectionsViewModel::disableInspection)
 
     val accordionCallbacks = InspectionAccordionCallbacks(
         onToggleInspectionCategory = onOpenCategory,
         onNavigateToQueryOfInsight = onNavigateToQueryOfInsight,
-        onChangeScope = onChangeScope
+        onChangeScope = onChangeScope,
+        onEnableInspection = onEnableInspection,
+        onDisableInspection = onDisableInspection,
     )
 
     CompositionLocalProvider(LocalInspectionAccordionCallbacks provides accordionCallbacks) {
@@ -180,12 +185,15 @@ internal data class InspectionAccordionCallbacks(
     val onToggleInspectionCategory: (InspectionCategory) -> Unit = { _ -> },
     val onNavigateToQueryOfInsight: (QueryInsight<PsiElement, *>) -> Unit = { _ -> },
     val onChangeScope: (AnalysisScope) -> Unit = { _ -> },
+    val onEnableInspection: (Inspection) -> Unit = { _ -> },
+    val onDisableInspection: (Inspection) -> Unit = { _ -> },
 )
 
 internal val LocalInspectionAccordionCallbacks = compositionLocalOf { InspectionAccordionCallbacks() }
 
 @Composable
 private fun InsightCard(insight: QueryInsight<PsiElement, *>) {
+    val callbacks = useInspectionAccordionCallbacks()
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier
@@ -218,7 +226,9 @@ private fun InsightCard(insight: QueryInsight<PsiElement, *>) {
 
             MoreActionsButton(
                 actions = listOf(
-                    MoreActionItem(label = "Disable inspection") {},
+                    MoreActionItem(label = "Disable inspection") {
+                        callbacks.onDisableInspection(insight.inspection)
+                    },
                 ),
             )
         }
