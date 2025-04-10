@@ -42,6 +42,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.zip
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.jetbrains.annotations.VisibleForTesting
 
 fun Inspection.getToolShortName(): String {
     return when (this) {
@@ -165,7 +166,8 @@ class InspectionsViewModel(
         profile.setToolEnabled(inspection.getToolShortName(), false)
     }
 
-    private fun getMdbInspectionsWithStatus(): Map<Inspection, Boolean> {
+    @VisibleForTesting
+    internal fun getMdbInspectionsWithStatus(): Map<Inspection, Boolean> {
         val profile = ProjectInspectionProfileManager.getInstance(project).currentProfile
         return ALL_MDB_INSPECTIONS.associateWith { inspection ->
             profile.isToolEnabled(
