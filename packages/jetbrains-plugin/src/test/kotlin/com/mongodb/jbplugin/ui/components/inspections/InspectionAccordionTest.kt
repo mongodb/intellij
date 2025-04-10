@@ -22,6 +22,7 @@ class InspectionAccordionTest {
                 AnalysisScope.default(),
                 AnalysisStatus.CollectingFiles,
                 listOf(),
+                emptySet(),
                 null
             )
         }
@@ -43,6 +44,7 @@ class InspectionAccordionTest {
                     AnalysisScope.default(),
                     AnalysisStatus.CollectingFiles,
                     emptyList(),
+                    emptySet(),
                     null
                 )
             }
@@ -59,6 +61,7 @@ class InspectionAccordionTest {
                 AnalysisScope.default(),
                 AnalysisStatus.CollectingFiles,
                 emptyList(),
+                emptySet(),
                 PERFORMANCE
             )
         }
@@ -74,6 +77,7 @@ class InspectionAccordionTest {
                 AnalysisScope.CurrentFile(),
                 AnalysisStatus.NoAnalysis,
                 emptyList(),
+                emptySet(),
                 null
             )
         }
@@ -88,6 +92,7 @@ class InspectionAccordionTest {
                 AnalysisScope.CurrentQuery(),
                 AnalysisStatus.NoAnalysis,
                 emptyList(),
+                emptySet(),
                 null
             )
         }
@@ -109,6 +114,7 @@ class InspectionAccordionTest {
                     AnalysisScope.default(),
                     AnalysisStatus.NoAnalysis,
                     emptyList(),
+                    emptySet(),
                     null
                 )
             }
@@ -132,6 +138,7 @@ class InspectionAccordionTest {
                     AnalysisScope.RecommendedInsights(),
                     AnalysisStatus.NoAnalysis,
                     emptyList(),
+                    emptySet(),
                     null
                 )
             }
