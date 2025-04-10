@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -29,6 +30,8 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.i18n.Icons
@@ -290,13 +293,16 @@ fun DisabledInspectionCard(
     inspection: Inspection
 ) {
     val callbacks = useInspectionAccordionCallbacks()
-    val iconImage = remember {
-        Icons.disabledInspectionIcon.toImageBitmap()
+    val (iconImage, iconSize) = remember {
+        val icon = Icons.disabledInspectionIcon
+        icon.toImageBitmap() to DpSize(icon.iconWidth.dp, icon.iconHeight.dp)
     }
     InsightCardStructure(
         title = callbacks.getInspectionDisplayName(inspection),
         iconKey = null,
         iconImage = iconImage,
+        iconWidth = iconSize.width,
+        iconHeight = iconSize.height,
         testTag = "DisabledInspectionCard::${inspection.getToolShortName()}",
         moreActionItems = listOf(
             MoreActionItem(label = useTranslation("insight.action.enable-inspection")) {
@@ -311,6 +317,8 @@ fun InsightCardStructure(
     title: String,
     iconKey: IconKey? = null,
     iconImage: ImageBitmap? = null,
+    iconWidth: Dp = 16.dp,
+    iconHeight: Dp = 16.dp,
     testTag: String,
     moreActionItems: List<MoreActionItem>,
     content: (@Composable () -> Unit)? = null
@@ -330,11 +338,16 @@ fun InsightCardStructure(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             if (iconKey != null) {
-                Icon(key = iconKey, contentDescription = "Warning")
+                Icon(
+                    key = iconKey,
+                    contentDescription = "Warning",
+                    modifier = Modifier.size(width = iconWidth, height = iconHeight),
+                )
             } else if (iconImage != null) {
                 Icon(
                     iconImage,
                     contentDescription = "Disabled",
+                    modifier = Modifier.size(width = iconWidth, height = iconHeight),
                 )
             }
 
