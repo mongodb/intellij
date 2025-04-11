@@ -86,7 +86,7 @@ object Icons {
         return IconUtil.scaleByFont(this, parentComponent, settings.fontSize)
     }
 
-    fun Icon.toImageBitmap(): ImageBitmap {
+    private fun Icon.toImageBitmap(): ImageBitmap {
         val consideredWidth = this.iconWidth
         val consideredHeight = this.iconHeight
 
