@@ -72,8 +72,8 @@ fun _InspectionScopeSettings(
         Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
             Text(text = useTranslation("side-panel.scope.insights") + " ")
             ActionLink(
+                text = useTranslation("side-panel.scope.refresh"),
                 modifier = Modifier.testTag("InspectionScopeSettings::Refresh"),
-                useTranslation("side-panel.scope.refresh")
             ) {
                 callbacks.onRefreshAnalysis()
             }

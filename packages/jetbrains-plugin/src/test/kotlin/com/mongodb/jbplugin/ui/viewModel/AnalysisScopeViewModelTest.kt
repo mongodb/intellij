@@ -5,13 +5,13 @@ import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.eventually
 import com.mongodb.jbplugin.fixtures.withMockedService
 import com.mongodb.jbplugin.inspections.analysisScope.AnalysisScope
+import com.mongodb.jbplugin.linting.ALL_MDB_INSPECTIONS
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestScope
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 @IntegrationTest
@@ -83,6 +83,16 @@ class AnalysisScopeViewModelTest {
         val editorViewModel = mock<CodeEditorViewModel>()
         whenever(editorViewModel.editorState).thenReturn(editorState)
 
+        var reAnalyzeCalled = false
+        val reanalyzeRelevantEditorsStub = {
+            reAnalyzeCalled = true
+        }
+        runBlocking {
+            whenever(editorViewModel.reanalyzeRelevantEditors()).then {
+                reanalyzeRelevantEditorsStub()
+            }
+        }
+
         project.withMockedService(editorViewModel)
         val analysisScopeViewModel = AnalysisScopeViewModel(project, coroutineScope)
 
@@ -93,11 +103,39 @@ class AnalysisScopeViewModelTest {
         eventually(coroutineScope = coroutineScope) {
             val currentScope = analysisScopeViewModel.analysisScope.value
             assertInstanceOf(AnalysisScope.CurrentFile::class.java, currentScope)
-            currentScope as AnalysisScope.CurrentFile
+        }
 
-            runBlocking {
-                verify(editorViewModel).reanalyzeRelevantEditors()
+        eventually(coroutineScope = coroutineScope) {
+            assertTrue(reAnalyzeCalled)
+        }
+    }
+
+    @Test
+    fun `it refreshes analysis on change in inspection status`(
+        project: Project,
+        coroutineScope: TestScope
+    ) {
+        val inspectionsWithStatus = MutableStateFlow(
+            ALL_MDB_INSPECTIONS.associateWith {
+                true
             }
+        )
+        val inspectionsViewModel = mock<InspectionsViewModel>()
+        whenever(inspectionsViewModel.inspectionsWithStatus).thenReturn(inspectionsWithStatus)
+        project.withMockedService(inspectionsViewModel)
+
+        val analysisScopeViewModel = AnalysisScopeViewModel(project, coroutineScope)
+        val currentScope = analysisScopeViewModel.analysisScope.value
+        runBlocking {
+            inspectionsWithStatus.emit(
+                ALL_MDB_INSPECTIONS.associateWith {
+                    false
+                }
+            )
+        }
+
+        eventually(coroutineScope = coroutineScope) {
+            assertTrue(currentScope != analysisScopeViewModel.analysisScope.value)
         }
     }
 }

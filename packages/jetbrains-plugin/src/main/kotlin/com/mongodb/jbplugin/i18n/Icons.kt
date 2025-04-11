@@ -1,5 +1,7 @@
 package com.mongodb.jbplugin.i18n
 
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.toComposeImageBitmap
 import com.intellij.icons.AllIcons
 import com.intellij.ide.ui.NotRoamableUiSettings
 import com.intellij.openapi.util.IconLoader
@@ -8,6 +10,7 @@ import com.intellij.ui.JBColor
 import com.intellij.ui.LayeredIcon
 import com.intellij.util.IconUtil
 import java.awt.Component
+import java.awt.image.BufferedImage
 import javax.swing.Icon
 import javax.swing.SwingConstants
 
@@ -57,6 +60,11 @@ object Icons {
             }
     }
 
+    val disabledInspectionIcon = IconLoader.getIcon(
+        "/icons/DisabledInspection.svg",
+        javaClass
+    ).toImageBitmap()
+
     val queryNotRunIcon = LayeredIcon.layeredIcon(arrayOf(logo, questionMark)).apply {
         val scaledGreenCircle = IconUtil.resizeSquared(questionMark, 9)
         setIcon(scaledGreenCircle, 1, SwingConstants.SOUTH_EAST)
@@ -76,5 +84,18 @@ object Icons {
         val settingsManager: NotRoamableUiSettings = NotRoamableUiSettings.getInstance()
         val settings = settingsManager.state
         return IconUtil.scaleByFont(this, parentComponent, settings.fontSize)
+    }
+
+    private fun Icon.toImageBitmap(): ImageBitmap {
+        val consideredWidth = this.iconWidth
+        val consideredHeight = this.iconHeight
+
+        val bufferedImage = BufferedImage(consideredWidth, consideredHeight, BufferedImage.TYPE_INT_ARGB)
+        val graphics = bufferedImage.createGraphics()
+
+        this.paintIcon(null, graphics, 0, 0)
+        graphics.dispose()
+
+        return bufferedImage.toComposeImageBitmap()
     }
 }
