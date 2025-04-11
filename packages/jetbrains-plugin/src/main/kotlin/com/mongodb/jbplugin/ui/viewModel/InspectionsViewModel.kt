@@ -9,6 +9,7 @@ import com.intellij.profile.ProfileChangeAdapter
 import com.intellij.profile.codeInspection.ProjectInspectionProfileManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
+import com.mongodb.jbplugin.editor.services.MdbPluginDisposable
 import com.mongodb.jbplugin.inspections.correctness.MongoDbFieldDoesNotExist
 import com.mongodb.jbplugin.inspections.correctness.MongoDbTypeMismatch
 import com.mongodb.jbplugin.inspections.environmentmismatch.MongoDbCollectionDoesNotExist
@@ -79,7 +80,7 @@ class InspectionsViewModel(
     val inspectionsWithStatus = mutableInspectionsWithStatus.asStateFlow()
 
     init {
-        val messageBus = project.messageBus.connect()
+        val messageBus = project.messageBus.connect(MdbPluginDisposable.getInstance(project))
         messageBus.subscribe(ProfileChangeAdapter.TOPIC, this)
 
         val connectionStateViewModel by project.service<ConnectionStateViewModel>()

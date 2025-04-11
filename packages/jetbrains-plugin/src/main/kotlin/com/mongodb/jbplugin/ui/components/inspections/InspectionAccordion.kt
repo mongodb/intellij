@@ -31,11 +31,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.i18n.Icons
-import com.mongodb.jbplugin.i18n.Icons.toImageBitmap
 import com.mongodb.jbplugin.inspections.analysisScope.AnalysisScope
 import com.mongodb.jbplugin.linting.Inspection
 import com.mongodb.jbplugin.linting.InspectionCategory
@@ -293,16 +291,13 @@ fun DisabledInspectionCard(
     inspection: Inspection
 ) {
     val callbacks = useInspectionAccordionCallbacks()
-    val (iconImage, iconSize) = remember {
-        val icon = Icons.disabledInspectionIcon
-        icon.toImageBitmap() to DpSize(icon.iconWidth.dp, icon.iconHeight.dp)
-    }
+    val iconImage = Icons.disabledInspectionIcon
     InsightCardStructure(
         title = callbacks.getInspectionDisplayName(inspection),
         iconKey = null,
         iconImage = iconImage,
-        iconWidth = iconSize.width,
-        iconHeight = iconSize.height,
+        iconWidth = iconImage.width.dp,
+        iconHeight = iconImage.height.dp,
         testTag = "DisabledInspectionCard::${inspection.getToolShortName()}",
         moreActionItems = listOf(
             MoreActionItem(label = useTranslation("insight.action.enable-inspection")) {

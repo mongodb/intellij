@@ -60,7 +60,10 @@ object Icons {
             }
     }
 
-    val disabledInspectionIcon = IconLoader.getIcon("/icons/DisabledInspection.svg", javaClass)
+    val disabledInspectionIcon = IconLoader.getIcon(
+        "/icons/DisabledInspection.svg",
+        javaClass
+    ).toImageBitmap()
 
     val queryNotRunIcon = LayeredIcon.layeredIcon(arrayOf(logo, questionMark)).apply {
         val scaledGreenCircle = IconUtil.resizeSquared(questionMark, 9)
