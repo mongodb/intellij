@@ -4,6 +4,7 @@ import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.codeInsight.daemon.impl.InlayHintsPassFactoryInternal
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.event.CaretEvent
 import com.intellij.openapi.editor.event.CaretListener
@@ -11,13 +12,17 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
+import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.fileTypes.FileTypeManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.getOrMaybeCreateUserData
+import com.intellij.openapi.util.removeUserData
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.findPsiFile
 import com.intellij.psi.PsiElement
 import com.intellij.psi.search.FileTypeIndex
 import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.psi.util.PsiModificationTracker
 import com.mongodb.jbplugin.dialects.Dialect
 import com.mongodb.jbplugin.dialects.javadriver.glossary.JavaDriverDialect
 import com.mongodb.jbplugin.dialects.springcriteria.SpringCriteriaDialect
@@ -27,7 +32,9 @@ import com.mongodb.jbplugin.editor.MongoDbVirtualFileDataSourceProvider.Keys
 import com.mongodb.jbplugin.editor.services.MdbPluginDisposable
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.meta.withinReadAction
+import com.mongodb.jbplugin.meta.withinReadActionBlocking
 import com.mongodb.jbplugin.mql.Node
+import fleet.util.logging.logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,13 +45,14 @@ import kotlinx.coroutines.withContext
 data class CaretView(val file: VirtualFile, val offset: Int)
 
 data class EditorState(
+    val focusedFile: VirtualFile? = null,
     val focusedFiles: List<VirtualFile>,
     val openFiles: List<VirtualFile>,
     val carets: List<CaretView>
 ) {
     companion object {
         fun default(): EditorState {
-            return EditorState(emptyList(), emptyList(), emptyList())
+            return EditorState(null, emptyList(), emptyList(), emptyList())
         }
     }
 }
@@ -57,13 +65,27 @@ private val allDialects: List<Dialect<PsiElement, Project>> = listOf(
 
 private const val MAX_TREE_DEPTH = 100
 
+private val log = logger<CodeEditorViewModel>()
+
 @Service(Service.Level.PROJECT)
 class CodeEditorViewModel(
     val project: Project,
     val coroutineScope: CoroutineScope,
-) : FileEditorManagerListener, CaretListener {
+) : FileEditorManagerListener, PsiModificationTracker.Listener, CaretListener {
     private val mutableEditorState = MutableStateFlow(EditorState.default())
     val editorState = mutableEditorState.asStateFlow()
+
+    val inferredDatabase: String?
+        get() = withinReadActionBlocking {
+            val focusedFile = editorState.value.focusedFile ?: return@withinReadActionBlocking null
+            val context = getDialectForFile(file = focusedFile)
+                ?.connectionContextExtractor
+                ?.gatherContext(this.project)
+            context?.database
+        }
+
+    val selectedEditor: Editor?
+        get() = (FileEditorManager.getInstance(this.project).selectedEditor as? TextEditor)?.editor
 
     init {
         val disposable = MdbPluginDisposable.getInstance(project)
@@ -72,7 +94,16 @@ class CodeEditorViewModel(
 
         rebuildEditorState(manager)
         messageBusConnection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this)
+        messageBusConnection.subscribe(PsiModificationTracker.TOPIC, this)
         EditorFactory.getInstance().eventMulticaster.addCaretListener(this, disposable)
+    }
+
+    override fun modificationCountChanged() {
+        val focusedFile = editorState.value.focusedFile
+        if (focusedFile != null) {
+            removeDialectForFile(file = focusedFile)
+        }
+        rebuildEditorState(FileEditorManager.getInstance(project))
     }
 
     override fun fileOpened(source: FileEditorManager, file: VirtualFile) {
@@ -88,12 +119,19 @@ class CodeEditorViewModel(
     }
 
     override fun caretPositionChanged(event: CaretEvent) {
-        val allCarets = event.editor.caretModel.allCarets.map {
-            CaretView(it.editor.virtualFile, it.offset)
+        try {
+            val allCarets = event.editor.caretModel.allCarets.map {
+                CaretView(it.editor.virtualFile, it.offset)
+            }
+            val toEmit = mutableEditorState.value.copy(carets = allCarets)
+            mutableEditorState.tryEmit(toEmit)
+        } catch (e: Exception) {
+            // There are a few edge cases where tracking the caret position bubbles an error in
+            // the IDE for null virtualFile, so we catch that here and log it.
+            // Unfortunately it appears that we cannot log the exception as well because the
+            // exception message also tries to access the virtualFile and fails again.
+            log.info("Unable to track caretPositionChanged event")
         }
-
-        val toEmit = mutableEditorState.value.copy(carets = allCarets)
-        mutableEditorState.tryEmit(toEmit)
     }
 
     suspend fun reanalyzeRelevantEditors() {
@@ -153,34 +191,50 @@ class CodeEditorViewModel(
             val scope = GlobalSearchScope.projectScope(project)
             val javaFileType = FileTypeManager.getInstance().getStdFileType("JAVA")
 
-            FileTypeIndex.getFiles(javaFileType, scope)
-                .mapNotNull { it.findPsiFile(project) }
-                .map { file -> file to allDialects.firstOrNull { it.isUsableForSource(file) } }
-                .filter { it.second != null }
-                .map {
-                    it.first.virtualFile.apply {
-                        putUserData(Keys.attachedDialect, it.second!!)
-                    }
-                }
+            FileTypeIndex.getFiles(javaFileType, scope).toList().onEach(::getDialectForFile)
         }
     }
 
     private fun rebuildEditorState(manager: FileEditorManager) {
         coroutineScope.launch(Dispatchers.IO) {
-            val openFiles = withinReadAction {
-                manager.openFiles.toList().distinctBy { it.canonicalPath }
-            }
-
-            val focusedFiles = withinReadAction {
-                manager.selectedEditors.mapNotNull { it.file }.distinctBy { it.canonicalPath }.toList()
+            val (openFiles, focusedFiles, focusedFile) = withinReadAction {
+                Triple(
+                    manager.openFiles.toList().distinctBy { it.canonicalPath },
+                    manager.selectedEditors
+                        .mapNotNull { it.file }
+                        .distinctBy { it.canonicalPath }.toList(),
+                    manager.selectedEditor?.file,
+                )
             }
 
             val toEmit = mutableEditorState.value.copy(
                 openFiles = openFiles,
-                focusedFiles = focusedFiles
+                focusedFiles = focusedFiles,
+                focusedFile = focusedFile,
             )
 
             mutableEditorState.emit(toEmit)
+
+            withinReadAction {
+                for (file in openFiles) {
+                    getDialectForFile(file)
+                }
+            }
+        }
+    }
+
+    private fun removeDialectForFile(file: VirtualFile) {
+        file.removeUserData(Keys.attachedDialect)
+    }
+
+    private fun getDialectForFile(file: VirtualFile): Dialect<PsiElement, Project>? {
+        return file.getOrMaybeCreateUserData(Keys.attachedDialect) {
+            try {
+                val psiFile = file.findPsiFile(this.project) ?: throw Exception("PsiFile not found")
+                allDialects.find { it.isUsableForSource(psiFile) }
+            } catch (exception: Exception) {
+                null
+            }
         }
     }
 }

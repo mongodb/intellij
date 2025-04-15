@@ -46,9 +46,6 @@ class MongoDbVirtualFileDataSourceProviderTest {
             )
         )
 
-        `when`(
-            file.getUserData(MongoDbVirtualFileDataSourceProvider.Keys.attachedDataSource)
-        ).thenReturn(dataSource)
         `when`(facade.findDataSource(dataSource.uniqueId)).thenReturn(
             mockDbDataSource,
         )
@@ -62,10 +59,6 @@ class MongoDbVirtualFileDataSourceProviderTest {
         val facade = mock<DbPsiFacade>()
         project.withMockedService(facade)
         val file = mock<VirtualFile>()
-
-        `when`(
-            file.getUserData(MongoDbVirtualFileDataSourceProvider.Keys.attachedDataSource)
-        ).thenReturn(null)
 
         assertNull(provider.getDataSource(project, file))
         verify(facade, never()).findDataSource(any())

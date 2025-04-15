@@ -2,6 +2,7 @@ package com.mongodb.jbplugin.editor
 
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
@@ -14,7 +15,6 @@ import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvide
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
 import com.mongodb.jbplugin.accessadapter.slice.BuildInfo
 import com.mongodb.jbplugin.accessadapter.slice.GetCollectionSchema
-import com.mongodb.jbplugin.editor.models.getToolbarModel
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.Node
@@ -40,6 +40,7 @@ import kotlin.concurrent.write
  */
 @Service(Service.Level.PROJECT)
 class CachedQueryService(
+    val project: Project,
     val coroutineScope: CoroutineScope
 ) : SiblingQueriesFinder<PsiElement> {
     private val queryCacheKey = Key.create<CachedValue<Node<PsiElement>>>("QueryCache")
@@ -68,7 +69,11 @@ class CachedQueryService(
             return decorateWithMetadata(dataSource, attachment.getUserData(queryCacheKey)!!.value)
         }
 
-        val toolbar = attachment.project.getToolbarModel()
+        // TODO: Confirm if instead of ToolbarModel, now the dependency should be the
+        // ConnectionStateViewModel or not. Tested with the applied dependency as well and saw no
+        // effect
+
+        // val toolbar = attachment.project.getToolbarModel()
         val cachedValue = cacheManager.createCachedValue {
             val parsedAst = dialect.parser.parse(expression)
             val namespaceOfQuery = extractNamespaceOfQuery(parsedAst)
@@ -96,7 +101,8 @@ class CachedQueryService(
                 }
             }
 
-            CachedValueProvider.Result.create(parsedAst, attachment, toolbar)
+            // CachedValueProvider.Result.create(parsedAst, attachment, toolbar)
+            CachedValueProvider.Result.create(parsedAst, attachment)
         }
 
         attachment.putUserData(queryCacheKey, cachedValue)
