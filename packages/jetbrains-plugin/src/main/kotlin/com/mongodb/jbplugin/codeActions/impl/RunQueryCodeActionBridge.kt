@@ -8,10 +8,6 @@ package com.mongodb.jbplugin.codeActions.impl
 import com.intellij.codeInsight.daemon.LineMarkerInfo
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.database.intentions.RunQueryInConsoleIntentionAction
-import com.intellij.notification.Notification
-import com.intellij.notification.NotificationAction
-import com.intellij.notification.NotificationGroupManager
-import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.editor.markup.GutterIconRenderer
@@ -128,23 +124,6 @@ internal object RunQueryCodeAction : MongoDbCodeAction {
             )
             editor?.appendText(formattedQuery)
         }
-    }
-
-    private fun createDataSourceNotSelectedNotification(onTryAgainAction: () -> Unit): Notification {
-        return NotificationGroupManager.getInstance()
-            .getNotificationGroup("com.mongodb.jbplugin.notifications.Connection")
-            .createNotification(
-                CodeActionsMessages.message("code.action.run.query.aborted.notification.title"),
-                CodeActionsMessages.message("code.action.run.query.aborted.notification.message"),
-                NotificationType.INFORMATION,
-            ).addAction(
-                NotificationAction.create(
-                    CodeActionsMessages.message("code.action.run.query.aborted.notification.action")
-                ) { _, notification ->
-                    onTryAgainAction()
-                    notification.expire()
-                }
-            )
     }
 
     private fun shouldDelegateToIntelliJRunQuery(query: Node<PsiElement>): Boolean {
