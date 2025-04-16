@@ -191,7 +191,9 @@ class CodeEditorViewModel(
             val scope = GlobalSearchScope.projectScope(project)
             val javaFileType = FileTypeManager.getInstance().getStdFileType("JAVA")
 
-            FileTypeIndex.getFiles(javaFileType, scope).toList().onEach(::getDialectForFile)
+            FileTypeIndex.getFiles(javaFileType, scope).filter {
+                getDialectForFile(it) != null
+            }
         }
     }
 
@@ -233,6 +235,7 @@ class CodeEditorViewModel(
                 val psiFile = file.findPsiFile(this.project) ?: throw Exception("PsiFile not found")
                 allDialects.find { it.isUsableForSource(psiFile) }
             } catch (exception: Exception) {
+                log.error(exception, "Could not find dialect for ${file.path}")
                 null
             }
         }

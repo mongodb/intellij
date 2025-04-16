@@ -10,11 +10,13 @@ import com.mongodb.jbplugin.fixtures.setupConnection
 import com.mongodb.jbplugin.fixtures.specifyDialect
 import com.mongodb.jbplugin.i18n.CodeActionsMessages
 import com.mongodb.jbplugin.i18n.Icons
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @IntegrationTest
 class SpringCriteriaRunQueryCodeActionTest {
     @ParsingTest(
@@ -25,12 +27,12 @@ class SpringCriteriaRunQueryCodeActionTest {
     }
         """,
     )
-    fun `does show a gutter icon if not connected`(
+    fun `does not show a gutter icon if not connected`(
         fixture: CodeInsightTestFixture,
     ) {
         fixture.specifyDialect(SpringCriteriaDialect)
         val gutters = fixture.findAllGutters()
-        assertTrue(gutters.isNotEmpty())
+        assertTrue(gutters.isEmpty())
     }
 
     @ParsingTest(
