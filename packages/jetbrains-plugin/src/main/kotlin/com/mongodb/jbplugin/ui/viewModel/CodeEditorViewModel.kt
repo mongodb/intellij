@@ -4,6 +4,7 @@ import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.codeInsight.daemon.impl.InlayHintsPassFactoryInternal
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.event.CaretEvent
@@ -34,7 +35,7 @@ import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.meta.withinReadAction
 import com.mongodb.jbplugin.meta.withinReadActionBlocking
 import com.mongodb.jbplugin.mql.Node
-import fleet.util.logging.logger
+import com.mongodb.jbplugin.observability.useLogMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -130,7 +131,7 @@ class CodeEditorViewModel(
             // the IDE for null virtualFile, so we catch that here and log it.
             // Unfortunately it appears that we cannot log the exception as well because the
             // exception message also tries to access the virtualFile and fails again.
-            log.info("Unable to track caretPositionChanged event")
+            log.warn(useLogMessage("Unable to track caretPositionChanged event").build())
         }
     }
 
@@ -235,7 +236,10 @@ class CodeEditorViewModel(
                 val psiFile = file.findPsiFile(this.project) ?: throw Exception("PsiFile not found")
                 allDialects.find { it.isUsableForSource(psiFile) }
             } catch (exception: Exception) {
-                log.error(exception, "Could not find dialect for ${file.path}")
+                log.warn(
+                    useLogMessage("Could not find dialect for ${file.path}").build(),
+                    exception,
+                )
                 null
             }
         }

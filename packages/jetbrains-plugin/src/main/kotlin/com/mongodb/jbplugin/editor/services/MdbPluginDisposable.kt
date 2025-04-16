@@ -4,6 +4,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
+import com.mongodb.jbplugin.observability.useLogMessage
 import io.ktor.util.collections.*
 
 private val log = logger<MdbPluginDisposable>()
@@ -29,7 +30,10 @@ class MdbPluginDisposable : Disposable {
             try {
                 listener()
             } catch (exception: Exception) {
-                log.warn("Exception while running an onDispose listener", exception)
+                log.warn(
+                    useLogMessage("Exception while running an onDispose listener").build(),
+                    exception,
+                )
             }
         }
     }

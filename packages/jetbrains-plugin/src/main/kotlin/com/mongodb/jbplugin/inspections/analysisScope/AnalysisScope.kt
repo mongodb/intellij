@@ -1,13 +1,14 @@
 package com.mongodb.jbplugin.inspections.analysisScope
 
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.meta.withinReadActionBlocking
+import com.mongodb.jbplugin.observability.useLogMessage
 import com.mongodb.jbplugin.ui.viewModel.CodeEditorViewModel
-import fleet.util.logging.logger
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.annotations.PropertyKey
 
@@ -46,7 +47,7 @@ sealed interface AnalysisScope {
                     relevantFiles.contains(it.query.source.containingFile.virtualFile)
                 }
             } catch (e: Exception) {
-                log.error("Unable to filter relevant insights ${e.message}")
+                log.warn(useLogMessage("Unable to filter relevant insights").build(), e)
                 return allInsights
             }
         }
@@ -113,7 +114,7 @@ sealed interface AnalysisScope {
                     it.query.source.containingFile.virtualFile.path.startsWith(sharedParent)
                 }
             } catch (e: Exception) {
-                log.error("Unable to filter relevant insights ${e.message}")
+                log.warn(useLogMessage("Unable to filter relevant insights").build(), e)
                 return allInsights
             }
         }
