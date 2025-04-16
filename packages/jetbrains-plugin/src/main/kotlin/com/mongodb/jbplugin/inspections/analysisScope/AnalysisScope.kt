@@ -1,11 +1,13 @@
 package com.mongodb.jbplugin.inspections.analysisScope
 
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.meta.withinReadActionBlocking
+import com.mongodb.jbplugin.observability.useLogMessage
 import com.mongodb.jbplugin.ui.viewModel.CodeEditorViewModel
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.annotations.PropertyKey
@@ -28,6 +30,8 @@ sealed interface AnalysisScope {
     }
 
     class CurrentFile : AnalysisScope {
+        private val log = logger<CurrentFile>()
+
         @PropertyKey(resourceBundle = "messages.SidePanelBundle")
         override val displayName = "side-panel.scope.current-file"
 
@@ -35,11 +39,16 @@ sealed interface AnalysisScope {
         override fun refreshed() = CurrentFile()
 
         override fun getFilteredInsights(project: Project, allInsights: List<QueryInsight<PsiElement, *>>): List<QueryInsight<PsiElement, *>> {
-            val codeEditorViewModel by project.service<CodeEditorViewModel>()
-            val relevantFiles = codeEditorViewModel.editorState.value.focusedFiles
+            try {
+                val codeEditorViewModel by project.service<CodeEditorViewModel>()
+                val relevantFiles = codeEditorViewModel.editorState.value.focusedFiles
 
-            return allInsights.filter {
-                relevantFiles.contains(it.query.source.containingFile.virtualFile)
+                return allInsights.filter {
+                    relevantFiles.contains(it.query.source.containingFile.virtualFile)
+                }
+            } catch (e: Exception) {
+                log.warn(useLogMessage("Unable to filter relevant insights").build(), e)
+                return allInsights
             }
         }
 
@@ -87,6 +96,8 @@ sealed interface AnalysisScope {
     }
 
     class RecommendedInsights : AnalysisScope {
+        private val log = logger<RecommendedInsights>()
+
         @PropertyKey(resourceBundle = "messages.SidePanelBundle")
         override val displayName = "side-panel.scope.recommended-insights"
 
@@ -94,11 +105,17 @@ sealed interface AnalysisScope {
         override fun refreshed() = RecommendedInsights()
 
         override fun getFilteredInsights(project: Project, allInsights: List<QueryInsight<PsiElement, *>>): List<QueryInsight<PsiElement, *>> {
-            val codeEditorViewModel by project.service<CodeEditorViewModel>()
-            val sharedParent = findOpenFilesCommonPrefix(codeEditorViewModel) ?: return emptyList()
+            try {
+                val codeEditorViewModel by project.service<CodeEditorViewModel>()
+                val sharedParent =
+                    findOpenFilesCommonPrefix(codeEditorViewModel) ?: return emptyList()
 
-            return allInsights.filter {
-                it.query.source.containingFile.virtualFile.path.startsWith(sharedParent)
+                return allInsights.filter {
+                    it.query.source.containingFile.virtualFile.path.startsWith(sharedParent)
+                }
+            } catch (e: Exception) {
+                log.warn(useLogMessage("Unable to filter relevant insights").build(), e)
+                return allInsights
             }
         }
 

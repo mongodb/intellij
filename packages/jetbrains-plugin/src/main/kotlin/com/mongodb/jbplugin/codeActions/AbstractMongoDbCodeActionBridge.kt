@@ -7,6 +7,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.util.*
+import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
 import com.mongodb.jbplugin.editor.CachedQueryService
 import com.mongodb.jbplugin.editor.dataSource
 import com.mongodb.jbplugin.editor.dialect
@@ -56,22 +57,17 @@ abstract class AbstractMongoDbCodeActionBridge(
             val dialect = expression.containingFile.dialect ?: return@runReadAction null
 
             val queryService by expression.project.service<CachedQueryService>()
-
-            queryService.queryAt(expression)?.let { query ->
-                fileInExpression.virtualFile?.let {
-                    codeAction.visitMongoDbQuery(
-                        coroutineScope,
-                        dataSource?.localDataSource,
-                        query,
-                        dialect.formatter,
-                    )
-                } ?: codeAction.visitMongoDbQuery(
-                    coroutineScope,
-                    dataSource = null,
-                    query,
-                    dialect.formatter
-                )
+            val query = queryService.queryAt(expression)
+            if (query == null || dataSource?.isConnected() != true) {
+                return@runReadAction null
             }
+
+            codeAction.visitMongoDbQuery(
+                coroutineScope,
+                dataSource.localDataSource,
+                query,
+                dialect.formatter
+            )
         }
     }
 }

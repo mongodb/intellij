@@ -6,13 +6,17 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiUtil
 import com.intellij.psi.util.childrenOfType
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
+import com.mongodb.jbplugin.dialects.javadriver.glossary.JavaDriverDialect
 import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.ParsingTest
+import com.mongodb.jbplugin.fixtures.specifyDialect
 import com.mongodb.jbplugin.meta.service
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @IntegrationTest
 class CachedQueryServiceTest {
     @ParsingTest(
@@ -39,6 +43,7 @@ class CachedQueryServiceTest {
     fun `does return all queries given an existing query if in the same namespace`(
         fixture: CodeInsightTestFixture
     ) = ApplicationManager.getApplication().runReadAction {
+        fixture.specifyDialect(JavaDriverDialect)
         val cachedQueryService by fixture.project.service<CachedQueryService>()
 
         val query1 = cachedQueryService.queryAt(fixture.queryOnMethod("query1"))!!

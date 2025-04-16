@@ -34,7 +34,6 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <postStartupActivity implementation="com.mongodb.jbplugin.ActivatePluginPostStartupActivity"/>
-        <postStartupActivity implementation="com.mongodb.jbplugin.editor.EditorToolbarDecorator"/>
         <toolWindow factoryClass="com.mongodb.jbplugin.ui.components.SidePanel" id="MongoDB"
             anchor="right" secondary="true" icon="/icons/SidePanelLogo.svg" />
         <applicationConfigurable

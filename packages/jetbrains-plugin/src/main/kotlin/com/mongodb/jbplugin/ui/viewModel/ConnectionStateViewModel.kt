@@ -17,6 +17,7 @@ import com.intellij.database.view.ui.DataSourceManagerDialog
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.ModificationTracker
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ex.ToolWindowManagerListener
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
@@ -25,8 +26,8 @@ import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isMongoDbDataSource
 import com.mongodb.jbplugin.accessadapter.slice.ListDatabases
 import com.mongodb.jbplugin.editor.services.ConnectionPreferences.Companion.UNINITIALIZED_DATABASE
 import com.mongodb.jbplugin.editor.services.MdbPluginDisposable
-import com.mongodb.jbplugin.editor.services.implementations.MdbEditorService
 import com.mongodb.jbplugin.editor.services.implementations.getConnectionPreferences
+import com.mongodb.jbplugin.meta.eventCount
 import com.mongodb.jbplugin.meta.service
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -133,7 +134,7 @@ data class DatabaseState(
 class ConnectionStateViewModel(
     private val project: Project,
     private val coroutineScope: CoroutineScope,
-) : DataSourceManager.Listener, JdbcDriverManager.Listener, ToolWindowManagerListener {
+) : DataSourceManager.Listener, JdbcDriverManager.Listener, ToolWindowManagerListener, ModificationTracker {
     @VisibleForTesting
     internal val initialStateLoaded = AtomicBoolean(false)
 
@@ -150,6 +151,8 @@ class ConnectionStateViewModel(
 
     private val mutableDatabaseState = MutableStateFlow(DatabaseState.initial())
     val databaseState = mutableDatabaseState.asStateFlow()
+
+    private val modificationCountTracker by connectionState.eventCount(project)
 
     init {
         setupListeners()
@@ -198,6 +201,10 @@ class ConnectionStateViewModel(
                 codeEditorViewModel.reanalyzeRelevantEditors()
             }
         }
+    }
+
+    override fun getModificationCount(): Long {
+        return modificationCountTracker
     }
 
     override fun toolWindowShown(toolWindow: ToolWindow) {
@@ -396,12 +403,12 @@ class ConnectionStateViewModel(
     private fun emitDatabasesLoadingStateChange(
         newDatabasesLoadingState: DatabasesLoadingState
     ) {
-        val editorService by project.service<MdbEditorService>()
+        val editorViewModel by project.service<CodeEditorViewModel>()
         val connectionPreferences = project.getConnectionPreferences()
         mutableDatabaseState.update { currentDatabaseState ->
             if (newDatabasesLoadingState.isForConnection(connectionState.value.selectedConnection)) {
                 val databaseToBeSelected = if (connectionPreferences.database == UNINITIALIZED_DATABASE) {
-                    editorService.inferredDatabase
+                    editorViewModel.inferredDatabase
                 } else {
                     connectionPreferences.database
                 }.takeIf { newDatabasesLoadingState.databases.contains(it) }

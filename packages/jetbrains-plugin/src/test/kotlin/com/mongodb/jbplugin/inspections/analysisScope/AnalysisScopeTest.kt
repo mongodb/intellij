@@ -19,6 +19,7 @@ import com.mongodb.jbplugin.meta.withinReadActionBlocking
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.ui.viewModel.CodeEditorViewModel
 import com.mongodb.jbplugin.ui.viewModel.EditorState
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -28,6 +29,7 @@ import org.mockito.Mockito.mock
 import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @IntegrationTest
 class AnalysisScopeTest {
     @Test
