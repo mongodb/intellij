@@ -23,6 +23,7 @@ import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasCollectionReference.Known
 import com.mongodb.jbplugin.mql.components.HasTargetCluster
 import com.mongodb.jbplugin.settings.pluginSetting
+import com.mongodb.jbplugin.ui.viewModel.ConnectionStateViewModel
 import io.github.z4kn4fein.semver.Version
 import kotlinx.coroutines.CoroutineScope
 import java.util.concurrent.locks.ReentrantReadWriteLock
@@ -69,11 +70,7 @@ class CachedQueryService(
             return decorateWithMetadata(dataSource, attachment.getUserData(queryCacheKey)!!.value)
         }
 
-        // TODO: Confirm if instead of ToolbarModel, now the dependency should be the
-        // ConnectionStateViewModel or not. Tested with the applied dependency as well and saw no
-        // effect
-
-        // val toolbar = attachment.project.getToolbarModel()
+        val connectionStateViewModel by project.service<ConnectionStateViewModel>()
         val cachedValue = cacheManager.createCachedValue {
             val parsedAst = dialect.parser.parse(expression)
             val namespaceOfQuery = extractNamespaceOfQuery(parsedAst)
@@ -101,8 +98,7 @@ class CachedQueryService(
                 }
             }
 
-            // CachedValueProvider.Result.create(parsedAst, attachment, toolbar)
-            CachedValueProvider.Result.create(parsedAst, attachment)
+            CachedValueProvider.Result.create(parsedAst, attachment, connectionStateViewModel)
         }
 
         attachment.putUserData(queryCacheKey, cachedValue)
