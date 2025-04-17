@@ -37,21 +37,24 @@ val PsiFile.database: String?
             }
     }.getOrNull()
 
-val PsiFile.dialect: Dialect<PsiElement, Project>?
+val VirtualFile.identifiedDialects: List<Dialect<PsiElement, Project>>
     get() = runCatching {
-        MongoDbVirtualFileDataSourceProvider()
-            .getDialect(
-                virtualFile,
-            )
-    }.getOrNull()
+        MongoDbVirtualFileDataSourceProvider().getDialects(this)
+    }.getOrElse { emptyList() }
+
+val VirtualFile.dialect: Dialect<PsiElement, Project>?
+    get() = identifiedDialects.firstOrNull()
+
+val PsiFile.dialect: Dialect<PsiElement, Project>?
+    get() = virtualFile.dialect
 
 /**
  * Returns the data source, if attached to the editor through the MongoDB Plugin.
  */
 class MongoDbVirtualFileDataSourceProvider : VirtualFileDataSourceProvider() {
     object Keys {
-        internal val attachedDialect: Key<Dialect<PsiElement, Project>?> = Key.create(
-            "$KEY_PREFIX.AttachedDialect"
+        internal val identifiedDialects: Key<List<Dialect<PsiElement, Project>>> = Key.create(
+            "$KEY_PREFIX.IdentifiedDialects"
         )
     }
 
@@ -81,7 +84,7 @@ class MongoDbVirtualFileDataSourceProvider : VirtualFileDataSourceProvider() {
         return selectedDatabase
     }
 
-    fun getDialect(
+    fun getDialects(
         file: VirtualFile
-    ): Dialect<PsiElement, Project>? = file.getUserData(Keys.attachedDialect)
+    ): List<Dialect<PsiElement, Project>> = file.getUserData(Keys.identifiedDialects) ?: emptyList()
 }
