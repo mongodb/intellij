@@ -102,7 +102,7 @@ class CodeEditorViewModel(
     override fun modificationCountChanged() {
         val focusedFile = editorState.value.focusedFile
         if (focusedFile != null) {
-            removeDialectForFile(file = focusedFile)
+            removeDialectsForFile(file = focusedFile)
         }
         rebuildEditorState(FileEditorManager.getInstance(project))
     }
@@ -129,7 +129,7 @@ class CodeEditorViewModel(
         } catch (e: Exception) {
             // There are a few edge cases where tracking the caret position bubbles an error in
             // the IDE for null virtualFile, so we catch that here and log it.
-            // Unfortunately it appears that we cannot log the exception as well because the
+            // Unfortunately, it appears that we cannot log the exception as well because the
             // exception message also tries to access the virtualFile and fails again.
             log.warn(useLogMessage("Unable to track caretPositionChanged event").build())
         }
@@ -226,22 +226,23 @@ class CodeEditorViewModel(
         }
     }
 
-    private fun removeDialectForFile(file: VirtualFile) {
-        file.removeUserData(Keys.attachedDialect)
+    private fun removeDialectsForFile(file: VirtualFile) {
+        file.removeUserData(Keys.identifiedDialects)
     }
 
     private fun getDialectForFile(file: VirtualFile): Dialect<PsiElement, Project>? {
-        return file.getOrMaybeCreateUserData(Keys.attachedDialect) {
+        return file.getOrMaybeCreateUserData(Keys.identifiedDialects) {
             try {
-                val psiFile = file.findPsiFile(this.project) ?: throw Exception("PsiFile not found")
-                allDialects.find { it.isUsableForSource(psiFile) }
+                val psiFile = file.findPsiFile(this.project)
+                    ?: throw Exception("PsiFile not found")
+                allDialects.filter { it.isUsableForSource(psiFile) }
             } catch (exception: Exception) {
                 log.warn(
-                    useLogMessage("Could not find dialect for ${file.path}").build(),
+                    useLogMessage("Could not identify dialects for ${file.path}").build(),
                     exception,
                 )
-                null
+                emptyList()
             }
-        }
+        }?.firstOrNull()
     }
 }

@@ -670,8 +670,8 @@ fun CodeInsightTestFixture.specifyDatabase(dataSource: LocalDataSource, name: St
  */
 fun CodeInsightTestFixture.specifyDialect(dialect: Dialect<PsiElement, Project>) {
     file.virtualFile.putUserData(
-        MongoDbVirtualFileDataSourceProvider.Keys.attachedDialect,
-        dialect
+        MongoDbVirtualFileDataSourceProvider.Keys.identifiedDialects,
+        listOf(dialect)
     )
 }
 
