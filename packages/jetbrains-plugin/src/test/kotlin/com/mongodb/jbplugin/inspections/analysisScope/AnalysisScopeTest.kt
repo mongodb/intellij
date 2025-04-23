@@ -198,6 +198,7 @@ class AnalysisScopeTest {
                 source,
                 emptyList()
             ),
+            source,
             "Some",
             emptyList(),
             Inspection.NotUsingIndex
@@ -207,7 +208,7 @@ class AnalysisScopeTest {
     }
 
     private fun insightOnQuery(query: Node<PsiElement>): QueryInsight<PsiElement, *> {
-        return QueryInsight(query, "Some", emptyList(), Inspection.NotUsingIndex)
+        return QueryInsight(query, query.source, "Some", emptyList(), Inspection.NotUsingIndex)
     }
 
     private fun queryWithHash(hash: Int): Node<PsiElement> {

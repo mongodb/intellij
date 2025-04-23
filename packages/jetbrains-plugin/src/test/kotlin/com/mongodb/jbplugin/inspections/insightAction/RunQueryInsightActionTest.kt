@@ -31,7 +31,7 @@ class RunQueryInsightActionTest {
         val insightAction = RunQueryInsightAction(coroutineScope, probe, consoleEditor)
         val query = project.aQuery()
 
-        insightAction.apply(QueryInsight.nonExistingField(query, "anyfield"))
+        insightAction.apply(QueryInsight.nonExistingField(query, query.source, "anyfield"))
 
         verify(probe).queryRunRequested(query, Console.EXISTING, TelemetryEvent.QueryRunEvent.TriggerLocation.SIDE_PANEL)
     }
@@ -50,7 +50,7 @@ class RunQueryInsightActionTest {
         val insightAction = RunQueryInsightAction(coroutineScope, probe, consoleEditor)
         val query = project.aQuery()
 
-        insightAction.apply(QueryInsight.nonExistingField(query, "anyfield"))
+        insightAction.apply(QueryInsight.nonExistingField(query, query.source, "anyfield"))
 
         verify(consoleEditor).openConsoleForDataSource(project, dataSource)
     }

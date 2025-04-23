@@ -14,6 +14,8 @@ import com.mongodb.jbplugin.editor.dialect
 import com.mongodb.jbplugin.i18n.InspectionsAndInlaysMessages
 import com.mongodb.jbplugin.inspections.quickfixes.LocalQuickFixBridge
 import com.mongodb.jbplugin.linting.Inspection
+import com.mongodb.jbplugin.linting.Inspection.NotUsingIndex
+import com.mongodb.jbplugin.linting.Inspection.NotUsingIndexEffectively
 import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.linting.QueryInsightsHolder
 import com.mongodb.jbplugin.linting.QueryInspection
@@ -106,11 +108,20 @@ internal class IntelliJBasedQueryInsightsHolder<I : Inspection>(
         }
 
         withContext(Dispatchers.EDT) {
-            val problemDescription = InspectionsAndInlaysMessages.message(insight.description, *insight.descriptionArguments.toTypedArray())
+            val problemDescription = InspectionsAndInlaysMessages.message(
+                insight.description,
+                *insight.descriptionArguments.toTypedArray()
+            )
+            val problemHighlightType = when (insight.inspection) {
+                // We would like not to highlight the insights from these inspections and IJ
+                // POSSIBLE_PROBLEM is the only highlight type that does not actually highlight
+                NotUsingIndex, NotUsingIndexEffectively -> ProblemHighlightType.POSSIBLE_PROBLEM
+                else -> ProblemHighlightType.WARNING
+            }
             problemsHolder.registerProblem(
-                insight.query.source,
+                insight.source,
                 problemDescription,
-                ProblemHighlightType.WARNING,
+                problemHighlightType,
                 *LocalQuickFixBridge.allQuickFixes(coroutineScope, insight)
             )
             onAfterInsight(insight)

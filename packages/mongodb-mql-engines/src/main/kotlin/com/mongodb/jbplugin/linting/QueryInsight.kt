@@ -97,6 +97,7 @@ sealed interface Inspection {
 
 data class QueryInsight<S, I : Inspection>(
     val query: Node<S>,
+    val source: S,
     val description: String,
     val descriptionArguments: List<String>,
     val inspection: I
@@ -105,6 +106,7 @@ data class QueryInsight<S, I : Inspection>(
         fun <S> notUsingIndex(query: Node<S>): QueryInsight<S, NotUsingIndex> {
             return QueryInsight(
                 query = query,
+                source = query.source,
                 description = "insight.not-using-index",
                 descriptionArguments = emptyList(),
                 inspection = NotUsingIndex
@@ -116,6 +118,7 @@ data class QueryInsight<S, I : Inspection>(
         ): QueryInsight<S, NotUsingIndexEffectively> {
             return QueryInsight(
                 query = query,
+                source = query.source,
                 description = "insight.not-using-index-effectively",
                 descriptionArguments = emptyList(),
                 inspection = NotUsingIndexEffectively
@@ -124,10 +127,12 @@ data class QueryInsight<S, I : Inspection>(
 
         fun <S> nonExistingField(
             query: Node<S>,
+            source: S,
             field: String
         ): QueryInsight<S, FieldDoesNotExist> {
             return QueryInsight(
                 query = query,
+                source = source,
                 description = "insight.field-does-not-exist",
                 descriptionArguments = listOf(field),
                 inspection = FieldDoesNotExist
@@ -136,12 +141,14 @@ data class QueryInsight<S, I : Inspection>(
 
         fun <S> typeMismatch(
             query: Node<S>,
+            source: S,
             field: String,
             fieldType: String,
             valueType: String
         ): QueryInsight<S, TypeMismatch> {
             return QueryInsight(
                 query = query,
+                source = source,
                 description = "insight.type-mismatch",
                 descriptionArguments = listOf(field, fieldType, valueType),
                 inspection = TypeMismatch
@@ -150,10 +157,12 @@ data class QueryInsight<S, I : Inspection>(
 
         fun <S> nonExistentDatabase(
             query: Node<S>,
+            source: S,
             database: String
         ): QueryInsight<S, DatabaseDoesNotExist> {
             return QueryInsight(
                 query = query,
+                source = source,
                 description = "insight.database-does-not-exist",
                 descriptionArguments = listOf(database),
                 inspection = DatabaseDoesNotExist
@@ -162,11 +171,13 @@ data class QueryInsight<S, I : Inspection>(
 
         fun <S> nonExistentCollection(
             query: Node<S>,
+            source: S,
             collection: String,
             database: String,
         ): QueryInsight<S, CollectionDoesNotExist> {
             return QueryInsight(
                 query = query,
+                source = source,
                 description = "insight.collection-does-not-exist",
                 descriptionArguments = listOf(collection, database),
                 inspection = CollectionDoesNotExist
@@ -178,6 +189,9 @@ data class QueryInsight<S, I : Inspection>(
         ): QueryInsight<S, NoDatabaseInferred> {
             return QueryInsight(
                 query = query,
+                // Ideally we should be attaching the insight to whichever database reference we
+                // can find but our current NamespaceExtractor strips out that information.
+                source = query.source,
                 description = "insight.no-database-inferred",
                 descriptionArguments = listOf(),
                 inspection = NoDatabaseInferred
@@ -189,6 +203,9 @@ data class QueryInsight<S, I : Inspection>(
         ): QueryInsight<S, NoCollectionSpecified> {
             return QueryInsight(
                 query = query,
+                // Ideally we should be attaching the insight to whichever collection reference we
+                // can find but our current NamespaceExtractor strips out that information.
+                source = query.source,
                 description = "insight.no-collection-specified",
                 descriptionArguments = listOf(),
                 inspection = NoCollectionSpecified

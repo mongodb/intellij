@@ -46,6 +46,7 @@ class CollectionDoesNotExistInspection<D> : QueryInspection<
                 holder.register(
                     QueryInsight.nonExistentCollection(
                         query = query,
+                        source = parsingResult.value.collectionSource,
                         collection = parsingResult.value.namespace.collection,
                         database = parsingResult.value.namespace.database,
                     )

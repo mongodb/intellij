@@ -42,10 +42,12 @@ class DatabaseDoesNotExistInspection<D> : QueryInspection<
 
         when (parsingResult) {
             is Either.Right -> {
+                val collectionRef = parsingResult.value
                 holder.register(
                     QueryInsight.nonExistentDatabase(
-                        query,
-                        parsingResult.value.namespace.database
+                        query = query,
+                        source = collectionRef.databaseSource ?: query.source,
+                        database = collectionRef.namespace.database
                     )
                 )
             }
