@@ -37,9 +37,14 @@ class ChooseConnectionInsightActionTest {
             }
         }
 
+        val query = project.aQuery()
         runBlocking {
             ChooseConnectionInsightAction().apply(
-                QueryInsight.nonExistentDatabase(project.aQuery(), "db")
+                QueryInsight.nonExistentDatabase(
+                    query,
+                    query.source,
+                    "db"
+                )
             )
         }
 

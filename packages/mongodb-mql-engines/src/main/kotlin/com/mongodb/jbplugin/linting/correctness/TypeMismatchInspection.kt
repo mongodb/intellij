@@ -60,12 +60,20 @@ class TypeMismatchInspection<D> : QueryInspection<
 
                 allFieldsAndValues.filter {
                     it.second != null && isCandidateForWarning(collectionSchema, it)
-                }.forEach {
-                    val fieldName = it.first.fieldName
+                }.forEach { (fieldRef, parsedValueRef) ->
+                    val fieldName = fieldRef.fieldName
                     val fieldType = settings.typeFormatter(collectionSchema.typeOf(fieldName))
-                    val valueType = settings.typeFormatter(it.second!!.type)
+                    val valueType = settings.typeFormatter(parsedValueRef!!.type)
 
-                    holder.register(QueryInsight.typeMismatch(query, fieldName, fieldType, valueType))
+                    holder.register(
+                        QueryInsight.typeMismatch(
+                            query = query,
+                            source = parsedValueRef.source,
+                            field = fieldName,
+                            fieldType = fieldType,
+                            valueType = valueType
+                        )
+                    )
                 }
             }
             else -> {}

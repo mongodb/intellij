@@ -52,8 +52,14 @@ class FieldDoesNotExistInspection<D> : QueryInspection<
 
                 allFields.filter {
                     collectionSchema.typeOf(it.fieldName) == BsonNull
-                }.forEach {
-                    holder.register(QueryInsight.nonExistingField(query, it.fieldName))
+                }.forEach { field ->
+                    holder.register(
+                        QueryInsight.nonExistingField(
+                            query = query,
+                            source = field.source,
+                            field = field.fieldName
+                        )
+                    )
                 }
             }
             else -> {}

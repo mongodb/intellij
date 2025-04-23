@@ -20,13 +20,13 @@ class JavaDriverMongoDbTypeMismatchTest {
     @ParsingTest(
         """
 public AggregateIterable<Document> exampleFind() {
-    return <warning descr="Type \"String\" is not compatible with the type of field \"thisIsDouble\" (double).">client.getDatabase("myDatabase")
+    return client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .aggregate(List.of(
                 Aggregates.match(
-                    eq("thisIsDouble", "123")
+                    eq("thisIsDouble", <warning descr="Type \"String\" is not compatible with the type of field \"thisIsDouble\" (double).">"123"</warning>)
                 )
-            ))</warning>;
+            ));
 }
 """,
     )

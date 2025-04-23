@@ -24,24 +24,24 @@ class SpringCriteriaMongoDbCollectionDoesNotExistTest {
         setup = SPRING_DATA,
         value = """
 public void allReleasedBooks() {
-        <warning descr="Cannot resolve \"book\" collection in \"myDatabase\" database in the connected data source.">template.find(
+        template.find(
             query(
             where("released")
             .is(true)),
-            Book.class
-        )</warning>;
+            <warning descr="Cannot resolve \"book\" collection in \"myDatabase\" database in the connected data source.">Book.class</warning>
+        );
     }
 
 public void exampleAggregate() {
-    <warning descr="Cannot resolve \"book\" collection in \"myDatabase\" database in the connected data source.">template.aggregate(
+    template.aggregate(
         Aggregation.newAggregation(
             Aggregation.match(
                 where("released").is(true)
             )
         ),
-        Book.class,
+        <warning descr="Cannot resolve \"book\" collection in \"myDatabase\" database in the connected data source.">Book.class</warning>,
         Book.class
-    )</warning>;
+    );
 }
 """,
     )
