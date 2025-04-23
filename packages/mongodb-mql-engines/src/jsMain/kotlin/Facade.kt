@@ -1,19 +1,16 @@
 @file:OptIn(ExperimentalJsExport::class, DelicateCoroutinesApi::class)
 
+import com.mongodb.jbplugin.accessadapter.slice.recursivelyBuildSchema
 import com.mongodb.jbplugin.indexing.CollectionIndexConsolidationOptions
 import com.mongodb.jbplugin.indexing.IndexAnalyzer
+import com.mongodb.jbplugin.mql.BsonObject
+import com.mongodb.jbplugin.mql.CollectionSchema
 import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.SiblingQueriesFinder
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
-import com.mongodb.jbplugin.mql.components.HasFieldReference
-import com.mongodb.jbplugin.mql.components.HasFilter
-import com.mongodb.jbplugin.mql.components.HasLimit
-import com.mongodb.jbplugin.mql.components.HasValueReference
-import com.mongodb.jbplugin.mql.components.IsCommand
-import com.mongodb.jbplugin.mql.components.Name
-import com.mongodb.jbplugin.mql.components.Named
-import com.mongodb.jbplugin.mql.toBsonType
+import com.mongodb.jbplugin.mql.flattenAnyOfReferences
+import com.mongodb.jbplugin.mql.mergeSchemaTogether
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.promise
@@ -33,32 +30,35 @@ interface Opaque<T : Any>
 interface Query
 
 @JsExport
-fun parseQuery(namespace: InputNamespace, json: Json): Opaque<Query> {
-    val ns = Namespace(namespace.database, namespace.collection)
-
-    val jsonEntries: Array<dynamic> = js("Object").entries(json)
-    val filter = jsonEntries.map {
-        Node(
-            it,
-            listOf(
-                Named(Name.EQ),
-                HasFieldReference(HasFieldReference.FromSchema(it[0], it[0])),
-                HasValueReference(HasValueReference.Constant(it[1], it[1], (it[1] as Any).toBsonType())),
-            )
+fun analyzeNamespace(ns: InputNamespace, sample: Array<Json>?): Opaque<CollectionSchema> {
+    val namespace = Namespace(ns.database, ns.collection)
+    if (sample != null) {
+        val everySchema = sample.map(::recursivelyBuildSchema)
+        val consolidatedSchema = everySchema.reduceOrNull(::mergeSchemaTogether) ?: BsonObject(
+            emptyMap(),
         )
+        val schema = flattenAnyOfReferences(consolidatedSchema) as BsonObject
+        val distribution = calculateDataDistribution(sample)
+        return CollectionSchema(
+            namespace,
+            schema,
+            distribution
+        ).asDynamic()
+    } else {
+        return CollectionSchema(
+            namespace,
+            BsonObject(emptyMap()),
+        ).asDynamic()
     }
+}
 
-    val result: dynamic = Node(
-        json,
-        listOf(
-            HasCollectionReference(HasCollectionReference.Known(Unit, Unit, ns, null)),
-            IsCommand(IsCommand.CommandType.FIND_MANY),
-            HasFilter<Unit>(filter),
-            HasLimit(50)
-        )
-    )
+@JsExport
+fun parseQuery(filter: Json, opaqueSchema: Opaque<CollectionSchema>): Opaque<Query> {
+    val query = parseFilter(filter)
+    val schema = opaqueSchema.unsafeCast<CollectionSchema>()
 
-    return result
+    return query.with(HasCollectionReference(HasCollectionReference.Known(filter, filter, schema.namespace, schema)))
+        .asDynamic()
 }
 
 @JsExport

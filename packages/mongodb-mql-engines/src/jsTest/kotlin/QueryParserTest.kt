@@ -5,7 +5,7 @@ class ParseQueryTest {
     @Test
     fun parseTemplateQuery_a1_b2() {
         val query: dynamic = js("{ a: 1, b: 2 }")
-        val root = parseQuery(query)
+        val root = parseFilter(query)
 
         val filter = root.component<HasFilter<*>>()
         assertNotNull(filter)
@@ -24,7 +24,7 @@ class ParseQueryTest {
     @Test
     fun parseAndQuery() {
         val query: dynamic = js("{ '${'$'}and': [{ a: 1 }, { b: 2 }] }")
-        val root = parseQuery(query)
+        val root = parseFilter(query)
 
         val andNode = root.component<HasFilter<*>>()?.children?.get(0)
         assertNotNull(andNode)
@@ -37,7 +37,7 @@ class ParseQueryTest {
     @Test
     fun parseOrQuery() {
         val query: dynamic = js("{ '${'$'}or': [{ a: 1 }, { b: 2 }] }")
-        val root = parseQuery(query)
+        val root = parseFilter(query)
 
         val orNode = root.component<HasFilter<*>>()?.children?.get(0)
         assertNotNull(orNode)
@@ -50,7 +50,7 @@ class ParseQueryTest {
     @Test
     fun parseNotQuery() {
         val query: dynamic = js("{ '${'$'}not': { a: 1 } }")
-        val root = parseQuery(query)
+        val root = parseFilter(query)
 
         val notNode = root.component<HasFilter<*>>()?.children?.get(0)
         assertNotNull(notNode)
@@ -75,7 +75,7 @@ class ParseQueryTest {
             }
         """
         )
-        val root = parseQuery(query)
+        val root = parseFilter(query)
         val andNode = root.component<HasFilter<*>>()?.children?.get(0)
         assertNotNull(andNode)
         assertEquals("and", andNode.component<Named>()?.name?.canonical)
@@ -119,7 +119,7 @@ class ParseQueryTest {
         """
         )
 
-        val root = parseQuery(query)
+        val root = parseFilter(query)
         val filter = root.component<HasFilter<*>>()
         assertNotNull(filter)
         val children = filter.children

@@ -4,7 +4,7 @@ import com.mongodb.jbplugin.mql.components.HasFilter
 import com.mongodb.jbplugin.mql.components.Name
 import com.mongodb.jbplugin.mql.components.Named
 
-fun parseQuery(query: dynamic): Node<dynamic> = when {
+fun parseFilter(query: dynamic): Node<dynamic> = when {
     jsTypeOf(query) == "object" -> run {
         val keys = js("Object.keys(query)") as Array<String>
         val isOperatorObject = keys.all { it.startsWith("$") }
@@ -14,7 +14,7 @@ fun parseQuery(query: dynamic): Node<dynamic> = when {
                 when (op) {
                     "\$and", "\$or", "\$nor" -> {
                         val arr = value as Array<dynamic>
-                        val parsedChildren = arr.map { parseQuery(it) }
+                        val parsedChildren = arr.map { parseFilter(it) }
 
                         val flattened = if (op == "\$and") {
                             parsedChildren.flatMap {
@@ -39,7 +39,7 @@ fun parseQuery(query: dynamic): Node<dynamic> = when {
                             value,
                             listOf(
                                 Named(Name.from("not")),
-                                HasFilter(listOf(parseQuery(value)))
+                                HasFilter(listOf(parseFilter(value)))
                             )
                         )
                     }

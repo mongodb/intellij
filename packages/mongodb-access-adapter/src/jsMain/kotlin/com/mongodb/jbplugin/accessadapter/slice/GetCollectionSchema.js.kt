@@ -1,35 +1,47 @@
 package com.mongodb.jbplugin.accessadapter.slice
 
-import com.mongodb.jbplugin.mql.BsonAnyOf
+import com.mongodb.jbplugin.mql.BsonAny
 import com.mongodb.jbplugin.mql.BsonArray
-import com.mongodb.jbplugin.mql.BsonNull
+import com.mongodb.jbplugin.mql.BsonBoolean
+import com.mongodb.jbplugin.mql.BsonDate
+import com.mongodb.jbplugin.mql.BsonDecimal128
+import com.mongodb.jbplugin.mql.BsonDouble
+import com.mongodb.jbplugin.mql.BsonInt32
+import com.mongodb.jbplugin.mql.BsonInt64
 import com.mongodb.jbplugin.mql.BsonObject
+import com.mongodb.jbplugin.mql.BsonObjectId
+import com.mongodb.jbplugin.mql.BsonString
 import com.mongodb.jbplugin.mql.BsonType
-import com.mongodb.jbplugin.mql.toBsonType
+import kotlin.js.Date
 
-actual fun recursivelyBuildSchema(value: Any?): BsonType {
-    return when (value) {
-        null -> BsonNull
-        is Map<*, *> -> BsonObject(
-            value.map { it.key.toString() to recursivelyBuildSchema(it.value) }
-                .toMap()
-        )
+private fun jsTypeOf(v: dynamic): String = js("typeof v") as String
 
-        is Collection<*> -> recursivelyBuildSchema(value.toTypedArray())
-        is Array<*> ->
-            BsonArray(
-                value
-                    .map {
-                        it.toBsonType()
-                    }.toSet()
-                    .let {
-                        if (it.size == 1) {
-                            it.first()
-                        } else {
-                            BsonAnyOf(it)
-                        }
-                    },
-            )
-        else -> value.toBsonType()
+actual fun recursivelyBuildSchema(value: Any?): BsonType = when {
+    jsTypeOf(value) == "string" -> BsonString
+    jsTypeOf(value) == "boolean" -> BsonBoolean
+    jsTypeOf(value) == "number" -> BsonDouble
+    jsTypeOf(value) == "bigint" -> BsonInt64
+    value is Date -> BsonDate
+    js("Array.isArray(value)") as Boolean -> BsonArray(BsonAny)
+    value != null && jsTypeOf(value) == "object" -> run {
+        val keys = js("Object.keys(value)") as Array<String>
+        if (keys.size == 1 && keys[0].startsWith("$")) {
+            when (keys[0]) {
+                "\$numberLong" -> BsonInt64
+                "\$numberDecimal" -> BsonDecimal128
+                "\$numberDouble" -> BsonDouble
+                "\$numberInt" -> BsonInt32
+                "\$oid" -> BsonObjectId
+                "\$date" -> BsonDate
+                else -> BsonAny
+            }
+        } else {
+            val map = keys.associateWith { key ->
+                recursivelyBuildSchema((value.asDynamic())[key])
+            }
+
+            BsonObject(map)
+        }
     }
+    else -> BsonAny
 }
