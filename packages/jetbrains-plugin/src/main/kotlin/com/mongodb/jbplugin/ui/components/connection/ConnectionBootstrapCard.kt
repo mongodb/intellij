@@ -28,6 +28,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.intellij.database.dataSource.LocalDataSource
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
+import com.mongodb.jbplugin.dialects.ConnectionContextRequirement
+import com.mongodb.jbplugin.editor.identifiedDialects
 import com.mongodb.jbplugin.ui.components.utilities.ActionLink
 import com.mongodb.jbplugin.ui.components.utilities.Card
 import com.mongodb.jbplugin.ui.components.utilities.CardCategory
@@ -36,9 +38,11 @@ import com.mongodb.jbplugin.ui.components.utilities.hooks.useTranslation
 import com.mongodb.jbplugin.ui.components.utilities.hooks.useViewModel
 import com.mongodb.jbplugin.ui.components.utilities.hooks.useViewModelMutator
 import com.mongodb.jbplugin.ui.components.utilities.hooks.useViewModelState
+import com.mongodb.jbplugin.ui.viewModel.CodeEditorViewModel
 import com.mongodb.jbplugin.ui.viewModel.ConnectionState
 import com.mongodb.jbplugin.ui.viewModel.ConnectionStateViewModel
 import com.mongodb.jbplugin.ui.viewModel.DatabaseState
+import com.mongodb.jbplugin.ui.viewModel.EditorState
 import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState
 import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState.Connecting
 import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState.Failed
@@ -93,9 +97,10 @@ fun ConnectionBootstrapCard() {
         viewModel.subscribeToSidePanelEvents { emittedEvent ->
             if (emittedEvent == SidePanelEvents.OpenConnectionComboBox) {
                 connectionComboBoxState.setComboBoxExpanded(true)
-                // Need to run it catching because there is slight chance that FocusRequester did not have
-                // time to initialize in which case, it will throw an exception. Exception itself does
-                // not harm the UI but its worth catching so it does not bubble up to the user.
+                // Need to run it catching because there is a slight chance that FocusRequester did
+                // not have time to initialize, in which case, it will throw an exception. Exception
+                // itself does not harm the UI, but it's worth catching, so it does not bubble up to
+                // the user.
                 runCatching {
                     connectionComboBoxState.focusRequester.requestFocus()
                 }
@@ -103,12 +108,14 @@ fun ConnectionBootstrapCard() {
         }
     }
 
+    val shouldShowDatabaseComboBox by useShouldShowDatabaseComboBox()
+
     CompositionLocalProvider(LocalConnectionCallbacks provides connectionCallbacks) {
         CompositionLocalProvider(LocalDatabaseCallbacks provides databaseCallbacks) {
             CompositionLocalProvider(
                 LocalConnectionComboBoxState provides connectionComboBoxState
             ) {
-                _ConnectionBootstrapCard(connectionState, databaseState)
+                _ConnectionBootstrapCard(connectionState, databaseState, shouldShowDatabaseComboBox)
             }
         }
     }
@@ -118,13 +125,14 @@ fun ConnectionBootstrapCard() {
 internal fun _ConnectionBootstrapCard(
     connectionState: ConnectionState,
     databaseState: DatabaseState,
+    showDatabaseComboBox: Boolean,
 ) {
     if (connectionState.selectedConnection == null) {
         ConnectionCardWhenNotConnected(connectionState)
     } else if (connectionState.selectedConnectionState is Failed) {
         ConnectionCardWhenConnectionFailed(connectionState)
     } else {
-        LightweightConnectionSection(connectionState, databaseState)
+        LightweightConnectionSection(connectionState, databaseState, showDatabaseComboBox)
     }
 }
 
@@ -201,10 +209,11 @@ internal fun ConnectionCardWhenConnectionFailed(connectionState: ConnectionState
 internal fun LightweightConnectionSection(
     connectionState: ConnectionState,
     databaseState: DatabaseState,
+    showDatabaseComboBox: Boolean,
 ) {
     val callbacks = useConnectionCallbacks()
 
-    Column {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (connectionState.selectedConnectionState is Connecting) {
             Text(useTranslation("side-panel.connection.ConnectionBootstrapCard.connecting-to"))
         } else {
@@ -216,7 +225,7 @@ internal fun LightweightConnectionSection(
             }
         }
 
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 ConnectionComboBox(
                     connections = connectionState.connections,
@@ -226,12 +235,14 @@ internal fun LightweightConnectionSection(
             }
         }
 
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                DatabaseComboBox(
-                    databasesLoadingState = databaseState.databasesLoadingState,
-                    selectedDatabase = databaseState.selectedDatabase,
-                )
+        if (showDatabaseComboBox) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    DatabaseComboBox(
+                        databasesLoadingState = databaseState.databasesLoadingState,
+                        selectedDatabase = databaseState.selectedDatabase,
+                    )
+                }
             }
         }
     }
@@ -371,10 +382,10 @@ internal data class ConnectionComboBoxState(
 }
 
 /**
- * We purposely initialise this to null to reduce pain when testing these components otherwise
+ * We purposely initialize this to null to reduce pain when testing these components, otherwise
  * for each test that directly / indirectly triggers connection combobox state changes will have
- * to initialise the CompositionLocalProvider. We evade that by doing a small check in
- * useConnectionComboBoxState below - where we either return the current value if its present which
+ * to initialize the CompositionLocalProvider. We evade that by doing a small check in
+ * useConnectionComboBoxState below - where we either return the current value if it's present which
  * in test cases won't be (unless specified) or we return a newly built ConnectionComboBoxState.
  */
 internal val LocalConnectionComboBoxState = compositionLocalOf<ConnectionComboBoxState?> { null }
@@ -382,4 +393,21 @@ internal val LocalConnectionComboBoxState = compositionLocalOf<ConnectionComboBo
 @Composable
 internal fun useConnectionComboBoxState(): ConnectionComboBoxState {
     return LocalConnectionComboBoxState.current ?: ConnectionComboBoxState.default()
+}
+
+@Composable
+internal fun useShouldShowDatabaseComboBox(): State<Boolean> {
+    val editorState by useViewModelState(
+        CodeEditorViewModel::editorState,
+        EditorState.default()
+    )
+
+    return derivedStateOf {
+        val identifiedDialects = editorState.focusedFile?.identifiedDialects ?: emptyList()
+        identifiedDialects.any { dialect ->
+            dialect.connectionContextExtractor?.requirements()?.contains(
+                ConnectionContextRequirement.DATABASE
+            ) ?: false
+        }
+    }
 }

@@ -37,7 +37,8 @@ class ConnectionBootstrapCardTest {
                         null,
                         SelectedConnectionState.Initial
                     ),
-                    DatabaseState.initial()
+                    DatabaseState.initial(),
+                    false
                 )
             }
         }
@@ -60,7 +61,8 @@ class ConnectionBootstrapCardTest {
                     null,
                     SelectedConnectionState.Initial
                 ),
-                DatabaseState.initial()
+                DatabaseState.initial(),
+                false
             )
         }
 
@@ -81,7 +83,8 @@ class ConnectionBootstrapCardTest {
                     dataSource,
                     SelectedConnectionState.Failed(dataSource, "Error message.")
                 ),
-                DatabaseState.initial()
+                DatabaseState.initial(),
+                false
             )
         }
 
@@ -104,7 +107,8 @@ class ConnectionBootstrapCardTest {
                     dataSource,
                     SelectedConnectionState.Connecting(dataSource)
                 ),
-                DatabaseState.initial()
+                DatabaseState.initial(),
+                false
             )
         }
 
@@ -124,7 +128,8 @@ class ConnectionBootstrapCardTest {
                     dataSource,
                     SelectedConnectionState.Connected(dataSource)
                 ),
-                DatabaseState.initial()
+                DatabaseState.initial(),
+                false
             )
         }
 
@@ -144,7 +149,8 @@ class ConnectionBootstrapCardTest {
                     dataSource,
                     SelectedConnectionState.Connected(dataSource)
                 ),
-                DatabaseState.initial()
+                DatabaseState.initial(),
+                true
             )
         }
 
@@ -169,7 +175,8 @@ class ConnectionBootstrapCardTest {
                         dataSource,
                         SelectedConnectionState.Connected(dataSource)
                     ),
-                    DatabaseState.initial()
+                    DatabaseState.initial(),
+                    false
                 )
             }
         }
@@ -256,7 +263,8 @@ class ConnectionBootstrapCardTest {
                         dataSource,
                         SelectedConnectionState.Connected(dataSource)
                     ),
-                    DatabaseState.initial()
+                    DatabaseState.initial(),
+                    false
                 )
             }
         }
