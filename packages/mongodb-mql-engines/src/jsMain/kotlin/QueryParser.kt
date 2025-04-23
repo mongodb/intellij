@@ -61,7 +61,7 @@ fun parseQuery(query: dynamic): Node<dynamic> = when {
                 val valueKeys = if (valueIsObject) js("Object.keys(value)") as Array<String> else emptyArray()
                 val nestedOperatorKeys = valueKeys.filter { it.startsWith("$") }
 
-                if (nestedOperatorKeys.isNotEmpty()) {
+                if (nestedOperatorKeys.isNotEmpty() && nestedOperatorKeys.any { !isEjsonKey(it) }) {
                     val subconditions = nestedOperatorKeys.map { op ->
                         Node(
                             value,
@@ -94,5 +94,5 @@ fun parseQuery(query: dynamic): Node<dynamic> = when {
         }
     }
     else ->
-        Node(query, listOf(parseEjson(query)))
+        Node(query, listOf(Named(Name.EQ), parseEjson(query)))
 }

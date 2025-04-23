@@ -87,7 +87,6 @@ class ParseQueryTest {
         assertEquals("and", andSubConditions.component<Named>()?.name?.canonical)
         val gtAndLtFilter = andSubConditions.component<HasFilter<*>>()
         assertNotNull(gtAndLtFilter)
-        println(gtAndLtFilter)
         assertEquals(2, gtAndLtFilter.children.size)
 
         val gtNode = gtAndLtFilter.children[0]
@@ -103,5 +102,42 @@ class ParseQueryTest {
         val orFilter = orNode.component<HasFilter<*>>()
         assertNotNull(orFilter)
         assertEquals(2, orFilter.children.size)
+    }
+
+    @Test
+    fun parseEjsonValues() {
+        val query: dynamic = js(
+            """
+            {
+              "a": { "${'$'}numberLong": "1234567890123456789" },
+              "b": { "${'$'}oid": "507f1f77bcf86cd799439011" },
+              "c": { "${'$'}date": { "${'$'}numberLong": "1609459200000" } },
+              "d": { "${'$'}numberDecimal": "123.456" },
+              "e": { "${'$'}numberInt": "42" },
+              "f": { "${'$'}numberDouble": "3.14" }
+            }
+        """
+        )
+
+        val root = parseQuery(query)
+        val filter = root.component<HasFilter<*>>()
+        assertNotNull(filter)
+        val children = filter.children
+        assertEquals(6, children.size)
+
+        val expectedFields = listOf("a", "b", "c", "d", "e", "f")
+        val expectedTypes = listOf("BsonInt64", "BsonObjectId", "BsonDate", "BsonDecimal128", "BsonInt32", "BsonDouble")
+
+        println(root)
+
+        for ((index, fieldName) in expectedFields.withIndex()) {
+            val node = children[index]
+            assertEquals("eq", node.component<Named>()?.name?.canonical)
+            val fieldRef = node.component<HasFieldReference<*>>()?.reference as HasFieldReference.FromSchema
+            assertEquals(fieldName, fieldRef.fieldName)
+            val valueRef = node.component<HasValueReference<*>>()?.reference
+            assertNotNull(valueRef)
+            assertTrue(valueRef.toString().contains(expectedTypes[index]))
+        }
     }
 }

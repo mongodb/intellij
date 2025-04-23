@@ -13,6 +13,15 @@ import kotlin.js.Date
 
 private fun jsTypeOf(v: dynamic): String = js("typeof v") as String
 
+fun isEjsonKey(v: String): Boolean = setOf(
+    "${'$'}numberLong",
+    "${'$'}numberDecimal",
+    "${'$'}numberDouble",
+    "${'$'}numberInt",
+    "${'$'}oid",
+    "${'$'}date"
+).contains(v)
+
 fun parseEjson(value: dynamic): HasValueReference<dynamic> = HasValueReference(
     when {
         jsTypeOf(value) == "string" -> HasValueReference.Runtime(value, BsonString)
