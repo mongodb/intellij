@@ -22,10 +22,10 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
         setup = DefaultSetup.SPRING_DATA,
         value = """
     public void allReleasedBooks() {
-        <warning descr="Field \"released\" does not seem to exist in collection.">template.find(
-                query(where("released").is(true)),
+        template.find(
+                query(where(<warning descr="Field \"released\" does not seem to exist in collection.">"released"</warning>).is(true)),
                 Book.class
-        )</warning>;
+        );
     }
     """,
     )
@@ -39,12 +39,12 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
         setup = DefaultSetup.SPRING_DATA,
         value = """
     public void allReleasedBooksSorted() {
-        <warning descr="Field \"released1\" does not seem to exist in collection."><warning descr="Field \"released2\" does not seem to exist in collection."><warning descr="Field \"released3\" does not seem to exist in collection.">template.find(
-                query(where("released1").is(true)
-                ).with(Sort.by("released2")
-                ).with(Sort.by(Sort.Direction.DESC, "released3")),
+        template.find(
+                query(where(<warning descr="Field \"released1\" does not seem to exist in collection.">"released1"</warning>).is(true)
+                ).with(Sort.by(<warning descr="Field \"released2\" does not seem to exist in collection.">"released2"</warning>)
+                ).with(Sort.by(Sort.Direction.DESC, <warning descr="Field \"released3\" does not seem to exist in collection.">"released3"</warning>)),
                 Book.class
-        )</warning></warning></warning>;
+        );
     }
     """,
     )
@@ -59,15 +59,15 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
         value = """
     public void allReleasedBooksAggregate() {
         String releasedAsVariable = "released";
-        <warning descr="Field \"released\" does not seem to exist in collection.">template.aggregate(
+        template.aggregate(
             Aggregation.newAggregation(
                 Aggregation.match(
-                    where("released").is(true)
+                    where(<warning descr="Field \"released\" does not seem to exist in collection.">"released"</warning>).is(true)
                 )
             ),
             Book.class,
             Book.class
-        )</warning>;
+        );
     }
     """,
     )
@@ -86,19 +86,19 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
     
     public void allReleasedBooksAggregate() {
         String releasedAsVariable = "releasedAsVariable";
-        <warning descr="Field \"released\" does not seem to exist in collection."><warning descr="Field \"releasedAsVariable\" does not seem to exist in collection."><warning descr="Field \"releasedFromMethodCall\" does not seem to exist in collection.">template.aggregate(
+        template.aggregate(
             Aggregation.newAggregation(
                 Aggregation.project(
-                        "released"
+                        <warning descr="Field \"released\" does not seem to exist in collection.">"released"</warning>
                 ).andInclude(
-                        releasedAsVariable
+                        <warning descr="Field \"releasedAsVariable\" does not seem to exist in collection.">releasedAsVariable</warning>
                 ).andExclude(
-                        releasedFromMethodCall()
+                        <warning descr="Field \"releasedFromMethodCall\" does not seem to exist in collection.">releasedFromMethodCall()</warning>
                 )
             ),
             Book.class,
             Book.class
-        )</warning></warning></warning>;
+        );
     }
     """,
     )
@@ -117,13 +117,15 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
     
     public void allReleasedBooksAggregate() {
         String releasedAsVariable = "releasedAsVariable";
-        <warning descr="Field \"released\" does not seem to exist in collection.">template.aggregate(
+        template.aggregate(
             Aggregation.newAggregation(
-                Aggregation.unwind("released")
+                Aggregation.unwind(<warning descr="Field \"released\" does not seem to exist in collection.">"released"</warning>),
+                Aggregation.unwind(<warning descr="Field \"releasedAsVariable\" does not seem to exist in collection.">releasedAsVariable</warning>),
+                Aggregation.unwind(<warning descr="Field \"releasedFromMethodCall\" does not seem to exist in collection.">releasedFromMethodCall()</warning>)
             ),
             Book.class,
             Book.class
-        )</warning>;
+        );
     }
     """,
     )
@@ -142,13 +144,18 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
     
     public void allReleasedBooksAggregate() {
         String releasedAsVariable = "releasedAsVariable";
-        <warning descr="Field \"released\" does not seem to exist in collection."><warning descr="Field \"releasedAsVariable\" does not seem to exist in collection."><warning descr="Field \"releasedFromMethodCall\" does not seem to exist in collection.">template.aggregate(
+        template.aggregate(
             Aggregation.newAggregation(
-                Aggregation.sort(Sort.Direction.ASC, "released", releasedAsVariable, releasedFromMethodCall())
+                Aggregation.sort(
+                    Sort.Direction.ASC,
+                    <warning descr="Field \"released\" does not seem to exist in collection.">"released"</warning>,
+                    <warning descr="Field \"releasedAsVariable\" does not seem to exist in collection.">releasedAsVariable</warning>,
+                    <warning descr="Field \"releasedFromMethodCall\" does not seem to exist in collection.">releasedFromMethodCall()</warning>
+                )
             ),
             Book.class,
             Book.class
-        )</warning></warning></warning>;
+        );
     }
     """,
     )
@@ -162,13 +169,13 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
         setup = DefaultSetup.SPRING_DATA,
         value = """
     public void allReleasedBooksAggregate() {
-        <warning descr="Field \"released\" does not seem to exist in collection.">template.aggregate(
+        template.aggregate(
             Aggregation.newAggregation(
-                Aggregation.addFields().addFieldWithValueOf("addedField", "released").build()
+                Aggregation.addFields().addFieldWithValueOf("addedField", <warning descr="Field \"released\" does not seem to exist in collection.">"released"</warning>).build()
             ),
             Book.class,
             Book.class
-        )</warning>;
+        );
     }
     """,
     )
@@ -182,13 +189,13 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
         setup = DefaultSetup.SPRING_DATA,
         value = """
     public void allReleasedBooksAggregate() {
-        <warning descr="Field \"released\" does not seem to exist in collection.">template.aggregate(
+        template.aggregate(
             Aggregation.newAggregation(
-                Aggregation.group("released")
+                Aggregation.group(<warning descr="Field \"released\" does not seem to exist in collection.">"released"</warning>)
             ),
             Book.class,
             Book.class
-        )</warning>;
+        );
     }
     """,
     )
@@ -202,13 +209,13 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
         setup = DefaultSetup.SPRING_DATA,
         value = """
     public void allReleasedBooksAggregate() {
-        <warning descr="Field \"released\" does not seem to exist in collection.">template.aggregate(
+        template.aggregate(
             Aggregation.newAggregation(
-                Aggregation.group().sum("released").as("acc")
+                Aggregation.group().sum(<warning descr="Field \"released\" does not seem to exist in collection.">"released"</warning>).as("acc")
             ),
             Book.class,
             Book.class
-        )</warning>;
+        );
     }
     """,
     )
@@ -222,13 +229,13 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
         setup = DefaultSetup.SPRING_DATA,
         value = """
     public void allReleasedBooksAggregate() {
-        <warning descr="Field \"released\" does not seem to exist in collection.">template.aggregate(
+        template.aggregate(
             Aggregation.newAggregation(
-                Aggregation.group().avg("released").as("acc")
+                Aggregation.group().avg(<warning descr="Field \"released\" does not seem to exist in collection.">"released"</warning>).as("acc")
             ),
             Book.class,
             Book.class
-        )</warning>;
+        );
     }
     """,
     )
@@ -242,13 +249,13 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
         setup = DefaultSetup.SPRING_DATA,
         value = """
     public void allReleasedBooksAggregate() {
-        <warning descr="Field \"released\" does not seem to exist in collection.">template.aggregate(
+        template.aggregate(
             Aggregation.newAggregation(
-                Aggregation.group().max("released").as("acc")
+                Aggregation.group().max(<warning descr="Field \"released\" does not seem to exist in collection.">"released"</warning>).as("acc")
             ),
             Book.class,
             Book.class
-        )</warning>;
+        );
     }
     """,
     )
@@ -262,13 +269,13 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
         setup = DefaultSetup.SPRING_DATA,
         value = """
     public void allReleasedBooksAggregate() {
-        <warning descr="Field \"released\" does not seem to exist in collection.">template.aggregate(
+        template.aggregate(
             Aggregation.newAggregation(
-                Aggregation.group().min("released").as("acc")
+                Aggregation.group().min(<warning descr="Field \"released\" does not seem to exist in collection.">"released"</warning>).as("acc")
             ),
             Book.class,
             Book.class
-        )</warning>;
+        );
     }
     """,
     )
@@ -282,13 +289,13 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
         setup = DefaultSetup.SPRING_DATA,
         value = """
     public void allReleasedBooksAggregate() {
-        <warning descr="Field \"released\" does not seem to exist in collection.">template.aggregate(
+        template.aggregate(
             Aggregation.newAggregation(
-                Aggregation.group().first("released").as("acc")
+                Aggregation.group().first(<warning descr="Field \"released\" does not seem to exist in collection.">"released"</warning>).as("acc")
             ),
             Book.class,
             Book.class
-        )</warning>;
+        );
     }
     """,
     )
@@ -302,13 +309,13 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
         setup = DefaultSetup.SPRING_DATA,
         value = """
     public void allReleasedBooksAggregate() {
-        <warning descr="Field \"released\" does not seem to exist in collection.">template.aggregate(
+        template.aggregate(
             Aggregation.newAggregation(
-                Aggregation.group().last("released").as("acc")
+                Aggregation.group().last(<warning descr="Field \"released\" does not seem to exist in collection.">"released"</warning>).as("acc")
             ),
             Book.class,
             Book.class
-        )</warning>;
+        );
     }
     """,
     )
@@ -322,13 +329,13 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
         setup = DefaultSetup.SPRING_DATA,
         value = """
     public void allReleasedBooksAggregate() {
-        <warning descr="Field \"released\" does not seem to exist in collection.">template.aggregate(
+        template.aggregate(
             Aggregation.newAggregation(
-                Aggregation.group().push("released").as("acc")
+                Aggregation.group().push(<warning descr="Field \"released\" does not seem to exist in collection.">"released"</warning>).as("acc")
             ),
             Book.class,
             Book.class
-        )</warning>;
+        );
     }
     """,
     )
@@ -342,13 +349,13 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
         setup = DefaultSetup.SPRING_DATA,
         value = """
     public void allReleasedBooksAggregate() {
-        <warning descr="Field \"released\" does not seem to exist in collection.">template.aggregate(
+        template.aggregate(
             Aggregation.newAggregation(
-                Aggregation.group().addToSet("released").as("acc")
+                Aggregation.group().addToSet(<warning descr="Field \"released\" does not seem to exist in collection.">"released"</warning>).as("acc")
             ),
             Book.class,
             Book.class
-        )</warning>;
+        );
     }
     """,
     )

@@ -18,15 +18,45 @@ class JavaDriverMongoDbDatabaseDoesNotExistTest {
     @ParsingTest(
         """
 public FindIterable<Document> exampleFind() {
-    return <warning descr="Cannot resolve \"myDatabase\" database reference in the connected data source.">client.getDatabase("myDatabase")
+    return client.getDatabase(<warning descr="Cannot resolve \"myDatabase\" database reference in the connected data source.">"myDatabase"</warning>)
             .getCollection("myCollection")
-            .find(eq("nonExistingField", "123"))</warning>;
+            .find(eq("nonExistingField", "123"));
+}
+
+public FindIterable<Document> exampleFind1() {
+    String dbName = "myDatabase";
+    return client.getDatabase(<warning descr="Cannot resolve \"myDatabase\" database reference in the connected data source.">dbName</warning>)
+            .getCollection("myCollection")
+            .find(eq("nonExistingField", "123"));
+}
+
+String getDatabaseName() {
+    return "myDatabase";
+}
+
+public FindIterable<Document> exampleFind2() {
+    return client.getDatabase(<warning descr="Cannot resolve \"myDatabase\" database reference in the connected data source.">getDatabaseName()</warning>)
+            .getCollection("myCollection")
+            .find(eq("nonExistingField", "123"));
 }
 
 public void exampleAggregate() {
-    <warning descr="Cannot resolve \"myDatabase\" database reference in the connected data source.">client.getDatabase("myDatabase")
+    client.getDatabase(<warning descr="Cannot resolve \"myDatabase\" database reference in the connected data source.">"myDatabase"</warning>)
             .getCollection("myCollection")
-            .aggregate(List.of())</warning>;
+            .aggregate(List.of());
+}
+
+public void exampleAggregate1() {
+    String dbName = "myDatabase";
+    client.getDatabase(<warning descr="Cannot resolve \"myDatabase\" database reference in the connected data source.">dbName</warning>)
+            .getCollection("myCollection")
+            .aggregate(List.of());
+}
+
+public void exampleAggregate2() {
+    client.getDatabase(<warning descr="Cannot resolve \"myDatabase\" database reference in the connected data source.">getDatabaseName()</warning>)
+            .getCollection("myCollection")
+            .aggregate(List.of());
 }
 """,
     )

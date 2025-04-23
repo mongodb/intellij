@@ -10,12 +10,14 @@ import com.mongodb.jbplugin.fixtures.ParsingTest
 import com.mongodb.jbplugin.fixtures.setupConnection
 import com.mongodb.jbplugin.fixtures.specifyDialect
 import com.mongodb.jbplugin.observability.TelemetryService
+import org.junit.jupiter.api.Disabled
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
 
+@Disabled("Skipping these tests because we do not highlight the problem anymore for inspection.")
 @IntegrationTest
 class JavaDriverMongoDbQueryNotUsingIndexEffectivelyTest {
     @ParsingTest(

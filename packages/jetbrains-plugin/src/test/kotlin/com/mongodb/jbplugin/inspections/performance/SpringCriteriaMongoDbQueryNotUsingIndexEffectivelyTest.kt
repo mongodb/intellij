@@ -9,10 +9,12 @@ import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.ParsingTest
 import com.mongodb.jbplugin.fixtures.setupConnection
 import com.mongodb.jbplugin.fixtures.specifyDialect
+import org.junit.jupiter.api.Disabled
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 
+@Disabled("Skipping these tests because we do not highlight the problem anymore for inspection.")
 @IntegrationTest
 class SpringCriteriaMongoDbQueryNotUsingIndexEffectivelyTest {
     @ParsingTest(

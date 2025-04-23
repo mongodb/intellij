@@ -21,15 +21,45 @@ class JavaDriverMongoDbCollectionDoesNotExistTest {
     @ParsingTest(
         """
 public FindIterable<Document> exampleFind() {
-    return <warning descr="Cannot resolve \"myCollection\" collection in \"myDatabase\" database in the connected data source.">client.getDatabase("myDatabase")
-            .getCollection("myCollection")
-            .find(eq("nonExistingField", "123"))</warning>;
+    return client.getDatabase("myDatabase")
+            .getCollection(<warning descr="Cannot resolve \"myCollection\" collection in \"myDatabase\" database in the connected data source.">"myCollection"</warning>)
+            .find(eq("nonExistingField", "123"));
+}
+
+public FindIterable<Document> exampleFind1() {
+    String collName = "myCollection";
+    return client.getDatabase("myDatabase")
+            .getCollection(<warning descr="Cannot resolve \"myCollection\" collection in \"myDatabase\" database in the connected data source.">collName</warning>)
+            .find(eq("nonExistingField", "123"));
+}
+
+String getCollection() {
+    return "myCollection";
+}
+
+public FindIterable<Document> exampleFind2() {
+    return client.getDatabase("myDatabase")
+            .getCollection(<warning descr="Cannot resolve \"myCollection\" collection in \"myDatabase\" database in the connected data source.">getCollection()</warning>)
+            .find(eq("nonExistingField", "123"));
 }
 
 public void exampleAggregate() {
-    <warning descr="Cannot resolve \"myCollection\" collection in \"myDatabase\" database in the connected data source.">client.getDatabase("myDatabase")
-            .getCollection("myCollection")
-            .aggregate(List.of())</warning>;
+    client.getDatabase("myDatabase")
+            .getCollection(<warning descr="Cannot resolve \"myCollection\" collection in \"myDatabase\" database in the connected data source.">"myCollection"</warning>)
+            .aggregate(List.of());
+}
+
+public void exampleAggregate1() {
+    String collName = "myCollection";
+    client.getDatabase("myDatabase")
+            .getCollection(<warning descr="Cannot resolve \"myCollection\" collection in \"myDatabase\" database in the connected data source.">collName</warning>)
+            .aggregate(List.of());
+}
+
+public void exampleAggregate2() {
+    client.getDatabase("myDatabase")
+            .getCollection(<warning descr="Cannot resolve \"myCollection\" collection in \"myDatabase\" database in the connected data source.">getCollection()</warning>)
+            .aggregate(List.of());
 }
 """,
     )
