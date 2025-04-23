@@ -9,6 +9,7 @@ plugins {
     id("org.jlleitschuh.gradle.ktlint")
 }
 
+version = rootProject.version
 val libs = the<LibrariesForLibs>()
 
 tasks {

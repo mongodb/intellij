@@ -18,6 +18,9 @@ kotlin {
     }
 
     js(IR) {
+        moduleName = project.name
+        version = project.version
+
         useEsModules()
         generateTypeScriptDefinitions()
         browser {
