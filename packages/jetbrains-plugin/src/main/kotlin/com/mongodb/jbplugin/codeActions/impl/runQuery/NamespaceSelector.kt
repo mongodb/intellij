@@ -2,7 +2,6 @@ package com.mongodb.jbplugin.codeActions.impl.runQuery
 
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.rd.util.launchChildBackground
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.ui.AnimatedIcon.ANIMATION_IN_RENDERER_ALLOWED
 import com.intellij.ui.components.JBLabel
@@ -14,7 +13,9 @@ import com.mongodb.jbplugin.i18n.Icons.scaledToText
 import com.mongodb.jbplugin.meta.latest
 import com.mongodb.jbplugin.meta.service
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.launch
 import java.awt.Component
 import javax.swing.DefaultComboBoxModel
 import javax.swing.SwingConstants
@@ -87,18 +88,18 @@ class NamespaceSelector(
             renderCollectionItem(value, index)
         }
 
-        coroutineScope.launchChildBackground {
+        coroutineScope.launch(Dispatchers.IO) {
             events.collect(::handleEvent)
         }
 
         databaseComboBox.addItemListener {
-            coroutineScope.launchChildBackground {
+            coroutineScope.launch(Dispatchers.IO) {
                 events.emit(Event.DatabaseSelected(it.item.toString()))
             }
         }
 
         collectionComboBox.addItemListener {
-            coroutineScope.launchChildBackground {
+            coroutineScope.launch(Dispatchers.IO) {
                 events.emit(Event.CollectionSelected(it.item.toString()))
             }
         }
@@ -107,7 +108,7 @@ class NamespaceSelector(
     }
 
     private fun loadDatabases() {
-        coroutineScope.launchChildBackground {
+        coroutineScope.launch(Dispatchers.IO) {
             events.emit(Event.DatabasesLoading)
             val readModel by project.service<DataGripBasedReadModelProvider>()
             val result = readModel.slice(
@@ -133,7 +134,7 @@ class NamespaceSelector(
                 databaseComboBox.isEnabled = true
             }
             is Event.DatabaseSelected -> {
-                coroutineScope.launchChildBackground {
+                coroutineScope.launch {
                     events.emit(Event.CollectionsLoading)
                     val readModel by project.service<DataGripBasedReadModelProvider>()
                     val result = readModel.slice(

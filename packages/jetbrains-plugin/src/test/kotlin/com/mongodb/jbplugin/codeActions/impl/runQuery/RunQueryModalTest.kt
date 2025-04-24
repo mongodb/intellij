@@ -49,9 +49,9 @@ class RunQueryModalTest {
         """
         )
 
-        val (fixture, _) = render(robot, query, dataSource, coroutineScope)
+        eventually(recovery = robot::cleanUp) {
+            val (fixture, _) = render(robot, query, dataSource, coroutineScope)
 
-        eventually {
             fixture.label(JLabelMatcher.withText("Specify query test values")).requireVisible()
             fixture.label(
                 JLabelMatcher.withText(
@@ -116,9 +116,9 @@ class RunQueryModalTest {
         """
         )
 
-        val (fixture, modal) = render(robot, query, dataSource, coroutineScope)
+        eventually(recovery = robot::cleanUp) {
+            val (fixture, modal) = render(robot, query, dataSource, coroutineScope)
 
-        eventually {
             val queryContext = modal.buildQueryContextFromModal()
 
             fixture.comboBox("DatabaseComboBox").requireVisible()
@@ -151,17 +151,17 @@ class RunQueryModalTest {
         """
         )
 
-        val (fixture, modal) = render(robot, query, dataSource, coroutineScope)
+        eventually(recovery = robot::cleanUp) {
+            val (fixture, modal) = render(robot, query, dataSource, coroutineScope)
 
-        eventually {
             fixture.textBox("_id").requireVisible().focus().setText("myId")
+
+            val queryContext = modal.buildQueryContextFromModal()
+            val idInput = queryContext.expansions.getValue("_id")
+
+            assertEquals("myId", idInput.defaultValue)
+            assertEquals(BsonString, idInput.type)
         }
-
-        val queryContext = modal.buildQueryContextFromModal()
-        val idInput = queryContext.expansions.getValue("_id")
-
-        assertEquals("myId", idInput.defaultValue)
-        assertEquals(BsonString, idInput.type)
     }
 
     @ParameterizedTest
@@ -183,9 +183,9 @@ class RunQueryModalTest {
         """
         )
 
-        val (fixture, _) = render(robot, query, dataSource, coroutineScope)
+        eventually(recovery = robot::cleanUp) {
+            val (fixture, _) = render(robot, query, dataSource, coroutineScope)
 
-        eventually {
             fixture.label(JLabelMatcher.withText(expectedHint)).requireVisible()
         }
     }
@@ -208,9 +208,9 @@ class RunQueryModalTest {
         """
         )
 
-        val (fixture, _) = render(robot, query, dataSource, coroutineScope)
+        eventually(recovery = robot::cleanUp) {
+            val (fixture, _) = render(robot, query, dataSource, coroutineScope)
 
-        eventually {
             fixture.label(
                 JLabelMatcher.withText(
                     "Unable to specify. Please fill it after generating the query."
@@ -235,9 +235,9 @@ class RunQueryModalTest {
         """
         )
 
-        val (fixture, modal) = render(robot, query, dataSource, coroutineScope)
+        eventually(recovery = robot::cleanUp) {
+            val (fixture, modal) = render(robot, query, dataSource, coroutineScope)
 
-        eventually {
             fixture.checkBox("_id")
                 .requireVisible()
                 .focus()
@@ -269,9 +269,9 @@ class RunQueryModalTest {
         """
         )
 
-        val (fixture, modal) = render(robot, query, dataSource, coroutineScope)
+        eventually(recovery = robot::cleanUp) {
+            val (fixture, modal) = render(robot, query, dataSource, coroutineScope)
 
-        eventually {
             fixture.comboBox("bool")
                 .requireVisible()
                 .requireItemCount(4)
