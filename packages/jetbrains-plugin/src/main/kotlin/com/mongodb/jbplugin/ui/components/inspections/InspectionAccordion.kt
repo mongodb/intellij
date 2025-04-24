@@ -1,6 +1,7 @@
 package com.mongodb.jbplugin.ui.components.inspections
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -58,6 +59,7 @@ import com.mongodb.jbplugin.ui.viewModel.getToolWrapper
 import org.jetbrains.jewel.ui.component.DefaultButton
 import org.jetbrains.jewel.ui.component.Icon
 import org.jetbrains.jewel.ui.component.Text
+import org.jetbrains.jewel.ui.component.Tooltip
 import org.jetbrains.jewel.ui.icon.IconKey
 import org.jetbrains.jewel.ui.icons.AllIconsKeys
 import org.jetbrains.jewel.ui.util.thenIf
@@ -307,6 +309,7 @@ fun DisabledInspectionCard(
     )
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun InsightCardStructure(
     title: String,
@@ -346,13 +349,17 @@ fun InsightCardStructure(
                 )
             }
 
-            Text(
-                text = title,
-                fontWeight = FontWeight.Bold,
-                overflow = TextOverflow.Ellipsis,
-                maxLines = 1,
-                modifier = Modifier.weight(1f, fill = true)
-            )
+            Tooltip(
+                tooltip = { Text(title) },
+                modifier = Modifier.weight(1f, fill = true),
+            ) {
+                Text(
+                    text = title,
+                    fontWeight = FontWeight.Bold,
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 1,
+                )
+            }
 
             MoreActionsButton(actions = moreActionItems, testTagPrefix = testTag)
         }
