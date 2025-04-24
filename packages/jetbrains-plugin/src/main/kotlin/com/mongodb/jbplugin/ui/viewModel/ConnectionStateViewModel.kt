@@ -40,7 +40,6 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.VisibleForTesting
 import java.util.concurrent.atomic.AtomicBoolean
@@ -449,9 +448,7 @@ class DataSourcesChangesAuditor : DataAuditor {
             dataSource.incModificationCount()
 
             val analysisScopeViewModel by project.service<AnalysisScopeViewModel>()
-            runBlocking {
-                analysisScopeViewModel.reanalyzeCurrentScope()
-            }
+            analysisScopeViewModel.reanalyzeCurrentScopeAsync()
         }
     }
 

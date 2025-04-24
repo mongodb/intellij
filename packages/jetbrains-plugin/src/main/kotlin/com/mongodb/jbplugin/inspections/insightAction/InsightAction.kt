@@ -9,6 +9,7 @@ import com.mongodb.jbplugin.linting.InspectionAction.CreateIndexSuggestionScript
 import com.mongodb.jbplugin.linting.InspectionAction.NoAction
 import com.mongodb.jbplugin.linting.InspectionAction.RunQuery
 import com.mongodb.jbplugin.linting.QueryInsight
+import com.mongodb.jbplugin.meta.projectOrNull
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.observability.probe.CreateIndexIntentionProbe
 import com.mongodb.jbplugin.observability.probe.QueryRunProbe
@@ -23,10 +24,12 @@ interface InsightAction {
     companion object {
         fun resolveAllActions(insight: QueryInsight<PsiElement, *>): List<InsightAction> {
             val allActions = arrayOf(insight.inspection.primaryAction) + insight.inspection.secondaryActions
-            return allActions.mapNotNull { resolveSingle(insight.query.source.project, it) }
+            return allActions.mapNotNull { resolveSingle(insight.query.projectOrNull, it) }
         }
 
-        private fun resolveSingle(project: Project, action: InspectionAction): InsightAction? {
+        private fun resolveSingle(project: Project?, action: InspectionAction): InsightAction? {
+            project ?: return null
+
             return when (action) {
                 ChooseConnection -> {
                     ChooseConnectionInsightAction()

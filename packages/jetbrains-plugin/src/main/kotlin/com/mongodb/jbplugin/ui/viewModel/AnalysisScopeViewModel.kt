@@ -150,6 +150,12 @@ class AnalysisScopeViewModel(
             .mapNotNull { it.key.getToolWrapper(project) }
     }
 
+    fun reanalyzeCurrentScopeAsync() {
+        coroutineScope.launch {
+            reanalyzeCurrentScope()
+        }
+    }
+
     suspend fun reanalyzeCurrentScope() {
         withContext(Dispatchers.IO) {
             mutableAnalysisScope.emit(mutableAnalysisScope.value)
