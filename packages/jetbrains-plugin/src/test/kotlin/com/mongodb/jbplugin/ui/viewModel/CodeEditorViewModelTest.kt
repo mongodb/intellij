@@ -101,12 +101,12 @@ class CodeEditorViewModelTest {
             filesInEditor = listOf(file)
         )
 
-        val query = queryAt(file, project, 25)
-        runBlocking {
-            viewModel.focusQueryInEditor(query, manager)
-        }
-
         eventually {
+            runBlocking {
+                val query = queryAt(file, project, 25)
+                viewModel.focusQueryInEditor(query, manager)
+            }
+
             verify(manager.selectedTextEditor!!.caretModel).moveToOffset(25)
         }
     }
@@ -126,12 +126,12 @@ class CodeEditorViewModelTest {
         val newEditor = editorForFile(file)
         whenever(manager.openTextEditor(any(), any())).thenReturn(newEditor)
 
-        runBlocking {
-            val query = queryAt(file, project, 25)
-            viewModel.focusQueryInEditor(query, manager)
-        }
-
         eventually {
+            runBlocking {
+                val query = queryAt(file, project, 25)
+                viewModel.focusQueryInEditor(query, manager)
+            }
+
             verify(newEditor.caretModel).moveToOffset(25)
         }
     }
