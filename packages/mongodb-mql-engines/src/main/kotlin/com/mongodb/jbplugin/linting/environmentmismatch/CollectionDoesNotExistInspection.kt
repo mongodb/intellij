@@ -16,16 +16,12 @@ import com.mongodb.jbplugin.mql.parser.parse
 fun <D>Namespace.isCollectionAvailableInCluster(
     dataSource: D,
     readModelProvider: MongoDbReadModelProvider<D>
-): Boolean {
-    val availableCollections = runCatching {
-        readModelProvider.slice(
-            dataSource,
-            ListCollections.Slice(database)
-        ).collections.map { it.name }
-    }.getOrDefault(emptyList())
-
-    return availableCollections.contains(collection)
-}
+): Boolean = runCatching {
+    readModelProvider.slice(
+        dataSource,
+        ListCollections.Slice(database)
+    ).collections.any { it.name == collection }
+}.getOrDefault(false)
 
 data class CollectionDoesNotExistInspectionSettings<D>(
     val dataSource: D,

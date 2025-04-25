@@ -16,14 +16,11 @@ import com.mongodb.jbplugin.mql.parser.parse
 fun <D>Namespace.isDatabaseAvailableInCluster(
     dataSource: D,
     readModelProvider: MongoDbReadModelProvider<D>,
-): Boolean {
-    val availableDatabases = runCatching {
-        readModelProvider.slice(dataSource, ListDatabases.Slice).databases.map {
-            it.name
-        }
-    }.getOrDefault(emptyList())
-    return availableDatabases.contains(database)
-}
+): Boolean = runCatching {
+    readModelProvider.slice(dataSource, ListDatabases.Slice).databases.any {
+        it.name == database
+    }
+}.getOrDefault(false)
 
 data class DatabaseDoesNotExistInspectionSettings<D>(
     val dataSource: D,
