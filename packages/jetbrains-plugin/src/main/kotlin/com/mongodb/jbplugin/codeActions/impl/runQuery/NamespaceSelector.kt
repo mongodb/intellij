@@ -9,7 +9,6 @@ import com.intellij.ui.components.JBLabel
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
 import com.mongodb.jbplugin.accessadapter.slice.ListCollections
 import com.mongodb.jbplugin.accessadapter.slice.ListDatabases
-import com.mongodb.jbplugin.codeActions.impl.runQuery.NamespaceSelector.Event.Tombstone
 import com.mongodb.jbplugin.i18n.Icons
 import com.mongodb.jbplugin.i18n.Icons.scaledToText
 import com.mongodb.jbplugin.meta.latest
@@ -18,7 +17,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -38,7 +36,6 @@ class NamespaceSelector(
         data object CollectionsLoading : Event
         data class CollectionsLoaded(val collections: List<String>) : Event
         data class CollectionSelected(val collection: String) : Event
-        data object Tombstone : Event
     }
 
     private val events: MutableSharedFlow<Event> = MutableSharedFlow()
@@ -96,7 +93,7 @@ class NamespaceSelector(
         }
 
         coroutineScope.launch(Dispatchers.IO) {
-            events.takeWhile { it != Tombstone }.collectLatest(::handleEvent)
+            events.collectLatest(::handleEvent)
         }
 
         databaseComboBox.addItemListener {
