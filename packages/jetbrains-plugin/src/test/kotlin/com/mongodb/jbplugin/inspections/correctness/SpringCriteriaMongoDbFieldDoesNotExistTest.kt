@@ -2,6 +2,10 @@ package com.mongodb.jbplugin.inspections.correctness
 
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.mongodb.jbplugin.accessadapter.slice.GetCollectionSchema
+import com.mongodb.jbplugin.accessadapter.slice.ListCollections
+import com.mongodb.jbplugin.accessadapter.slice.ListCollections.Collection
+import com.mongodb.jbplugin.accessadapter.slice.ListDatabases
+import com.mongodb.jbplugin.accessadapter.slice.ListDatabases.Database
 import com.mongodb.jbplugin.dialects.springcriteria.SpringCriteriaDialect
 import com.mongodb.jbplugin.fixtures.DefaultSetup
 import com.mongodb.jbplugin.fixtures.IntegrationTest
@@ -369,6 +373,14 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "bad_db")
         fixture.specifyDialect(SpringCriteriaDialect)
+
+        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
+            ListDatabases(listOf(Database("bad_db")))
+        )
+
+        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>())).thenReturn(
+            ListCollections(listOf(Collection("book", "collection")))
+        )
 
         `when`(
             readModelProvider.slice(eq(dataSource), any<GetCollectionSchema.Slice>())

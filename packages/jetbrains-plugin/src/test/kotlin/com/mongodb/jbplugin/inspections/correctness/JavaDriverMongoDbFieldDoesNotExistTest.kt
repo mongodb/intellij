@@ -3,6 +3,10 @@ package com.mongodb.jbplugin.inspections.correctness
 import com.intellij.openapi.application.Application
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.mongodb.jbplugin.accessadapter.slice.GetCollectionSchema
+import com.mongodb.jbplugin.accessadapter.slice.ListCollections
+import com.mongodb.jbplugin.accessadapter.slice.ListCollections.Collection
+import com.mongodb.jbplugin.accessadapter.slice.ListDatabases
+import com.mongodb.jbplugin.accessadapter.slice.ListDatabases.Database
 import com.mongodb.jbplugin.dialects.javadriver.glossary.JavaDriverDialect
 import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.ParsingTest
@@ -38,6 +42,14 @@ public FindIterable<Document> exampleFind() {
 
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
+
+        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
+            ListDatabases(listOf(Database("myDatabase")))
+        )
+
+        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>())).thenReturn(
+            ListCollections(listOf(Collection("myCollection", "collection")))
+        )
 
         `when`(
             readModelProvider.slice(eq(dataSource), any<GetCollectionSchema.Slice>())
@@ -165,6 +177,14 @@ private Bson getNorQueryWithFieldNameFromMethodCall() {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
+        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
+            ListDatabases(listOf(Database("myDatabase")))
+        )
+
+        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>())).thenReturn(
+            ListCollections(listOf(Collection("myCollection", "collection")))
+        )
+
         `when`(
             readModelProvider.slice(eq(dataSource), any<GetCollectionSchema.Slice>())
         ).thenReturn(
@@ -195,6 +215,14 @@ public AggregateIterable<Document> exampleAggregate() {
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
+
+        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
+            ListDatabases(listOf(Database("myDatabase")))
+        )
+
+        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>())).thenReturn(
+            ListCollections(listOf(Collection("myCollection", "collection")))
+        )
 
         `when`(
             readModelProvider.slice(eq(dataSource), any<GetCollectionSchema.Slice>())
@@ -261,6 +289,14 @@ public AggregateIterable<Document> exampleUnwind3() {
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
+
+        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
+            ListDatabases(listOf(Database("myDatabase")))
+        )
+
+        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>())).thenReturn(
+            ListCollections(listOf(Collection("myCollection", "collection")))
+        )
 
         `when`(
             readModelProvider.slice(eq(dataSource), any<GetCollectionSchema.Slice>())
@@ -329,6 +365,14 @@ public AggregateIterable<Document> exampleAggregateFields() {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
+        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
+            ListDatabases(listOf(Database("myDatabase")))
+        )
+
+        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>())).thenReturn(
+            ListCollections(listOf(Collection("myCollection", "collection")))
+        )
+
         `when`(
             readModelProvider.slice(eq(dataSource), any<GetCollectionSchema.Slice>())
         ).thenReturn(
@@ -389,6 +433,14 @@ public AggregateIterable<Document> exampleAggregateOrderBy() {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
+        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
+            ListDatabases(listOf(Database("myDatabase")))
+        )
+
+        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>())).thenReturn(
+            ListCollections(listOf(Collection("myCollection", "collection")))
+        )
+
         `when`(
             readModelProvider.slice(eq(dataSource), any<GetCollectionSchema.Slice>())
         ).thenReturn(
@@ -419,6 +471,14 @@ public AggregateIterable<Document> exampleAggregateOrderBy() {
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
+
+        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
+            ListDatabases(listOf(Database("myDatabase")))
+        )
+
+        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>())).thenReturn(
+            ListCollections(listOf(Collection("myCollection", "collection")))
+        )
 
         `when`(
             readModelProvider.slice(eq(dataSource), any<GetCollectionSchema.Slice>())
@@ -454,6 +514,14 @@ public AggregateIterable<Document> goodGroupAggregate1() {
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
+
+        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
+            ListDatabases(listOf(Database("myDatabase")))
+        )
+
+        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>())).thenReturn(
+            ListCollections(listOf(Collection("myCollection", "collection")))
+        )
 
         `when`(
             readModelProvider.slice(eq(dataSource), any<GetCollectionSchema.Slice>())
@@ -500,6 +568,14 @@ public AggregateIterable<Document> goodGroupAggregate2() {
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
+
+        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
+            ListDatabases(listOf(Database("myDatabase")))
+        )
+
+        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>())).thenReturn(
+            ListCollections(listOf(Collection("myCollection", "collection")))
+        )
 
         `when`(
             readModelProvider.slice(eq(dataSource), any<GetCollectionSchema.Slice>())
