@@ -68,6 +68,20 @@ class ConnectionStateViewModelTest {
     }
 
     @Test
+    fun `clears inspections when selecting a new database`(
+        project: Project,
+        testScope: TestScope,
+    ) {
+        val viewModel = ConnectionStateViewModel(project, testScope)
+        viewModel.connectionSaga = connectionSaga
+
+        runBlocking {
+            viewModel.selectDatabase("oops")
+            verify(inspectionsViewModel, timeout(1000)).clear()
+        }
+    }
+
+    @Test
     fun `attempts to load initial data only when MongoDB tool window shows up`(
         project: Project,
         testScope: TestScope,

@@ -326,6 +326,9 @@ class ConnectionStateViewModel(
 
     suspend fun selectDatabase(database: String) {
         withContext(Dispatchers.IO) {
+            val inspectionsViewModel by project.service<InspectionsViewModel>()
+            inspectionsViewModel.clear()
+
             mutableDatabaseState.update { state ->
                 state.copy(
                     selectedDatabase = database,
