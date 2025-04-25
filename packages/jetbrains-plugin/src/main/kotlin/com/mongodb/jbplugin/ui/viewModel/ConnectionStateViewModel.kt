@@ -286,6 +286,9 @@ class ConnectionStateViewModel(
 
     suspend fun selectConnection(connection: LocalDataSource) {
         withContext(Dispatchers.IO) {
+            val inspectionsViewModel by project.service<InspectionsViewModel>()
+            inspectionsViewModel.clear()
+
             mutableConnectionState.update { state ->
                 state.copy(
                     selectedConnection = connection,
@@ -323,6 +326,11 @@ class ConnectionStateViewModel(
 
     suspend fun selectDatabase(database: String) {
         withContext(Dispatchers.IO) {
+            val inspectionsViewModel by project.service<InspectionsViewModel>()
+            val analysisScopeViewModel by project.service<AnalysisScopeViewModel>()
+            inspectionsViewModel.clear()
+            analysisScopeViewModel.reanalyzeCurrentScope()
+
             mutableDatabaseState.update { state ->
                 state.copy(
                     selectedDatabase = database,
