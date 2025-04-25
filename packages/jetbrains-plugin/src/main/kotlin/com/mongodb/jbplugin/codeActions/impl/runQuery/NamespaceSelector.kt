@@ -1,6 +1,7 @@
 package com.mongodb.jbplugin.codeActions.impl.runQuery
 
 import com.intellij.database.dataSource.LocalDataSource
+import com.intellij.openapi.application.EDT
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.ui.AnimatedIcon.ANIMATION_IN_RENDERER_ALLOWED
@@ -8,6 +9,7 @@ import com.intellij.ui.components.JBLabel
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
 import com.mongodb.jbplugin.accessadapter.slice.ListCollections
 import com.mongodb.jbplugin.accessadapter.slice.ListDatabases
+import com.mongodb.jbplugin.codeActions.impl.runQuery.NamespaceSelector.Event.Tombstone
 import com.mongodb.jbplugin.i18n.Icons
 import com.mongodb.jbplugin.i18n.Icons.scaledToText
 import com.mongodb.jbplugin.meta.latest
@@ -15,7 +17,11 @@ import com.mongodb.jbplugin.meta.service
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import java.awt.Component
 import javax.swing.DefaultComboBoxModel
 import javax.swing.SwingConstants
@@ -23,7 +29,7 @@ import javax.swing.SwingConstants
 class NamespaceSelector(
     private val project: Project,
     private val dataSource: LocalDataSource,
-    private val coroutineScope: CoroutineScope,
+    coroutineScope: CoroutineScope,
 ) {
     sealed interface Event {
         data object DatabasesLoading : Event
@@ -32,9 +38,10 @@ class NamespaceSelector(
         data object CollectionsLoading : Event
         data class CollectionsLoaded(val collections: List<String>) : Event
         data class CollectionSelected(val collection: String) : Event
+        data object Tombstone : Event
     }
 
-    private val events: MutableSharedFlow<Event> = MutableSharedFlow(extraBufferCapacity = 1)
+    private val events: MutableSharedFlow<Event> = MutableSharedFlow()
 
     private val databaseModel = DefaultComboBoxModel<String>(emptyArray())
     val databaseComboBox = ComboBox(databaseModel)
@@ -89,68 +96,67 @@ class NamespaceSelector(
         }
 
         coroutineScope.launch(Dispatchers.IO) {
-            events.collect(::handleEvent)
+            events.takeWhile { it != Tombstone }.collectLatest(::handleEvent)
         }
 
         databaseComboBox.addItemListener {
-            coroutineScope.launch(Dispatchers.IO) {
+            runBlocking {
                 events.emit(Event.DatabaseSelected(it.item.toString()))
             }
         }
 
         collectionComboBox.addItemListener {
-            coroutineScope.launch(Dispatchers.IO) {
+            runBlocking {
                 events.emit(Event.CollectionSelected(it.item.toString()))
             }
         }
 
-        loadDatabases()
-    }
-
-    private fun loadDatabases() {
         coroutineScope.launch(Dispatchers.IO) {
-            events.emit(Event.DatabasesLoading)
-            val readModel by project.service<DataGripBasedReadModelProvider>()
-            val result = readModel.slice(
-                dataSource,
-                ListDatabases.Slice
-            )
-
-            events.emit(Event.DatabasesLoaded(result.databases.map { it.name }))
+            loadDatabases()
         }
     }
 
-    private fun handleEvent(event: Event) {
+    private suspend fun loadDatabases() {
+        events.emit(Event.DatabasesLoading)
+        val readModel by project.service<DataGripBasedReadModelProvider>()
+        val result = readModel.slice(
+            dataSource,
+            ListDatabases.Slice
+        )
+
+        events.emit(Event.DatabasesLoaded(result.databases.map { it.name }))
+    }
+
+    private suspend fun handleEvent(event: Event) {
         when (event) {
-            is Event.DatabasesLoading -> {
+            is Event.DatabasesLoading -> withContext(Dispatchers.EDT) {
                 databaseComboBox.isEnabled = false
             }
 
-            is Event.DatabasesLoaded -> {
+            is Event.DatabasesLoaded -> withContext(Dispatchers.EDT) {
                 databaseModel.removeAllElements()
                 collectionModel.removeAllElements()
                 databaseModel.addAll(event.databases)
                 databaseModel.selectedItem = event.databases.firstOrNull()
                 databaseComboBox.isEnabled = true
             }
-            is Event.DatabaseSelected -> {
-                coroutineScope.launch {
-                    events.emit(Event.CollectionsLoading)
-                    val readModel by project.service<DataGripBasedReadModelProvider>()
-                    val result = readModel.slice(
-                        dataSource,
-                        ListCollections.Slice(event.database)
-                    )
+            is Event.DatabaseSelected -> withContext(Dispatchers.IO) {
+                events.tryEmit(Event.CollectionsLoading)
 
-                    events.emit(Event.CollectionsLoaded(result.collections.map { it.name }))
-                }
+                val readModel by project.service<DataGripBasedReadModelProvider>()
+                val result = readModel.slice(
+                    dataSource,
+                    ListCollections.Slice(event.database)
+                )
+
+                events.emit(Event.CollectionsLoaded(result.collections.map { it.name }))
             }
-            is Event.CollectionsLoading -> {
+            is Event.CollectionsLoading -> withContext(Dispatchers.EDT) {
                 collectionModel.removeAllElements()
                 collectionComboBox.isEnabled = false
             }
 
-            is Event.CollectionsLoaded -> {
+            is Event.CollectionsLoaded -> withContext(Dispatchers.EDT) {
                 collectionModel.addAll(event.collections)
                 collectionModel.selectedItem = event.collections.firstOrNull()
                 collectionComboBox.isEnabled = true

@@ -27,10 +27,9 @@ class NamespaceSelectorTest {
         coroutineScope: CoroutineScope
     ) {
         val dataSource = mockDataSource()
+        val (fixture, _) = render(robot, project, dataSource, coroutineScope)
 
-        eventually(recovery = robot::cleanUp) {
-            val (fixture, _) = render(robot, project, dataSource, coroutineScope)
-
+        eventually {
             fixture.comboBox("DatabaseComboBox").requireDisabled()
             fixture.comboBox("CollectionComboBox").requireDisabled()
         }
@@ -53,8 +52,9 @@ class NamespaceSelectorTest {
             )
         )
 
-        eventually(recovery = robot::cleanUp) {
-            val (fixture, _) = render(robot, project, dataSource, coroutineScope)
+        val (fixture, _) = render(robot, project, dataSource, coroutineScope)
+
+        eventually {
             val databaseComboBox = fixture.comboBox("DatabaseComboBox")
 
             databaseComboBox.requireEnabled()
@@ -89,9 +89,9 @@ class NamespaceSelectorTest {
             )
         )
 
-        eventually(recovery = robot::cleanUp) {
-            val (fixture, selector) = render(robot, project, dataSource, coroutineScope)
+        val (fixture, selector) = render(robot, project, dataSource, coroutineScope)
 
+        eventually {
             val databaseComboBox = fixture.comboBox("DatabaseComboBox")
             val collectionComboBox = fixture.comboBox("CollectionComboBox")
 
@@ -103,10 +103,10 @@ class NamespaceSelectorTest {
             collectionComboBox.requireEnabled()
                 .requireItemCount(2)
                 .requireSelection("coll1")
-
-            assertEquals("db1", selector.selectedDatabase)
-            assertEquals("coll1", selector.selectedCollection)
         }
+
+        assertEquals("db1", selector.selectedDatabase)
+        assertEquals("coll1", selector.selectedCollection)
     }
 
     private fun render(robot: Robot, project: Project, dataSource: LocalDataSource, coroutineScope: CoroutineScope): Pair<FrameFixture, NamespaceSelector> {

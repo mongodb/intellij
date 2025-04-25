@@ -9,50 +9,53 @@ import com.intellij.ui.AnimatedIcon
 import com.intellij.ui.JBColor
 import com.intellij.ui.LayeredIcon
 import com.intellij.util.IconUtil
+import com.intellij.util.ui.UIUtil
 import java.awt.Component
 import java.awt.image.BufferedImage
 import javax.swing.Icon
 import javax.swing.SwingConstants
 
 object Icons {
-    private val greenCircle = IconLoader.getIcon("/icons/GreenCircle.svg", javaClass)
-    private val redCircle = IconLoader.getIcon("/icons/RedCircle.svg", javaClass)
+    private val redCircle = ownIcon("/icons/RedCircle.svg")
+    private val jbProvidedMongoDBLogo = AllIcons.Providers.MongoDB
+
     val loading = AnimatedIcon.Default()
-    val logo = AllIcons.Providers.MongoDB
-    val logoConnected =
-        LayeredIcon.layeredIcon(arrayOf(logo, greenCircle)).apply {
-            val scaledGreenCircle = IconUtil.resizeSquared(greenCircle, 6)
-            setIcon(scaledGreenCircle, 1, SwingConstants.SOUTH_EAST)
-        }
-    val connectionFailed = AllIcons.General.Error
-    val remove = AllIcons.Diff.Remove
-    private val databaseLight = IconLoader.getIcon("/icons/Database.svg", javaClass)
-    private val databaseDark = IconLoader.getIcon("/icons/DatabaseDark.svg", javaClass)
-    private val database = if (JBColor.isBright()) databaseLight else databaseDark
-    private val collectionLight = IconLoader.getIcon("/icons/Collection.svg", javaClass)
-    private val collectionDark = IconLoader.getIcon("/icons/CollectionDark.svg", javaClass)
-    private val collection = if (JBColor.isBright()) collectionLight else collectionDark
-    private val fieldLight = IconLoader.getIcon("/icons/Field.svg", javaClass)
-    private val fieldDark = IconLoader.getIcon("/icons/FieldDark.svg", javaClass)
-    private val field = if (JBColor.isBright()) fieldLight else fieldDark
-    private val runQueryGutterLight = IconLoader.getIcon("/icons/ConsoleRun.svg", javaClass)
-    private val runQueryGutterDark = IconLoader.getIcon("/icons/ConsoleRunDark.svg", javaClass)
-    val runQueryGutter = if (JBColor.isBright()) runQueryGutterLight else runQueryGutterDark
+
+    private val database = themedIcon(
+        light = ownIcon("/icons/Database.svg"),
+        dark = ownIcon("/icons/DatabaseDark.svg")
+    )
+
+    private val collection = themedIcon(
+        light = ownIcon("/icons/Collection.svg"),
+        dark = ownIcon("/icons/CollectionDark.svg")
+    )
+
+    private val field = themedIcon(
+        light = ownIcon("/icons/Field.svg"),
+        dark = ownIcon("/icons/FieldDark.svg")
+    )
+
+    val runQueryGutter = themedIcon(
+        light = ownIcon("/icons/ConsoleRun.svg"),
+        dark = ownIcon("/icons/ConsoleRunDark.svg")
+    )
+
     val databaseAutocompleteEntry = database
     val collectionAutocompleteEntry = collection
     val fieldAutocompleteEntry = field
     val information = AllIcons.General.Information
     val warning = AllIcons.General.Warning
+
     private val greenCheckmark = AllIcons.General.GreenCheckmark
     private val questionMark = AllIcons.General.QuestionDialog
 
     object SidePanel {
-        private object LogoRaw {
-            val logoLight = IconLoader.getIcon("/icons/SidePanelLogo.svg", javaClass)
-            val logoDark = IconLoader.getIcon("/icons/SidePanelLogoDark.svg", javaClass)
-        }
+        val logo = themedIcon(
+            light = ownIcon("/icons/SidePanelLogo.svg"),
+            dark = ownIcon("/icons/SidePanelLogoDark.svg")
+        )
 
-        val logo = if (JBColor.isBright()) LogoRaw.logoLight else LogoRaw.logoDark
         val logoAttention =
             LayeredIcon.layeredIcon(arrayOf(logo, redCircle)).apply {
                 val scaledRedCircle = IconUtil.resizeSquared(redCircle, 10)
@@ -60,22 +63,19 @@ object Icons {
             }
     }
 
-    val disabledInspectionIcon = IconLoader.getIcon(
-        "/icons/DisabledInspection.svg",
-        javaClass
-    ).toImageBitmap()
+    val disabledInspectionIcon = ownIcon("/icons/DisabledInspection.svg").toImageBitmap()
 
-    val queryNotRunIcon = LayeredIcon.layeredIcon(arrayOf(logo, questionMark)).apply {
+    val queryNotRunIcon = LayeredIcon.layeredIcon(arrayOf(jbProvidedMongoDBLogo, questionMark)).apply {
         val scaledGreenCircle = IconUtil.resizeSquared(questionMark, 9)
         setIcon(scaledGreenCircle, 1, SwingConstants.SOUTH_EAST)
     }
 
-    val indexOkIcon = LayeredIcon.layeredIcon(arrayOf(logo, greenCheckmark)).apply {
+    val indexOkIcon = LayeredIcon.layeredIcon(arrayOf(jbProvidedMongoDBLogo, greenCheckmark)).apply {
         val scaledGreenCircle = IconUtil.resizeSquared(greenCheckmark, 9)
         setIcon(scaledGreenCircle, 1, SwingConstants.SOUTH_EAST)
     }
 
-    val indexWarningIcon = LayeredIcon.layeredIcon(arrayOf(logo, warning)).apply {
+    val indexWarningIcon = LayeredIcon.layeredIcon(arrayOf(jbProvidedMongoDBLogo, warning)).apply {
         val scaledGreenCircle = IconUtil.resizeSquared(warning, 9)
         setIcon(scaledGreenCircle, 1, SwingConstants.SOUTH_EAST)
     }
@@ -90,12 +90,20 @@ object Icons {
         val consideredWidth = this.iconWidth
         val consideredHeight = this.iconHeight
 
-        val bufferedImage = BufferedImage(consideredWidth, consideredHeight, BufferedImage.TYPE_INT_ARGB)
+        val bufferedImage = UIUtil.createImage(null, consideredWidth, consideredHeight, BufferedImage.TYPE_INT_ARGB)
         val graphics = bufferedImage.createGraphics()
 
         this.paintIcon(null, graphics, 0, 0)
         graphics.dispose()
 
         return bufferedImage.toComposeImageBitmap()
+    }
+
+    private fun ownIcon(path: String): Icon {
+        return IconLoader.getIcon(path, javaClass.classLoader)
+    }
+
+    private fun themedIcon(light: Icon, dark: Icon): Icon {
+        return if (JBColor.isBright()) light else dark
     }
 }

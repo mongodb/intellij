@@ -122,9 +122,10 @@ class CodeEditorViewModel(
 
     override fun caretPositionChanged(event: CaretEvent) {
         try {
-            val allCarets = event.editor.caretModel.allCarets.map {
-                CaretView(it.editor.virtualFile, it.offset)
-            }
+            val allCarets = event.editor.caretModel.allCarets
+                .filter { it.editor.virtualFile != null }
+                .map { CaretView(it.editor.virtualFile, it.offset) }
+
             val toEmit = mutableEditorState.value.copy(carets = allCarets)
             mutableEditorState.tryEmit(toEmit)
         } catch (e: Exception) {

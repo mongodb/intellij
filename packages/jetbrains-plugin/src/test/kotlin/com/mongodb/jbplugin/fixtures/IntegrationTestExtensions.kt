@@ -314,6 +314,15 @@ public class $className {
                 robot.cleanUp()
             }
         }
+
+        // The latest version of Skia has a reference cleaner thread that is not a daemon.
+        // This is used for cleaning up old resources, like icons. In our case, tests were leaking
+        // this thread and we really don't care about it when we finish the test, so we are forcefully
+        // stopping it after each test if it does exist.
+        val cleanerThread = Thread.getAllStackTraces().keys.firstOrNull { it.name == "Reference Cleaner" }
+        cleanerThread?.uncaughtExceptionHandler = Thread.UncaughtExceptionHandler { _, _ -> }
+        cleanerThread?.interrupt()
+        cleanerThread?.join(1000)
     }
 
     override fun afterAll(context: ExtensionContext) {

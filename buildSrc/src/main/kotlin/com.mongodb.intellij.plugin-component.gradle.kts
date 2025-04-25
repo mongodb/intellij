@@ -156,8 +156,7 @@ tasks {
                 "--add-opens=java.desktop/javax.swing=ALL-UNNAMED",
                 "--add-opens=java.desktop/sun.awt=ALL-UNNAMED",
                 "-Dpolyglot.engine.WarnInterpreterOnly=false",
-                "-Dpolyglot.log.level=OFF",
-                "-Didea.home.path=$homePath",
+                "-Dpolyglot.log.level=OFF"
             ),
         )
     }
