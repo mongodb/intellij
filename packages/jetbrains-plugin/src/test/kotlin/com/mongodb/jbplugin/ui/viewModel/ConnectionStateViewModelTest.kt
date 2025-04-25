@@ -28,12 +28,14 @@ class ConnectionStateViewModelTest {
     lateinit var dataSource: LocalDataSource
     private lateinit var connectionSaga: ConnectionSaga
     private lateinit var codeEditorViewModel: CodeEditorViewModel
+    private lateinit var inspectionsViewModel: InspectionsViewModel
     private lateinit var connectionPreferences: PersistentConnectionPreferences
     private lateinit var mongoDBToolWindow: ToolWindow
 
     @BeforeEach
     fun setUp(project: Project) {
         codeEditorViewModel = mock()
+        inspectionsViewModel = mock()
         dataSource = mockDataSource()
         connectionSaga = mock()
         whenever(connectionSaga.listMongoDbConnections()).thenReturn(listOf(dataSource))
@@ -47,7 +49,22 @@ class ConnectionStateViewModelTest {
 
         project
             .withMockedService(codeEditorViewModel)
+            .withMockedService(inspectionsViewModel)
             .withMockedService(connectionPreferencesStateComponent)
+    }
+
+    @Test
+    fun `clears inspections when selecting a new connection`(
+        project: Project,
+        testScope: TestScope,
+    ) {
+        val viewModel = ConnectionStateViewModel(project, testScope)
+        viewModel.connectionSaga = connectionSaga
+
+        runBlocking {
+            viewModel.selectConnection(dataSource)
+            verify(inspectionsViewModel, timeout(1000)).clear()
+        }
     }
 
     @Test

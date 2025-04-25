@@ -286,6 +286,9 @@ class ConnectionStateViewModel(
 
     suspend fun selectConnection(connection: LocalDataSource) {
         withContext(Dispatchers.IO) {
+            val inspectionsViewModel by project.service<InspectionsViewModel>()
+            inspectionsViewModel.clear()
+
             mutableConnectionState.update { state ->
                 state.copy(
                     selectedConnection = connection,

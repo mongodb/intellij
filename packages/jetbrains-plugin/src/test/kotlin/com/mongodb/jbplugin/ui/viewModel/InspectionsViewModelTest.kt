@@ -34,6 +34,19 @@ class InspectionsViewModelTest {
     }
 
     @Test
+    fun `removes insights when clearing`(project: Project, coroutineScope: CoroutineScope) {
+        val viewModel = InspectionsViewModel(project, coroutineScope)
+        val query = mock<Node<PsiElement>>()
+
+        runBlocking {
+            viewModel.addInsight(QueryInsight.notUsingIndex(query))
+            viewModel.clear()
+        }
+
+        assertEquals(0, viewModel.insights.value.size)
+    }
+
+    @Test
     fun `can hold multiple insights for the same query`(project: Project, coroutineScope: CoroutineScope) {
         val viewModel = InspectionsViewModel(project, coroutineScope)
         val query = mock<Node<PsiElement>>()

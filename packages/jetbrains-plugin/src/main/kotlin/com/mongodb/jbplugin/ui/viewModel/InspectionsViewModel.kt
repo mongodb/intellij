@@ -121,6 +121,12 @@ class InspectionsViewModel(
         }
     }
 
+    suspend fun clear() {
+        withContext(Dispatchers.IO) {
+            mutableInsights.emit(emptyList())
+        }
+    }
+
     private suspend fun flushInsightsForDisabledInspections(
         inspectionsWithStatus: Map<Inspection, Boolean>
     ) {
