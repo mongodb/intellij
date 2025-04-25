@@ -32,6 +32,12 @@ jobs:
     name: "Prepare Release"
     runs-on: ubuntu-latest
     steps:
+      - name: Maximize Build Space
+        uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # 1.3.1
+        with:
+          tool-cache: false
+          large-packages: false
+
       - uses: mongodb-js/devtools-shared/actions/setup-bot-token@main
         id: app-token
         with:

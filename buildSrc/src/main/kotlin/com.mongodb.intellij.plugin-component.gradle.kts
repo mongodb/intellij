@@ -42,7 +42,7 @@ intellijPlatform {
 
         ideaVersion {
             sinceBuild = libs.versions.intellij.minRelease
-            untilBuild = "${libs.versions.intellij.minRelease.get()}.*"
+            untilBuild = "${libs.versions.intellij.maxRelease.get()}.*"
         }
 
         val changelog = rootProject.changelog
@@ -143,12 +143,6 @@ tasks {
         useJUnitPlatform()
 
         environment("TESTCONTAINERS_RYUK_DISABLED", "true")
-        val homePath =
-            project.layout.buildDirectory
-                .dir("idea-sandbox/config-test")
-                .get()
-                .asFile.absolutePath
-
         jvmArgs(
             listOf(
                 "--add-opens=java.base/java.lang=ALL-UNNAMED",
