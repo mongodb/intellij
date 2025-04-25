@@ -9,6 +9,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
+import com.intellij.psi.util.findTopmostParentOfType
 import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.eventually
 import com.mongodb.jbplugin.mql.Node
@@ -100,12 +101,12 @@ class CodeEditorViewModelTest {
             filesInEditor = listOf(file)
         )
 
-        val query = queryAt(file, project, 25)
-        runBlocking {
-            viewModel.focusQueryInEditor(query, manager)
-        }
-
         eventually {
+            runBlocking {
+                val query = queryAt(file, project, 25)
+                viewModel.focusQueryInEditor(query, manager)
+            }
+
             verify(manager.selectedTextEditor!!.caretModel).moveToOffset(25)
         }
     }
@@ -125,12 +126,12 @@ class CodeEditorViewModelTest {
         val newEditor = editorForFile(file)
         whenever(manager.openTextEditor(any(), any())).thenReturn(newEditor)
 
-        runBlocking {
-            val query = queryAt(file, project, 25)
-            viewModel.focusQueryInEditor(query, manager)
-        }
-
         eventually {
+            runBlocking {
+                val query = queryAt(file, project, 25)
+                viewModel.focusQueryInEditor(query, manager)
+            }
+
             verify(newEditor.caretModel).moveToOffset(25)
         }
     }
@@ -140,7 +141,7 @@ internal fun queryAt(file: VirtualFile, project: Project, offset: Int): Node<Psi
     val psiElement = mock<PsiElement>()
     val psiFile = mock<PsiFile>()
 
-    whenever(psiElement.containingFile).thenReturn(psiFile)
+    whenever(psiElement.findTopmostParentOfType<PsiFile>()).thenReturn(psiFile)
     whenever(psiFile.virtualFile).thenReturn(file)
     whenever(psiElement.project).thenReturn(project)
     whenever(psiElement.textOffset).thenReturn(offset)

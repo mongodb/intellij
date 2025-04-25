@@ -30,6 +30,7 @@ import com.mongodb.jbplugin.linting.Inspection.NotUsingIndexEffectively
 import com.mongodb.jbplugin.linting.Inspection.TypeMismatch
 import com.mongodb.jbplugin.linting.InspectionCategory
 import com.mongodb.jbplugin.linting.QueryInsight
+import com.mongodb.jbplugin.meta.containingFileOrNull
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.meta.withinReadAction
 import kotlinx.coroutines.CoroutineScope
@@ -109,11 +110,12 @@ class InspectionsViewModel(
                     currentInsights.filter { currentInsight ->
                         !(
                             currentInsight.inspection == inspection &&
-                                currentInsight.query.source.containingFile.isEquivalentTo(
+                                currentInsight.query.containingFileOrNull?.isEquivalentTo(
                                     psiFile
-                                )
+                                ) == true
                             )
-                    }
+                        // also remove insights that are not attached to a file anymore
+                    }.filter { it.query.containingFileOrNull != null }
                 }
             }
         }

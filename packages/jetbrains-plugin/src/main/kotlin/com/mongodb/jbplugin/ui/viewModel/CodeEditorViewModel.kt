@@ -31,6 +31,7 @@ import com.mongodb.jbplugin.dialects.springquery.SpringAtQueryDialect
 import com.mongodb.jbplugin.editor.CachedQueryService
 import com.mongodb.jbplugin.editor.MongoDbVirtualFileDataSourceProvider.Keys
 import com.mongodb.jbplugin.editor.services.MdbPluginDisposable
+import com.mongodb.jbplugin.meta.containingFileOrNull
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.meta.withinReadAction
 import com.mongodb.jbplugin.meta.withinReadActionBlocking
@@ -121,9 +122,10 @@ class CodeEditorViewModel(
 
     override fun caretPositionChanged(event: CaretEvent) {
         try {
-            val allCarets = event.editor.caretModel.allCarets.map {
-                CaretView(it.editor.virtualFile, it.offset)
-            }
+            val allCarets = event.editor.caretModel.allCarets
+                .filter { it.editor.virtualFile != null }
+                .map { CaretView(it.editor.virtualFile, it.offset) }
+
             val toEmit = mutableEditorState.value.copy(carets = allCarets)
             mutableEditorState.tryEmit(toEmit)
         } catch (e: Exception) {
@@ -152,7 +154,7 @@ class CodeEditorViewModel(
 
     suspend fun focusQueryInEditor(query: Node<PsiElement>, fileEditorManager: FileEditorManager? = null) {
         withContext(Dispatchers.EDT) {
-            val vFile = query.source.containingFile.virtualFile
+            val vFile = query.containingFileOrNull?.virtualFile ?: return@withContext
 
             val manager = fileEditorManager ?: FileEditorManager.getInstance(query.source.project)
             val editorOfFile = manager.selectedTextEditor?.takeIf { it.virtualFile == vFile }

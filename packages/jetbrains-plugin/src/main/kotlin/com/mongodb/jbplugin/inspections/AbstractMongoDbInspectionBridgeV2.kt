@@ -50,7 +50,7 @@ abstract class AbstractMongoDbInspectionBridgeV2<Settings, I : Inspection>(
         isOnTheFly: Boolean
     ) {
         val inspectionViewModel by session.file.project.service<InspectionsViewModel>()
-        runBlocking {
+        coroutineScope.launch {
             inspectionViewModel.flushOldInsightsFor(session.file, inspection)
         }
     }

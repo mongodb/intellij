@@ -15,6 +15,7 @@ import com.mongodb.jbplugin.mql.BsonEnum
 import com.mongodb.jbplugin.mql.BsonString
 import com.mongodb.jbplugin.mql.Node
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.test.TestScope
 import org.assertj.swing.core.Robot
 import org.assertj.swing.core.matcher.JLabelMatcher
 import org.assertj.swing.edt.GuiActionRunner
@@ -87,7 +88,7 @@ class RunQueryModalTest {
     fun `if the collection can not be inferred it does show the namespace selector and gathers the values for the query context`(
         robot: Robot,
         project: Project,
-        coroutineScope: CoroutineScope
+        coroutineScope: TestScope
     ) {
         val dataSource = mockDataSource()
         val readModel = project.mockReadModelProvider()
@@ -116,7 +117,7 @@ class RunQueryModalTest {
         """
         )
 
-        val (fixture, modal) = render(robot, query, dataSource, coroutineScope)
+        val (fixture, modal) = render(robot, query, dataSource, coroutineScope.backgroundScope)
 
         eventually {
             val queryContext = modal.buildQueryContextFromModal()

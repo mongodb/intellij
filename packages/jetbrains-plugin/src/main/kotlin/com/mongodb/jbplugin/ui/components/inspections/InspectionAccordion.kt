@@ -39,6 +39,7 @@ import com.mongodb.jbplugin.inspections.analysisScope.AnalysisScope
 import com.mongodb.jbplugin.linting.Inspection
 import com.mongodb.jbplugin.linting.InspectionCategory
 import com.mongodb.jbplugin.linting.QueryInsight
+import com.mongodb.jbplugin.meta.containingFileOrNull
 import com.mongodb.jbplugin.meta.withinReadActionBlocking
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.ui.components.utilities.ActionLink
@@ -385,7 +386,8 @@ private fun LinkToQueryInsight(insight: QueryInsight<PsiElement, *>) {
 
 private fun queryLocation(query: Node<PsiElement>): String {
     return withinReadActionBlocking {
-        val containingFile = query.source.containingFile
+        val containingFile = query.containingFileOrNull ?: return@withinReadActionBlocking "Not in a file"
+
         val fileName = containingFile.name
         val lineNumber = containingFile.fileDocument.getLineNumber(query.source.textOffset) + 1
 
