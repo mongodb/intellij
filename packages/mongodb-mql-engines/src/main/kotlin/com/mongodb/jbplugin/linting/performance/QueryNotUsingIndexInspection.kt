@@ -7,10 +7,15 @@ import com.mongodb.jbplugin.linting.Inspection.NotUsingIndex
 import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.linting.QueryInsightsHolder
 import com.mongodb.jbplugin.linting.QueryInspection
+import com.mongodb.jbplugin.linting.correctness.isNamespaceAvailableInCluster
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.QueryContext
+import com.mongodb.jbplugin.mql.adt.Either
 import com.mongodb.jbplugin.mql.components.HasExplain
 import com.mongodb.jbplugin.mql.components.HasExplain.ExplainPlanType
+import com.mongodb.jbplugin.mql.parser.components.knownCollection
+import com.mongodb.jbplugin.mql.parser.filter
+import com.mongodb.jbplugin.mql.parser.parse
 
 data class QueryNotUsingIndexInspectionSettings<D>(
     val dataSource: D,
@@ -27,6 +32,20 @@ class QueryNotUsingIndexInspection<D> : QueryInspection<
         holder: QueryInsightsHolder<S, NotUsingIndex>,
         settings: QueryNotUsingIndexInspectionSettings<D>
     ) {
+        val validationResults = knownCollection<S>()
+            .filter {
+                it.namespace.isValid &&
+                    it.namespace.isNamespaceAvailableInCluster(
+                        dataSource = settings.dataSource,
+                        readModelProvider = settings.readModelProvider,
+                    )
+            }
+            .parse(query)
+
+        if (validationResults is Either.Left) {
+            return
+        }
+
         val explainPlanResult = settings.readModelProvider.slice(
             settings.dataSource,
             ExplainQuery.Slice(

@@ -1,14 +1,10 @@
 package com.mongodb.jbplugin.linting.environmentmismatch
 
-import com.mongodb.jbplugin.accessadapter.slice.ListCollections
-import com.mongodb.jbplugin.accessadapter.slice.ListCollections.Collection
 import com.mongodb.jbplugin.linting.Inspection.NoDatabaseInferred
 import com.mongodb.jbplugin.linting.QueryInspectionTest
 import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.`when`
-import org.mockito.kotlin.any
 
 class NoDatabaseInferredInspectionTest : QueryInspectionTest<NoDatabaseInferred> {
     @Test
@@ -43,11 +39,8 @@ class NoDatabaseInferredInspectionTest : QueryInspectionTest<NoDatabaseInferred>
             )
         )
 
-        `when`(readModelProvider.slice(any(), any<ListCollections.Slice>())).thenReturn(
-            ListCollections(
-                listOf(Collection("collection", "collection"))
-            )
-        )
+        whenDatabasesAre(listOf("database"))
+        whenCollectionsAre(listOf("collection"))
 
         val inspection = NoDatabaseInferredInspection()
         inspection.run(query, holder, Unit)

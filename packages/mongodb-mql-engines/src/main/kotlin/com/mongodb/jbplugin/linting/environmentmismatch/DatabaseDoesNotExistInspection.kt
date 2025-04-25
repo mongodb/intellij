@@ -6,11 +6,24 @@ import com.mongodb.jbplugin.linting.Inspection.DatabaseDoesNotExist
 import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.linting.QueryInsightsHolder
 import com.mongodb.jbplugin.linting.QueryInspection
+import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.adt.Either
 import com.mongodb.jbplugin.mql.parser.components.knownCollection
 import com.mongodb.jbplugin.mql.parser.filter
 import com.mongodb.jbplugin.mql.parser.parse
+
+fun <D>Namespace.isDatabaseAvailableInCluster(
+    dataSource: D,
+    readModelProvider: MongoDbReadModelProvider<D>,
+): Boolean {
+    val availableDatabases = runCatching {
+        readModelProvider.slice(dataSource, ListDatabases.Slice).databases.map {
+            it.name
+        }
+    }.getOrDefault(emptyList())
+    return availableDatabases.contains(database)
+}
 
 data class DatabaseDoesNotExistInspectionSettings<D>(
     val dataSource: D,
@@ -28,15 +41,10 @@ class DatabaseDoesNotExistInspection<D> : QueryInspection<
     ) {
         val parsingResult = knownCollection<Source>()
             .filter { knownRef ->
-                val detectedDatabase = knownRef.namespace.database
-                val availableDatabases = runCatching {
-                    settings.readModelProvider.slice(
-                        settings.dataSource,
-                        ListDatabases.Slice
-                    ).databases.map { it.name }
-                }.getOrDefault(emptyList())
-
-                !availableDatabases.contains(detectedDatabase)
+                !knownRef.namespace.isDatabaseAvailableInCluster(
+                    dataSource = settings.dataSource,
+                    readModelProvider = settings.readModelProvider,
+                )
             }
             .parse(query)
 

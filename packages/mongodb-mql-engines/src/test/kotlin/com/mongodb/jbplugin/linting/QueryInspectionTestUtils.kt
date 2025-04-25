@@ -1,12 +1,22 @@
 package com.mongodb.jbplugin.linting
 
 import com.mongodb.jbplugin.accessadapter.MongoDbReadModelProvider
+import com.mongodb.jbplugin.accessadapter.slice.ExplainPlan
+import com.mongodb.jbplugin.accessadapter.slice.ExplainQuery
+import com.mongodb.jbplugin.accessadapter.slice.GetCollectionSchema
+import com.mongodb.jbplugin.accessadapter.slice.ListCollections
+import com.mongodb.jbplugin.accessadapter.slice.ListDatabases
+import com.mongodb.jbplugin.mql.BsonObject
+import com.mongodb.jbplugin.mql.CollectionSchema
+import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.Node
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.`when`
+import org.mockito.kotlin.any
 
 class InMemoryQueryInsightsHolder<S, I : Inspection> : QueryInsightsHolder<S, I> {
     val results = mutableListOf<QueryInsight<S, I>>()
@@ -46,6 +56,38 @@ interface QueryInspectionTest<I : Inspection> {
         val insight = holder.results.getOrNull(n)
         assertNotNull(insight, "Expected an insight at position $n but was null")
         return InspectionTestContextForInsight(query, insight!!)
+    }
+
+    fun InspectionTestContext<I>.whenDatabasesAre(databases: List<String>) {
+        `when`(readModelProvider.slice(any(), any<ListDatabases.Slice>())).thenReturn(
+            ListDatabases(
+                databases.map { ListDatabases.Database(it) }
+            )
+        )
+    }
+
+    fun InspectionTestContext<I>.whenCollectionsAre(collections: List<String>) {
+        `when`(readModelProvider.slice(any(), any<ListCollections.Slice>())).thenReturn(
+            ListCollections(
+                collections.map { ListCollections.Collection(it, "collection") }
+            )
+        )
+    }
+
+    fun InspectionTestContext<I>.whenCollectionSchemaIs(namespace: Namespace, schema: BsonObject) {
+        `when`(readModelProvider.slice(any(), any<GetCollectionSchema.Slice>())).thenReturn(
+            GetCollectionSchema(
+                CollectionSchema(
+                    namespace,
+                    schema,
+                ),
+            ),
+        )
+    }
+
+    fun InspectionTestContext<I>.whenExplainPlanIs(explainPlan: ExplainPlan) {
+        `when`(readModelProvider.slice(any(), any<ExplainQuery.Slice<Unit>>()))
+            .thenReturn(ExplainQuery(explainPlan))
     }
 
     fun InspectionTestContextForInsight<I>.assertInsightDescriptionIs(description: String, vararg arguments: String) {

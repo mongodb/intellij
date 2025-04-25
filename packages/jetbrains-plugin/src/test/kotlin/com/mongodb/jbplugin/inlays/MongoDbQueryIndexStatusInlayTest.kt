@@ -4,6 +4,8 @@ import com.intellij.codeInsight.hints.InlineInlayRenderer
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.mongodb.jbplugin.accessadapter.slice.ExplainPlan
 import com.mongodb.jbplugin.accessadapter.slice.ExplainQuery
+import com.mongodb.jbplugin.accessadapter.slice.ListCollections
+import com.mongodb.jbplugin.accessadapter.slice.ListDatabases
 import com.mongodb.jbplugin.dialects.javadriver.glossary.JavaDriverDialect
 import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.ParsingTest
@@ -19,6 +21,78 @@ class MongoDbQueryIndexStatusInlayTest {
     @ParsingTest(
         value = """
     public FindIterable<Document> exampleFind() {
+        client.getDatabase("myDatabase")
+                .getCollection("myCollection")
+                .find();
+    }
+        """,
+    )
+    fun `does not show any inlay when the database does not exist`(
+        fixture: CodeInsightTestFixture,
+    ) {
+        val (dataSource, readModel) = fixture.setupConnection()
+        fixture.specifyDialect(JavaDriverDialect)
+        whenever(readModel.slice(eq(dataSource), any<ListDatabases.Slice>()))
+            .thenReturn(
+                ListDatabases(
+                    listOf(ListDatabases.Database("myDatabase1"))
+                )
+            )
+
+        whenever(readModel.slice(eq(dataSource), any<ListCollections.Slice>()))
+            .thenReturn(
+                ListCollections(
+                    listOf(
+                        ListCollections.Collection("myCollection", "collection")
+                    )
+                )
+            )
+
+        whenever(readModel.slice(eq(dataSource), any<ExplainQuery.Slice<Any>>()))
+            .thenReturn(ExplainQuery(ExplainPlan.CollectionScan))
+
+        fixture.testIndexInlay()
+    }
+
+    @ParsingTest(
+        value = """
+    public FindIterable<Document> exampleFind() {
+        client.getDatabase("myDatabase")
+                .getCollection("myCollection")
+                .find();
+    }
+        """,
+    )
+    fun `does not show any inlay when the collection does not exist`(
+        fixture: CodeInsightTestFixture,
+    ) {
+        val (dataSource, readModel) = fixture.setupConnection()
+        fixture.specifyDialect(JavaDriverDialect)
+        whenever(readModel.slice(eq(dataSource), any<ListDatabases.Slice>()))
+            .thenReturn(
+                ListDatabases(
+                    listOf(ListDatabases.Database("myDatabase"))
+                )
+            )
+
+        whenever(readModel.slice(eq(dataSource), any<ListCollections.Slice>()))
+            .thenReturn(
+                ListCollections(
+                    listOf(
+                        ListCollections.Collection("myCollection1", "collection")
+                    )
+                )
+            )
+
+        whenever(readModel.slice(eq(dataSource), any<ExplainQuery.Slice<Any>>()))
+            .thenReturn(ExplainQuery(ExplainPlan.CollectionScan))
+
+        fixture.testIndexInlay()
+    }
+
+    @ParsingTest(
+        value = """
+    public FindIterable<Document> exampleFind() {
         <hint text="[<image> Collection Scan]"/>client.getDatabase("myDatabase")
                 .getCollection("myCollection")
                 .find();
@@ -30,6 +104,21 @@ class MongoDbQueryIndexStatusInlayTest {
     ) {
         val (dataSource, readModel) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
+        whenever(readModel.slice(eq(dataSource), any<ListDatabases.Slice>()))
+            .thenReturn(
+                ListDatabases(
+                    listOf(ListDatabases.Database("myDatabase"))
+                )
+            )
+
+        whenever(readModel.slice(eq(dataSource), any<ListCollections.Slice>()))
+            .thenReturn(
+                ListCollections(
+                    listOf(
+                        ListCollections.Collection("myCollection", "collection")
+                    )
+                )
+            )
 
         whenever(readModel.slice(eq(dataSource), any<ExplainQuery.Slice<Any>>()))
             .thenReturn(ExplainQuery(ExplainPlan.CollectionScan))
@@ -52,6 +141,22 @@ class MongoDbQueryIndexStatusInlayTest {
         val (dataSource, readModel) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
+        whenever(readModel.slice(eq(dataSource), any<ListDatabases.Slice>()))
+            .thenReturn(
+                ListDatabases(
+                    listOf(ListDatabases.Database("myDatabase"))
+                )
+            )
+
+        whenever(readModel.slice(eq(dataSource), any<ListCollections.Slice>()))
+            .thenReturn(
+                ListCollections(
+                    listOf(
+                        ListCollections.Collection("myCollection", "collection")
+                    )
+                )
+            )
+
         whenever(readModel.slice(eq(dataSource), any<ExplainQuery.Slice<Any>>()))
             .thenReturn(ExplainQuery(ExplainPlan.IndexScan("my_index")))
 
@@ -73,6 +178,22 @@ class MongoDbQueryIndexStatusInlayTest {
         val (dataSource, readModel) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
+        whenever(readModel.slice(eq(dataSource), any<ListDatabases.Slice>()))
+            .thenReturn(
+                ListDatabases(
+                    listOf(ListDatabases.Database("myDatabase"))
+                )
+            )
+
+        whenever(readModel.slice(eq(dataSource), any<ListCollections.Slice>()))
+            .thenReturn(
+                ListCollections(
+                    listOf(
+                        ListCollections.Collection("myCollection", "collection")
+                    )
+                )
+            )
+
         whenever(readModel.slice(eq(dataSource), any<ExplainQuery.Slice<Any>>()))
             .thenReturn(ExplainQuery(ExplainPlan.IneffectiveIndexUsage("my_index")))
 
@@ -93,6 +214,22 @@ class MongoDbQueryIndexStatusInlayTest {
     ) {
         val (dataSource, readModel) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
+
+        whenever(readModel.slice(eq(dataSource), any<ListDatabases.Slice>()))
+            .thenReturn(
+                ListDatabases(
+                    listOf(ListDatabases.Database("myDatabase"))
+                )
+            )
+
+        whenever(readModel.slice(eq(dataSource), any<ListCollections.Slice>()))
+            .thenReturn(
+                ListCollections(
+                    listOf(
+                        ListCollections.Collection("myCollection", "collection")
+                    )
+                )
+            )
 
         whenever(readModel.slice(eq(dataSource), any<ExplainQuery.Slice<Any>>()))
             .thenReturn(ExplainQuery(ExplainPlan.NotRun))
