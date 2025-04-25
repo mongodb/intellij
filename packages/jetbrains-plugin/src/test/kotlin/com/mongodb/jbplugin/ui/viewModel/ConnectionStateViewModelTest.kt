@@ -28,6 +28,7 @@ class ConnectionStateViewModelTest {
     lateinit var dataSource: LocalDataSource
     private lateinit var connectionSaga: ConnectionSaga
     private lateinit var codeEditorViewModel: CodeEditorViewModel
+    private lateinit var analysisScopeViewModel: AnalysisScopeViewModel
     private lateinit var inspectionsViewModel: InspectionsViewModel
     private lateinit var connectionPreferences: PersistentConnectionPreferences
     private lateinit var mongoDBToolWindow: ToolWindow
@@ -36,6 +37,7 @@ class ConnectionStateViewModelTest {
     fun setUp(project: Project) {
         codeEditorViewModel = mock()
         inspectionsViewModel = mock()
+        analysisScopeViewModel = mock()
         dataSource = mockDataSource()
         connectionSaga = mock()
         whenever(connectionSaga.listMongoDbConnections()).thenReturn(listOf(dataSource))
@@ -50,6 +52,7 @@ class ConnectionStateViewModelTest {
         project
             .withMockedService(codeEditorViewModel)
             .withMockedService(inspectionsViewModel)
+            .withMockedService(analysisScopeViewModel)
             .withMockedService(connectionPreferencesStateComponent)
     }
 
@@ -78,6 +81,20 @@ class ConnectionStateViewModelTest {
         runBlocking {
             viewModel.selectDatabase("oops")
             verify(inspectionsViewModel, timeout(1000)).clear()
+        }
+    }
+
+    @Test
+    fun `reanalyzes the scope when selecting a new database`(
+        project: Project,
+        testScope: TestScope,
+    ) {
+        val viewModel = ConnectionStateViewModel(project, testScope)
+        viewModel.connectionSaga = connectionSaga
+
+        runBlocking {
+            viewModel.selectDatabase("oops")
+            verify(analysisScopeViewModel, timeout(1000)).reanalyzeCurrentScope()
         }
     }
 
