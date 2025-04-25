@@ -41,7 +41,7 @@ public void exampleAggregate(String collectionName) {
         fixture.specifyDialect(JavaDriverDialect)
 
         `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
-            ListDatabases(listOf(Database("myDb")))
+            ListDatabases(listOf(Database("myDatabase")))
         )
 
         `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>())).thenReturn(
@@ -77,7 +77,7 @@ public void exampleAggregate() {
         fixture.specifyDialect(JavaDriverDialect)
 
         `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
-            ListDatabases(listOf(Database("myDb")))
+            ListDatabases(listOf(Database("myDatabase")))
         )
 
         `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>())).thenReturn(

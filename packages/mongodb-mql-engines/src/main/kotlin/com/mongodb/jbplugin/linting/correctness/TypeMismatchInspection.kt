@@ -32,7 +32,13 @@ class TypeMismatchInspection<D> : QueryInspection<
         settings: TypeMismatchInspectionSettings<D>
     ) {
         val querySchema = knownCollection<Source>()
-            .filter { it.namespace.isValid }
+            .filter {
+                it.namespace.isValid &&
+                    it.namespace.isNamespaceAvailableInCluster(
+                        dataSource = settings.dataSource,
+                        readModelProvider = settings.readModelProvider
+                    )
+            }
             .map {
                 settings.readModelProvider.slice(
                     settings.dataSource,

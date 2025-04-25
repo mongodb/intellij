@@ -6,7 +6,10 @@ import com.mongodb.jbplugin.linting.Inspection.FieldDoesNotExist
 import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.linting.QueryInsightsHolder
 import com.mongodb.jbplugin.linting.QueryInspection
+import com.mongodb.jbplugin.linting.environmentmismatch.isCollectionAvailableInCluster
+import com.mongodb.jbplugin.linting.environmentmismatch.isDatabaseAvailableInCluster
 import com.mongodb.jbplugin.mql.BsonNull
+import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.adt.Either
 import com.mongodb.jbplugin.mql.parser.components.allNodesWithSchemaFieldReferences
@@ -16,6 +19,20 @@ import com.mongodb.jbplugin.mql.parser.filter
 import com.mongodb.jbplugin.mql.parser.map
 import com.mongodb.jbplugin.mql.parser.mapMany
 import com.mongodb.jbplugin.mql.parser.parse
+
+fun <D>Namespace.isNamespaceAvailableInCluster(
+    dataSource: D,
+    readModelProvider: MongoDbReadModelProvider<D>
+): Boolean {
+    return isDatabaseAvailableInCluster(
+        dataSource = dataSource,
+        readModelProvider = readModelProvider
+    ) &&
+        isCollectionAvailableInCluster(
+            dataSource = dataSource,
+            readModelProvider = readModelProvider
+        )
+}
 
 data class FieldDoesNotExistInspectionSettings<D>(
     val dataSource: D,
@@ -33,7 +50,13 @@ class FieldDoesNotExistInspection<D> : QueryInspection<
         settings: FieldDoesNotExistInspectionSettings<D>
     ) {
         val querySchema = knownCollection<Source>()
-            .filter { it.namespace.isValid }
+            .filter {
+                it.namespace.isValid &&
+                    it.namespace.isNamespaceAvailableInCluster(
+                        dataSource = settings.dataSource,
+                        readModelProvider = settings.readModelProvider
+                    )
+            }
             .map {
                 settings.readModelProvider.slice(
                     settings.dataSource,

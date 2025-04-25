@@ -2,6 +2,10 @@ package com.mongodb.jbplugin.inspections.correctness
 
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.mongodb.jbplugin.accessadapter.slice.GetCollectionSchema
+import com.mongodb.jbplugin.accessadapter.slice.ListCollections
+import com.mongodb.jbplugin.accessadapter.slice.ListCollections.Collection
+import com.mongodb.jbplugin.accessadapter.slice.ListDatabases
+import com.mongodb.jbplugin.accessadapter.slice.ListDatabases.Database
 import com.mongodb.jbplugin.dialects.javadriver.glossary.JavaDriverDialect
 import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.ParsingTest
@@ -35,6 +39,14 @@ public AggregateIterable<Document> exampleFind() {
     ) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
+
+        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
+            ListDatabases(listOf(Database("myDatabase")))
+        )
+
+        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>())).thenReturn(
+            ListCollections(listOf(Collection("myCollection", "collection")))
+        )
 
         `when`(
             readModelProvider.slice(eq(dataSource), any<GetCollectionSchema.Slice>())

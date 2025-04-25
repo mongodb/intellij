@@ -28,8 +28,10 @@ import com.mongodb.jbplugin.editor.dataSource
 import com.mongodb.jbplugin.editor.dialect
 import com.mongodb.jbplugin.i18n.Icons
 import com.mongodb.jbplugin.i18n.InspectionsAndInlaysMessages
+import com.mongodb.jbplugin.linting.correctness.isNamespaceAvailableInCluster
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.mql.QueryContext
+import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasExplain
 import com.mongodb.jbplugin.mql.components.HasExplain.ExplainPlanType.FULL
 import com.mongodb.jbplugin.mql.components.HasExplain.ExplainPlanType.SAFE
@@ -89,6 +91,18 @@ private object QueriesInFileCollector : InlayHintsCollector {
 
         val queryWithExplainPlan = query.with(HasExplain(explainPlanType))
         val queryContext = QueryContext.empty(automaticallyRun = true)
+
+        val collectionReference = query.component<HasCollectionReference<PsiElement>>()?.reference
+        val skipInlayDecoration = collectionReference !is HasCollectionReference.Known ||
+            !collectionReference.namespace.isValid ||
+            !collectionReference.namespace.isNamespaceAvailableInCluster(
+                dataSource = dataSource,
+                readModelProvider = readModelProvider,
+            )
+
+        if (skipInlayDecoration) {
+            return true
+        }
 
         val explainPlan = runCatching {
             readModelProvider.slice(

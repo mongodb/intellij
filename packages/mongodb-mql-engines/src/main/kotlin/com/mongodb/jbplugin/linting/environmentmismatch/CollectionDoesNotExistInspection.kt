@@ -6,11 +6,22 @@ import com.mongodb.jbplugin.linting.Inspection.CollectionDoesNotExist
 import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.linting.QueryInsightsHolder
 import com.mongodb.jbplugin.linting.QueryInspection
+import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.adt.Either
 import com.mongodb.jbplugin.mql.parser.components.knownCollection
 import com.mongodb.jbplugin.mql.parser.filter
 import com.mongodb.jbplugin.mql.parser.parse
+
+fun <D>Namespace.isCollectionAvailableInCluster(
+    dataSource: D,
+    readModelProvider: MongoDbReadModelProvider<D>
+): Boolean = runCatching {
+    readModelProvider.slice(
+        dataSource,
+        ListCollections.Slice(database)
+    ).collections.any { it.name == collection }
+}.getOrDefault(false)
 
 data class CollectionDoesNotExistInspectionSettings<D>(
     val dataSource: D,
@@ -28,16 +39,19 @@ class CollectionDoesNotExistInspection<D> : QueryInspection<
     ) {
         val parsingResult = knownCollection<Source>()
             .filter { knownRef ->
-                val detectedDatabase = knownRef.namespace.database
-                val detectedCollection = knownRef.namespace.collection
-                val availableCollections = runCatching {
-                    settings.readModelProvider.slice(
-                        settings.dataSource,
-                        ListCollections.Slice(detectedDatabase)
-                    ).collections.map { it.name }
-                }.getOrDefault(emptyList())
+                if (!knownRef.namespace.isDatabaseAvailableInCluster(
+                        dataSource = settings.dataSource,
+                        readModelProvider = settings.readModelProvider
+                    )
+                ) {
+                    // We do not want to trigger the inspection when Database does not even exist
+                    return@filter false
+                }
 
-                !availableCollections.contains(detectedCollection)
+                !knownRef.namespace.isCollectionAvailableInCluster(
+                    dataSource = settings.dataSource,
+                    readModelProvider = settings.readModelProvider
+                )
             }
             .parse(query)
 
