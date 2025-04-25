@@ -18,7 +18,7 @@ import kotlin.js.Json
 import kotlin.js.Promise
 
 @JsExport
-interface InputNamespace {
+external interface InputNamespace {
     val database: String
     val collection: String
 }
