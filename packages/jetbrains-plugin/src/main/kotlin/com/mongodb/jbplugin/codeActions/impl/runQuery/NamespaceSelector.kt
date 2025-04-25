@@ -18,7 +18,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.awt.Component
 import javax.swing.DefaultComboBoxModel
@@ -97,13 +96,13 @@ class NamespaceSelector(
         }
 
         databaseComboBox.addItemListener {
-            runBlocking {
+            coroutineScope.launch(Dispatchers.IO) {
                 events.emit(Event.DatabaseSelected(it.item.toString()))
             }
         }
 
         collectionComboBox.addItemListener {
-            runBlocking {
+            coroutineScope.launch(Dispatchers.IO) {
                 events.emit(Event.CollectionSelected(it.item.toString()))
             }
         }
