@@ -54,9 +54,6 @@ class PluginSettings : BaseState(), Serializable {
     var isFullExplainPlanEnabled by property(false)
     var sampleSize by property(DEFAULT_SAMPLE_SIZE)
     var softIndexesLimit by property(DEFAULT_INDEXES_AMOUNT_SOFT_LIMIT)
-
-    // feature toggles
-    var ftEnableSidePanel by property(false)
 }
 
 class SettingsDelegate<T>(private val settingProp: KMutableProperty0<T>) {
