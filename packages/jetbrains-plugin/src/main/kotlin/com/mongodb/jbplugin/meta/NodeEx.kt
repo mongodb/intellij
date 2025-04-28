@@ -7,7 +7,7 @@ import com.intellij.psi.util.findTopmostParentOfType
 import com.mongodb.jbplugin.mql.Node
 
 val Node<PsiElement>.containingFileOrNull: PsiFile?
-    get() = source.findTopmostParentOfType()
+    get() = withinReadActionBlocking { source.findTopmostParentOfType() }
 
 val Node<PsiElement>.projectOrNull: Project?
-    get() = containingFileOrNull?.project
+    get() = withinReadActionBlocking { containingFileOrNull?.project }

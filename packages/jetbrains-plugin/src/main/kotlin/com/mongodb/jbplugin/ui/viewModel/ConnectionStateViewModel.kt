@@ -5,15 +5,14 @@ import com.intellij.database.dataSource.DatabaseConnectionManager
 import com.intellij.database.dataSource.DatabaseDriverManager
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.database.dataSource.connection.ConnectionRequestor
-import com.intellij.database.dataSource.findProjectWhereActive
 import com.intellij.database.dataSource.localDataSource
 import com.intellij.database.datagrid.DataAuditor
 import com.intellij.database.datagrid.DataRequest.Context
-import com.intellij.database.dialects.base.ProcessDbmsOutputAction.Companion.connection
 import com.intellij.database.model.RawDataSource
 import com.intellij.database.psi.DataSourceManager
 import com.intellij.database.run.ConsoleRunConfiguration
 import com.intellij.database.view.ui.DataSourceManagerDialog
+import com.intellij.ide.impl.ProjectUtil
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
@@ -438,14 +437,19 @@ class ConnectionStateViewModel(
 class DataSourcesChangesAuditor : DataAuditor {
     @VisibleForTesting
     internal var readContext: (Context) -> Triple<LocalDataSource, Project, String>? = { context ->
-        val dataSource = context.connection?.connectionPoint?.dataSource
-        val project = dataSource?.findProjectWhereActive(null)
-        val query = context.query
+        val project = ProjectUtil.getActiveProject()
+        if (project != null) {
+            val connectionStateViewModel by project.service<ConnectionStateViewModel>()
+            val dataSource = connectionStateViewModel.connectionState.value.selectedConnection
+            val query = context.query
 
-        if (dataSource == null || project == null || query == null) {
-            null
+            if (dataSource == null) {
+                null
+            } else {
+                Triple(dataSource, project, query)
+            }
         } else {
-            Triple(dataSource, project, query)
+            null
         }
     }
 

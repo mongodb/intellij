@@ -11,7 +11,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 import com.mongodb.jbplugin.meta.service
-import com.mongodb.jbplugin.settings.pluginSetting
 import com.mongodb.jbplugin.ui.components.connection.ConnectionBootstrapCard
 import com.mongodb.jbplugin.ui.components.connection.OnlyWhenConnected
 import com.mongodb.jbplugin.ui.components.inspections.InspectionAccordion
@@ -38,11 +37,6 @@ class SidePanel : ToolWindowFactory, DumbAware {
                 createSidePanelComponent()
             }
         }
-    }
-
-    override suspend fun isApplicableAsync(project: Project): Boolean {
-        val isEnabled by pluginSetting { ::ftEnableSidePanel }
-        return isEnabled
     }
 
     @Composable
