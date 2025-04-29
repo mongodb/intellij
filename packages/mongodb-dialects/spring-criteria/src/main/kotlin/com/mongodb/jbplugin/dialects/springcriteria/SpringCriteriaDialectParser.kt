@@ -48,6 +48,17 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
         isCandidateForQuery(it)
     }!!
 
+    override fun parseCollectionReference(source: PsiElement): HasCollectionReference<PsiElement> {
+        val methodCallExpression = source.parentOfType<PsiMethodCallExpression>(withSelf = true)
+        val maybeMongoOpCall = methodCallExpression?.findSpringMongoDbExpression()
+        val actualMethod = maybeMongoOpCall?.firstChild?.firstChild as? PsiMethodCallExpression
+        return extractCollectionFromQueryChain(maybeMongoOpCall).or(
+            extractCollectionFromClassTypeParameter(
+                actualMethod?.argumentList?.expressions?.getOrNull(1)
+            )
+        )
+    }
+
     override fun parse(source: PsiElement): Node<PsiElement> {
         if (source !is PsiMethodCallExpression) {
             return Node(source, emptyList())

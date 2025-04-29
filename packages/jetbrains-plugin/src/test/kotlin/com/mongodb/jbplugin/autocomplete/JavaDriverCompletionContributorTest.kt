@@ -56,6 +56,39 @@ class JavaDriverCompletionContributorTest {
     @ParsingTest(
         value = """
     public FindIterable<Document> exampleFind() {
+        return client.getDatabase("myDatabase").getCollection("<caret>");
+    }
+        """,
+    )
+    fun `should autocomplete collections from the current connection and inferred database even without a query`(
+        fixture: CodeInsightTestFixture,
+    ) {
+        fixture.specifyDialect(JavaDriverDialect)
+
+        val (dataSource, readModelProvider) = fixture.setupConnection()
+
+        `when`(
+            readModelProvider.slice(eq(dataSource), eq(ListCollections.Slice("myDatabase")))
+        ).thenReturn(
+            ListCollections(
+                listOf(
+                    ListCollections.Collection("myCollection", "collection"),
+                ),
+            ),
+        )
+
+        val elements = fixture.completeBasic()
+
+        assertNotNull(
+            elements.firstOrNull {
+                it.lookupString == "myCollection"
+            },
+        )
+    }
+
+    @ParsingTest(
+        value = """
+    public FindIterable<Document> exampleFind() {
         return client.getDatabase("myDatabase").getCollection("<caret>").find();
     }
         """,

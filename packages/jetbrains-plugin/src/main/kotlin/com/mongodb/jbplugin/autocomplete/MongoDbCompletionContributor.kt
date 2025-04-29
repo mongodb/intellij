@@ -20,6 +20,7 @@ import com.intellij.util.ProcessingContext
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
 import com.mongodb.jbplugin.autocomplete.MongoDbElementPatterns.canBeFieldName
+import com.mongodb.jbplugin.autocomplete.MongoDbElementPatterns.extractDatabase
 import com.mongodb.jbplugin.autocomplete.MongoDbElementPatterns.guessDatabaseAndCollection
 import com.mongodb.jbplugin.autocomplete.MongoDbElementPatterns.isCollectionReference
 import com.mongodb.jbplugin.autocomplete.MongoDbElementPatterns.isConnected
@@ -95,12 +96,18 @@ internal object Collection {
             context: ProcessingContext,
             result: CompletionResultSet,
         ) {
-            val dataSource = parameters.originalFile.dataSource!!
-            val (database, _) = guessDatabaseAndCollection(parameters.originalPosition!!)
+            val dataSource = parameters.originalFile.dataSource ?: return
+            val source = parameters.originalPosition ?: return
+            val dialect = parameters.originalFile.dialect ?: return
+            val database = if (dialect is JavaDriverDialect) {
+                val collectionReference = dialect.parser.parseCollectionReference(source)
+                extractDatabase(collectionReference)
+            } else {
+                parameters.originalFile.database
+            } ?: return
 
-            database ?: return
-
-            val readModelProvider by parameters.originalFile.project.service<DataGripBasedReadModelProvider>()
+            val readModelProvider by parameters.originalFile
+                .project.service<DataGripBasedReadModelProvider>()
 
             val completions =
                 Autocompletion.autocompleteCollections(
@@ -329,7 +336,7 @@ private object MongoDbElementPatterns {
             else -> null
         }
 
-    private fun extractDatabase(reference: HasCollectionReference<PsiElement>?): String? =
+    fun extractDatabase(reference: HasCollectionReference<PsiElement>?): String? =
         when (val innerRef = reference?.reference) {
             is HasCollectionReference.Known -> innerRef.namespace.database
             else -> null
