@@ -418,5 +418,39 @@ class CollectionIndexConsolidationTest {
         assertMongoDbIndexHasPartialExpression(null, index)
     }
 
+    @Test
+    fun `should not covert empty indexes with other indexes`() {
+        val index = CollectionIndexConsolidation.apply(
+            baseIndex = indexOf("f1" to 1, "f2" to 1) {
+                query {
+                    findMany("my.coll".toNs()) {
+                        filterBy {
+                            predicate(Name.EQ) {
+                                schema("should_be_covered")
+                            }
+                        }
+                    }
+                }
+            },
+            indexes = listOf(
+                indexOf {
+                    query {
+                        findMany("my.coll".toNs()) {
+                            filterBy {
+                                predicate(Name.EQ) {
+                                    schema("should_NOT_be_covered")
+                                }
+                            }
+                        }
+                    }
+                }
+            ),
+            options = emptyOptions()
+        )
+
+        assertMongoDbIndexIs(arrayOf("f1" to 1, "f2" to 1), index)
+        assertNumberOfCoveredQueriesForIndex(1, index)
+    }
+
     private fun emptyOptions() = CollectionIndexConsolidationOptions(10)
 }

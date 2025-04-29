@@ -94,6 +94,11 @@ private class IndexPartitions<S> {
     }
 
     fun addIndex(index: IndexAnalyzer.SuggestedIndex.MongoDbIndex<S>): IndexPartitions<S> {
+        // if the index is empty, just ignore it
+        if (index.fields.isEmpty() && index.partialFilterExpression == null) {
+            return this
+        }
+
         // first check if the index can be inserted into an existing partition
         val fittingPartition = partitions.find {
             it.all { it.isPrefixOf(index) || index.isPrefixOf(it) }
