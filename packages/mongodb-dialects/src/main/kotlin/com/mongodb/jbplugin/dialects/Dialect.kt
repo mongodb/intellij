@@ -10,6 +10,7 @@ import com.mongodb.jbplugin.indexing.IndexAnalyzer
 import com.mongodb.jbplugin.mql.BsonType
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.QueryContext
+import com.mongodb.jbplugin.mql.components.HasCollectionReference
 
 /**
  * Represents the dialect itself, S is the input type of the dialect. It's an opaque type,
@@ -55,6 +56,8 @@ interface DialectParser<S> {
     fun isCandidateForQuery(source: S): Boolean
 
     fun attachment(source: S): S
+
+    fun parseCollectionReference(source: S): HasCollectionReference<S>
 
     fun parse(source: S): Node<S>
 

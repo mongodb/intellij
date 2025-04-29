@@ -41,6 +41,65 @@ class Repository {
         this.template = template;
     }
     
+    public List<Book> completeQuery() {
+        return template.query(Book.class).matching(where("released").is(true)).all();
+    }
+    
+    public List<Book> partialQuery() {
+        return template.query(Book.class).matching(where("released"));
+    }
+    
+    public List<Book> justCollection() {
+        return template.query(Book.class);
+    }
+}
+        """
+    )
+    fun `extracts the collection reference`(
+        psiFile: PsiFile
+    ) {
+        val queries = listOf(
+            psiFile.getQueryAtMethod("Repository", "completeQuery"),
+            psiFile.getQueryAtMethod("Repository", "partialQuery"),
+            psiFile.getQueryAtMethod("Repository", "justCollection"),
+        )
+        for (query in queries) {
+            val collectionReference = SpringCriteriaDialectParser.parseCollectionReference(
+                query
+            ).reference as HasCollectionReference.OnlyCollection<*>
+            assertNotNull(
+                collectionReference,
+                "Collection reference should not be null for query $query"
+            )
+            assertEquals(
+                "book",
+                collectionReference.collection,
+                "Collection reference should be 'book' for query $query"
+            )
+        }
+    }
+
+    @ParsingTest(
+        fileName = "Book.java",
+        """
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.query.Criteria;
+
+import java.util.List;
+
+import static org.springframework.data.mongodb.core.query.Criteria.where;
+
+@Document
+record Book() {}
+
+class Repository {
+    private final MongoTemplate template;
+    
+    public Repository(MongoTemplate template) {
+        this.template = template;
+    }
+    
     public List<Book> allReleasedBooks() {
         return template.query(Book.class).matching(where("released").is(true)).all();
     }

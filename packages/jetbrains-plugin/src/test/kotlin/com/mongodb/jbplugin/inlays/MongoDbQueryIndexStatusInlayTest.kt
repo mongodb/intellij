@@ -93,7 +93,7 @@ class MongoDbQueryIndexStatusInlayTest {
     @ParsingTest(
         value = """
     public FindIterable<Document> exampleFind() {
-        <hint text="[<image> Collection Scan]"/>client.getDatabase("myDatabase")
+        <hint text="[<image> Missing Index]"/>client.getDatabase("myDatabase")
                 .getCollection("myCollection")
                 .find();
     }

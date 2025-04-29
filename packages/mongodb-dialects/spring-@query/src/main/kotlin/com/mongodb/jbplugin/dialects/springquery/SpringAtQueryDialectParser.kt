@@ -10,6 +10,7 @@ import com.intellij.psi.PsiNameValuePair
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.util.PsiTypesUtil
 import com.intellij.psi.util.elementType
+import com.intellij.psi.util.findParentOfType
 import com.mongodb.jbplugin.dialects.DialectParser
 import com.mongodb.jbplugin.dialects.javadriver.glossary.findAllChildrenOfType
 import com.mongodb.jbplugin.dialects.javadriver.glossary.findTopParentBy
@@ -42,6 +43,11 @@ object SpringAtQueryDialectParser : DialectParser<PsiElement> {
 
     override fun attachment(source: PsiElement): PsiElement {
         return findParentMethodWithQueryAnnotation(source)!!
+    }
+
+    override fun parseCollectionReference(source: PsiElement): HasCollectionReference<PsiElement> {
+        val method = source.findParentOfType<PsiMethod>() ?: return unknownCollectionReference
+        return resolveMethodCollection(method)
     }
 
     override fun parse(source: PsiElement): Node<PsiElement> {
