@@ -152,6 +152,12 @@ class InspectionsViewModel(
 
     suspend fun openCategory(category: InspectionCategory) {
         withContext(Dispatchers.IO) {
+            mutableOpenCategories.emit(category)
+        }
+    }
+
+    suspend fun toggleCategory(category: InspectionCategory) {
+        withContext(Dispatchers.IO) {
             if (mutableOpenCategories.value == category) {
                 mutableOpenCategories.emit(null)
             } else {
