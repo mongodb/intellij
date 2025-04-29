@@ -13,6 +13,7 @@ import com.mongodb.jbplugin.mql.QueryContext
 import com.mongodb.jbplugin.mql.adt.Either
 import com.mongodb.jbplugin.mql.components.HasExplain
 import com.mongodb.jbplugin.mql.components.HasExplain.ExplainPlanType
+import com.mongodb.jbplugin.mql.components.IsCommand
 import com.mongodb.jbplugin.mql.parser.components.knownCollection
 import com.mongodb.jbplugin.mql.parser.filter
 import com.mongodb.jbplugin.mql.parser.parse
@@ -32,6 +33,10 @@ class QueryNotUsingIndexInspection<D> : QueryInspection<
         holder: QueryInsightsHolder<S, NotUsingIndex>,
         settings: QueryNotUsingIndexInspectionSettings<D>
     ) {
+        if (query.component<IsCommand>()?.type?.usesIndexes == false) {
+            return
+        }
+
         val validationResults = knownCollection<S>()
             .filter {
                 it.namespace.isValid &&
