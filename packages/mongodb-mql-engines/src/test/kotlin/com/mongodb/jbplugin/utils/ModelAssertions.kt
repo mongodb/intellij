@@ -6,6 +6,7 @@ import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 
 object ModelAssertions {
     fun assertCollectionIs(expected: Namespace, actual: HasCollectionReference<Unit>) {
@@ -37,6 +38,12 @@ object ModelAssertions {
         }
 
         assertEquals(expected, actual.coveredQueries.size)
+    }
+
+    fun assertNoMongoDbIndex(
+        actual: IndexAnalyzer.SuggestedIndex<Unit>,
+    ) {
+        assertTrue(actual as? IndexAnalyzer.SuggestedIndex.NoIndex != null, "Expected no index, but got $actual")
     }
 
     fun assertMongoDbIndexIs(
