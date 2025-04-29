@@ -7,6 +7,7 @@ package com.mongodb.jbplugin.dialects.javadriver.glossary
 import com.intellij.lang.jvm.JvmModifier
 import com.intellij.openapi.project.Project
 import com.intellij.psi.JavaPsiFacade
+import com.intellij.psi.PsiBinaryExpression
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiEnumConstant
@@ -251,13 +252,17 @@ fun PsiElement.findMongoDbCollectionReference(): PsiExpression? {
 fun PsiElement.tryToResolveAsConstant(): Pair<Boolean, Any?> {
     val meaningfulThis = meaningfulExpression()
 
-    if (meaningfulThis is PsiEnumConstant) {
+    if (meaningfulThis is PsiBinaryExpression && meaningfulThis.operationSign.text == "+") {
+        val left = meaningfulThis.lOperand.tryToResolveAsConstantString()
+        val right = meaningfulThis.rOperand?.tryToResolveAsConstantString()
+
+        if (left != null && right != null) {
+            return true to (left + right)
+        }
+    } else if (meaningfulThis is PsiEnumConstant) {
         return true to meaningfulThis
     } else if (meaningfulThis is PsiReferenceExpression) {
-        val varRef = meaningfulThis.resolve()
-        if (varRef == null) {
-            return false to null
-        }
+        val varRef = meaningfulThis.resolve() ?: return false to null
         return varRef.tryToResolveAsConstant()
     } else if (meaningfulThis is PsiLocalVariable && meaningfulThis.initializer != null) {
         return meaningfulThis.initializer!!.tryToResolveAsConstant()

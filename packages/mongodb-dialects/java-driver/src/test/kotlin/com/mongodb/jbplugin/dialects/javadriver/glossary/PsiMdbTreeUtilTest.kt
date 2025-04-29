@@ -11,6 +11,7 @@ import com.mongodb.jbplugin.dialects.javadriver.IntegrationTest
 import com.mongodb.jbplugin.dialects.javadriver.ParsingTest
 import com.mongodb.jbplugin.dialects.javadriver.getQueryAtMethod
 import com.mongodb.jbplugin.mql.*
+import com.mongodb.jbplugin.mql.components.HasFieldReference
 import com.mongodb.jbplugin.mql.components.HasFilter
 import com.mongodb.jbplugin.mql.components.HasValueReference
 import org.junit.jupiter.api.Assertions.*
@@ -129,6 +130,74 @@ public final class Repository {
             BsonEnum(setOf("CATALAN", "ENGLISH", "FRENCH", "HINDI", "SPANISH"), "Language"),
             valueType
         )
+    }
+
+    @ParsingTest(
+        fileName = "Repository.java",
+        value = """
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Filters;
+import java.util.ArrayList;
+
+public final class Repository {
+    private static final String LANGUAGE = "language";
+    private final MongoCollection<Document> collection;
+    
+    public Repository(MongoClient client) {
+        this.collection = client.getDatabase("simple").getCollection("books");
+    }
+    
+    public List<Document> findBooksInCatalan() {
+        return this.collection.find(Filters.eq("$" + LANGUAGE, "Catalan"));
+    }
+}
+      """
+    )
+    fun `should understand a java constant concatenation with strings`(psiFile: PsiFile) {
+        val query = psiFile.getQueryAtMethod("Repository", "findBooksInCatalan")
+        val parsedQuery = JavaDriverDialectParser.parse(query)
+        val filter = parsedQuery.component<HasFilter<PsiElement>>()!!
+        val eqOp = filter.children[0]
+        val field = eqOp.component<HasFieldReference<PsiElement>>()!!
+        val fieldRef = field.reference as HasFieldReference.FromSchema<PsiElement>
+        val fieldName = fieldRef.fieldName
+
+        assertEquals("${'$'}language", fieldName)
+    }
+
+    @ParsingTest(
+        fileName = "Repository.java",
+        value = """
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Filters;
+import java.util.ArrayList;
+
+public final class Repository {
+    private static final String LANGUAGE = "language";
+    private final MongoCollection<Document> collection;
+    
+    public Repository(MongoClient client) {
+        this.collection = client.getDatabase("simple").getCollection("books");
+    }
+    
+    public List<Document> findBooksInCatalan() {
+        return this.collection.find(Filters.eq("$" + "language", "Catalan"));
+    }
+}
+      """
+    )
+    fun `should understand a java literal string concatenation`(psiFile: PsiFile) {
+        val query = psiFile.getQueryAtMethod("Repository", "findBooksInCatalan")
+        val parsedQuery = JavaDriverDialectParser.parse(query)
+        val filter = parsedQuery.component<HasFilter<PsiElement>>()!!
+        val eqOp = filter.children[0]
+        val field = eqOp.component<HasFieldReference<PsiElement>>()!!
+        val fieldRef = field.reference as HasFieldReference.FromSchema<PsiElement>
+        val fieldName = fieldRef.fieldName
+
+        assertEquals("${'$'}language", fieldName)
     }
 
     companion object {
