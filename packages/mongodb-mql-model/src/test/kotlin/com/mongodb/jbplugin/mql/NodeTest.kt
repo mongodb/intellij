@@ -2,7 +2,10 @@ package com.mongodb.jbplugin.mql
 
 import com.mongodb.jbplugin.mql.components.*
 import com.mongodb.jbplugin.mql.components.HasCollectionReference.Known
+import com.mongodb.jbplugin.mql.components.IsCommand.CommandType
+import com.mongodb.jbplugin.mql.components.IsCommand.CommandType.FIND_ONE
 import io.github.z4kn4fein.semver.Version
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -177,23 +180,6 @@ class NodeTest {
         )
     }
 
-    @MethodSource("validComponents")
-    @ParameterizedTest
-    fun `does support the following component`(
-        component: Component,
-        componentClass: Class<Component>,
-    ) {
-        val node =
-            Node<Unit?>(
-                null,
-                listOf(
-                    component,
-                ),
-            )
-
-        assertNotNull(node.component(componentClass))
-    }
-
     @Test
     fun `adds target cluster if does not exist`() {
         val targetCluster = HasTargetCluster(Version.parse("7.0.0"))
@@ -236,50 +222,79 @@ class NodeTest {
         assertEquals(schema, (nodeReference?.reference as? Known<*>)?.schema)
     }
 
+    @ParameterizedTest
+    @MethodSource("allCommands")
+    fun `a query is supported if the command is supported`(cmd: CommandType, supported: Boolean) {
+        val query = Node(Unit, listOf(IsCommand(cmd)))
+        val isSupported = runBlocking { query.isSupported() }
+        assertEquals(supported, isSupported)
+    }
+
+    @ParameterizedTest
+    @MethodSource("allOperations")
+    fun `a query is supported if fields contain supported operators`(name: Name, supported: Boolean) {
+        val query = Node(
+            Unit,
+            listOf(
+                IsCommand(FIND_ONE),
+                HasFilter(
+                    listOf(
+                        Node(
+                            Unit,
+                            listOf(
+                                Named(name),
+                                HasFieldReference(HasFieldReference.FromSchema(Unit, "f1")),
+                                HasValueReference(HasValueReference.Constant(Unit, "f1", BsonString)),
+                            )
+                        )
+                    )
+                )
+            )
+        )
+
+        val isSupported = runBlocking { query.isSupported() }
+        assertEquals(supported, isSupported)
+    }
+
+    @ParameterizedTest
+    @MethodSource("allOperations")
+    fun `a query is unsupported if fields contains an unsupported operator`(name: Name) {
+        val query = Node(
+            Unit,
+            listOf(
+                IsCommand(FIND_ONE),
+                HasFilter(
+                    listOf(
+                        Node(
+                            Unit,
+                            listOf(
+                                Named(name),
+                                HasFieldReference(HasFieldReference.FromSchema(Unit, "f1")),
+                                HasValueReference(HasValueReference.Constant(Unit, "f1", BsonString)),
+                            )
+                        ),
+                        Node(
+                            Unit,
+                            listOf(
+                                Named(Name.UNKNOWN),
+                                HasFieldReference(HasFieldReference.FromSchema(Unit, "f2")),
+                                HasValueReference(HasValueReference.Constant(Unit, "f2", BsonString)),
+                            )
+                        )
+                    )
+                )
+            )
+        )
+
+        val isSupported = runBlocking { query.isSupported() }
+        assertFalse(isSupported)
+    }
+
     companion object {
         @JvmStatic
-        fun validComponents(): Array<Array<Any>> =
-            arrayOf(
-                arrayOf(HasFilter<Unit?>(emptyList()), HasFilter::class.java),
-                arrayOf(
-                    HasCollectionReference(HasCollectionReference.Unknown),
-                    HasCollectionReference::class.java
-                ),
-                arrayOf(
-                    HasCollectionReference(
-                        HasCollectionReference.Known(1, 2, Namespace("db", "coll"))
-                    ),
-                    HasCollectionReference::class.java,
-                ),
-                arrayOf(
-                    HasCollectionReference(HasCollectionReference.OnlyCollection(1, "coll")),
-                    HasCollectionReference::class.java,
-                ),
-                arrayOf(
-                    HasFieldReference(HasFieldReference.Unknown),
-                    HasFieldReference::class.java
-                ),
-                arrayOf(
-                    HasFieldReference(HasFieldReference.FromSchema(null, "abc")),
-                    HasFieldReference::class.java
-                ),
-                arrayOf(
-                    HasValueReference(HasValueReference.Unknown),
-                    HasValueReference::class.java
-                ),
-                arrayOf(
-                    HasValueReference(HasValueReference.Constant(null, 123, BsonInt32)),
-                    HasValueReference::class.java
-                ),
-                arrayOf(
-                    HasValueReference(HasValueReference.Runtime(null, BsonInt32)),
-                    HasValueReference::class.java
-                ),
-                arrayOf(
-                    HasValueReference(HasValueReference.Unknown),
-                    HasValueReference::class.java
-                ),
-                arrayOf(Named(Name.EQ), Named::class.java),
-            )
+        fun allCommands() = CommandType.entries.map { arrayOf(it, it.isSupported) }.toTypedArray()
+
+        @JvmStatic
+        fun allOperations() = Name.entries.map { arrayOf(it, it.isSupported) }.toTypedArray()
     }
 }
