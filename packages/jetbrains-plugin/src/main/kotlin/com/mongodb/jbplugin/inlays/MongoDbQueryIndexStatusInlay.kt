@@ -28,6 +28,7 @@ import com.mongodb.jbplugin.editor.dataSource
 import com.mongodb.jbplugin.editor.dialect
 import com.mongodb.jbplugin.i18n.Icons
 import com.mongodb.jbplugin.i18n.InspectionsAndInlaysMessages
+import com.mongodb.jbplugin.linting.InspectionCategory.PERFORMANCE
 import com.mongodb.jbplugin.linting.correctness.isNamespaceAvailableInCluster
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.mql.QueryContext
@@ -37,6 +38,7 @@ import com.mongodb.jbplugin.mql.components.HasExplain.ExplainPlanType.FULL
 import com.mongodb.jbplugin.mql.components.HasExplain.ExplainPlanType.SAFE
 import com.mongodb.jbplugin.settings.pluginSetting
 import com.mongodb.jbplugin.ui.viewModel.AnalysisScopeViewModel
+import com.mongodb.jbplugin.ui.viewModel.InspectionsViewModel
 import com.mongodb.jbplugin.ui.viewModel.SidePanelViewModel
 import org.jetbrains.jewel.bridge.JewelComposePanel
 import java.awt.Cursor
@@ -153,9 +155,11 @@ private object QueriesInFileCollector : InlayHintsCollector {
             inlayFactory.onClick(it, Left) { _, _ ->
                 val analysisScopeViewModel by element.project.service<AnalysisScopeViewModel>()
                 val sidePanelViewModel by element.project.service<SidePanelViewModel>()
+                val inspectionsViewModel by element.project.service<InspectionsViewModel>()
 
                 sidePanelViewModel.withOpenSidePanel {
                     analysisScopeViewModel.changeScopeToCurrentQuery()
+                    inspectionsViewModel.openCategory(PERFORMANCE)
                 }
             }
         }
