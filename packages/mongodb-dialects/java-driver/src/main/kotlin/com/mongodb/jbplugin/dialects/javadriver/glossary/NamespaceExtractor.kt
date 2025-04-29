@@ -123,19 +123,16 @@ object NamespaceExtractor {
         }
 
         return when (currentRef) {
-            is Either.Right ->
-                if (!doShareHierarchy(
-                        currentRef.value.element.findContainingClass(),
-                        currentClass
-                    )
-                ) {
+            is Either.Right -> {
+                val containingClass = currentRef.value.element.findContainingClassOrNull()
+                if (containingClass != null && !doShareHierarchy(containingClass, currentClass)) {
                     Either.Left(currentRef.value.element) as Either<PsiElement, PsiReference>
-                } else if (currentRef.value.element.findContainingClass() == currentClass) {
+                } else if (containingClass == currentClass) {
                     Either.Left(currentRef.value.element) as Either<PsiElement, PsiReference>
                 } else {
                     null
                 }
-            else -> currentRef
+            } else -> currentRef
         }
     }
 
