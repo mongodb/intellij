@@ -13,6 +13,7 @@ import com.mongodb.jbplugin.mql.components.Name
 import com.mongodb.jbplugin.utils.ModelAssertions.assertIndexCollectionIs
 import com.mongodb.jbplugin.utils.ModelAssertions.assertMongoDbIndexHasPartialExpression
 import com.mongodb.jbplugin.utils.ModelAssertions.assertMongoDbIndexIs
+import com.mongodb.jbplugin.utils.ModelAssertions.assertNoMongoDbIndex
 import com.mongodb.jbplugin.utils.ModelDsl.aggregate
 import com.mongodb.jbplugin.utils.ModelDsl.ascending
 import com.mongodb.jbplugin.utils.ModelDsl.constant
@@ -284,8 +285,7 @@ class IndexAnalyzerTest {
             emptyOptions()
         )
 
-        assertIndexCollectionIs("myDb.myColl".toNs(), result)
-        assertMongoDbIndexIs(emptyArray(), result)
+        assertNoMongoDbIndex(result)
     }
 
     @Test
