@@ -746,4 +746,134 @@ class Another {
         assertEquals("myDatabase", namespace.database)
         assertEquals("myCollection", namespace.collection)
     }
+
+    @ParsingTest(
+        "Repository.java",
+        """
+import com.mongodb.ReadConcern;import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;import com.mongodb.client.model.Filters;
+import java.util.List;
+import java.util.Optional;
+import org.bson.Document;
+import org.bson.codecs.pojo.annotations.BsonId;
+import org.bson.codecs.pojo.annotations.BsonProperty;
+
+class DaoConstants {
+    public static final String DB_NAME = "myDatabase";
+}
+
+class MongoClientContainer {
+    public MongoClient getClient() {
+        return null;
+    }
+}
+
+interface BaseDaoInterface<Entity> { 
+  MongoClient getClient();
+  MongoCollection<T> getCollection();
+}
+
+class BaseDao<Entity> implements BaseDaoInterface<Entity> {
+  private final MongoClientContainer clientContainer;
+  protected final String dbName;
+  protected final String collName;
+  private final Class<Entity> docClass;
+  
+  protected BaseDao(MongoClientContainer clientContainer, Class<Entity> entityClass, String dbName, String collectionName) {
+    this(clientContainer, entityClass, dbName, collectionName, false);
+  }
+  
+  protected BaseDao(MongoClientContainer clientContainer, Class<Entity> entityClass, String dbName, String collectionName, boolean unused) {
+    this.clientContainer = clientContainer;
+    this.dbName = dbName;
+    this.collName = collectionName;
+    this.docClass = entityClass;
+  }
+  
+  protected MongoClient getClient() {
+    return clientContainer.getClient();
+  }
+  
+  protected MongoCollection<T> getCollection() {
+    return getDatabase(getClient(), dbName)
+            .getCollection(collName, docClass)
+            .withCodecRegistry(CodecRegistries.fromRegistries());
+  }
+  
+  protected MongoDatabase getDatabase(MongoClient client, String databaseName) {
+    return client.getDatabase(databaseName);
+  }
+}
+
+class ActorDao extends BaseDao<Actor>, implements BaseDaoInterface<Actor> {
+  public ActorDao(MongoClient client, String dbName, String collectionName) {
+    super(client, Actor.class, Actor.DB, Actor.COLLECTION);
+  }
+  
+  public Optional<Actor> findById(String id) {
+    return Optional.ofNullable(getCollection().find(Filters.eq("_id", id)).first()); 
+  }
+  
+  @Override
+  protected MongoCollection<Actor> getCollection() {
+      return super.getCollection()
+                .withReadConcern(ReadConcern.MAJORITY)
+                .withWriteConcern(WriteConcern.MAJORITY);
+  }
+}
+
+class AnotherDao extends BaseDao<Another>, implements BaseDaoInterface<Actor> {
+  static final String DB = "myAnotherDatabase";
+  static final String COLLECTION = "myAnotherCollection";
+
+  public AnotherDao(MongoClient client, String dbName, String collectionName) {
+    super(client, Actor.class, DB, COLLECTION);
+  }
+}
+
+class AnotherDao2 extends BaseDao<Another>, implements BaseDaoInterface<Actor> {
+  static final String DB = "myAnotherDatabase";
+  static final String COLLECTION = "myAnotherCollection";
+
+  public AnotherDao2(MongoClient client, String dbName, String collectionName) {
+    super(client, Actor.class, DB, COLLECTION);
+  }
+}
+
+class AnotherDao3 extends BaseDao<Another> {
+  public AnotherDao3(MongoClient client) {
+    super(client, Actor.class, "myJsonDb", "myJsonColl");
+  }
+}
+
+class Actor {
+   public static final String DB = DaoConstants.DB_NAME;
+   public static final String COLLECTION = "myCollection";
+     
+  @BsonId
+  public String id;
+
+  @BsonProperty
+  public List<Document> policyAssignments;
+}
+
+class Another {
+  @BsonId
+  public String id;
+
+  @BsonProperty
+  public List<Document> policyAssignments;
+}
+        """,
+    )
+    fun `inheritance with document class and generics with interfaces and overridden methods`(psiFile: PsiFile) {
+        val methodToAnalyse = psiFile.getQueryAtMethod("ActorDao", "findById")
+        val namespace = (
+            NamespaceExtractor.extractNamespace(methodToAnalyse).reference
+                as HasCollectionReference.Known<PsiElement>
+            ).namespace
+        assertEquals("myDatabase", namespace.database)
+        assertEquals("myCollection", namespace.collection)
+    }
 }
