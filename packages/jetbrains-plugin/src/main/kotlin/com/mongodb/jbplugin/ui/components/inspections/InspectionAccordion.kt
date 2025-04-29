@@ -74,7 +74,7 @@ fun InspectionAccordion() {
     val openCategory by useViewModelState(InspectionsViewModel::openCategories, null)
     val inspectionsWithStatus by useViewModelState(InspectionsViewModel::inspectionsWithStatus, emptyMap())
 
-    val onOpenCategory by useViewModelMutator(InspectionsViewModel::openCategory)
+    val onOpenCategory by useViewModelMutator(InspectionsViewModel::toggleCategory)
     val onNavigateToQueryOfInsight by useViewModelMutator(InspectionsViewModel::visitQueryOfInsightInEditor)
     val onChangeScope by useViewModelMutator(AnalysisScopeViewModel::changeScope)
     val onEnableInspection by useViewModelMutator(InspectionsViewModel::enableInspection)
