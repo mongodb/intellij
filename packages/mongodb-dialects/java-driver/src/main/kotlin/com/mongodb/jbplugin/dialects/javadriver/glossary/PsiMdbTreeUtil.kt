@@ -47,13 +47,24 @@ import com.mongodb.jbplugin.mql.BsonUUID
 import com.mongodb.jbplugin.mql.components.IsCommand
 
 /**
- * Helper extension function to get the containing class of any element.
+ * Helper extension function to get the containing class of any element. Throws an exception
+ * when the element is not in a class.
  *
  * @return
  */
 fun PsiElement.findContainingClass(): PsiClass =
     parentOfType<PsiClass>(withSelf = true)
         ?: childrenOfType<PsiClass>().first()
+
+/**
+ * Helper extension function to get the containing class of any element. Returns null when the
+ * element is not in a class.
+ *
+ * @return
+ */
+fun PsiElement.findContainingClassOrNull(): PsiClass? =
+    parentOfType<PsiClass>(withSelf = true)
+        ?: childrenOfType<PsiClass>().firstOrNull()
 
 /**
  * Helper function to check if a type is a MongoDB Collection
