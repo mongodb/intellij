@@ -13,7 +13,6 @@ import com.intellij.openapi.application.EDT
 import com.intellij.openapi.editor.markup.GutterIconRenderer
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiLiteralExpression
-import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
 import com.mongodb.jbplugin.codeActions.AbstractMongoDbCodeActionBridge
 import com.mongodb.jbplugin.codeActions.MongoDbCodeAction
 import com.mongodb.jbplugin.codeActions.impl.runQuery.RunQueryModal
@@ -54,7 +53,7 @@ class RunQueryCodeActionBridge(coroutineScope: CoroutineScope) :
 internal object RunQueryCodeAction : MongoDbCodeAction {
     override fun visitMongoDbQuery(
         coroutineScope: CoroutineScope,
-        dataSource: LocalDataSource?,
+        dataSource: LocalDataSource,
         query: Node<PsiElement>,
         formatter: DialectFormatter
     ): LineMarkerInfo<PsiElement> {
@@ -68,10 +67,6 @@ internal object RunQueryCodeAction : MongoDbCodeAction {
                     delegateRunQueryToIntelliJ(query)
                 } else {
                     emitRunQueryEvent(query, dataSource)
-
-                    if (dataSource?.isConnected() != true) {
-                        return@LineMarkerInfo
-                    }
 
                     val queryContext = RunQueryModal(
                         query,

@@ -157,6 +157,10 @@ data class Node<S>(
             }.all { it }
         }
     }
+
+    fun isSupportedBlocking(): Boolean {
+        return runBlocking { isSupported() }
+    }
 }
 
 /**

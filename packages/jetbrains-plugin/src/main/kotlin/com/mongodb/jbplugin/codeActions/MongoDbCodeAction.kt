@@ -16,7 +16,7 @@ import kotlinx.coroutines.CoroutineScope
 interface MongoDbCodeAction {
     fun visitMongoDbQuery(
         coroutineScope: CoroutineScope,
-        dataSource: LocalDataSource?,
+        dataSource: LocalDataSource,
         query: Node<PsiElement>,
         formatter: DialectFormatter,
     ): LineMarkerInfo<PsiElement>?

@@ -84,7 +84,7 @@ abstract class AbstractMongoDbInspectionBridgeV2<Settings, I : Inspection>(
                     val queryService by expression.project.service<CachedQueryService>()
                     val query = queryService.queryAt(expression) ?: return@runReadAction
 
-                    if (fileInExpression.virtualFile != null && dataSource.isConnected()) {
+                    if (fileInExpression.virtualFile != null && dataSource.isConnected() && query.isSupportedBlocking()) {
                         val settings = buildSettings(query)
                         val problems = IntelliJBasedQueryInsightsHolder(coroutineScope, holder, inspectionsViewModel, ::afterInsight)
 
