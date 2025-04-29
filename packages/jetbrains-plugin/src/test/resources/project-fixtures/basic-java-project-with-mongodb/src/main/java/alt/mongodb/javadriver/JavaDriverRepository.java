@@ -48,7 +48,7 @@ public class JavaDriverRepository {
             .getDatabase("sample_mflix")
             .getCollection("movies")
             .find(
-                Filters.eq("rated", "abc")
+                Filters.eq("rated", Rate.TV_PG)
             )
             .first();
     }
