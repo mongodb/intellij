@@ -52,6 +52,10 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
         isCandidateForQuery(it)
     }!!
 
+    override fun parseCollectionReference(source: PsiElement): HasCollectionReference<PsiElement> {
+        return NamespaceExtractor.extractNamespace(source)
+    }
+
     override fun parse(source: PsiElement): Node<PsiElement> {
         val sourceDialect = HasSourceDialect(HasSourceDialect.DialectName.JAVA_DRIVER)
         val collectionReference = NamespaceExtractor.extractNamespace(source)

@@ -41,6 +41,62 @@ public final class Repository {
         this.collection = client.getDatabase("simple").getCollection("books");
     }
     
+    public Document completeQuery(ObjectId id) {
+        return this.collection.find(eq("_id", id)).first();
+    }
+    
+    public Document partialQuery(ObjectId id) {
+        return this.collection.find(eq("_id", id));
+    }
+    
+    public Document justNamespace() {
+        return this.collection;
+    }
+}
+        """,
+    )
+    fun `can extract collection reference`(psiFile: PsiFile) {
+        val queries = listOf(
+            psiFile.getQueryAtMethod("Repository", "completeQuery"),
+            psiFile.getQueryAtMethod("Repository", "partialQuery"),
+            psiFile.getQueryAtMethod("Repository", "justNamespace"),
+        )
+        for (query in queries) {
+            val collectionReference = JavaDriverDialect.parser.parseCollectionReference(
+                query
+            ).reference as HasCollectionReference.Known<*>
+            assertNotNull(
+                collectionReference,
+                "Collection reference should not be null for query: $query"
+            )
+            assertEquals(
+                "simple",
+                collectionReference.namespace.database,
+                "Incorrect database name for query: $query"
+            )
+            assertEquals(
+                "books",
+                collectionReference.namespace.collection,
+                "Incorrect collection name for query: $query"
+            )
+        }
+    }
+
+    @ParsingTest(
+        fileName = "Repository.java",
+        value = """
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import org.bson.types.ObjectId;
+import static com.mongodb.client.model.Filters.*;
+
+public final class Repository {
+    private final MongoCollection<Document> collection;
+    
+    public Repository(MongoClient client) {
+        this.collection = client.getDatabase("simple").getCollection("books");
+    }
+    
     public Document findBookById(ObjectId id) {
         return this.collection.find(eq("_id", id)).first();
     }
