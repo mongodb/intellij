@@ -10,7 +10,6 @@ import com.mongodb.jbplugin.mql.components.HasFieldReference
 import com.mongodb.jbplugin.mql.components.HasTargetCluster
 import com.mongodb.jbplugin.mql.components.IsCommand.CommandType
 import com.mongodb.jbplugin.mql.components.Name
-import com.mongodb.jbplugin.mql.components.Named
 import com.mongodb.jbplugin.mql.parser.components.allNodesWithSchemaFieldReferences
 import com.mongodb.jbplugin.mql.parser.components.whenAllNamedOperationsAreIn
 import com.mongodb.jbplugin.mql.parser.components.whenCommandIsAnyOf
@@ -142,12 +141,12 @@ data class Node<S>(
         return allFieldNames.hashCode()
     }
 
-    val SUPPORTED_COMMANDS = (CommandType.entries.filter { it.isSupported }).toSet()
-    val SUPPORTED_OPERATIONS = (Name.entries.filter { it.isSupported }).toSet()
+    private val supportedCommands = (CommandType.entries.filter { it.isSupported }).toSet()
+    private val supportedOperations = (Name.entries.filter { it.isSupported }).toSet()
     suspend fun isSupported(): Boolean {
         return withContext(Dispatchers.IO) {
-            val isCommandSupportedAsync = async { whenCommandIsAnyOf<S>(SUPPORTED_COMMANDS).parse(this@Node) }
-            val areOperationsSupportedAsync = async { whenAllNamedOperationsAreIn<S>(SUPPORTED_OPERATIONS).parse(this@Node) }
+            val isCommandSupportedAsync = async { whenCommandIsAnyOf<S>(supportedCommands).parse(this@Node) }
+            val areOperationsSupportedAsync = async { whenAllNamedOperationsAreIn<S>(supportedOperations).parse(this@Node) }
 
             listOf(
                 isCommandSupportedAsync,
