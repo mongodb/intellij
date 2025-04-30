@@ -7,9 +7,196 @@ import com.mongodb.jbplugin.dialects.javadriver.ParsingTest
 import com.mongodb.jbplugin.dialects.javadriver.getQueryAtMethod
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 
 @IntegrationTest
 class NamespaceExtractorTest {
+    @ParsingTest(
+        "Repository.java",
+        """
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import org.bson.types.ObjectId;
+import static com.mongodb.client.model.Filters.*;
+
+public final class Repository {
+    private final MongoClient client;
+    
+    public Repository(MongoClient client) {
+        this.client = client;
+    }
+    
+    public Document getBooks(ObjectId id) {
+        return client.getDatabase("simple").getCollection("books").find(eq("_id", id)).first();
+    }
+    
+    public Document getMovies(ObjectId id) {
+        return client.getDatabase("sample_mflix").getCollection("movies").find(eq("_id", id)).first();
+    }
+}
+      """
+    )
+    fun `extracts different namespaces from different queries in different methods`(psiFile: PsiFile) {
+        val bookQuery = psiFile.getQueryAtMethod("Repository", "getBooks")
+        val bookColReference = NamespaceExtractor.extractNamespace(
+            bookQuery
+        ).reference as HasCollectionReference.Known<*>
+        assertNotNull(bookColReference)
+        assertEquals("simple", bookColReference.namespace.database)
+        assertEquals("books", bookColReference.namespace.collection)
+
+        val movieQuery = psiFile.getQueryAtMethod("Repository", "getMovies")
+        val movieColReference = NamespaceExtractor.extractNamespace(
+            movieQuery
+        ).reference as HasCollectionReference.Known<*>
+        assertNotNull(movieColReference)
+        assertEquals("sample_mflix", movieColReference.namespace.database)
+        assertEquals("movies", movieColReference.namespace.collection)
+    }
+
+    @ParsingTest(
+        "Repository.java",
+        """
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import org.bson.types.ObjectId;
+import static com.mongodb.client.model.Filters.*;
+
+public final class Repository {
+    private final MongoClient client;
+    
+    public Repository(MongoClient client) {
+        this.client = client;
+    }
+    
+    // Two simple queries in the same method
+    public Document getBooks(ObjectId id) {
+        var movies = client.getDatabase("sample_mflix").getCollection("movies").find(eq("_id", id)).first();
+        return client.getDatabase("simple").getCollection("books").find(eq("_id", id)).first();
+    }
+    
+    // Two queries in the same method where one is getting both database and collection from a variable
+    public Document getBooks1(ObjectId id) {
+        var movies = client.getDatabase("sample_mflix").getCollection("movies").find(eq("_id", id)).first();
+        var database = client.getDatabase("simple");
+        var collection = database.getCollection("books");
+        return collection.find(eq("_id", id)).first();
+    }
+    
+    MongoDatabase db2 = client.getDatabase("simple");
+    MongoCollection<Document> coll2 = db2.getCollection("books");
+    
+    
+    // Two queries in the same method where one is getting both database and collection from a field
+    public Document getBooks2(ObjectId id) {
+        var movies = client.getDatabase("sample_mflix").getCollection("movies").find(eq("_id", id)).first();
+        return coll2.find(eq("_id", id)).first();
+    }
+    
+    MongoDatabase getDatabase() {
+        return client.getDatabase("simple");
+    }
+    
+    MongoCollection<Document> getCollection() {
+        return getDatabase().getCollection("books");
+    }
+    
+    // Two queries in the same method where one is getting both database and collection from a factory method
+    public Document getBooks3(ObjectId id) {
+        var movies = client.getDatabase("sample_mflix").getCollection("movies").find(eq("_id", id)).first();
+        return getCollection().find(eq("_id", id)).first();
+    }
+}
+      """
+    )
+    fun `extracts correct namespace even when there are multiple queries in the same method`(psiFile: PsiFile) {
+        val bookQueries = listOf(
+            psiFile.getQueryAtMethod("Repository", "getBooks"),
+            psiFile.getQueryAtMethod("Repository", "getBooks1"),
+            psiFile.getQueryAtMethod("Repository", "getBooks2"),
+            psiFile.getQueryAtMethod("Repository", "getBooks3"),
+        )
+
+        for (bookQuery in bookQueries) {
+            val bookColReference = NamespaceExtractor.extractNamespace(
+                bookQuery
+            ).reference as HasCollectionReference.Known<*>
+            assertNotNull(bookColReference)
+            assertEquals("simple", bookColReference.namespace.database)
+            assertEquals("books", bookColReference.namespace.collection)
+        }
+    }
+
+    @ParsingTest(
+        "Repository.java",
+        """
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.MongoDatabase;import org.bson.types.ObjectId;
+import static com.mongodb.client.model.Filters.*;
+
+public final class Repository {
+    private final MongoClient client;
+    private final MongoDatabase database;
+    
+    public Repository(MongoClient client, MongoDatabase database) {
+        this.client = client;
+        this.database = database;
+    }
+    
+    // Two simple queries in the same method
+    public Document getBooks(MongoDatabase db, ObjectId id) {
+        var movies = client.getDatabase("sample_mflix").getCollection("movies").find(eq("_id", id)).first();
+        return db.getCollection("books").find(eq("_id", id)).first();
+    }
+    
+    // Two queries in the same method where one is getting a collection from a variable
+    public Document getBooks1(MongoDatabase db, ObjectId id) {
+        var movies = client.getDatabase("sample_mflix").getCollection("movies").find(eq("_id", id)).first();
+        var collection = db.getCollection("books");
+        return collection.find(eq("_id", id)).first();
+    }
+    
+    MongoCollection<Document> coll2 = database.getCollection("books");
+    
+    
+    // Two queries in the same method where one is getting a collection from a field
+    public Document getBooks2(ObjectId id) {
+        var movies = client.getDatabase("sample_mflix").getCollection("movies").find(eq("_id", id)).first();
+        return coll2.find(eq("_id", id)).first();
+    }
+    
+    MongoCollection<Document> getCollection() {
+        return database.getCollection("books");
+    }
+    
+    // Two queries in the same method where one is getting a collection from a factory method
+    public Document getBooks3(ObjectId id) {
+        var movies = client.getDatabase("sample_mflix").getCollection("movies").find(eq("_id", id)).first();
+        return getCollection().find(eq("_id", id)).first();
+    }
+}
+      """
+    )
+    fun `extracts correct namespace (OnlyCollection) even when there are multiple queries in the same method`(psiFile: PsiFile) {
+        val bookQueries = listOf(
+            psiFile.getQueryAtMethod("Repository", "getBooks"),
+            psiFile.getQueryAtMethod("Repository", "getBooks1"),
+            psiFile.getQueryAtMethod("Repository", "getBooks2"),
+            psiFile.getQueryAtMethod("Repository", "getBooks3"),
+        )
+
+        for (bookQuery in bookQueries) {
+            val bookColReference = NamespaceExtractor.extractNamespace(
+                bookQuery
+            ).reference as HasCollectionReference.OnlyCollection<*>
+            assertNotNull(bookColReference)
+            assertEquals("books", bookColReference.collection)
+        }
+    }
+
     @ParsingTest(
         "Repository.java",
         """

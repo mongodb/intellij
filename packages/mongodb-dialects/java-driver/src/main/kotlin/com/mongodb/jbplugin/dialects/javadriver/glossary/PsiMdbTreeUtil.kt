@@ -22,6 +22,7 @@ import com.intellij.psi.PsiParenthesizedExpression
 import com.intellij.psi.PsiReferenceExpression
 import com.intellij.psi.PsiReturnStatement
 import com.intellij.psi.PsiType
+import com.intellij.psi.PsiVariable
 import com.intellij.psi.impl.source.PsiClassReferenceType
 import com.intellij.psi.impl.source.PsiImmediateClassType
 import com.intellij.psi.search.GlobalSearchScope
@@ -105,7 +106,7 @@ fun PsiClass.isMongoDbDatabaseClass(project: Project): Boolean {
 
     val mdbDatabaseClass =
         javaFacade.findClass(
-            "com.mongodb.client.MongoDatabase",
+            DATABASE_FQN,
             GlobalSearchScope.everythingScope(project),
         )
 
@@ -224,30 +225,44 @@ fun PsiMethodCallExpression.findMongoDbCollectionMethodCallForCommand(
 /**
  * Returns the reference to a MongoDB driver collection.
  */
-fun PsiElement.findMongoDbCollectionReference(): PsiExpression? {
+fun PsiElement.findMongoDbCollectionReference(): PsiExpression? = findMongoDbReference(
+    PsiType::isMongoDbCollectionClass
+)
+
+fun PsiElement.findMongoDbDatabaseReference(): PsiExpression? = findMongoDbReference(
+    PsiType::isMongoDbDatabaseClass
+)
+
+private fun PsiElement.findMongoDbReference(
+    isCorrectReference: PsiType.(Project) -> Boolean
+): PsiExpression? {
     when (this) {
         is PsiMethodCallExpression -> {
-            return if (methodExpression.type?.isMongoDbCollectionClass(project) == true) {
-                methodExpression
-            } else if (methodExpression.qualifierExpression is PsiMethodCallExpression) {
-                (methodExpression.qualifierExpression as PsiMethodCallExpression).findMongoDbCollectionReference()
-            } else if (methodExpression.qualifierExpression?.reference?.resolve() is PsiField) {
-                methodExpression.qualifierExpression
+            val qualifierExpression = methodExpression.qualifierExpression
+            return if (methodExpression.type?.isCorrectReference(project) == true) {
+                this
+            } else if (qualifierExpression is PsiMethodCallExpression) {
+                qualifierExpression.findMongoDbReference(isCorrectReference)
+            } else if (
+                qualifierExpression?.reference?.resolve() is PsiField ||
+                qualifierExpression?.reference?.resolve() is PsiVariable
+            ) {
+                qualifierExpression
             } else {
                 methodExpression.children.firstNotNullOfOrNull {
-                    it.findMongoDbCollectionReference()
+                    it.findMongoDbReference(isCorrectReference)
                 }
             }
         }
         is PsiExpression -> {
-            if (this.type?.isMongoDbCollectionClass(project) == true) {
+            if (this.type?.isCorrectReference(project) == true) {
                 return this
             }
 
             return null
         }
         else -> {
-            return children.firstNotNullOfOrNull { it.findMongoDbCollectionReference() }
+            return children.firstNotNullOfOrNull { it.findMongoDbReference(isCorrectReference) }
         }
     }
 }
