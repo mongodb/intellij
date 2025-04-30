@@ -34,7 +34,7 @@ object NamespaceExtractor {
      * PsiElement/s. So we try extracting the relevant information either from the provided
      * PsiElement or from the resolved PsiElement/s via the provided PsiElement.
      */
-    fun extractNamespaceFromWithinQueryAndReferences(
+    private fun extractNamespaceFromWithinQueryAndReferences(
         collectionRef: PsiElement
     ): HasCollectionReference<PsiElement> {
         val collection = extractCollectionFromCollectionRef(collectionRef)
@@ -61,7 +61,7 @@ object NamespaceExtractor {
         }
     }
 
-    fun extractCollectionFromCollectionRef(collectionRef: PsiElement): Pair<PsiElement, String>? {
+    private fun extractCollectionFromCollectionRef(collectionRef: PsiElement): Pair<PsiElement, String>? {
         val resolvedGetCollectionCall = collectionRef.resolveToMethodCallExpression { _, method ->
             method.name == "getCollection" &&
                 method.containingClass?.qualifiedName == DATABASE_FQN
@@ -72,8 +72,11 @@ object NamespaceExtractor {
         }
     }
 
-    fun extractDatabaseFromCollectionRef(collectionRef: PsiElement): Pair<PsiElement, String>? {
-        val databaseRef = collectionRef.findMongoDbDatabaseReference() ?: {
+    private fun extractDatabaseFromCollectionRef(collectionRef: PsiElement): Pair<PsiElement, String>? {
+        val foundDatabaseRef = collectionRef.findMongoDbDatabaseReference()
+        val databaseRef = if (foundDatabaseRef != null) {
+            foundDatabaseRef
+        } else {
             // If there is no database reference directly in the collectionRef element,
             // then it might be that the database reference is within the referenced
             // initializer expression, so we first need to resolve the provided collectionRef.
@@ -84,7 +87,7 @@ object NamespaceExtractor {
                 }
 
             resolvedGetCollectionCall?.findMongoDbDatabaseReference()
-        }() ?: return null
+        } ?: return null
 
         val resolvedGetDatabaseCall = databaseRef.resolveToMethodCallExpression { _, method ->
             method.name == "getDatabase" &&
@@ -96,7 +99,7 @@ object NamespaceExtractor {
         }
     }
 
-    fun extractNamespaceFromSurroundingContext(
+    private fun extractNamespaceFromSurroundingContext(
         query: PsiElement
     ): HasCollectionReference<PsiElement> {
         val currentClass = query.findContainingClass()
