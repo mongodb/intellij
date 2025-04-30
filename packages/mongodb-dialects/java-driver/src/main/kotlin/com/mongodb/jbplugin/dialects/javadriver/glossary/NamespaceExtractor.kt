@@ -14,10 +14,93 @@ import com.mongodb.jbplugin.mql.components.HasCollectionReference
 
 object NamespaceExtractor {
     fun extractNamespace(query: PsiElement): HasCollectionReference<PsiElement> {
-        val currentClass = query.findContainingClass()
-        val queryCollectionRef = query.findMongoDbCollectionReference() ?: query
+        val queryCollectionRef = query.findMongoDbCollectionReference()
+        // We will first try extracting the namespace directly from within the query or its
+        // resolvable elements, and if we fail (get an Unknown), then we will fall back to
+        // considering a broader scope for detecting the namespace.
+        if (queryCollectionRef != null) {
+            val collectionRef = extractNamespaceFromWithinQueryAndReferences(queryCollectionRef)
+            if (collectionRef.reference !is HasCollectionReference.Unknown) {
+                return collectionRef
+            }
+        }
 
-        val setupMethods = findAllCandidateSetupMethodsForQuery(queryCollectionRef)
+        return extractNamespaceFromSurroundingContext(query)
+    }
+
+    /**
+     * Given a PsiElement called collectionRef, it is possible that the PsiElement/s representing a
+     * Namespace are somehow referenced in the PsiElement itself or at least in its resolvable
+     * PsiElement/s. So we try extracting the relevant information either from the provided
+     * PsiElement or from the resolved PsiElement/s via the provided PsiElement.
+     */
+    fun extractNamespaceFromWithinQueryAndReferences(
+        collectionRef: PsiElement
+    ): HasCollectionReference<PsiElement> {
+        val collection = extractCollectionFromCollectionRef(collectionRef)
+        val database = extractDatabaseFromCollectionRef(collectionRef)
+        return if (collection != null && database != null) {
+            HasCollectionReference(
+                HasCollectionReference.Known(
+                    databaseSource = database.first,
+                    collectionSource = collection.first,
+                    namespace = Namespace(database.second, collection.second),
+                )
+            )
+        } else if (collection != null) {
+            HasCollectionReference(
+                HasCollectionReference.OnlyCollection(
+                    collectionSource = collection.first,
+                    collection = collection.second
+                )
+            )
+        } else {
+            HasCollectionReference(
+                HasCollectionReference.Unknown.cast()
+            )
+        }
+    }
+
+    fun extractCollectionFromCollectionRef(collectionRef: PsiElement): Pair<PsiElement, String>? {
+        val resolvedGetCollectionCall = collectionRef.resolveToMethodCallExpression { _, method ->
+            method.name == "getCollection" &&
+                method.containingClass?.qualifiedName == DATABASE_FQN
+        } ?: return null
+
+        return resolvedGetCollectionCall.argumentList.expressions.firstOrNull()?.let {
+            Pair(it, it.tryToResolveAsConstantString() ?: return null)
+        }
+    }
+
+    fun extractDatabaseFromCollectionRef(collectionRef: PsiElement): Pair<PsiElement, String>? {
+        val databaseRef = collectionRef.findMongoDbDatabaseReference() ?: {
+            // If there is no database reference directly in the collectionRef element,
+            // then it might be that the database reference is within the referenced
+            // initializer expression, so we first need to resolve the provided collectionRef.
+            val resolvedGetCollectionCall = collectionRef
+                .resolveToMethodCallExpression { _, method ->
+                    method.name == "getCollection" &&
+                        method.containingClass?.qualifiedName == DATABASE_FQN
+                }
+
+            resolvedGetCollectionCall?.findMongoDbDatabaseReference()
+        }() ?: return null
+
+        val resolvedGetDatabaseCall = databaseRef.resolveToMethodCallExpression { _, method ->
+            method.name == "getDatabase" &&
+                method.containingClass?.qualifiedName == MONGO_CLIENT_FQN
+        } ?: return null
+
+        return resolvedGetDatabaseCall.argumentList.expressions.firstOrNull()?.let {
+            Pair(it, it.tryToResolveAsConstantString() ?: return null)
+        }
+    }
+
+    fun extractNamespaceFromSurroundingContext(
+        query: PsiElement
+    ): HasCollectionReference<PsiElement> {
+        val currentClass = query.findContainingClass()
+        val setupMethods = findAllCandidateSetupMethodsForQuery(query)
         val resolvableConcepts = setupMethods.flatMap {
             findAllResolvableConceptsInMethod(it)
         }.distinctBy { (it.concept to it.usagePoint.textOffset) }
