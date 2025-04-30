@@ -84,6 +84,39 @@ public void exampleAggregate2() {
     @ParsingTest(
         """
 public FindIterable<Document> exampleFind() {
+    var x = client.getDatabase("myDatabase")
+        .getCollection(
+            <warning descr="Cannot resolve \"randomCollection\" collection in \"myDatabase\" database in the connected data source.">"randomCollection"</warning>
+        ).find(eq("nonExistingField", "123"));
+    
+    return client.getDatabase("myDatabase")
+            .getCollection(
+                <warning descr="Cannot resolve \"anotherRandomCollection\" collection in \"myDatabase\" database in the connected data source.">"anotherRandomCollection"</warning>
+            ).find(eq("nonExistingField", "123"));
+}
+""",
+    )
+    fun `shows collection not existing insight correctly when there are multiple queries in the same method`(
+        fixture: CodeInsightTestFixture,
+    ) {
+        val (dataSource, readModelProvider) = fixture.setupConnection()
+        fixture.specifyDialect(JavaDriverDialect)
+
+        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
+            ListDatabases(listOf(Database("myDatabase")))
+        )
+
+        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>())).thenReturn(
+            ListCollections(listOf(Collection("myCollection", "collection")))
+        )
+
+        fixture.enableInspections(MongoDbCollectionDoesNotExist::class.java)
+        fixture.testHighlighting()
+    }
+
+    @ParsingTest(
+        """
+public FindIterable<Document> exampleFind() {
     return client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .find(eq("nonExistingField", "123"));
