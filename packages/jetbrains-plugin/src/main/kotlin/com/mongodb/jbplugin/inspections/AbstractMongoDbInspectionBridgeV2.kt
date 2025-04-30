@@ -4,7 +4,6 @@ import com.intellij.codeInspection.AbstractBaseJavaLocalInspectionTool
 import com.intellij.codeInspection.LocalInspectionToolSession
 import com.intellij.codeInspection.ProblemHighlightType
 import com.intellij.codeInspection.ProblemsHolder
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.EDT
 import com.intellij.psi.*
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
@@ -20,6 +19,7 @@ import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.linting.QueryInsightsHolder
 import com.mongodb.jbplugin.linting.QueryInspection
 import com.mongodb.jbplugin.meta.service
+import com.mongodb.jbplugin.meta.withinReadActionBlocking
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.ui.viewModel.InspectionsViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -75,16 +75,16 @@ abstract class AbstractMongoDbInspectionBridgeV2<Settings, I : Inspection>(
             }
 
             private fun dispatchIfValidMongoDbQuery(expression: PsiElement) {
-                ApplicationManager.getApplication().runReadAction {
+                withinReadActionBlocking {
                     val fileInExpression = runCatching { expression.containingFile }.getOrNull()
-                    val dataSource = fileInExpression?.dataSource ?: return@runReadAction
-                    fileInExpression.dialect ?: return@runReadAction
+                    val dataSource = fileInExpression?.dataSource ?: return@withinReadActionBlocking
+                    fileInExpression.dialect ?: return@withinReadActionBlocking
 
                     val inspectionsViewModel by expression.project.service<InspectionsViewModel>()
                     val queryService by expression.project.service<CachedQueryService>()
-                    val query = queryService.queryAt(expression) ?: return@runReadAction
+                    val query = queryService.queryAt(expression) ?: return@withinReadActionBlocking
 
-                    if (fileInExpression.virtualFile != null && dataSource.isConnected()) {
+                    if (fileInExpression.virtualFile != null && dataSource.isConnected() && query.isSupportedBlocking()) {
                         val settings = buildSettings(query)
                         val problems = IntelliJBasedQueryInsightsHolder(coroutineScope, holder, inspectionsViewModel, ::afterInsight)
 

@@ -2,16 +2,16 @@ package com.mongodb.jbplugin.codeActions
 
 import com.intellij.codeInsight.daemon.LineMarkerInfo
 import com.intellij.codeInsight.daemon.LineMarkerProvider
-import com.intellij.database.dataSource.localDataSource
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.util.*
+import com.intellij.psi.util.PsiTreeUtil.getParentOfType
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
 import com.mongodb.jbplugin.editor.CachedQueryService
 import com.mongodb.jbplugin.editor.dataSource
 import com.mongodb.jbplugin.editor.dialect
 import com.mongodb.jbplugin.meta.service
+import com.mongodb.jbplugin.meta.withinReadActionBlocking
 import com.mongodb.jbplugin.mql.Node
 import kotlinx.coroutines.CoroutineScope
 
@@ -49,22 +49,22 @@ abstract class AbstractMongoDbCodeActionBridge(
     override fun getLineMarkerInfo(element: PsiElement) = dispatchIfValidMongoDbQuery(element)
 
     private fun dispatchIfValidMongoDbQuery(expression: PsiElement): LineMarkerInfo<PsiElement>? {
-        return ApplicationManager.getApplication().runReadAction<LineMarkerInfo<PsiElement>?> {
-            val fileInExpression =
-                PsiTreeUtil.getParentOfType(expression, PsiFile::class.java)
-                    ?: return@runReadAction null
+        return withinReadActionBlocking {
+            val fileInExpression = getParentOfType(expression, PsiFile::class.java)
+                ?: return@withinReadActionBlocking null
+
             val dataSource = fileInExpression.dataSource
-            val dialect = expression.containingFile.dialect ?: return@runReadAction null
+            val dialect = expression.containingFile.dialect ?: return@withinReadActionBlocking null
 
             val queryService by expression.project.service<CachedQueryService>()
             val query = queryService.queryAt(expression)
-            if (query == null || dataSource?.isConnected() != true) {
-                return@runReadAction null
+            if (query == null || !query.isSupportedBlocking() || dataSource?.isConnected() != true) {
+                return@withinReadActionBlocking null
             }
 
             codeAction.visitMongoDbQuery(
                 coroutineScope,
-                dataSource.localDataSource,
+                dataSource,
                 query,
                 dialect.formatter
             )

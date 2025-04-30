@@ -21,6 +21,25 @@ class JavaDriverRunQueryCodeActionTest {
     public FindIterable<Document> exampleFind() {
         return client.getDatabase("myDatabase")
                 .getCollection("myCollection")
+                .find(Filters.regex("field", "value"));
+    }
+        """,
+    )
+    fun `does not show the run query gutter icon for unsupported queries`(
+        fixture: CodeInsightTestFixture,
+    ) {
+        fixture.setupConnection()
+        fixture.specifyDialect(JavaDriverDialect)
+
+        val gutters = fixture.findAllGutters()
+        assertNull(gutters.find { it.icon == Icons.runQueryGutter })
+    }
+
+    @ParsingTest(
+        value = """
+    public FindIterable<Document> exampleFind() {
+        return client.getDatabase("myDatabase")
+                .getCollection("myCollection")
                 .find();
     }
         """,

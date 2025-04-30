@@ -91,6 +91,10 @@ private object QueriesInFileCollector : InlayHintsCollector {
         val query = queryService.queryAt(element) ?: return true
         val readModelProvider by element.project.service<DataGripBasedReadModelProvider>()
 
+        if (!query.isSupportedBlocking()) {
+            return false
+        }
+
         val queryWithExplainPlan = query.with(HasExplain(explainPlanType))
         val queryContext = QueryContext.empty(automaticallyRun = true)
 

@@ -8,11 +8,19 @@ import com.mongodb.jbplugin.mql.adt.Either
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasFieldReference
 import com.mongodb.jbplugin.mql.components.HasTargetCluster
+import com.mongodb.jbplugin.mql.components.IsCommand.CommandType
+import com.mongodb.jbplugin.mql.components.Name
 import com.mongodb.jbplugin.mql.parser.components.allNodesWithSchemaFieldReferences
+import com.mongodb.jbplugin.mql.parser.components.whenAllNamedOperationsAreIn
+import com.mongodb.jbplugin.mql.parser.components.whenCommandIsAnyOf
 import com.mongodb.jbplugin.mql.parser.filterNotNullMany
 import com.mongodb.jbplugin.mql.parser.mapMany
 import com.mongodb.jbplugin.mql.parser.parse
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 
 /** A component represents the semantics of a Node. When a Node has some special meaning, we will attach a component
  * that adds that specific meaning. For example, take into consideration the following Java Query:
@@ -58,11 +66,6 @@ data class Node<S>(
     val components: List<Component>,
 ) {
     inline fun <reified C : Component> component(): C? = components.firstOrNull { it is C } as C?
-
-    fun <C : Component> component(withClass: Class<C>): C? = components.firstOrNull {
-        withClass.isInstance(it)
-    } as C?
-
     inline fun <reified C : Component> components(): List<C> = components.filterIsInstance<C>()
 
     fun with(component: Component): Node<S> {
@@ -136,6 +139,26 @@ data class Node<S>(
         }
 
         return allFieldNames.hashCode()
+    }
+
+    private val supportedCommands = (CommandType.entries.filter { it.isSupported }).toSet()
+    private val supportedOperations = (Name.entries.filter { it.isSupported }).toSet()
+    suspend fun isSupported(): Boolean {
+        return withContext(Dispatchers.IO) {
+            val isCommandSupportedAsync = async { whenCommandIsAnyOf<S>(supportedCommands).parse(this@Node) }
+            val areOperationsSupportedAsync = async { whenAllNamedOperationsAreIn<S>(supportedOperations).parse(this@Node) }
+
+            listOf(
+                isCommandSupportedAsync,
+                areOperationsSupportedAsync
+            ).awaitAll().map {
+                it.orElse { false }
+            }.all { it }
+        }
+    }
+
+    fun isSupportedBlocking(): Boolean {
+        return runBlocking { isSupported() }
     }
 }
 

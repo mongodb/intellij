@@ -115,11 +115,11 @@ inline fun <reified OO, I, E, O> Parser<I, E, O>.mapAs(): Parser<I, E, OO> {
 /**
  * Returns a parser that maps the error of the previous parser.
  */
-fun <I, E, O, EE> Parser<I, E, O>.mapError(mapFn: (E) -> EE): Parser<I, EE, O> {
+fun <I, E, O> Parser<I, E, O>.recoverError(mapFn: (E) -> O): Parser<I, E, O> {
     return { input ->
         when (val result = this(input)) {
-            is Either.Left -> Either.left(mapFn(result.value))
-            is Either.Right -> Either.right(result.value)
+            is Either.Left -> Either.right(mapFn(result.value))
+            is Either.Right -> result
         }
     }
 }

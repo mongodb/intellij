@@ -5,6 +5,9 @@ import com.mongodb.jbplugin.mql.adt.Either
 import com.mongodb.jbplugin.mql.components.Name
 import com.mongodb.jbplugin.mql.components.Named
 import com.mongodb.jbplugin.mql.parser.Parser
+import com.mongodb.jbplugin.mql.parser.anyError
+import com.mongodb.jbplugin.mql.parser.map
+import com.mongodb.jbplugin.mql.parser.recoverError
 
 data object HasNoNamedOperation
 
@@ -24,4 +27,11 @@ fun <S> extractOperation(): Parser<Node<S>, HasNoNamedOperation, Named> {
             Either.left(HasNoNamedOperation)
         }
     }
+}
+
+fun <S> whenAllNamedOperationsAreIn(names: Set<Name>): Parser<Node<S>, Any, Boolean> {
+    return allFiltersRecursively<S>()
+        .anyError()
+        .map { filters -> filters.all { names.contains(it.component<Named>()?.name) } }
+        .recoverError { it is NoFilters }
 }
