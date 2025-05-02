@@ -99,7 +99,7 @@ public FindIterable<Document> exampleFind() {
     )
     fun `shows collection not existing insight correctly when there are multiple queries in the same method`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
