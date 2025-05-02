@@ -21,6 +21,8 @@ import com.mongodb.jbplugin.mql.components.HasFieldReference.FromSchema
 import com.mongodb.jbplugin.mql.flattenAnyOfReferences
 import com.mongodb.jbplugin.mql.toBsonType
 
+internal const val MONGO_CLIENT_FQN = "com.mongodb.client.MongoClient"
+internal const val DATABASE_FQN = "com.mongodb.client.MongoDatabase"
 private const val COLLECTION_FQN = "com.mongodb.client.MongoCollection"
 private const val SESSION_FQN = "com.mongodb.client.ClientSession"
 private const val FILTERS_FQN = "com.mongodb.client.model.Filters"

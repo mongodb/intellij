@@ -10,7 +10,7 @@ import com.intellij.psi.PsiManager
 import com.intellij.psi.util.CachedValue
 import com.intellij.psi.util.CachedValueProvider
 import com.intellij.psi.util.CachedValuesManager
-import com.intellij.psi.util.PsiTreeUtil
+import com.intellij.psi.util.PsiTreeUtil.getParentOfType
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
 import com.mongodb.jbplugin.accessadapter.slice.BuildInfo
@@ -51,8 +51,7 @@ class CachedQueryService(
     private val rwLock: ReentrantReadWriteLock = ReentrantReadWriteLock(true)
 
     fun queryAt(expression: PsiElement): Node<PsiElement>? {
-        val fileInExpression =
-            PsiTreeUtil.getParentOfType(expression, PsiFile::class.java) ?: return null
+        val fileInExpression = getParentOfType(expression, PsiFile::class.java) ?: return null
         val dataSource = fileInExpression.dataSource
 
         val dialect = expression.containingFile.dialect ?: return null
@@ -73,10 +72,10 @@ class CachedQueryService(
 
         val connectionStateViewModel by project.service<ConnectionStateViewModel>()
         val cachedValue = cacheManager.createCachedValue {
-            val parsedAst = dialect.parser.parse(expression)
+            val parsedAst = runCatching { dialect.parser.parse(expression) }.getOrNull()
             val namespaceOfQuery = extractNamespaceOfQuery(parsedAst)
 
-            if (namespaceOfQuery != null) {
+            if (parsedAst != null && namespaceOfQuery != null) {
                 // we get an exclusive lock because we are in IntelliJ's parser thread. Essentially,
                 // this is the only thread who should update the cached queries.
                 // We do this in the cached value because we want to update the cached queries
@@ -138,7 +137,11 @@ class CachedQueryService(
      * We need this because in Spring Data we need the context of the project to get the actual
      * namespace (the database is either in the application.yaml or in the toolbar).
      */
-    private fun extractNamespaceOfQuery(query: Node<PsiElement>): Namespace? {
+    private fun extractNamespaceOfQuery(query: Node<PsiElement>?): Namespace? {
+        if (query == null) {
+            return null
+        }
+
         val ref = query.component<HasCollectionReference<PsiElement>>()?.reference as? Known
         if (ref == null && query.source.containingFile.database != null) {
             val decoratedQuery = query.queryWithOverwrittenDatabase(

@@ -30,191 +30,191 @@ interface HasQueryRole {
  *
  * @property canonical
  */
-enum class Name(val canonical: String) : HasQueryRole {
-    ALL("all") {
+enum class Name(val canonical: String, val isSupported: Boolean) : HasQueryRole {
+    ALL("all", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    AND("and") {
+    AND("and", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    BITS_ALL_CLEAR("bitsAllClear") {
+    BITS_ALL_CLEAR("bitsAllClear", isSupported = false) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    BITS_ALL_SET("bitsAllSet") {
+    BITS_ALL_SET("bitsAllSet", isSupported = false) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    BITS_ANY_CLEAR("bitsAnyClear") {
+    BITS_ANY_CLEAR("bitsAnyClear", isSupported = false) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    BITS_ANY_SET("bitsAnySet") {
+    BITS_ANY_SET("bitsAnySet", isSupported = false) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    COMBINE("combine") {
+    COMBINE("combine", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    ELEM_MATCH("elementMatch") {
+    ELEM_MATCH("elementMatch", isSupported = false) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    EQ("eq") {
+    EQ("eq", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.EQUALITY
     },
-    EXISTS("exists") {
+    EXISTS("exists", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    GEO_INTERSECTS("geoIntersects") {
+    GEO_INTERSECTS("geoIntersects", isSupported = false) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.RANGE
     },
-    GEO_WITHIN("geoWithin") {
+    GEO_WITHIN("geoWithin", isSupported = false) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.RANGE
     },
-    GEO_WITHIN_BOX("geoWithinBox") {
+    GEO_WITHIN_BOX("geoWithinBox", isSupported = false) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.RANGE
     },
-    GEO_WITHIN_CENTER("geoWithinCenter") {
+    GEO_WITHIN_CENTER("geoWithinCenter", isSupported = false) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.RANGE
     },
-    GEO_WITHIN_CENTER_SPHERE("geoWithinCenterSphere") {
+    GEO_WITHIN_CENTER_SPHERE("geoWithinCenterSphere", isSupported = false) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.RANGE
     },
-    GEO_WITHIN_POLYGON("geoWithinPolygon") {
+    GEO_WITHIN_POLYGON("geoWithinPolygon", isSupported = false) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.RANGE
     },
-    GT("gt") {
+    GT("gt", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.RANGE
     },
-    GTE("gte") {
+    GTE("gte", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.RANGE
     },
-    IN("in") {
+    IN("in", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.RANGE
     },
-    INC("inc") {
+    INC("inc", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    LT("lt") {
+    LT("lt", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.RANGE
     },
-    LTE("lte") {
+    LTE("lte", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.RANGE
     },
-    NE("ne") {
+    NE("ne", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.RANGE
     },
-    NEAR("near") {
+    NEAR("near", isSupported = false) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.RANGE
     },
-    NEAR_SPHERE("nearSphere") {
+    NEAR_SPHERE("nearSphere", isSupported = false) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.RANGE
     },
-    NIN("nin") {
+    NIN("nin", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.RANGE
     },
-    NOR("nor") {
+    NOR("nor", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.UNION
     },
-    NOT("not") {
+    NOT("not", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    OR("or") {
+    OR("or", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.UNION
     },
-    REGEX("regex") {
+    REGEX("regex", isSupported = false) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.RANGE
     },
-    SET("set") {
+    SET("set", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    SET_ON_INSERT("setOnInsert") {
+    SET_ON_INSERT("setOnInsert", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    SIZE("size") {
+    SIZE("size", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    TEXT("text") {
+    TEXT("text", isSupported = false) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.RANGE
     },
-    TYPE("type") {
+    TYPE("type", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    UNSET("unset") {
+    UNSET("unset", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    MATCH("match") {
+    MATCH("match", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    PROJECT("project") {
+    PROJECT("project", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    INCLUDE("include") {
+    INCLUDE("include", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    EXCLUDE("exclude") {
+    EXCLUDE("exclude", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    GROUP("group") {
+    GROUP("group", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    SUM("sum") {
+    SUM("sum", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    AVG("avg") {
+    AVG("avg", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    FIRST("first") {
+    FIRST("first", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    LAST("last") {
+    LAST("last", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    TOP("top") {
+    TOP("top", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    TOP_N("topN") {
+    TOP_N("topN", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    BOTTOM("bottom") {
+    BOTTOM("bottom", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    BOTTOM_N("bottomN") {
+    BOTTOM_N("bottomN", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    MAX("max") {
+    MAX("max", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.SORT
     },
-    MIN("min") {
+    MIN("min", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.SORT
     },
-    PUSH("push") {
+    PUSH("push", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    PULL("pull") {
+    PULL("pull", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    PULL_ALL("pullAll") {
+    PULL_ALL("pullAll", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    POP("pop") {
+    POP("pop", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    ADD_TO_SET("addToSet") {
+    ADD_TO_SET("addToSet", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    SORT("sort") {
+    SORT("sort", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.SORT
     },
-    ASCENDING("ascending") {
+    ASCENDING("ascending", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.SORT
     },
-    DESCENDING("descending") {
+    DESCENDING("descending", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.SORT
     },
-    ADD_FIELDS("addFields") {
+    ADD_FIELDS("addFields", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    UNWIND("unwind") {
+    UNWIND("unwind", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    UNKNOWN("<unknown operator>") {
+    UNKNOWN("<unknown operator>", isSupported = false) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     };
 

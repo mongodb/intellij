@@ -54,7 +54,7 @@ class RunQueryCodeActionBridge(coroutineScope: CoroutineScope) :
 internal object RunQueryCodeAction : MongoDbCodeAction {
     override fun visitMongoDbQuery(
         coroutineScope: CoroutineScope,
-        dataSource: LocalDataSource?,
+        dataSource: LocalDataSource,
         query: Node<PsiElement>,
         formatter: DialectFormatter
     ): LineMarkerInfo<PsiElement> {
@@ -69,7 +69,7 @@ internal object RunQueryCodeAction : MongoDbCodeAction {
                 } else {
                     emitRunQueryEvent(query, dataSource)
 
-                    if (dataSource?.isConnected() != true) {
+                    if (!dataSource.isConnected()) {
                         return@LineMarkerInfo
                     }
 

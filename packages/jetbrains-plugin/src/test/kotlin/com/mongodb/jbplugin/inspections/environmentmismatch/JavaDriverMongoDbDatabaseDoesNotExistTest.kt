@@ -78,6 +78,33 @@ public void exampleAggregate2() {
     @ParsingTest(
         """
 public FindIterable<Document> exampleFind() {
+    var x = client.getDatabase(
+        <warning descr="Cannot resolve \"bingo\" database reference in the connected data source.">"bingo"</warning>
+    ).getCollection("myCollection").find(eq("nonExistingField", "123"));
+    
+    return client.getDatabase(
+        <warning descr="Cannot resolve \"bango\" database reference in the connected data source.">"bango"</warning>
+    ).getCollection("myCollection").find(eq("nonExistingField", "123"));
+}
+""",
+    )
+    fun `shows database not existing insight correctly when there are multiple queries in the same method`(
+        fixture: CodeInsightTestFixture,
+    ) {
+        val (dataSource, readModelProvider) = fixture.setupConnection()
+        fixture.specifyDialect(JavaDriverDialect)
+
+        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
+            ListDatabases(listOf(Database("myDatabase")))
+        )
+
+        fixture.enableInspections(MongoDbDatabaseDoesNotExist::class.java)
+        fixture.testHighlighting()
+    }
+
+    @ParsingTest(
+        """
+public FindIterable<Document> exampleFind() {
     return client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .find(eq("nonExistingField", "123"));
