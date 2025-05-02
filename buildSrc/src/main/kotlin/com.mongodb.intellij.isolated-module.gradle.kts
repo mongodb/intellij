@@ -21,7 +21,6 @@ kotlin {
         moduleName = project.name
         version = project.version
 
-        useEsModules()
         generateTypeScriptDefinitions()
         browser {
             testTask {

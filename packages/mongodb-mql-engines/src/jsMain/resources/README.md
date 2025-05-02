@@ -6,7 +6,7 @@ index suggestions.
 ## Example Usage:
 
 ```js
-import * as mql from 'mongodb-mql-engines';
+const mql = require('mongodb-mql-engines');
 
 const sampleDocuments = [ { a: 1, b: 2 }, { a: 5, b: true } ]
 
