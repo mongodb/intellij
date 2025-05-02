@@ -31,6 +31,7 @@ import com.mongodb.jbplugin.i18n.InspectionsAndInlaysMessages
 import com.mongodb.jbplugin.linting.InspectionCategory.PERFORMANCE
 import com.mongodb.jbplugin.linting.correctness.isNamespaceAvailableInCluster
 import com.mongodb.jbplugin.meta.service
+import com.mongodb.jbplugin.meta.withDefaultTimeoutOrNull
 import com.mongodb.jbplugin.mql.QueryContext
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasExplain
@@ -41,11 +42,9 @@ import com.mongodb.jbplugin.ui.viewModel.AnalysisScopeViewModel
 import com.mongodb.jbplugin.ui.viewModel.InspectionsViewModel
 import com.mongodb.jbplugin.ui.viewModel.SidePanelViewModel
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeoutOrNull
 import org.jetbrains.jewel.bridge.JewelComposePanel
 import java.awt.Cursor
 import javax.swing.JComponent
-import kotlin.time.Duration.Companion.seconds
 
 class MongoDbQueryIndexStatusInlay : InlayHintsProvider<Unit> {
     override val name: String = InspectionsAndInlaysMessages.message("inlay.indexing.name")
@@ -99,7 +98,7 @@ private object QueriesInFileCollector : InlayHintsCollector {
 
         val collectionReference = query.component<HasCollectionReference<PsiElement>>()?.reference
         val skipInlayDecoration = runBlocking {
-            withTimeoutOrNull(1.seconds) {
+            withDefaultTimeoutOrNull {
                 collectionReference !is HasCollectionReference.Known ||
                     !collectionReference.namespace.isValid ||
                     !collectionReference.namespace.isNamespaceAvailableInCluster(
@@ -115,7 +114,7 @@ private object QueriesInFileCollector : InlayHintsCollector {
 
         val explainPlan = runCatching {
             runBlocking {
-                withTimeoutOrNull(1.seconds) {
+                withDefaultTimeoutOrNull {
                     readModelProvider.slice(
                         dataSource,
                         ExplainQuery.Slice(
