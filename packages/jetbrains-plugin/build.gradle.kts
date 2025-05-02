@@ -49,6 +49,7 @@ configurations {
         exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib")
         exclude(group = "org.jetbrains.kotlin", module = "kotlin-reflect")
         exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
+        exclude(group = "org.jetbrains.jewel", module = "jewel-int-ui-standalone-243")
     }
 }
 dependencies {

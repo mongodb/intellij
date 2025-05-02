@@ -26,6 +26,7 @@ import com.mongodb.jbplugin.settings.pluginSetting
 import com.mongodb.jbplugin.ui.viewModel.ConnectionStateViewModel
 import io.github.z4kn4fein.semver.Version
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.runBlocking
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
@@ -157,31 +158,33 @@ class CachedQueryService(
             query.queryWithOverwrittenDatabase(it)
         } ?: query
 
-        return runCatching {
-            if (dataSource != null && dataSource.isConnected()) {
-                val readModel by query.source.project.service<DataGripBasedReadModelProvider>()
-                val buildInfo = readModel.slice(dataSource, BuildInfo.Slice)
+        return runBlocking {
+            runCatching {
+                if (dataSource != null && dataSource.isConnected()) {
+                    val readModel by query.source.project.service<DataGripBasedReadModelProvider>()
+                    val buildInfo = readModel.slice(dataSource, BuildInfo.Slice)
 
-                val queryWithTargetCluster = queryWithDb.withTargetCluster(
-                    HasTargetCluster(Version.parse(buildInfo.version))
-                )
+                    val queryWithTargetCluster = queryWithDb.withTargetCluster(
+                        HasTargetCluster(Version.parse(buildInfo.version))
+                    )
 
-                val knownReference = queryWithTargetCluster.component<HasCollectionReference<*>>()?.reference as? Known<*>
-                if (knownReference != null) {
-                    val sampleSize by pluginSetting { ::sampleSize }
-                    val collectionSchema = readModel.slice(
-                        dataSource,
-                        GetCollectionSchema.Slice(knownReference.namespace, sampleSize)
-                    )
-                    queryWithTargetCluster.queryWithInjectedCollectionSchema(
-                        collectionSchema.schema
-                    )
+                    val knownReference = queryWithTargetCluster.component<HasCollectionReference<*>>()?.reference as? Known<*>
+                    if (knownReference != null) {
+                        val sampleSize by pluginSetting { ::sampleSize }
+                        val collectionSchema = readModel.slice(
+                            dataSource,
+                            GetCollectionSchema.Slice(knownReference.namespace, sampleSize)
+                        )
+                        queryWithTargetCluster.queryWithInjectedCollectionSchema(
+                            collectionSchema.schema
+                        )
+                    } else {
+                        queryWithTargetCluster
+                    }
                 } else {
-                    queryWithTargetCluster
+                    queryWithDb
                 }
-            } else {
-                queryWithDb
-            }
-        }.getOrDefault(queryWithDb)
+            }.getOrDefault(queryWithDb)
+        }
     }
 }

@@ -88,7 +88,9 @@ abstract class AbstractMongoDbInspectionBridgeV2<Settings, I : Inspection>(
                         val settings = buildSettings(query)
                         val problems = IntelliJBasedQueryInsightsHolder(coroutineScope, holder, inspectionsViewModel, ::afterInsight)
 
-                        runBlocking { queryInspection.run(query, problems, settings) }
+                        runBlocking(Dispatchers.IO) {
+                            queryInspection.run(query, problems, settings)
+                        }
                     }
                 }
             }

@@ -12,12 +12,17 @@ import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.observability.TelemetryEvent
 import com.mongodb.jbplugin.observability.TelemetryService
 import com.mongodb.jbplugin.observability.useLogMessage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 private val logger: Logger = logger<NewConnectionActivatedProbe>()
 
 /** This probe is emitted when a new connection happens through DataGrip.
  */
-class NewConnectionActivatedProbe : DatabaseSessionStateListener {
+class NewConnectionActivatedProbe(
+    private val coroutineScope: CoroutineScope
+) : DatabaseSessionStateListener {
     override fun clientAttached(client: VisibleDatabaseSessionClient) {
     }
 
@@ -43,28 +48,30 @@ class NewConnectionActivatedProbe : DatabaseSessionStateListener {
             return
         }
 
-        val serverInfo = readModelProvider.slice(dataSource, BuildInfo.Slice)
+        coroutineScope.launch(Dispatchers.IO) {
+            val serverInfo = readModelProvider.slice(dataSource, BuildInfo.Slice)
 
-        val newConnectionEvent =
-            TelemetryEvent.NewConnection(
-                isAtlas = serverInfo.isAtlas,
-                isLocalAtlas = serverInfo.isLocalAtlas,
-                isLocalhost = serverInfo.isLocalhost,
-                isEnterprise = serverInfo.isEnterprise,
-                isGenuine = serverInfo.isGenuineMongoDb,
-                nonGenuineServerName = serverInfo.nonGenuineVariant,
-                serverOsFamily = serverInfo.buildEnvironment["target_os"],
-                atlasHost = serverInfo.atlasHost,
-                version = serverInfo.version,
+            val newConnectionEvent =
+                TelemetryEvent.NewConnection(
+                    isAtlas = serverInfo.isAtlas,
+                    isLocalAtlas = serverInfo.isLocalAtlas,
+                    isLocalhost = serverInfo.isLocalhost,
+                    isEnterprise = serverInfo.isEnterprise,
+                    isGenuine = serverInfo.isGenuineMongoDb,
+                    nonGenuineServerName = serverInfo.nonGenuineVariant,
+                    serverOsFamily = serverInfo.buildEnvironment["target_os"],
+                    atlasHost = serverInfo.atlasHost,
+                    version = serverInfo.version,
+                )
+
+            telemetryService.sendEvent(newConnectionEvent)
+
+            logger.info(
+                useLogMessage("New connection activated")
+                    .mergeTelemetryEventProperties(newConnectionEvent)
+                    .build(),
             )
-
-        telemetryService.sendEvent(newConnectionEvent)
-
-        logger.info(
-            useLogMessage("New connection activated")
-                .mergeTelemetryEventProperties(newConnectionEvent)
-                .build(),
-        )
+        }
     }
 
     override fun disconnected(session: DatabaseSession) {

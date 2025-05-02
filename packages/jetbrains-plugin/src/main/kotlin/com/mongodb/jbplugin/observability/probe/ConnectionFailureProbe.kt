@@ -14,6 +14,9 @@ import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.observability.TelemetryEvent
 import com.mongodb.jbplugin.observability.TelemetryService
 import com.mongodb.jbplugin.observability.useLogMessage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.sql.SQLException
 
 private val logger: Logger = logger<NewConnectionActivatedProbe>()
@@ -21,7 +24,9 @@ private val logger: Logger = logger<NewConnectionActivatedProbe>()
 /** This probe is emitted when a connection error happens in DataGrip. It connects
  * directly into DataGrip extension points, so it shouldn't be instantiated directly.
  */
-class ConnectionFailureProbe : DatabaseConnectionManager.Listener {
+class ConnectionFailureProbe(
+    private val coroutineScope: CoroutineScope
+) : DatabaseConnectionManager.Listener {
     override fun connectionChanged(
         connection: DatabaseConnection,
         added: Boolean,
@@ -42,28 +47,30 @@ class ConnectionFailureProbe : DatabaseConnectionManager.Listener {
         val telemetryService by service<TelemetryService>()
         val readModelProvider by project.service<DataGripBasedReadModelProvider>()
 
-        val dataSource = connectionPoint.dataSource
-        val serverInfo = readModelProvider.slice(dataSource, BuildInfo.Slice)
-        val telemetryEvent =
-            if (exception is RemoteObject.ForeignException) {
-                connectionFailureEvent(
-                    extractMongoDbExceptionCode(exception),
-                    exception.originalClassName!!,
-                    serverInfo
-                )
-            } else {
-                connectionFailureEvent("<unk>", th.javaClass.simpleName, serverInfo)
-            }
+        coroutineScope.launch(Dispatchers.IO) {
+            val dataSource = connectionPoint.dataSource
+            val serverInfo = readModelProvider.slice(dataSource, BuildInfo.Slice)
+            val telemetryEvent =
+                if (exception is RemoteObject.ForeignException) {
+                    connectionFailureEvent(
+                        extractMongoDbExceptionCode(exception),
+                        exception.originalClassName!!,
+                        serverInfo
+                    )
+                } else {
+                    connectionFailureEvent("<unk>", th.javaClass.simpleName, serverInfo)
+                }
 
-        telemetryService.sendEvent(telemetryEvent)
-        logger.warn(
-            useLogMessage("Failure connecting to cluster")
-                .put("isMongoDBException", exception is RemoteObject.ForeignException)
-                .put("exceptionMessage", th.message ?: "<no-message>")
-                .put("stackTrace", th.stackTrace.joinToString())
-                .mergeTelemetryEventProperties(telemetryEvent)
-                .build(),
-        )
+            telemetryService.sendEvent(telemetryEvent)
+            logger.warn(
+                useLogMessage("Failure connecting to cluster")
+                    .put("isMongoDBException", exception is RemoteObject.ForeignException)
+                    .put("exceptionMessage", th.message ?: "<no-message>")
+                    .put("stackTrace", th.stackTrace.joinToString())
+                    .mergeTelemetryEventProperties(telemetryEvent)
+                    .build(),
+            )
+        }
     }
 
     private fun extractMongoDbExceptionCode(exception: RemoteObject.ForeignException): String {

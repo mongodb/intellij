@@ -12,10 +12,14 @@ import com.mongodb.jbplugin.accessadapter.MongoDbDriver
 import com.mongodb.jbplugin.accessadapter.MongoDbReadModelProvider
 import com.mongodb.jbplugin.accessadapter.Slice
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.DataGripMongoDbDriver
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import org.jetbrains.annotations.VisibleForTesting
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentMap
+import java.util.concurrent.locks.ReentrantReadWriteLock
+import kotlin.concurrent.read
+import kotlin.concurrent.write
+import kotlin.time.Duration.Companion.seconds
 
 private typealias DriverFactory = (Project, LocalDataSource) -> MongoDbDriver
 
@@ -56,27 +60,39 @@ class DataGripBasedReadModelProvider(
      * result. Otherwise, we call the slice and store the current modificationCount along with the
      * result of the query.
      */
-    private val cachedValues: ConcurrentMap<String, Pair<Long, *>> = ConcurrentHashMap()
+    private val cachedValues = mutableMapOf<String, Pair<Long, *>>()
+    private val rwLock = ReentrantReadWriteLock(true)
 
-    override fun <T : Any> slice(
+    override suspend fun <T : Any> slice(
         dataSource: LocalDataSource,
         slice: Slice<T>,
     ): T {
-        return cachedValues.compute("${dataSource.uniqueId}/${slice.id}") { key, data ->
-            val modificationStamp = data?.first ?: -1
-            val cachedValue = data?.second
+        return withContext(Dispatchers.IO) {
+            withTimeout(10.seconds) {
+                val entryKey = "${dataSource.uniqueId}/${slice.id}"
 
-            if (cachedValue == null || modificationStamp < dataSource.modificationCount) {
-                val driver = driverFactory(project, dataSource)
-                val newValue = runCatching {
-                    runBlocking { slice.queryUsingDriver(driver) }
-                }.getOrNull()
-                wasCached = false
-                dataSource.modificationCount to newValue
-            } else {
-                wasCached = true
-                modificationStamp to cachedValue
+                rwLock.read {
+                    wasCached = true
+                    if (cachedValues.containsKey(entryKey)) {
+                        val entry = cachedValues[entryKey]!!
+                        if (entry.first < dataSource.modificationCount) {
+                            refreshCache(entryKey, slice, dataSource)
+                        }
+                    } else {
+                        refreshCache(entryKey, slice, dataSource)
+                    }
+                    cachedValues[entryKey]?.second as T
+                }
             }
-        }?.second!! as T
+        }
+    }
+
+    private suspend fun <T : Any> refreshCache(entry: String, slice: Slice<T>, dataSource: LocalDataSource) {
+        rwLock.write {
+            val driver = driverFactory(project, dataSource)
+            val newValue = runCatching { slice.queryUsingDriver(driver) }.getOrNull()
+            wasCached = false
+            cachedValues[entry] = dataSource.modificationCount to newValue
+        }
     }
 }

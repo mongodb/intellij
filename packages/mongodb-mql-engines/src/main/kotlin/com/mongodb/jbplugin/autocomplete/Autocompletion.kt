@@ -73,7 +73,7 @@ sealed interface AutocompletionResult {
  * Autocompletion facade. Use the methods in this class to get all the required autocompletion information.
  */
 object Autocompletion {
-    fun <D> autocompleteDatabases(
+    suspend fun <D> autocompleteDatabases(
         dataSource: D,
         readModelProvider: MongoDbReadModelProvider<D>,
     ): AutocompletionResult {
@@ -90,7 +90,7 @@ object Autocompletion {
         return AutocompletionResult.Successful(entries)
     }
 
-    fun <D> autocompleteCollections(
+    suspend fun <D> autocompleteCollections(
         dataSource: D,
         readModelProvider: MongoDbReadModelProvider<D>,
         database: String,
@@ -113,7 +113,7 @@ object Autocompletion {
         return AutocompletionResult.Successful(entries)
     }
 
-    fun <D> autocompleteFields(
+    suspend fun <D> autocompleteFields(
         dataSource: D,
         readModelProvider: MongoDbReadModelProvider<D>,
         namespace: Namespace,

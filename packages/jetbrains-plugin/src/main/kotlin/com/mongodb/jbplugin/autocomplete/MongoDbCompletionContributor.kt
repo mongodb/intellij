@@ -4,7 +4,12 @@
 
 package com.mongodb.jbplugin.autocomplete
 
-import com.intellij.codeInsight.completion.*
+import com.intellij.codeInsight.completion.CompletionContributor
+import com.intellij.codeInsight.completion.CompletionParameters
+import com.intellij.codeInsight.completion.CompletionProvider
+import com.intellij.codeInsight.completion.CompletionResultSet
+import com.intellij.codeInsight.completion.CompletionType
+import com.intellij.codeInsight.completion.PrioritizedLookupElement
 import com.intellij.codeInsight.lookup.AutoCompletionPolicy
 import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.codeInsight.lookup.LookupElementBuilder
@@ -41,17 +46,20 @@ import com.mongodb.jbplugin.mql.components.IsCommand
 import com.mongodb.jbplugin.mql.components.IsCommand.CommandType
 import com.mongodb.jbplugin.observability.probe.AutocompleteSuggestionAcceptedProbe
 import com.mongodb.jbplugin.settings.pluginSetting
-import kotlin.collections.emptyList
-import kotlin.collections.map
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  * This class connects our completion engine with IntelliJ's systems.
  */
-class MongoDbCompletionContributor : CompletionContributor() {
+class MongoDbCompletionContributor(
+    coroutineScope: CoroutineScope,
+) : CompletionContributor() {
     init {
-        extend(CompletionType.BASIC, Database.place, Database.Provider)
-        extend(CompletionType.BASIC, Collection.place, Collection.Provider)
-        extend(CompletionType.BASIC, Field.place, Field.Provider)
+        extend(CompletionType.BASIC, Database.place, Database.Provider(coroutineScope))
+        extend(CompletionType.BASIC, Collection.place, Collection.Provider(coroutineScope))
+        extend(CompletionType.BASIC, Field.place, Field.Provider(coroutineScope))
     }
 }
 
@@ -61,7 +69,7 @@ internal object Database {
             .and(isConnected())
             .and(isDatabaseReference())
 
-    object Provider : CompletionProvider<CompletionParameters>() {
+    class Provider(private val coroutineScope: CoroutineScope) : CompletionProvider<CompletionParameters>() {
         override fun addCompletions(
             parameters: CompletionParameters,
             context: ProcessingContext,
@@ -70,16 +78,18 @@ internal object Database {
             val dataSource = parameters.originalFile.dataSource!!
             val readModelProvider by parameters.originalFile.project.service<DataGripBasedReadModelProvider>()
 
-            val completions =
-                Autocompletion.autocompleteDatabases(
-                    dataSource,
-                    readModelProvider,
-                ) as? AutocompletionResult.Successful
+            coroutineScope.launch(Dispatchers.IO) {
+                val completions =
+                    Autocompletion.autocompleteDatabases(
+                        dataSource,
+                        readModelProvider,
+                    ) as? AutocompletionResult.Successful
 
-            val lookupEntries = completions?.entries?.map {
-                it.toLookupElement(JavaDriverDialect, CommandType.UNKNOWN)
-            } ?: emptyList()
-            result.addAllElements(lookupEntries)
+                val lookupEntries = completions?.entries?.map {
+                    it.toLookupElement(JavaDriverDialect, CommandType.UNKNOWN)
+                } ?: emptyList()
+                result.addAllElements(lookupEntries)
+            }
         }
     }
 }
@@ -90,7 +100,7 @@ internal object Collection {
             .and(isConnected())
             .and(isCollectionReference())
 
-    object Provider : CompletionProvider<CompletionParameters>() {
+    class Provider(private val coroutineScope: CoroutineScope) : CompletionProvider<CompletionParameters>() {
         override fun addCompletions(
             parameters: CompletionParameters,
             context: ProcessingContext,
@@ -109,17 +119,20 @@ internal object Collection {
             val readModelProvider by parameters.originalFile
                 .project.service<DataGripBasedReadModelProvider>()
 
-            val completions =
-                Autocompletion.autocompleteCollections(
-                    dataSource,
-                    readModelProvider,
-                    database,
-                ) as? AutocompletionResult.Successful
+            coroutineScope.launch(Dispatchers.IO) {
+                val completions =
+                    Autocompletion.autocompleteCollections(
+                        dataSource,
+                        readModelProvider,
+                        database,
+                    ) as? AutocompletionResult.Successful
 
-            val lookupEntries = completions?.entries?.map {
-                it.toLookupElement(JavaDriverDialect, CommandType.UNKNOWN)
-            } ?: emptyList()
-            result.addAllElements(lookupEntries)
+                val lookupEntries = completions?.entries?.map {
+                    it.toLookupElement(JavaDriverDialect, CommandType.UNKNOWN)
+                } ?: emptyList()
+
+                result.addAllElements(lookupEntries)
+            }
         }
     }
 }
@@ -130,7 +143,7 @@ internal object Field {
             .and(isConnected())
             .and(canBeFieldName())
 
-    object Provider : CompletionProvider<CompletionParameters>() {
+    class Provider(private val coroutineScope: CoroutineScope) : CompletionProvider<CompletionParameters>() {
         override fun addCompletions(
             parameters: CompletionParameters,
             context: ProcessingContext,
@@ -148,18 +161,21 @@ internal object Field {
             val readModelProvider by parameters.originalFile.project.service<DataGripBasedReadModelProvider>()
             val sampleSize by pluginSetting { ::sampleSize }
 
-            val completions =
-                Autocompletion.autocompleteFields(
-                    dataSource,
-                    readModelProvider,
-                    Namespace(database, collection),
-                    sampleSize
-                ) as? AutocompletionResult.Successful
+            coroutineScope.launch(Dispatchers.IO) {
+                val completions =
+                    Autocompletion.autocompleteFields(
+                        dataSource,
+                        readModelProvider,
+                        Namespace(database, collection),
+                        sampleSize
+                    ) as? AutocompletionResult.Successful
 
-            val lookupEntries = completions?.entries?.map {
-                it.toLookupElement(JavaDriverDialect, command)
-            } ?: emptyList()
-            result.addAllElements(lookupEntries)
+                val lookupEntries = completions?.entries?.map {
+                    it.toLookupElement(JavaDriverDialect, command)
+                } ?: emptyList()
+
+                result.addAllElements(lookupEntries)
+            }
         }
     }
 }

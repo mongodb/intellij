@@ -40,9 +40,12 @@ import com.mongodb.jbplugin.settings.pluginSetting
 import com.mongodb.jbplugin.ui.viewModel.AnalysisScopeViewModel
 import com.mongodb.jbplugin.ui.viewModel.InspectionsViewModel
 import com.mongodb.jbplugin.ui.viewModel.SidePanelViewModel
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import org.jetbrains.jewel.bridge.JewelComposePanel
 import java.awt.Cursor
 import javax.swing.JComponent
+import kotlin.time.Duration.Companion.seconds
 
 class MongoDbQueryIndexStatusInlay : InlayHintsProvider<Unit> {
     override val name: String = InspectionsAndInlaysMessages.message("inlay.indexing.name")
@@ -95,25 +98,33 @@ private object QueriesInFileCollector : InlayHintsCollector {
         val queryContext = QueryContext.empty(automaticallyRun = true)
 
         val collectionReference = query.component<HasCollectionReference<PsiElement>>()?.reference
-        val skipInlayDecoration = collectionReference !is HasCollectionReference.Known ||
-            !collectionReference.namespace.isValid ||
-            !collectionReference.namespace.isNamespaceAvailableInCluster(
-                dataSource = dataSource,
-                readModelProvider = readModelProvider,
-            )
+        val skipInlayDecoration = runBlocking {
+            withTimeoutOrNull(1.seconds) {
+                collectionReference !is HasCollectionReference.Known ||
+                    !collectionReference.namespace.isValid ||
+                    !collectionReference.namespace.isNamespaceAvailableInCluster(
+                        dataSource = dataSource,
+                        readModelProvider = readModelProvider,
+                    )
+            } ?: true
+        }
 
         if (skipInlayDecoration) {
             return true
         }
 
         val explainPlan = runCatching {
-            readModelProvider.slice(
-                dataSource,
-                ExplainQuery.Slice(
-                    queryWithExplainPlan,
-                    queryContext
-                )
-            ).explainPlan
+            runBlocking {
+                withTimeoutOrNull(1.seconds) {
+                    readModelProvider.slice(
+                        dataSource,
+                        ExplainQuery.Slice(
+                            queryWithExplainPlan,
+                            queryContext
+                        )
+                    ).explainPlan
+                } ?: NotRun
+            }
         }.getOrDefault(NotRun)
 
         val (icon, text, tooltip) = when (explainPlan) {
