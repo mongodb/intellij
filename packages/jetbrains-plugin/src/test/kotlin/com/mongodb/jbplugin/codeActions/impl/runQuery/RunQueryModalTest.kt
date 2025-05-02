@@ -16,6 +16,7 @@ import com.mongodb.jbplugin.mql.BsonString
 import com.mongodb.jbplugin.mql.Node
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
 import org.assertj.swing.core.Robot
 import org.assertj.swing.core.matcher.JLabelMatcher
 import org.assertj.swing.edt.GuiActionRunner
@@ -89,7 +90,7 @@ class RunQueryModalTest {
         robot: Robot,
         project: Project,
         coroutineScope: TestScope
-    ) {
+    ) = runTest {
         val dataSource = mockDataSource()
         val readModel = project.mockReadModelProvider()
 

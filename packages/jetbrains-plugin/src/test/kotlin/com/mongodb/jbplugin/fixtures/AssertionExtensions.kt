@@ -7,13 +7,14 @@ package com.mongodb.jbplugin.fixtures
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.withTimeout
 import java.time.Duration
 
 /**
  * Waits for a given condition to be success, or throws an assertion error on timeout.
  *
  */
-fun <T> waitFor(timeout: Duration, interval: Duration, condition: () -> Pair<Boolean, T>): T {
+private fun <T> waitFor(timeout: Duration, interval: Duration, condition: () -> Pair<Boolean, T>): T {
     if (timeout <= Duration.ZERO) {
         throw AssertionError("Test timed out.")
     }
@@ -32,7 +33,7 @@ fun <T> waitFor(timeout: Duration, interval: Duration, condition: () -> Pair<Boo
  *
  *  If the condition throws an exception or returns false it's considered a failure.
  */
-fun waitFor(timeout: Duration, interval: Duration, condition: () -> Boolean) {
+private fun waitFor(timeout: Duration, interval: Duration, condition: () -> Boolean) {
     waitFor<Boolean>(timeout, interval) {
         val (success, result) = runCatching {
             val value = runCatching { condition() }.getOrDefault(false)
@@ -62,6 +63,7 @@ fun waitFor(timeout: Duration, interval: Duration, condition: () -> Boolean) {
  * @param fn
  * @param recovery
  */
+@Deprecated("Prefer using TestScope.eventually as it works with coroutines.")
 fun eventually(
     timeout: Duration = Duration.ofSeconds(10),
     coroutineScope: TestScope? = null,
@@ -105,14 +107,61 @@ fun eventually(
  * @param fn
  * @param recovery
  */
+private fun eventuallySuspendable(
+    timeout: Duration = Duration.ofSeconds(10),
+    coroutineScope: TestScope? = null,
+    recovery: () -> Unit = {},
+    fn: suspend (Int) -> Unit,
+) {
+    var attempt = 1
+    waitFor(timeout, Duration.ofMillis(50)) {
+        coroutineScope?.advanceUntilIdle()
+
+        val result = runCatching {
+            runBlocking {
+                withTimeout(50) {
+                    fn(attempt++)
+                }
+            }
+        }
+
+        result.exceptionOrNull()?.printStackTrace(System.err)
+
+        if (result.isFailure) {
+            recovery()
+        }
+
+        result.isSuccess
+    }
+}
+
+/**
+ * Waits until the block function finishes successfully up to 1 second (or the provided timeout).
+ *
+ * Example usages:
+ *
+ * ```kt
+ * eventually {
+ *    verify(mock).myFunction()
+ * }
+ * // with custom timeout
+ * eventually(timeout = Duration.ofSeconds(5)) {
+ *    verify(mock).myFunction()
+ * }
+ * ```
+ *
+ * @param timeout
+ * @param fn
+ * @param recovery
+ */
 fun TestScope.eventually(
     timeout: Duration = Duration.ofSeconds(10),
     recovery: () -> Unit = {},
     fn: suspend (Int) -> Unit,
 ) {
-    eventually(
+    eventuallySuspendable(
         timeout,
         this,
         recovery
-    ) { n -> runBlocking(this.coroutineContext) { fn(n) } }
+    ) { n -> fn(n) }
 }

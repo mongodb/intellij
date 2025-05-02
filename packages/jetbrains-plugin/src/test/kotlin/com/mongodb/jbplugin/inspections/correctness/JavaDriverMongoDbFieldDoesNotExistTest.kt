@@ -17,6 +17,7 @@ import com.mongodb.jbplugin.mql.BsonString
 import com.mongodb.jbplugin.mql.CollectionSchema
 import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.observability.TelemetryService
+import kotlinx.coroutines.test.runTest
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.atLeastOnce
@@ -37,7 +38,7 @@ public FindIterable<Document> exampleFind() {
     fun `shows an inspection when the field does not exist in the current namespace`(
         app: Application,
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val telemetryService = app.getService(TelemetryService::class.java)
 
         val (dataSource, readModelProvider) = fixture.setupConnection()
@@ -173,7 +174,7 @@ private Bson getNorQueryWithFieldNameFromMethodCall() {
     )
     fun `shows an inspection when a field, referenced in different forms of a nested $and, $or and $nor query, does not exists in the current namespace`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
@@ -212,7 +213,7 @@ public AggregateIterable<Document> exampleAggregate() {
     )
     fun `shows an inspection for Aggregates#match call when the field does not exist in the current namespace`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
@@ -286,7 +287,7 @@ public AggregateIterable<Document> exampleUnwind3() {
     )
     fun `shows an inspection for Aggregates#unwind call when the field does not exist in the current namespace`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
@@ -361,7 +362,7 @@ public AggregateIterable<Document> exampleAggregateFields() {
     )
     fun `shows an inspection for Aggregates#project call when the field does not exist in the current namespace`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
@@ -429,7 +430,7 @@ public AggregateIterable<Document> exampleAggregateOrderBy() {
     )
     fun `shows an inspection for Aggregates#sort call when the field does not exist in the current namespace`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
@@ -468,7 +469,7 @@ public AggregateIterable<Document> exampleAggregateOrderBy() {
     )
     fun `does not show any inspection for Aggregates#addFields call even when the field does not exist in the current namespace`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
@@ -511,7 +512,7 @@ public AggregateIterable<Document> goodGroupAggregate1() {
     )
     fun `shows an inspection for Aggregates#group call when the field does not exist in the current namespace`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
@@ -565,7 +566,7 @@ public AggregateIterable<Document> goodGroupAggregate2() {
     )
     fun `shows an inspection for Aggregates#group call with method refs and variables when the field does not exist in the current namespace`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 

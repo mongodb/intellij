@@ -3,6 +3,7 @@ package com.mongodb.jbplugin.accessadapter.datagrip
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.openapi.project.Project
 import com.mongodb.jbplugin.accessadapter.slice.BuildInfo
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -13,7 +14,7 @@ class DataGripBasedReadModelProviderTest {
         project: Project,
         dataSource: LocalDataSource,
         version: MongoDbVersion
-    ) {
+    ) = runTest {
         val service = project.getService(DataGripBasedReadModelProvider::class.java)
         val info = service.slice(dataSource, BuildInfo.Slice)
 
@@ -25,7 +26,7 @@ class DataGripBasedReadModelProviderTest {
         project: Project,
         dataSource: LocalDataSource,
         version: MongoDbVersion
-    ) {
+    ) = runTest {
         val service = project.getService(DataGripBasedReadModelProvider::class.java)
 
         val info1 = service.slice(dataSource, BuildInfo.Slice)
@@ -40,7 +41,7 @@ class DataGripBasedReadModelProviderTest {
     fun `does not cache the query for the same slice if the data source changed`(
         project: Project,
         dataSource: LocalDataSource,
-    ) {
+    ) = runTest {
         val service = project.getService(DataGripBasedReadModelProvider::class.java)
 
         service.slice(dataSource, BuildInfo.Slice)

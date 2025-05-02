@@ -9,10 +9,12 @@ import com.mongodb.jbplugin.fixtures.mockLogMessage
 import com.mongodb.jbplugin.observability.TelemetryProperty
 import com.mongodb.jbplugin.observability.TelemetryService
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.TestScope
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.argThat
+import org.mockito.kotlin.timeout
 import org.mockito.kotlin.verify
 import java.sql.SQLException
 
@@ -33,11 +35,11 @@ class ConnectionFailureProbeTest {
         application.withMockedService(logMessage)
 
         project.withMockedUnconnectedMongoDbConnection(MongoDbServerUrl("mongodb://localhost"))
-        val probe = ConnectionFailureProbe()
+        val probe = ConnectionFailureProbe(TestScope())
 
         probe.connectionFailed(project, connectionPoint, Throwable())
 
-        verify(telemetryService).sendEvent(
+        verify(telemetryService, timeout(1000)).sendEvent(
             argThat { event ->
                 event.properties[TelemetryProperty.IS_ATLAS] == false &&
                     event.properties[TelemetryProperty.IS_LOCAL_ATLAS] == false &&
@@ -66,7 +68,7 @@ class ConnectionFailureProbeTest {
         application.withMockedService(logMessage)
 
         project.withMockedUnconnectedMongoDbConnection(MongoDbServerUrl("mongodb://localhost"))
-        val probe = ConnectionFailureProbe()
+        val probe = ConnectionFailureProbe(TestScope())
 
         val innerException =
             Exception(
@@ -82,7 +84,7 @@ class ConnectionFailureProbeTest {
 
         probe.connectionFailed(project, connectionPoint, sqlException)
 
-        verify(telemetryService).sendEvent(
+        verify(telemetryService, timeout(1000)).sendEvent(
             argThat { event ->
                 event.properties[TelemetryProperty.IS_ATLAS] == false &&
                     event.properties[TelemetryProperty.ERROR_CODE] == "18" &&

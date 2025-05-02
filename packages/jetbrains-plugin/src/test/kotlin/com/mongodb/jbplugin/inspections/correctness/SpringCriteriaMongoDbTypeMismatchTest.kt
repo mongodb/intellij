@@ -18,6 +18,7 @@ import com.mongodb.jbplugin.mql.BsonBoolean
 import com.mongodb.jbplugin.mql.BsonObject
 import com.mongodb.jbplugin.mql.CollectionSchema
 import com.mongodb.jbplugin.mql.Namespace
+import kotlinx.coroutines.test.runTest
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
@@ -50,7 +51,7 @@ class SpringCriteriaMongoDbTypeMismatchTest {
     fun `shows an inspection when a provided value cannot be assigned to a field because of detected type mismatch`(
         project: Project,
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "sample_books")
         fixture.specifyDialect(SpringCriteriaDialect)

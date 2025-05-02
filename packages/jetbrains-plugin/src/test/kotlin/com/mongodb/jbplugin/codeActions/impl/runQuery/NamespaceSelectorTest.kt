@@ -10,6 +10,7 @@ import com.mongodb.jbplugin.fixtures.mockDataSource
 import com.mongodb.jbplugin.fixtures.mockReadModelProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
 import org.assertj.swing.core.Robot
 import org.assertj.swing.edt.GuiActionRunner
 import org.assertj.swing.fixture.FrameFixture
@@ -25,7 +26,7 @@ class NamespaceSelectorTest {
         robot: Robot,
         project: Project,
         coroutineScope: CoroutineScope
-    ) {
+    ) = runTest {
         val dataSource = mockDataSource()
         val (fixture, _) = render(robot, project, dataSource, coroutineScope)
 
@@ -40,7 +41,7 @@ class NamespaceSelectorTest {
         robot: Robot,
         project: Project,
         coroutineScope: TestScope
-    ) {
+    ) = runTest {
         val dataSource = mockDataSource()
         val readModel = project.mockReadModelProvider()
 
@@ -68,7 +69,7 @@ class NamespaceSelectorTest {
         robot: Robot,
         project: Project,
         coroutineScope: TestScope
-    ) {
+    ) = runTest {
         val dataSource = mockDataSource()
         val readModel = project.mockReadModelProvider()
 

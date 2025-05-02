@@ -10,6 +10,7 @@ import com.mongodb.jbplugin.fixtures.ParsingTest
 import com.mongodb.jbplugin.fixtures.setupConnection
 import com.mongodb.jbplugin.fixtures.specifyDialect
 import com.mongodb.jbplugin.observability.TelemetryService
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Disabled
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
@@ -32,7 +33,7 @@ public FindIterable<Document> exampleFind() {
     fun `does not show an inspection when the query is a collscan`(
         app: Application,
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
@@ -56,7 +57,7 @@ public FindIterable<Document> exampleFind() {
     fun `shows an inspection when the query has an ineffective index usage`(
         app: Application,
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val telemetryService = app.getService(TelemetryService::class.java)
 
         val (dataSource, readModelProvider) = fixture.setupConnection()

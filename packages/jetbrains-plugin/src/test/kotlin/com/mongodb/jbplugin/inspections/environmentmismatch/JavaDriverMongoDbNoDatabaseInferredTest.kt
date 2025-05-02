@@ -10,6 +10,7 @@ import com.mongodb.jbplugin.fixtures.ParsingTest
 import com.mongodb.jbplugin.fixtures.setupConnection
 import com.mongodb.jbplugin.fixtures.specifyDialect
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
@@ -34,7 +35,7 @@ public void exampleAggregate(MongoDatabase db) {
     )
     fun `shows an inspection when the database cannot be inferred`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
@@ -67,7 +68,7 @@ public void exampleAggregate() {
     )
     fun `does not show an inspection when the database can be inferred`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 

@@ -9,6 +9,7 @@ import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.ParsingTest
 import com.mongodb.jbplugin.fixtures.setupConnection
 import com.mongodb.jbplugin.fixtures.specifyDialect
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Disabled
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
@@ -42,7 +43,7 @@ class BookRepository {
     )
     fun `shows an inspection when the query is a collscan`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(SpringCriteriaDialect)
 
@@ -79,7 +80,7 @@ class BookRepository {
     )
     fun `does not show an inspection when the query has an ineffective index usage`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(SpringCriteriaDialect)
 
