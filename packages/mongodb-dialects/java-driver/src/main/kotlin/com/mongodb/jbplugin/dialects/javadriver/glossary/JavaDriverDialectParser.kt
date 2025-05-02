@@ -226,7 +226,9 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
          */
         if (source is PsiWhiteSpace) {
             val parentExpressionList = source.parent
-            return parentExpressionList.children.any { isReferenceToField(it) }
+            return parentExpressionList.children
+                .filterNot { it.isEquivalentTo(source) }
+                .any { isReferenceToField(it) }
         }
 
         return (isInQuery || isInAggregate) && isString
