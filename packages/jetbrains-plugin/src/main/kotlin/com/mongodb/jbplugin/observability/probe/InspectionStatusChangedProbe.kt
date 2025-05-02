@@ -4,7 +4,6 @@ import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.diagnostic.logger
-import com.intellij.openapi.rd.util.launchChildNonUrgentBackground
 import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.meta.withinReadActionBlocking
@@ -132,7 +131,7 @@ class InspectionStatusChangedProbe(
     }
 
     fun finishedProcessingInspections(inspectionType: InspectionType, problemsHolder: ProblemsHolder) = runSafe {
-        cs.launchChildNonUrgentBackground {
+        cs.launch(Dispatchers.IO) {
             val results = problemsHolder.results
             // check all our registered problems
             // if at the end of the processing cycle it's empty
