@@ -63,3 +63,7 @@ suspend fun <T> withDefaultTimeoutOrNull(cb: suspend () -> T): T? {
         cb()
     }
 }
+
+fun invokeInEdt(cb: () -> Unit) {
+    ApplicationManager.getApplication().invokeLater(cb)
+}

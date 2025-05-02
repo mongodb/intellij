@@ -1,13 +1,13 @@
 package com.mongodb.jbplugin.observability.probe
 
 import com.intellij.codeInspection.ProblemsHolder
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.rd.util.launchChildNonUrgentBackground
 import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.meta.service
+import com.mongodb.jbplugin.meta.withinReadActionBlocking
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.components.HasSourceDialect
 import com.mongodb.jbplugin.observability.TelemetryEvent
@@ -16,6 +16,8 @@ import com.mongodb.jbplugin.observability.TelemetryService
 import com.mongodb.jbplugin.observability.probe.InspectionStatusChangedProbe.UniqueInspection
 import com.mongodb.jbplugin.observability.useLogMessage
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.lang.ref.WeakReference
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -57,14 +59,14 @@ class InspectionStatusChangedProbe(
         val dialect = query.component<HasSourceDialect>() ?: return@runSafe
         val psiElement = query.source
 
-        cs.launchChildNonUrgentBackground {
+        cs.launch(Dispatchers.IO) {
             mutex.withLock {
                 val elementsWithProblems = problemsByInspectionType(inspectionType)
 
                 // check if the element is already in the list
                 if (isElementRegistered(elementsWithProblems) { psiElement }) {
                     // do nothing, it's already registered
-                    return@launchChildNonUrgentBackground
+                    return@launch
                 }
 
                 // it's a new error, send a telemetry event and store it
@@ -96,13 +98,13 @@ class InspectionStatusChangedProbe(
         val dialect = query.component<HasSourceDialect>() ?: return@runSafe
         val psiElement = query.source
 
-        cs.launchChildNonUrgentBackground {
+        cs.launch(Dispatchers.IO) {
             mutex.withLock {
                 val elementsWithProblems = problemsByInspectionType(inspectionType)
 
                 if (isElementRegistered(elementsWithProblems) { psiElement }) {
                     // do nothing, it's already registered
-                    return@launchChildNonUrgentBackground
+                    return@launch
                 }
 
                 // it's a new error, send a telemetry event and store it
@@ -177,7 +179,7 @@ class InspectionStatusChangedProbe(
         elementsWithProblems: MutableList<UniqueInspection>,
         psiElement: () -> PsiElement
     ): Boolean = runCatching {
-        ApplicationManager.getApplication().runReadAction<Boolean> {
+        withinReadActionBlocking {
             elementsWithProblems.find {
                 val isStrictlyEqual = it.on.get()?.source == psiElement()
                 val isEquivalent = it.on.get()?.source?.isEquivalentTo(psiElement()) == true

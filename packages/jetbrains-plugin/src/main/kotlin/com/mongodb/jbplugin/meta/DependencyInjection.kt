@@ -5,13 +5,13 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.ComponentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
-import com.intellij.openapi.rd.util.launchChildBackground
 import com.intellij.openapi.util.Disposer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import kotlin.reflect.KProperty
 
 class DependencyInjection<out T>(private val cm: ComponentManager, private val javaClass: Class<T>) {
@@ -58,12 +58,12 @@ class AsyncState<E : Any, T : Any>(
     private val scope: CoroutineScope = CoroutineScope(asyncStatusRefreshScope)
 
     init {
-        scope.launchChildBackground {
+        scope.launch(Dispatchers.IO) {
             sharedFlow.collectLatest {
                 val newState = accessor(it, state)
                 if (state != newState) {
                     state = newState
-                    scope.launchChildBackground {
+                    scope.launch {
                         state.onChange()
                     }
                 }
