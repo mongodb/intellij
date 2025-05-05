@@ -13,7 +13,7 @@ import com.mongodb.jbplugin.mql.parser.components.knownCollection
 import com.mongodb.jbplugin.mql.parser.filter
 import com.mongodb.jbplugin.mql.parser.parse
 
-fun <D>Namespace.isCollectionAvailableInCluster(
+suspend fun <D> Namespace.isCollectionAvailableInCluster(
     dataSource: D,
     readModelProvider: MongoDbReadModelProvider<D>
 ): Boolean = runCatching {

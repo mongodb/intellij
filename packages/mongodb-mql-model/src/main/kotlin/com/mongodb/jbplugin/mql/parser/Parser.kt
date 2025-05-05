@@ -55,7 +55,7 @@ data object ElementDoesNotMatchFilter
  * @param filterFn The filter function.
  */
 fun <I, E, O> Parser<I, E, O>.filter(
-    filterFn: (O) -> Boolean
+    filterFn: suspend (O) -> Boolean
 ): Parser<I, Either<E, ElementDoesNotMatchFilter>, O> {
     return { input ->
         when (val result = this(input)) {
@@ -78,7 +78,7 @@ fun <I, E, O> Parser<I, E, O>.anyError(): Parser<I, Any, O> {
 /**
  * Returns a new parser that maps the output to a new type.
  */
-fun <I, E, O, OO> Parser<I, E, O>.map(mapFn: (O) -> OO): Parser<I, E, OO> {
+fun <I, E, O, OO> Parser<I, E, O>.map(mapFn: suspend (O) -> OO): Parser<I, E, OO> {
     return { input ->
         when (val result = this(input)) {
             is Either.Left -> Either.left(result.value)

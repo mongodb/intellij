@@ -9,6 +9,7 @@ import com.mongodb.jbplugin.mql.BsonObject
 import com.mongodb.jbplugin.mql.BsonString
 import com.mongodb.jbplugin.mql.CollectionSchema
 import com.mongodb.jbplugin.mql.Namespace
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.mockito.Mockito.`when`
@@ -25,7 +26,7 @@ record Entity() {}
     )
     fun `should autocomplete collections from the current connection`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -66,7 +67,7 @@ record Entity() {}
     )
     fun `should autocomplete fields from the current namespace`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -118,7 +119,7 @@ record Entity() {}
     )
     fun `should autocomplete fields from the current namespace in a chained sort`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -166,7 +167,7 @@ record Entity() {}
     )
     fun `should autocomplete collections from the current connection in an aggregate call`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -207,7 +208,7 @@ record Entity() {}
     )
     fun `should autocomplete collections from the current connection in an aggregateStream call`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -254,7 +255,7 @@ record Entity() {}
     )
     fun `should autocomplete fields from the current namespace in a Criteria inside an aggregate call`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -308,7 +309,7 @@ record Entity() {}
     )
     fun `should autocomplete fields from the current namespace in a Criteria inside an aggregateStream call`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -362,7 +363,7 @@ record Entity() {}
     )
     fun `should autocomplete fields from the current namespace in a Aggregation#project call`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -416,7 +417,7 @@ record Entity() {}
     )
     fun `should autocomplete fields from the current namespace in fields helper passed to Aggregation#project call`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -470,7 +471,7 @@ record Entity() {}
     )
     fun `should autocomplete fields from the current namespace in field helper passed to Aggregation#project call`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -524,7 +525,7 @@ record Entity() {}
     )
     fun `should autocomplete fields from the current namespace in andInclude call chained to Aggregation#project call`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -578,7 +579,7 @@ record Entity() {}
     )
     fun `should autocomplete fields from the current namespace in fields helper passed to andInclude call chained to Aggregation#project call`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -632,7 +633,7 @@ record Entity() {}
     )
     fun `should autocomplete fields from the current namespace in field helper passed to andInclude call chained to Aggregation#project call`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -686,7 +687,7 @@ record Entity() {}
     )
     fun `should autocomplete fields from the current namespace in andExclude call chained to Aggregation#project call`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -740,7 +741,7 @@ record Entity() {}
     )
     fun `should autocomplete fields from the current namespace in unwind`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -794,7 +795,7 @@ record Entity() {}
     )
     fun `should autocomplete fields from the current namespace in Aggregation#sort call`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -850,7 +851,7 @@ record Entity() {}
     )
     fun `should autocomplete fields from the current namespace in Sort#by of Aggregation#sort call`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -906,7 +907,7 @@ record Entity() {}
     )
     fun `should autocomplete fields from the current namespace in Sort#by with direction of Aggregation#sort call`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -964,7 +965,7 @@ record Entity() {}
     )
     fun `should autocomplete fields from the current namespace in Order#asc of Aggregation#sort call`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -1022,7 +1023,7 @@ record Entity() {}
     )
     fun `should autocomplete fields from the current namespace in Order#desc of Aggregation#sort call`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -1080,7 +1081,7 @@ record Entity() {}
     )
     fun `should autocomplete fields from the current namespace in Order#by of Aggregation#sort call`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -1140,7 +1141,7 @@ record Entity() {}
     )
     fun `should autocomplete fields from the current namespace in List of Order of Aggregation#sort call`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -1194,7 +1195,7 @@ record Entity() {}
     )
     fun `should autocomplete fields from the current namespace in Aggregation#addFields#addFieldsWithValueOf call`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -1248,7 +1249,7 @@ record Entity() {}
     )
     fun `should autocomplete fields from the current namespace in Fields#field call passed to Aggregation#addFields#addFieldsWithValueOf call`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -1302,7 +1303,7 @@ record Entity() {}
     )
     fun `should autocomplete fields from the current namespace in Aggregation#addFields#withValueOf call`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -1356,7 +1357,7 @@ record Entity() {}
     )
     fun `should autocomplete fields from the current namespace in Fields#field call passed to Aggregation#addFields#withValueOf call`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -1410,7 +1411,7 @@ record Entity() {}
     )
     fun `should autocomplete fields from the current namespace in Aggregation#group root call`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -1464,7 +1465,7 @@ record Entity() {}
     )
     fun `should autocomplete fields from the current namespace in Aggregation#group root call with Fields#fields`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -1518,7 +1519,7 @@ record Entity() {}
     )
     fun `should autocomplete fields from the current namespace in Aggregation#group root call with Fields#from(Fields#field)`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -1573,7 +1574,7 @@ record Entity() {}
     )
     fun `should autocomplete fields from the current namespace in Aggregation#group#sum call`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -1628,7 +1629,7 @@ record Entity() {}
     )
     fun `should autocomplete fields from the current namespace in Aggregation#group#avg call`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -1683,7 +1684,7 @@ record Entity() {}
     )
     fun `should autocomplete fields from the current namespace in Aggregation#group#first call`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -1738,7 +1739,7 @@ record Entity() {}
     )
     fun `should autocomplete fields from the current namespace in Aggregation#group#last call`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -1793,7 +1794,7 @@ record Entity() {}
     )
     fun `should autocomplete fields from the current namespace in Aggregation#group#max call`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -1848,7 +1849,7 @@ record Entity() {}
     )
     fun `should autocomplete fields from the current namespace in Aggregation#group#min call`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -1903,7 +1904,7 @@ record Entity() {}
     )
     fun `should autocomplete fields from the current namespace in Aggregation#group#push call`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -1958,7 +1959,7 @@ record Entity() {}
     )
     fun `should autocomplete fields from the current namespace in Aggregation#group#addToSet call`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
@@ -2014,7 +2015,7 @@ record Entity() {}
     )
     fun `should not autocomplete fields from the current namespace in Aggregation#group#as call`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)

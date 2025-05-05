@@ -31,6 +31,7 @@ import com.mongodb.jbplugin.i18n.InspectionsAndInlaysMessages
 import com.mongodb.jbplugin.linting.InspectionCategory.PERFORMANCE
 import com.mongodb.jbplugin.linting.correctness.isNamespaceAvailableInCluster
 import com.mongodb.jbplugin.meta.service
+import com.mongodb.jbplugin.meta.withDefaultTimeoutOrNull
 import com.mongodb.jbplugin.mql.QueryContext
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasExplain
@@ -40,6 +41,7 @@ import com.mongodb.jbplugin.settings.pluginSetting
 import com.mongodb.jbplugin.ui.viewModel.AnalysisScopeViewModel
 import com.mongodb.jbplugin.ui.viewModel.InspectionsViewModel
 import com.mongodb.jbplugin.ui.viewModel.SidePanelViewModel
+import kotlinx.coroutines.runBlocking
 import org.jetbrains.jewel.bridge.JewelComposePanel
 import java.awt.Cursor
 import javax.swing.JComponent
@@ -99,25 +101,33 @@ private object QueriesInFileCollector : InlayHintsCollector {
         val queryContext = QueryContext.empty(automaticallyRun = true)
 
         val collectionReference = query.component<HasCollectionReference<PsiElement>>()?.reference
-        val skipInlayDecoration = collectionReference !is HasCollectionReference.Known ||
-            !collectionReference.namespace.isValid ||
-            !collectionReference.namespace.isNamespaceAvailableInCluster(
-                dataSource = dataSource,
-                readModelProvider = readModelProvider,
-            )
+        val skipInlayDecoration = runBlocking {
+            withDefaultTimeoutOrNull {
+                collectionReference !is HasCollectionReference.Known ||
+                    !collectionReference.namespace.isValid ||
+                    !collectionReference.namespace.isNamespaceAvailableInCluster(
+                        dataSource = dataSource,
+                        readModelProvider = readModelProvider,
+                    )
+            } ?: true
+        }
 
         if (skipInlayDecoration) {
             return true
         }
 
         val explainPlan = runCatching {
-            readModelProvider.slice(
-                dataSource,
-                ExplainQuery.Slice(
-                    queryWithExplainPlan,
-                    queryContext
-                )
-            ).explainPlan
+            runBlocking {
+                withDefaultTimeoutOrNull {
+                    readModelProvider.slice(
+                        dataSource,
+                        ExplainQuery.Slice(
+                            queryWithExplainPlan,
+                            queryContext
+                        )
+                    ).explainPlan
+                } ?: NotRun
+            }
         }.getOrDefault(NotRun)
 
         val (icon, text, tooltip) = when (explainPlan) {

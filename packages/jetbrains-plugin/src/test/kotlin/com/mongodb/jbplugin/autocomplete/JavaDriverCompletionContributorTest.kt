@@ -10,6 +10,7 @@ import com.mongodb.jbplugin.mql.BsonObject
 import com.mongodb.jbplugin.mql.BsonString
 import com.mongodb.jbplugin.mql.CollectionSchema
 import com.mongodb.jbplugin.mql.Namespace
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.*
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
@@ -26,7 +27,7 @@ class JavaDriverCompletionContributorTest {
     )
     fun `should autocomplete databases from the current connection`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
         val (dataSource, readModelProvider) = fixture.setupConnection()
 
@@ -39,18 +40,20 @@ class JavaDriverCompletionContributorTest {
             ),
         )
 
-        val elements = fixture.completeBasic()
+        eventually {
+            val elements = fixture.completeBasic()
 
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myDatabase1"
-            },
-        )
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myDatabase2"
-            },
-        )
+            assertNotNull(
+                elements.firstOrNull {
+                    it.lookupString == "myDatabase1"
+                },
+            )
+            assertNotNull(
+                elements.firstOrNull {
+                    it.lookupString == "myDatabase2"
+                },
+            )
+        }
     }
 
     @ParsingTest(
@@ -62,7 +65,7 @@ class JavaDriverCompletionContributorTest {
     )
     fun `should autocomplete collections from the current connection and inferred database even without a query`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
 
         val (dataSource, readModelProvider) = fixture.setupConnection()
@@ -77,13 +80,15 @@ class JavaDriverCompletionContributorTest {
             ),
         )
 
-        val elements = fixture.completeBasic()
+        eventually {
+            val elements = fixture.completeBasic()
 
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myCollection"
-            },
-        )
+            assertNotNull(
+                elements.firstOrNull {
+                    it.lookupString == "myCollection"
+                },
+            )
+        }
     }
 
     @ParsingTest(
@@ -95,7 +100,7 @@ class JavaDriverCompletionContributorTest {
     )
     fun `should autocomplete collections from the current connection and inferred database`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
 
         val (dataSource, readModelProvider) = fixture.setupConnection()
@@ -110,13 +115,15 @@ class JavaDriverCompletionContributorTest {
             ),
         )
 
-        val elements = fixture.completeBasic()
+        eventually {
+            val elements = fixture.completeBasic()
 
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myCollection"
-            },
-        )
+            assertNotNull(
+                elements.firstOrNull {
+                    it.lookupString == "myCollection"
+                },
+            )
+        }
     }
 
     @ParsingTest(
@@ -129,7 +136,7 @@ class JavaDriverCompletionContributorTest {
     )
     fun `should autocomplete fields from the current namespace`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
 
         val (dataSource, readModelProvider) = fixture.setupConnection()
@@ -151,13 +158,15 @@ class JavaDriverCompletionContributorTest {
             ),
         )
 
-        val elements = fixture.completeBasic()
+        eventually {
+            val elements = fixture.completeBasic()
 
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
+            assertNotNull(
+                elements.firstOrNull {
+                    it.lookupString == "myField"
+                },
+            )
+        }
     }
 
     @ParsingTest(
@@ -170,7 +179,7 @@ class JavaDriverCompletionContributorTest {
     )
     fun `should autocomplete fields from the current namespace in the filters of an update`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
 
         val (dataSource, readModelProvider) = fixture.setupConnection()
@@ -191,13 +200,15 @@ class JavaDriverCompletionContributorTest {
             ),
         )
 
-        val elements = fixture.completeBasic()
+        eventually {
+            val elements = fixture.completeBasic()
 
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
+            assertNotNull(
+                elements.firstOrNull {
+                    it.lookupString == "myField"
+                },
+            )
+        }
     }
 
     @ParsingTest(
@@ -210,7 +221,7 @@ class JavaDriverCompletionContributorTest {
     )
     fun `should autocomplete fields from the current namespace in the updates of an update`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
 
         val (dataSource, readModelProvider) = fixture.setupConnection()
@@ -231,17 +242,18 @@ class JavaDriverCompletionContributorTest {
             ),
         )
 
-        val elements = fixture.completeBasic()
+        eventually {
+            val elements = fixture.completeBasic()
 
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
+            assertNotNull(
+                elements.firstOrNull {
+                    it.lookupString == "myField"
+                },
+            )
+        }
     }
 
     @ParsingTest(
-
         value = """
     public void exampleFind() {
         client.getDatabase("myDatabase").getCollection("myCollection")
@@ -255,7 +267,7 @@ class JavaDriverCompletionContributorTest {
     )
     fun `should autocomplete fields from the current namespace in the filters of an Aggregates#match stage`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
 
         val (dataSource, readModelProvider) = fixture.setupConnection()
@@ -276,17 +288,18 @@ class JavaDriverCompletionContributorTest {
             ),
         )
 
-        val elements = fixture.completeBasic()
+        eventually {
+            val elements = fixture.completeBasic()
 
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
+            assertNotNull(
+                elements.firstOrNull {
+                    it.lookupString == "myField"
+                },
+            )
+        }
     }
 
     @ParsingTest(
-
         value = """
     public void exampleFind() {
         client.getDatabase("myDatabase").getCollection("myCollection")
@@ -300,7 +313,7 @@ class JavaDriverCompletionContributorTest {
     )
     fun `should autocomplete fields from the current namespace in Projections#include of an Aggregates#project stage`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
 
         val (dataSource, readModelProvider) = fixture.setupConnection()
@@ -321,17 +334,18 @@ class JavaDriverCompletionContributorTest {
             ),
         )
 
-        val elements = fixture.completeBasic()
+        eventually {
+            val elements = fixture.completeBasic()
 
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
+            assertNotNull(
+                elements.firstOrNull {
+                    it.lookupString == "myField"
+                },
+            )
+        }
     }
 
     @ParsingTest(
-
         value = """
     public void exampleFind() {
         client.getDatabase("myDatabase").getCollection("myCollection")
@@ -347,7 +361,7 @@ class JavaDriverCompletionContributorTest {
     )
     fun `should autocomplete fields from the current namespace in Projections#include built with List#of of an Aggregates#project stage`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
 
         val (dataSource, readModelProvider) = fixture.setupConnection()
@@ -368,13 +382,15 @@ class JavaDriverCompletionContributorTest {
             ),
         )
 
-        val elements = fixture.completeBasic()
+        eventually {
+            val elements = fixture.completeBasic()
 
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
+            assertNotNull(
+                elements.firstOrNull {
+                    it.lookupString == "myField"
+                },
+            )
+        }
     }
 
     @ParsingTest(
@@ -393,7 +409,7 @@ class JavaDriverCompletionContributorTest {
     )
     fun `should autocomplete fields from the current namespace in Projections#include built with Arrays#asList of an Aggregates#project stage`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
 
         val (dataSource, readModelProvider) = fixture.setupConnection()
@@ -414,13 +430,15 @@ class JavaDriverCompletionContributorTest {
             ),
         )
 
-        val elements = fixture.completeBasic()
+        eventually {
+            val elements = fixture.completeBasic()
 
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
+            assertNotNull(
+                elements.firstOrNull {
+                    it.lookupString == "myField"
+                },
+            )
+        }
     }
 
     @ParsingTest(
@@ -437,7 +455,7 @@ class JavaDriverCompletionContributorTest {
     )
     fun `should autocomplete fields from the current namespace in Projections#exclude of an Aggregates#project stage`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
 
         val (dataSource, readModelProvider) = fixture.setupConnection()
@@ -458,13 +476,15 @@ class JavaDriverCompletionContributorTest {
             ),
         )
 
-        val elements = fixture.completeBasic()
+        eventually {
+            val elements = fixture.completeBasic()
 
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
+            assertNotNull(
+                elements.firstOrNull {
+                    it.lookupString == "myField"
+                },
+            )
+        }
     }
 
     @ParsingTest(
@@ -483,7 +503,7 @@ class JavaDriverCompletionContributorTest {
     )
     fun `should autocomplete fields from the current namespace in Projections#exclude built with List#of of an Aggregates#project stage`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
 
         val (dataSource, readModelProvider) = fixture.setupConnection()
@@ -504,13 +524,15 @@ class JavaDriverCompletionContributorTest {
             ),
         )
 
-        val elements = fixture.completeBasic()
+        eventually {
+            val elements = fixture.completeBasic()
 
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
+            assertNotNull(
+                elements.firstOrNull {
+                    it.lookupString == "myField"
+                },
+            )
+        }
     }
 
     @ParsingTest(
@@ -529,7 +551,7 @@ class JavaDriverCompletionContributorTest {
     )
     fun `should autocomplete fields from the current namespace in Projections#exclude built with Arrays#asList of an Aggregates#project stage`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
 
         val (dataSource, readModelProvider) = fixture.setupConnection()
@@ -550,13 +572,15 @@ class JavaDriverCompletionContributorTest {
             ),
         )
 
-        val elements = fixture.completeBasic()
+        eventually {
+            val elements = fixture.completeBasic()
 
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
+            assertNotNull(
+                elements.firstOrNull {
+                    it.lookupString == "myField"
+                },
+            )
+        }
     }
 
     @ParsingTest(
@@ -575,7 +599,7 @@ class JavaDriverCompletionContributorTest {
     )
     fun `should autocomplete fields from the current namespace in Projections#fields of an Aggregates#project stage`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
 
         val (dataSource, readModelProvider) = fixture.setupConnection()
@@ -596,13 +620,15 @@ class JavaDriverCompletionContributorTest {
             ),
         )
 
-        val elements = fixture.completeBasic()
+        eventually {
+            val elements = fixture.completeBasic()
 
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
+            assertNotNull(
+                elements.firstOrNull {
+                    it.lookupString == "myField"
+                },
+            )
+        }
     }
 
     @ParsingTest(
@@ -623,7 +649,7 @@ class JavaDriverCompletionContributorTest {
     )
     fun `should autocomplete fields from the current namespace in Projections#fields built with List#of of an Aggregates#project stage`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
 
         val (dataSource, readModelProvider) = fixture.setupConnection()
@@ -644,18 +670,19 @@ class JavaDriverCompletionContributorTest {
             ),
         )
 
-        val elements = fixture.completeBasic()
+        eventually {
+            val elements = fixture.completeBasic()
 
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
+            assertNotNull(
+                elements.firstOrNull {
+                    it.lookupString == "myField"
+                },
+            )
+        }
     }
 
     @ParsingTest(
         value = """
-
     public void exampleFind() {
         client.getDatabase("myDatabase").getCollection("myCollection")
                 .aggregate(List.of(
@@ -672,7 +699,7 @@ class JavaDriverCompletionContributorTest {
     )
     fun `should autocomplete fields from the current namespace in Projections#fields built with Arrays#asList of an Aggregates#project stage`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
 
         val (dataSource, readModelProvider) = fixture.setupConnection()
@@ -693,13 +720,15 @@ class JavaDriverCompletionContributorTest {
             ),
         )
 
-        val elements = fixture.completeBasic()
+        eventually {
+            val elements = fixture.completeBasic()
 
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
+            assertNotNull(
+                elements.firstOrNull {
+                    it.lookupString == "myField"
+                },
+            )
+        }
     }
 
     @ParsingTest(
@@ -716,7 +745,7 @@ class JavaDriverCompletionContributorTest {
     )
     fun `should autocomplete fields from the current namespace in Sorts#ascending of an Aggregates#sort stage`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
 
         val (dataSource, readModelProvider) = fixture.setupConnection()
@@ -737,13 +766,15 @@ class JavaDriverCompletionContributorTest {
             ),
         )
 
-        val elements = fixture.completeBasic()
+        eventually {
+            val elements = fixture.completeBasic()
 
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
+            assertNotNull(
+                elements.firstOrNull {
+                    it.lookupString == "myField"
+                },
+            )
+        }
     }
 
     @ParsingTest(
@@ -760,7 +791,7 @@ class JavaDriverCompletionContributorTest {
     )
     fun `should autocomplete fields from the current namespace in Sorts#descending of an Aggregates#sort stage`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
 
         val (dataSource, readModelProvider) = fixture.setupConnection()
@@ -781,13 +812,15 @@ class JavaDriverCompletionContributorTest {
             ),
         )
 
-        val elements = fixture.completeBasic()
+        eventually {
+            val elements = fixture.completeBasic()
 
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
+            assertNotNull(
+                elements.firstOrNull {
+                    it.lookupString == "myField"
+                },
+            )
+        }
     }
 
     @ParsingTest(
@@ -806,7 +839,7 @@ class JavaDriverCompletionContributorTest {
     )
     fun `should autocomplete fields from the current namespace in Sorts#orderBy of an Aggregates#sort stage`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
 
         val (dataSource, readModelProvider) = fixture.setupConnection()
@@ -827,13 +860,15 @@ class JavaDriverCompletionContributorTest {
             ),
         )
 
-        val elements = fixture.completeBasic()
+        eventually {
+            val elements = fixture.completeBasic()
 
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
+            assertNotNull(
+                elements.firstOrNull {
+                    it.lookupString == "myField"
+                },
+            )
+        }
     }
 
     @ParsingTest(
@@ -850,7 +885,7 @@ class JavaDriverCompletionContributorTest {
     )
     fun `should not autocomplete fields from the current namespace in Aggregates#addFields stage`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
 
         val (dataSource, readModelProvider) = fixture.setupConnection()
@@ -871,13 +906,15 @@ class JavaDriverCompletionContributorTest {
             ),
         )
 
-        val elements = fixture.completeBasic()
+        eventually {
+            val elements = fixture.completeBasic()
 
-        assertNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
+            assertNull(
+                elements.firstOrNull {
+                    it.lookupString == "myField"
+                },
+            )
+        }
     }
 
     @ParsingTest(
@@ -894,7 +931,7 @@ class JavaDriverCompletionContributorTest {
     )
     fun `should autocomplete fields from the current namespace for _id expression in Aggregates#group stage`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
 
         val (dataSource, readModelProvider) = fixture.setupConnection()
@@ -915,13 +952,15 @@ class JavaDriverCompletionContributorTest {
             ),
         )
 
-        val elements = fixture.completeBasic()
+        eventually {
+            val elements = fixture.completeBasic()
 
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
+            assertNotNull(
+                elements.firstOrNull {
+                    it.lookupString == "myField"
+                },
+            )
+        }
     }
 
     @ParsingTest(
@@ -939,7 +978,7 @@ class JavaDriverCompletionContributorTest {
     )
     fun `should autocomplete fields from the current namespace for accumulator expression in Aggregates#group stage`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
 
         val (dataSource, readModelProvider) = fixture.setupConnection()
@@ -960,13 +999,15 @@ class JavaDriverCompletionContributorTest {
             ),
         )
 
-        val elements = fixture.completeBasic()
+        eventually {
+            val elements = fixture.completeBasic()
 
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
+            assertNotNull(
+                elements.firstOrNull {
+                    it.lookupString == "myField"
+                },
+            )
+        }
     }
 
     @ParsingTest(
@@ -981,7 +1022,7 @@ class JavaDriverCompletionContributorTest {
     )
     fun `should autocomplete fields from the current namespace in an Aggregates#unwind stage`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
 
         val (dataSource, readModelProvider) = fixture.setupConnection()
@@ -1002,12 +1043,14 @@ class JavaDriverCompletionContributorTest {
             ),
         )
 
-        val elements = fixture.completeBasic()
+        eventually {
+            val elements = fixture.completeBasic()
 
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
+            assertNotNull(
+                elements.firstOrNull {
+                    it.lookupString == "myField"
+                },
+            )
+        }
     }
 }

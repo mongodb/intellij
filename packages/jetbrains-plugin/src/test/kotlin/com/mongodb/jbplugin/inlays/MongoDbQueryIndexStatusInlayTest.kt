@@ -11,6 +11,7 @@ import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.ParsingTest
 import com.mongodb.jbplugin.fixtures.setupConnection
 import com.mongodb.jbplugin.fixtures.specifyDialect
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.*
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
@@ -29,7 +30,7 @@ class MongoDbQueryIndexStatusInlayTest {
     )
     fun `does not show any inlay when the database does not exist`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModel) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
         whenever(readModel.slice(eq(dataSource), any<ListDatabases.Slice>()))
@@ -65,7 +66,7 @@ class MongoDbQueryIndexStatusInlayTest {
     )
     fun `does not show any inlay when the collection does not exist`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModel) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
         whenever(readModel.slice(eq(dataSource), any<ListDatabases.Slice>()))
@@ -101,7 +102,7 @@ class MongoDbQueryIndexStatusInlayTest {
     )
     fun `shows a collection scan inlay`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModel) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
         whenever(readModel.slice(eq(dataSource), any<ListDatabases.Slice>()))
@@ -137,7 +138,7 @@ class MongoDbQueryIndexStatusInlayTest {
     )
     fun `shows an index scan inlay`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModel) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
@@ -174,7 +175,7 @@ class MongoDbQueryIndexStatusInlayTest {
     )
     fun `shows an ineffective index scan inlay`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModel) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
@@ -211,7 +212,7 @@ class MongoDbQueryIndexStatusInlayTest {
     )
     fun `shows queries that could not be run`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModel) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 

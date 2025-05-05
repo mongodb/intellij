@@ -5,6 +5,7 @@ import com.intellij.psi.*
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.util.parentOfType
+import com.intellij.psi.util.siblings
 import com.mongodb.jbplugin.dialects.DialectParser
 import com.mongodb.jbplugin.mql.BsonAny
 import com.mongodb.jbplugin.mql.BsonAnyOf
@@ -225,8 +226,8 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
          * will contain all tokens and the string we actually want. Check if any of them is a reference to a field.
          */
         if (source is PsiWhiteSpace) {
-            val parentExpressionList = source.parent
-            return parentExpressionList.children.any { isReferenceToField(it) }
+            return source.siblings(withSelf = false)
+                .any { isReferenceToField(it) }
         }
 
         return (isInQuery || isInAggregate) && isString

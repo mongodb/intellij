@@ -8,6 +8,7 @@ import com.mongodb.jbplugin.autocomplete.Autocompletion.autocompleteCollections
 import com.mongodb.jbplugin.autocomplete.Autocompletion.autocompleteDatabases
 import com.mongodb.jbplugin.autocomplete.Autocompletion.autocompleteFields
 import com.mongodb.jbplugin.mql.*
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.`when`
@@ -15,7 +16,7 @@ import org.mockito.kotlin.mock
 
 class AutocompletionTest {
     @Test
-    fun `returns the list of all available databases`() {
+    fun `returns the list of all available databases`() = runTest {
         val readModelProvider = mock<MongoDbReadModelProvider<Any?>>()
         `when`(readModelProvider.slice(null, ListDatabases.Slice)).thenReturn(
             ListDatabases(listOf(ListDatabases.Database("myDb"))),
@@ -40,7 +41,7 @@ class AutocompletionTest {
     }
 
     @Test
-    fun `notifies when the provided database does not exist`() {
+    fun `notifies when the provided database does not exist`() = runTest {
         val readModelProvider = mock<MongoDbReadModelProvider<Any?>>()
         val slice = ListCollections.Slice("myDb")
 
@@ -57,7 +58,7 @@ class AutocompletionTest {
     }
 
     @Test
-    fun `returns the list of collections for the given database`() {
+    fun `returns the list of collections for the given database`() = runTest {
         val readModelProvider = mock<MongoDbReadModelProvider<Any?>>()
         val slice = ListCollections.Slice("myDb")
 
@@ -87,7 +88,7 @@ class AutocompletionTest {
     }
 
     @Test
-    fun `returns the list of fields for sample documents`() {
+    fun `returns the list of fields for sample documents`() = runTest {
         val readModelProvider = mock<MongoDbReadModelProvider<Any?>>()
         val namespace = Namespace("myDb", "myColl")
         val slice = GetCollectionSchema.Slice(namespace, 50)

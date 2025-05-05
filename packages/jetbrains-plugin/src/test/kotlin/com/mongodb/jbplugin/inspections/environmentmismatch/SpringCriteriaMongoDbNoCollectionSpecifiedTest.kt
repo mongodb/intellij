@@ -11,6 +11,7 @@ import com.mongodb.jbplugin.fixtures.setupConnection
 import com.mongodb.jbplugin.fixtures.specifyDatabase
 import com.mongodb.jbplugin.fixtures.specifyDialect
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.eq
 
@@ -44,7 +45,7 @@ public void exampleAggregate(Class collectionClass) {
     )
     fun `shows an inspection when the collection cannot be detected`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(SpringCriteriaDialect)
 
@@ -83,7 +84,7 @@ public void exampleAggregate() {
     )
     fun `shows no inspection when the collection can be detected`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "myDb")
         fixture.specifyDialect(SpringCriteriaDialect)

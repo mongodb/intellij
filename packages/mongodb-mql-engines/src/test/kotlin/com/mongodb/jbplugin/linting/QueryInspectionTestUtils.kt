@@ -10,6 +10,7 @@ import com.mongodb.jbplugin.mql.BsonObject
 import com.mongodb.jbplugin.mql.CollectionSchema
 import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.Node
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -58,7 +59,7 @@ interface QueryInspectionTest<I : Inspection> {
         return InspectionTestContextForInsight(query, insight!!)
     }
 
-    fun InspectionTestContext<I>.whenDatabasesAre(databases: List<String>) {
+    fun InspectionTestContext<I>.whenDatabasesAre(databases: List<String>) = runBlocking {
         `when`(readModelProvider.slice(any(), any<ListDatabases.Slice>())).thenReturn(
             ListDatabases(
                 databases.map { ListDatabases.Database(it) }
@@ -66,7 +67,7 @@ interface QueryInspectionTest<I : Inspection> {
         )
     }
 
-    fun InspectionTestContext<I>.whenCollectionsAre(collections: List<String>) {
+    fun InspectionTestContext<I>.whenCollectionsAre(collections: List<String>) = runBlocking {
         `when`(readModelProvider.slice(any(), any<ListCollections.Slice>())).thenReturn(
             ListCollections(
                 collections.map { ListCollections.Collection(it, "collection") }
@@ -74,7 +75,7 @@ interface QueryInspectionTest<I : Inspection> {
         )
     }
 
-    fun InspectionTestContext<I>.whenCollectionSchemaIs(namespace: Namespace, schema: BsonObject) {
+    fun InspectionTestContext<I>.whenCollectionSchemaIs(namespace: Namespace, schema: BsonObject) = runBlocking {
         `when`(readModelProvider.slice(any(), any<GetCollectionSchema.Slice>())).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -85,7 +86,7 @@ interface QueryInspectionTest<I : Inspection> {
         )
     }
 
-    fun InspectionTestContext<I>.whenExplainPlanIs(explainPlan: ExplainPlan) {
+    fun InspectionTestContext<I>.whenExplainPlanIs(explainPlan: ExplainPlan) = runBlocking {
         `when`(readModelProvider.slice(any(), any<ExplainQuery.Slice<Unit>>()))
             .thenReturn(ExplainQuery(explainPlan))
     }

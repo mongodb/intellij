@@ -25,7 +25,7 @@ interface Slice<S : Any> {
  * @param D
  */
 interface MongoDbReadModelProvider<D> {
-    fun <T : Any> slice(
+    suspend fun <T : Any> slice(
         dataSource: D,
         slice: Slice<T>,
     ): T

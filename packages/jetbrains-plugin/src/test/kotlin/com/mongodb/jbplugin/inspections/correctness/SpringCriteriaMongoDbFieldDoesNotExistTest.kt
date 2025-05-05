@@ -16,6 +16,7 @@ import com.mongodb.jbplugin.fixtures.specifyDialect
 import com.mongodb.jbplugin.mql.BsonObject
 import com.mongodb.jbplugin.mql.CollectionSchema
 import com.mongodb.jbplugin.mql.Namespace
+import kotlinx.coroutines.test.runTest
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
@@ -35,7 +36,7 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
     )
     fun `find_query shows inspection when field does not exist`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         doRunHighlightingTest(fixture)
     }
 
@@ -54,7 +55,7 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
     )
     fun `find_query_with_sort shows inspection when field does not exist`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         doRunHighlightingTest(fixture)
     }
 
@@ -77,7 +78,7 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
     )
     fun `aggregate_with_match shows inspection when field does not exist`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         doRunHighlightingTest(fixture)
     }
 
@@ -108,7 +109,7 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
     )
     fun `aggregate_with_project shows inspection when field does not exist`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         doRunHighlightingTest(fixture)
     }
 
@@ -135,7 +136,7 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
     )
     fun `aggregate_with_unwind shows inspection when field does not exist`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         doRunHighlightingTest(fixture)
     }
 
@@ -165,7 +166,7 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
     )
     fun `aggregate_with_sort shows inspection when field does not exist`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         doRunHighlightingTest(fixture)
     }
 
@@ -185,7 +186,7 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
     )
     fun `aggregate_with_addFields shows inspection when field does not exist`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         doRunHighlightingTest(fixture)
     }
 
@@ -205,7 +206,7 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
     )
     fun `aggregate_with_group shows inspection when field does not exist`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         doRunHighlightingTest(fixture)
     }
 
@@ -225,7 +226,7 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
     )
     fun `aggregate_with_group_sum shows inspection when field does not exist`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         doRunHighlightingTest(fixture)
     }
 
@@ -245,7 +246,7 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
     )
     fun `aggregate_with_group_avg shows inspection when field does not exist`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         doRunHighlightingTest(fixture)
     }
 
@@ -265,7 +266,7 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
     )
     fun `aggregate_with_group_max shows inspection when field does not exist`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         doRunHighlightingTest(fixture)
     }
 
@@ -285,7 +286,7 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
     )
     fun `aggregate_with_group_min shows inspection when field does not exist`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         doRunHighlightingTest(fixture)
     }
 
@@ -305,7 +306,7 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
     )
     fun `aggregate_with_group_first shows inspection when field does not exist`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         doRunHighlightingTest(fixture)
     }
 
@@ -325,7 +326,7 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
     )
     fun `aggregate_with_group_last shows inspection when field does not exist`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         doRunHighlightingTest(fixture)
     }
 
@@ -345,7 +346,7 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
     )
     fun `aggregate_with_group_push shows inspection when field does not exist`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         doRunHighlightingTest(fixture)
     }
 
@@ -365,11 +366,11 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
     )
     fun `aggregate_with_group_addToSet shows inspection when field does not exist`(
         fixture: CodeInsightTestFixture,
-    ) {
+    ) = runTest {
         doRunHighlightingTest(fixture)
     }
 
-    private fun doRunHighlightingTest(fixture: CodeInsightTestFixture) {
+    private suspend fun doRunHighlightingTest(fixture: CodeInsightTestFixture) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDatabase(dataSource, "bad_db")
         fixture.specifyDialect(SpringCriteriaDialect)

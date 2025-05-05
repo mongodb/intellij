@@ -20,7 +20,7 @@ import com.mongodb.jbplugin.mql.parser.map
 import com.mongodb.jbplugin.mql.parser.mapMany
 import com.mongodb.jbplugin.mql.parser.parse
 
-fun <D>Namespace.isNamespaceAvailableInCluster(
+suspend fun <D> Namespace.isNamespaceAvailableInCluster(
     dataSource: D,
     readModelProvider: MongoDbReadModelProvider<D>
 ): Boolean {

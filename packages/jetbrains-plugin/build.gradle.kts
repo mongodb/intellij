@@ -51,6 +51,7 @@ configurations {
         exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-coroutines-core")
     }
 }
+
 dependencies {
     implementation(project(":packages:mongodb-access-adapter"))
     implementation(project(":packages:mongodb-access-adapter:datagrip-access-adapter"))
