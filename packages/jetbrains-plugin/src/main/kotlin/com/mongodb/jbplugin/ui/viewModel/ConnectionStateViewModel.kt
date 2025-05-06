@@ -167,7 +167,10 @@ class ConnectionStateViewModel(
                 // re-analysing the files.
                 if (isDisconnected || isConnected) {
                     val codeEditorViewModel by project.service<CodeEditorViewModel>()
+                    val analysisScopeViewModel by project.service<AnalysisScopeViewModel>()
+
                     codeEditorViewModel.reanalyzeRelevantEditors()
+                    analysisScopeViewModel.refreshAnalysis()
                 }
 
                 if (isDisconnected) {

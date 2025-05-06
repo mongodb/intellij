@@ -189,6 +189,7 @@ class ConnectionStateViewModelTest {
         runBlocking {
             viewModel.selectConnection(dataSource)
             verify(codeEditorViewModel, timeout(1000).atLeastOnce()).reanalyzeRelevantEditors()
+            verify(analysisScopeViewModel, timeout(1000).atLeastOnce()).refreshAnalysis()
         }
 
         runBlocking {
