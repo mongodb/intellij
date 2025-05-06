@@ -281,6 +281,8 @@ internal fun ConnectionComboBox(
             for (connection in connections) {
                 ConnectionItem(connection)
             }
+
+            NewConnectionItem()
         }
     }
 }
@@ -299,6 +301,24 @@ internal fun DisconnectItem() {
         Row {
             Icon(AllIconsKeys.General.Close, "", modifier = Modifier.padding(end = 8.dp))
             Text(useTranslation("side-panel.connection.ConnectionBootstrapCard.combobox.disconnect"))
+        }
+    }
+}
+
+@Composable
+internal fun NewConnectionItem() {
+    val connectionCallback = useConnectionCallbacks()
+
+    Box(
+        modifier = Modifier
+            .testTag("NewConnectionItem")
+            .clickable { connectionCallback.addNewConnection() }
+            .padding(4.dp)
+            .fillMaxWidth(1f)
+    ) {
+        Row {
+            Icon(AllIconsKeys.General.Add, "", modifier = Modifier.padding(end = 8.dp))
+            Text(useTranslation("side-panel.connection.ConnectionBootstrapCard.combobox.add-new-connection"))
         }
     }
 }
