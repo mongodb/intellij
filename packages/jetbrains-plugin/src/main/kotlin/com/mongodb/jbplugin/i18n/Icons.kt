@@ -9,7 +9,6 @@ import com.intellij.ui.AnimatedIcon
 import com.intellij.ui.JBColor
 import com.intellij.ui.LayeredIcon
 import com.intellij.util.IconUtil
-import com.intellij.util.ui.UIUtil
 import java.awt.Component
 import java.awt.image.BufferedImage
 import javax.swing.Icon
@@ -90,7 +89,11 @@ object Icons {
         val consideredWidth = this.iconWidth
         val consideredHeight = this.iconHeight
 
-        val bufferedImage = UIUtil.createImage(null, consideredWidth, consideredHeight, BufferedImage.TYPE_INT_ARGB)
+        val bufferedImage = BufferedImage(
+            consideredWidth,
+            consideredHeight,
+            BufferedImage.TYPE_INT_ARGB
+        )
         val graphics = bufferedImage.createGraphics()
 
         this.paintIcon(null, graphics, 0, 0)
