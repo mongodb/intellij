@@ -84,7 +84,8 @@ import org.jetbrains.jewel.ui.util.thenIf
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ControlledComboBox(
+fun<T> ControlledComboBox(
+    selectedItem: T,
     labelText: String,
     modifier: Modifier = Modifier,
     menuModifier: Modifier = Modifier,
@@ -120,6 +121,10 @@ fun ControlledComboBox(
         } else {
             popupExpanded = isExpanded
         }
+    }
+
+    LaunchedEffect(selectedItem) {
+        setPopupExpanded(false)
     }
 
     // fun setPopupExpanded(expanded: Boolean) {

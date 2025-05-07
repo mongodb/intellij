@@ -262,6 +262,7 @@ internal fun ConnectionComboBox(
     val (comboBoxExpanded, setComboBoxExpanded, focusRequester) = useConnectionComboBoxState()
 
     ControlledComboBox(
+        selectedItem = selectedConnection,
         comboBoxExpanded = comboBoxExpanded,
         setComboBoxExpanded = setComboBoxExpanded,
         modifier = Modifier.testTag("ConnectionComboBox").focusRequester(focusRequester),

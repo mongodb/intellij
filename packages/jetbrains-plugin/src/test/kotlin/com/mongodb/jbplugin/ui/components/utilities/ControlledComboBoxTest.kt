@@ -29,6 +29,7 @@ class ControlledComboBoxTest {
     fun `should be able to control the popup via normal clicks`() = runComposeUiTest {
         setContentWithTheme {
             ControlledComboBox(
+                selectedItem = null,
                 labelText = "Select a description",
             ) {
                 Column {
@@ -48,6 +49,7 @@ class ControlledComboBoxTest {
         setContentWithTheme {
             var selectedItem by remember { mutableStateOf<String?>(null) }
             ControlledComboBox(
+                selectedItem = selectedItem,
                 modifier = Modifier.testTag("ComboBox"),
                 labelText = if (selectedItem == null) {
                     "Select a description"
@@ -75,12 +77,45 @@ class ControlledComboBoxTest {
     }
 
     @Test
+    fun `should dismiss the items popup after an item is selected`() = runComposeUiTest {
+        setContentWithTheme {
+            var selectedItem by remember { mutableStateOf<String?>(null) }
+            ControlledComboBox(
+                selectedItem = selectedItem,
+                modifier = Modifier.testTag("ComboBox"),
+                labelText = if (selectedItem == null) {
+                    "Select a description"
+                } else {
+                    selectedItem!!
+                },
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier.clickable {
+                            selectedItem = "Description A"
+                        }
+                    ) {
+                        Text("Description A")
+                    }
+                }
+            }
+        }
+
+        onNodeWithTag("ComboBox").performClick()
+        onNodeWithTag("Jewel.ComboBox.PopupMenu").assertExists()
+
+        onNodeWithText("Description A").performClick()
+        onNodeWithTag("Jewel.ComboBox.PopupMenu").assertDoesNotExist()
+    }
+
+    @Test
     fun `popup menu can be controlled via lifted state`() = runComposeUiTest {
         var setComboBoxExpanded: (Boolean) -> Unit = {}
         setContentWithTheme {
             var comboBoxExpanded by remember { mutableStateOf(false) }
             setComboBoxExpanded = { comboBoxExpanded = it }
             ControlledComboBox(
+                selectedItem = null,
                 labelText = "Select a description",
                 comboBoxExpanded = comboBoxExpanded,
                 setComboBoxExpanded = setComboBoxExpanded,
