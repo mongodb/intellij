@@ -8,14 +8,17 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runComposeUiTest
 import com.intellij.testFramework.assertInstanceOf
+import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.setContentWithTheme
 import com.mongodb.jbplugin.inspections.analysisScope.AnalysisScope
 import com.mongodb.jbplugin.ui.viewModel.AnalysisStatus
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import kotlin.time.Duration.Companion.milliseconds
 
-@OptIn(ExperimentalTestApi::class)
+@OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
+@IntegrationTest
 class InspectionScopeSettingsTest {
     @Test
     fun `should add a combobox with the list of available scopes`() = runComposeUiTest {

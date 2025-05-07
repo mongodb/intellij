@@ -13,10 +13,10 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import com.mongodb.jbplugin.ui.components.utilities.ControlledComboBox
 import com.mongodb.jbplugin.ui.components.utilities.hooks.useTranslation
 import com.mongodb.jbplugin.ui.viewModel.DatabasesLoadingState
 import org.jetbrains.jewel.ui.Outline
-import org.jetbrains.jewel.ui.component.ComboBox
 import org.jetbrains.jewel.ui.component.Icon
 import org.jetbrains.jewel.ui.component.Text
 import org.jetbrains.jewel.ui.icons.AllIconsKeys
@@ -27,7 +27,8 @@ internal fun DatabaseComboBox(
     selectedDatabase: String?,
 ) {
     val scrollState = rememberScrollState()
-    ComboBox(
+    ControlledComboBox(
+        selectedItem = selectedDatabase,
         menuModifier = Modifier.verticalScroll(scrollState),
         modifier = Modifier.testTag("DatabaseComboBox"),
         labelText = selectedDatabase

@@ -6,13 +6,16 @@ import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runComposeUiTest
+import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.mockDataSource
 import com.mongodb.jbplugin.fixtures.setContentWithTheme
 import com.mongodb.jbplugin.ui.viewModel.DatabasesLoadingState
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
-@OptIn(ExperimentalTestApi::class)
+@OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
+@IntegrationTest
 class DatabaseComboBoxTest {
     @Test
     fun `should show the loading status text when the databases are loading`() = runComposeUiTest {

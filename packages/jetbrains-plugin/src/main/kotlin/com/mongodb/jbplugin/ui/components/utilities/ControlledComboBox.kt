@@ -84,13 +84,14 @@ import org.jetbrains.jewel.ui.util.thenIf
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ControlledComboBox(
+fun<T> ControlledComboBox(
+    selectedItem: T,
     labelText: String,
     modifier: Modifier = Modifier,
     menuModifier: Modifier = Modifier,
     isEnabled: Boolean = true,
-    comboBoxExpanded: Boolean = false,
-    setComboBoxExpanded: (Boolean) -> Unit = {},
+    comboBoxExpanded: Boolean? = null,
+    setComboBoxExpanded: ((Boolean) -> Unit)? = null,
     outline: Outline = Outline.None,
     maxPopupHeight: Dp = Dp.Unspecified,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
@@ -105,11 +106,25 @@ fun ControlledComboBox(
     // onPopupStateChange: (Boolean) -> Unit = {},
     popupContent: @Composable () -> Unit,
 ) {
-    var popupExpanded by remember { mutableStateOf(false) }
+    var popupExpanded by remember { mutableStateOf(comboBoxExpanded ?: false) }
     var chevronHovered by remember { mutableStateOf(false) }
 
     LaunchedEffect(comboBoxExpanded) {
-        popupExpanded = comboBoxExpanded
+        if (comboBoxExpanded != null) {
+            popupExpanded = comboBoxExpanded
+        }
+    }
+
+    fun setPopupExpanded(isExpanded: Boolean) {
+        if (setComboBoxExpanded != null) {
+            setComboBoxExpanded(isExpanded)
+        } else {
+            popupExpanded = isExpanded
+        }
+    }
+
+    LaunchedEffect(selectedItem) {
+        setPopupExpanded(false)
     }
 
     // fun setPopupExpanded(expanded: Boolean) {
@@ -146,7 +161,7 @@ fun ControlledComboBox(
             .onFocusChanged { focusState ->
                 comboBoxState = comboBoxState.copy(focused = focusState.isFocused)
                 if (!focusState.isFocused) {
-                    setComboBoxExpanded(false)
+                    setPopupExpanded(false)
                 }
             }
             .thenIf(isEnabled) {
@@ -155,29 +170,29 @@ fun ControlledComboBox(
                     .pointerInput(interactionSource) {
                         detectPressAndCancel(
                             onPress = {
-                                setComboBoxExpanded(!popupExpanded)
+                                setPopupExpanded(!popupExpanded)
                                 comboBoxFocusRequester.requestFocus()
                             },
-                            onCancel = { setComboBoxExpanded(false) },
+                            onCancel = { setPopupExpanded(false) },
                         )
                     }
                     .semantics(mergeDescendants = true) { role = Role.DropdownList }
                     .onPreviewKeyEvent {
                         if (it.type == KeyEventType.KeyDown && it.key == Key.Spacebar) {
-                            setComboBoxExpanded(!popupExpanded)
+                            setPopupExpanded(!popupExpanded)
                         }
                         if (it.type == KeyEventType.KeyDown && it.key == Key.DirectionDown) {
                             if (popupExpanded) {
                                 onArrowDownPress()
                             } else {
-                                setComboBoxExpanded(true)
+                                setPopupExpanded(true)
                             }
                         }
                         if (it.type == KeyEventType.KeyDown && it.key == Key.DirectionUp && popupExpanded) {
                             onArrowUpPress()
                         }
                         if (it.type == KeyEventType.KeyDown && it.key == Key.Escape && popupExpanded) {
-                            setComboBoxExpanded(false)
+                            setPopupExpanded(false)
                         }
                         false
                     }
@@ -236,7 +251,7 @@ fun ControlledComboBox(
             PopupContainer(
                 onDismissRequest = {
                     if (!chevronHovered) {
-                        setComboBoxExpanded(false)
+                        setPopupExpanded(false)
                     }
                 },
                 modifier =
@@ -245,7 +260,7 @@ fun ControlledComboBox(
                     .semantics { contentDescription = "Jewel.ComboBox.PopupMenu" }
                     .heightIn(max = maxHeight)
                     .width(comboBoxWidth)
-                    .onClick { setComboBoxExpanded(false) },
+                    .onClick { setPopupExpanded(false) },
                 horizontalAlignment = Alignment.Start,
                 popupProperties = PopupProperties(focusable = false),
                 content = popupContent,

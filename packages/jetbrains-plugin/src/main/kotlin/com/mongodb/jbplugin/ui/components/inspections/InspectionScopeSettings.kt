@@ -25,6 +25,7 @@ import com.mongodb.jbplugin.inspections.analysisScope.AnalysisScope.CurrentFile
 import com.mongodb.jbplugin.inspections.analysisScope.AnalysisScope.CurrentQuery
 import com.mongodb.jbplugin.inspections.analysisScope.AnalysisScope.RecommendedInsights
 import com.mongodb.jbplugin.ui.components.utilities.ActionLink
+import com.mongodb.jbplugin.ui.components.utilities.ControlledComboBox
 import com.mongodb.jbplugin.ui.components.utilities.Separator
 import com.mongodb.jbplugin.ui.components.utilities.hooks.useTranslation
 import com.mongodb.jbplugin.ui.components.utilities.hooks.useViewModelMutator
@@ -36,7 +37,6 @@ import com.mongodb.jbplugin.ui.viewModel.AnalysisStatus.Done
 import com.mongodb.jbplugin.ui.viewModel.AnalysisStatus.InProgress
 import com.mongodb.jbplugin.ui.viewModel.AnalysisStatus.NoAnalysis
 import org.jetbrains.jewel.ui.component.CircularProgressIndicator
-import org.jetbrains.jewel.ui.component.ComboBox
 import org.jetbrains.jewel.ui.component.Icon
 import org.jetbrains.jewel.ui.component.Text
 import org.jetbrains.jewel.ui.component.styling.CircularProgressStyle
@@ -88,7 +88,8 @@ fun _InspectionScopeSettings(
 private fun InspectionScopeComboBox(currentScope: AnalysisScope, modifier: Modifier = Modifier) {
     Row(modifier = modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(text = useTranslation("side-panel.scope.scope-to"))
-        ComboBox(
+        ControlledComboBox(
+            selectedItem = currentScope,
             modifier = Modifier.padding(start = 8.dp).fillMaxWidth().testTag("InspectionScopeComboBox"),
             labelText = useTranslation(currentScope.displayName)
         ) {

@@ -8,6 +8,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runComposeUiTest
 import com.intellij.database.dataSource.LocalDataSource
+import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.MongoDbServerUrl
 import com.mongodb.jbplugin.fixtures.mockDataSource
 import com.mongodb.jbplugin.fixtures.readClipboard
@@ -15,11 +16,13 @@ import com.mongodb.jbplugin.fixtures.setContentWithTheme
 import com.mongodb.jbplugin.ui.viewModel.ConnectionState
 import com.mongodb.jbplugin.ui.viewModel.DatabaseState
 import com.mongodb.jbplugin.ui.viewModel.SelectedConnectionState
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
-@OptIn(ExperimentalTestApi::class)
+@OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
+@IntegrationTest
 class ConnectionBootstrapCardTest {
     @Test
     fun `shows a button to create a new data source when disconnected`() = runComposeUiTest {
