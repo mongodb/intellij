@@ -51,6 +51,35 @@ class ConnectionBootstrapCardTest {
     }
 
     @Test
+    fun `shows an option to create a new data source in the connection list`() = runComposeUiTest {
+        var requestedDataSourceCreation = false
+        val dataSource = mockDataSource()
+
+        setContentWithTheme {
+            CompositionLocalProvider(
+                LocalConnectionCallbacks provides ConnectionCallbacks(
+                    addNewConnection = { requestedDataSourceCreation = true },
+                )
+            ) {
+                _ConnectionBootstrapCard(
+                    ConnectionState(
+                        listOf(dataSource),
+                        dataSource,
+                        SelectedConnectionState.Failed(dataSource, "Error message.")
+                    ),
+                    DatabaseState.initial(),
+                    false
+                )
+            }
+        }
+
+        onNodeWithTag("ConnectionComboBox").performClick()
+        onNodeWithTag("NewConnectionItem").performClick()
+
+        assertTrue(requestedDataSourceCreation)
+    }
+
+    @Test
     fun `shows the list of connections when disconnected if there is any`() = runComposeUiTest {
         val dataSource = mockDataSource()
 
