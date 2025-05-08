@@ -1,6 +1,5 @@
 package com.mongodb.jbplugin.editor
 
-import com.intellij.codeInsight.daemon.impl.EditorTracker
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.database.editor.DatabaseEditorHelper
 import com.intellij.database.util.DbUIUtil
@@ -49,7 +48,7 @@ interface DatagripConsoleEditor {
         }
 
         private fun allConsoleEditorsForDataSource(project: Project, dataSource: LocalDataSource): List<Editor> =
-            EditorTracker.getInstance(project).activeEditors.filter {
+            EditorFactory.getInstance().allEditors.filter {
                 val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(it.document)
                 val virtualFile = psiFile?.virtualFile ?: return@filter false
                 val dataSourceOfFile = DbVFSUtils.getDataSource(project, virtualFile)
