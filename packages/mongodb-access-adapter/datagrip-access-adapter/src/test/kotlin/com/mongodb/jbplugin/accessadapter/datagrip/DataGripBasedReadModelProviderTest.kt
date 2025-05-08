@@ -50,4 +50,20 @@ class DataGripBasedReadModelProviderTest {
 
         assertEquals(service.wasCached, false)
     }
+
+    @Test
+    fun `calls onCacheRecalculation when cache is recalculated`(
+        project: Project,
+        dataSource: LocalDataSource,
+    ) = runTest {
+        val service = project.getService(DataGripBasedReadModelProvider::class.java)
+
+        var wasRecalculated = false
+        // Cache will be calculated on the first call to Slice
+        service.slice(dataSource, BuildInfo.Slice) {
+            wasRecalculated = true
+        }
+
+        assertEquals(true, wasRecalculated)
+    }
 }
