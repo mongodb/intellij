@@ -31,7 +31,7 @@ class JavaDriverCompletionContributorTest {
         fixture.specifyDialect(JavaDriverDialect)
         val (dataSource, readModelProvider) = fixture.setupConnection()
 
-        `when`(readModelProvider.slice(eq(dataSource), any<ListDatabases.Slice>())).thenReturn(
+        `when`(readModelProvider.slice(eq(dataSource), any<ListDatabases.Slice>(), eq(null))).thenReturn(
             ListDatabases(
                 listOf(
                     ListDatabases.Database("myDatabase1"),
@@ -71,7 +71,7 @@ class JavaDriverCompletionContributorTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(ListCollections.Slice("myDatabase")))
+            readModelProvider.slice(eq(dataSource), eq(ListCollections.Slice("myDatabase")), eq(null))
         ).thenReturn(
             ListCollections(
                 listOf(
@@ -106,7 +106,7 @@ class JavaDriverCompletionContributorTest {
         val (dataSource, readModelProvider) = fixture.setupConnection()
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(ListCollections.Slice("myDatabase")))
+            readModelProvider.slice(eq(dataSource), eq(ListCollections.Slice("myDatabase")), eq(null))
         ).thenReturn(
             ListCollections(
                 listOf(
@@ -143,7 +143,7 @@ class JavaDriverCompletionContributorTest {
         val namespace = Namespace("myDatabase", "myCollection")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -186,7 +186,7 @@ class JavaDriverCompletionContributorTest {
         val namespace = Namespace("myDatabase", "myCollection")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -228,7 +228,7 @@ class JavaDriverCompletionContributorTest {
         val namespace = Namespace("myDatabase", "myCollection")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -274,7 +274,7 @@ class JavaDriverCompletionContributorTest {
         val namespace = Namespace("myDatabase", "myCollection")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -320,7 +320,7 @@ class JavaDriverCompletionContributorTest {
         val namespace = Namespace("myDatabase", "myCollection")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -368,7 +368,7 @@ class JavaDriverCompletionContributorTest {
         val namespace = Namespace("myDatabase", "myCollection")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -416,7 +416,7 @@ class JavaDriverCompletionContributorTest {
         val namespace = Namespace("myDatabase", "myCollection")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -462,7 +462,7 @@ class JavaDriverCompletionContributorTest {
         val namespace = Namespace("myDatabase", "myCollection")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -510,7 +510,7 @@ class JavaDriverCompletionContributorTest {
         val namespace = Namespace("myDatabase", "myCollection")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -558,7 +558,7 @@ class JavaDriverCompletionContributorTest {
         val namespace = Namespace("myDatabase", "myCollection")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -606,7 +606,7 @@ class JavaDriverCompletionContributorTest {
         val namespace = Namespace("myDatabase", "myCollection")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -656,7 +656,7 @@ class JavaDriverCompletionContributorTest {
         val namespace = Namespace("myDatabase", "myCollection")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -706,7 +706,7 @@ class JavaDriverCompletionContributorTest {
         val namespace = Namespace("myDatabase", "myCollection")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -752,7 +752,7 @@ class JavaDriverCompletionContributorTest {
         val namespace = Namespace("myDatabase", "myCollection")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -798,7 +798,7 @@ class JavaDriverCompletionContributorTest {
         val namespace = Namespace("myDatabase", "myCollection")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -846,7 +846,7 @@ class JavaDriverCompletionContributorTest {
         val namespace = Namespace("myDatabase", "myCollection")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -892,7 +892,7 @@ class JavaDriverCompletionContributorTest {
         val namespace = Namespace("myDatabase", "myCollection")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -938,7 +938,7 @@ class JavaDriverCompletionContributorTest {
         val namespace = Namespace("myDatabase", "myCollection")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -985,7 +985,7 @@ class JavaDriverCompletionContributorTest {
         val namespace = Namespace("myDatabase", "myCollection")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -1029,7 +1029,7 @@ class JavaDriverCompletionContributorTest {
         val namespace = Namespace("myDatabase", "myCollection")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(

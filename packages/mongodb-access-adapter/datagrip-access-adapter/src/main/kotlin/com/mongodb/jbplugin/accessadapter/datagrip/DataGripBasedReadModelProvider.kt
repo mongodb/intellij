@@ -12,7 +12,9 @@ import com.mongodb.jbplugin.accessadapter.MongoDbDriver
 import com.mongodb.jbplugin.accessadapter.MongoDbReadModelProvider
 import com.mongodb.jbplugin.accessadapter.Slice
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.DataGripMongoDbDriver
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import org.jetbrains.annotations.VisibleForTesting
@@ -41,6 +43,7 @@ private typealias DriverFactory = (Project, LocalDataSource) -> MongoDbDriver
 @Service(Service.Level.PROJECT)
 class DataGripBasedReadModelProvider(
     private val project: Project,
+    private val coroutineScope: CoroutineScope,
 ) : MongoDbReadModelProvider<LocalDataSource> {
     var driverFactory: DriverFactory = { project, dataSource ->
         DataGripMongoDbDriver(project, dataSource)
@@ -66,6 +69,7 @@ class DataGripBasedReadModelProvider(
     override suspend fun <T : Any> slice(
         dataSource: LocalDataSource,
         slice: Slice<T>,
+        onCacheRecalculation: (suspend (T) -> Unit)?,
     ): T {
         return withContext(Dispatchers.IO) {
             withTimeout(10.seconds) {
@@ -81,7 +85,14 @@ class DataGripBasedReadModelProvider(
                     } else {
                         refreshCache(entryKey, slice, dataSource)
                     }
-                    cachedValues[entryKey]?.second as T
+
+                    val result = cachedValues[entryKey]?.second as T
+                    if (!wasCached && onCacheRecalculation != null) {
+                        coroutineScope.launch(Dispatchers.IO) {
+                            onCacheRecalculation(result)
+                        }
+                    }
+                    result
                 }
             }
         }

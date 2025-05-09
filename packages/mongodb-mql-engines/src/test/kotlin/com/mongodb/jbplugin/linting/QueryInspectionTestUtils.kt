@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 
 class InMemoryQueryInsightsHolder<S, I : Inspection> : QueryInsightsHolder<S, I> {
     val results = mutableListOf<QueryInsight<S, I>>()
@@ -60,7 +61,7 @@ interface QueryInspectionTest<I : Inspection> {
     }
 
     fun InspectionTestContext<I>.whenDatabasesAre(databases: List<String>) = runBlocking {
-        `when`(readModelProvider.slice(any(), any<ListDatabases.Slice>())).thenReturn(
+        `when`(readModelProvider.slice(any(), any<ListDatabases.Slice>(), eq(null))).thenReturn(
             ListDatabases(
                 databases.map { ListDatabases.Database(it) }
             )
@@ -68,7 +69,7 @@ interface QueryInspectionTest<I : Inspection> {
     }
 
     fun InspectionTestContext<I>.whenCollectionsAre(collections: List<String>) = runBlocking {
-        `when`(readModelProvider.slice(any(), any<ListCollections.Slice>())).thenReturn(
+        `when`(readModelProvider.slice(any(), any<ListCollections.Slice>(), eq(null))).thenReturn(
             ListCollections(
                 collections.map { ListCollections.Collection(it, "collection") }
             )
@@ -76,7 +77,7 @@ interface QueryInspectionTest<I : Inspection> {
     }
 
     fun InspectionTestContext<I>.whenCollectionSchemaIs(namespace: Namespace, schema: BsonObject) = runBlocking {
-        `when`(readModelProvider.slice(any(), any<GetCollectionSchema.Slice>())).thenReturn(
+        `when`(readModelProvider.slice(any(), any<GetCollectionSchema.Slice>(), eq(null))).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
                     namespace,
@@ -87,7 +88,7 @@ interface QueryInspectionTest<I : Inspection> {
     }
 
     fun InspectionTestContext<I>.whenExplainPlanIs(explainPlan: ExplainPlan) = runBlocking {
-        `when`(readModelProvider.slice(any(), any<ExplainQuery.Slice<Unit>>()))
+        `when`(readModelProvider.slice(any(), any<ExplainQuery.Slice<Unit>>(), eq(null)))
             .thenReturn(ExplainQuery(explainPlan))
     }
 

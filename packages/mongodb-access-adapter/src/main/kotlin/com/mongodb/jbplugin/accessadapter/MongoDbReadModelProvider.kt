@@ -28,5 +28,6 @@ interface MongoDbReadModelProvider<D> {
     suspend fun <T : Any> slice(
         dataSource: D,
         slice: Slice<T>,
+        onCacheRecalculation: (suspend (T) -> Unit)? = null,
     ): T
 }

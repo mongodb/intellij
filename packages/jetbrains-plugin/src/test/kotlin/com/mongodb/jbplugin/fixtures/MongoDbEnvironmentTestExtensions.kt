@@ -10,6 +10,7 @@ import com.mongodb.client.MongoClients
 import com.mongodb.jbplugin.accessadapter.ConnectionString
 import com.mongodb.jbplugin.accessadapter.MongoDbDriver
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
+import kotlinx.coroutines.CoroutineScope
 import org.bson.Document
 import org.junit.jupiter.api.extension.AfterAllCallback
 import org.junit.jupiter.api.extension.BeforeAllCallback
@@ -123,7 +124,10 @@ class MongoDbEnvironmentTestExtensions :
     ): Any = serverUrl!!
 }
 
-suspend fun Project.withMockedUnconnectedMongoDbConnection(url: MongoDbServerUrl): Project {
+suspend fun Project.withMockedUnconnectedMongoDbConnection(
+    url: MongoDbServerUrl,
+    coroutineScope: CoroutineScope,
+): Project {
     val driver = mock<MongoDbDriver>()
     `when`(driver.connected).thenReturn(false)
     `when`(
@@ -133,6 +137,7 @@ suspend fun Project.withMockedUnconnectedMongoDbConnection(url: MongoDbServerUrl
     val readModelProvider =
         DataGripBasedReadModelProvider(
             this,
+            coroutineScope = coroutineScope,
         ).apply {
             driverFactory = { _, _ -> driver }
         }

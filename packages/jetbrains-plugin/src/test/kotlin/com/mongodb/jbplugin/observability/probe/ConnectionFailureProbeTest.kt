@@ -34,7 +34,10 @@ class ConnectionFailureProbeTest {
         application.withMockedService(telemetryService)
         application.withMockedService(logMessage)
 
-        project.withMockedUnconnectedMongoDbConnection(MongoDbServerUrl("mongodb://localhost"))
+        project.withMockedUnconnectedMongoDbConnection(
+            MongoDbServerUrl("mongodb://localhost"),
+            this
+        )
         val probe = ConnectionFailureProbe(TestScope())
 
         probe.connectionFailed(project, connectionPoint, Throwable())
@@ -67,7 +70,10 @@ class ConnectionFailureProbeTest {
         application.withMockedService(telemetryService)
         application.withMockedService(logMessage)
 
-        project.withMockedUnconnectedMongoDbConnection(MongoDbServerUrl("mongodb://localhost"))
+        project.withMockedUnconnectedMongoDbConnection(
+            MongoDbServerUrl("mongodb://localhost"),
+            this
+        )
         val probe = ConnectionFailureProbe(TestScope())
 
         val innerException =

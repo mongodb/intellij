@@ -31,7 +31,7 @@ record Entity() {}
         fixture.specifyDialect(SpringCriteriaDialect)
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(ListCollections.Slice("myDatabase")))
+            readModelProvider.slice(eq(dataSource), eq(ListCollections.Slice("myDatabase")), eq(null))
         ).thenReturn(
             ListCollections(
                 listOf(
@@ -75,7 +75,7 @@ record Entity() {}
         val namespace = Namespace("myDatabase", "book")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -91,19 +91,22 @@ record Entity() {}
         )
 
         fixture.type('"')
-        val elements = fixture.completeBasic()
 
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
+        eventually {
+            val elements = fixture.completeBasic()
 
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField2"
-            },
-        )
+            assertNotNull(
+                elements.firstOrNull {
+                    it.lookupString == "myField"
+                },
+            )
+
+            assertNotNull(
+                elements.firstOrNull {
+                    it.lookupString == "myField2"
+                },
+            )
+        }
     }
 
     @ParsingTest(
@@ -128,7 +131,7 @@ record Entity() {}
         val namespace = Namespace("myDatabase", "book")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -175,7 +178,7 @@ record Entity() {}
         fixture.specifyDialect(SpringCriteriaDialect)
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(ListCollections.Slice("myDatabase")))
+            readModelProvider.slice(eq(dataSource), eq(ListCollections.Slice("myDatabase")), eq(null))
         ).thenReturn(
             ListCollections(
                 listOf(
@@ -186,19 +189,21 @@ record Entity() {}
         )
 
         fixture.type('"')
-        val elements = fixture.completeBasic()
+        eventually {
+            val elements = fixture.completeBasic()
 
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myCollection"
-            },
-        )
+            assertNotNull(
+                elements.firstOrNull {
+                    it.lookupString == "myCollection"
+                },
+            )
 
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "anotherCollection"
-            },
-        )
+            assertNotNull(
+                elements.firstOrNull {
+                    it.lookupString == "anotherCollection"
+                },
+            )
+        }
     }
 
     @ParsingTest(
@@ -217,7 +222,7 @@ record Entity() {}
         fixture.specifyDialect(SpringCriteriaDialect)
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(ListCollections.Slice("myDatabase")))
+            readModelProvider.slice(eq(dataSource), eq(ListCollections.Slice("myDatabase")), eq(null))
         ).thenReturn(
             ListCollections(
                 listOf(
@@ -228,19 +233,21 @@ record Entity() {}
         )
 
         fixture.type('"')
-        val elements = fixture.completeBasic()
+        eventually {
+            val elements = fixture.completeBasic()
 
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myCollection"
-            },
-        )
+            assertNotNull(
+                elements.firstOrNull {
+                    it.lookupString == "myCollection"
+                },
+            )
 
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "anotherCollection"
-            },
-        )
+            assertNotNull(
+                elements.firstOrNull {
+                    it.lookupString == "anotherCollection"
+                },
+            )
+        }
     }
 
     @ParsingTest(
@@ -267,7 +274,7 @@ record Entity() {}
         val namespace = Namespace("myDatabase", "book")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -322,7 +329,7 @@ record Entity() {}
         val namespace = Namespace("myDatabase", "book")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -377,7 +384,7 @@ record Entity() {}
         val namespace = Namespace("myDatabase", "book")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -432,7 +439,7 @@ record Entity() {}
         val namespace = Namespace("myDatabase", "book")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -487,7 +494,7 @@ record Entity() {}
         val namespace = Namespace("myDatabase", "book")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -542,7 +549,7 @@ record Entity() {}
         val namespace = Namespace("myDatabase", "book")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -597,7 +604,7 @@ record Entity() {}
         val namespace = Namespace("myDatabase", "book")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -652,7 +659,7 @@ record Entity() {}
         val namespace = Namespace("myDatabase", "book")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -707,7 +714,7 @@ record Entity() {}
         val namespace = Namespace("myDatabase", "book")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -762,7 +769,7 @@ record Entity() {}
         val namespace = Namespace("myDatabase", "book")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -819,7 +826,7 @@ record Entity() {}
         val namespace = Namespace("myDatabase", "book")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -876,7 +883,7 @@ record Entity() {}
         val namespace = Namespace("myDatabase", "book")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -935,7 +942,7 @@ record Entity() {}
         val namespace = Namespace("myDatabase", "book")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -994,7 +1001,7 @@ record Entity() {}
         val namespace = Namespace("myDatabase", "book")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -1053,7 +1060,7 @@ record Entity() {}
         val namespace = Namespace("myDatabase", "book")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -1114,7 +1121,7 @@ record Entity() {}
         val namespace = Namespace("myDatabase", "book")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -1169,7 +1176,7 @@ record Entity() {}
         val namespace = Namespace("myDatabase", "book")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -1224,7 +1231,7 @@ record Entity() {}
         val namespace = Namespace("myDatabase", "book")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -1279,7 +1286,7 @@ record Entity() {}
         val namespace = Namespace("myDatabase", "book")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -1334,7 +1341,7 @@ record Entity() {}
         val namespace = Namespace("myDatabase", "book")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -1389,7 +1396,7 @@ record Entity() {}
         val namespace = Namespace("myDatabase", "book")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -1443,7 +1450,7 @@ record Entity() {}
         val namespace = Namespace("myDatabase", "book")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -1497,7 +1504,7 @@ record Entity() {}
         val namespace = Namespace("myDatabase", "book")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -1552,7 +1559,7 @@ record Entity() {}
         val namespace = Namespace("myDatabase", "book")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -1608,7 +1615,7 @@ record Entity() {}
         val namespace = Namespace("myDatabase", "book")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -1664,7 +1671,7 @@ record Entity() {}
         val namespace = Namespace("myDatabase", "book")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -1720,7 +1727,7 @@ record Entity() {}
         val namespace = Namespace("myDatabase", "book")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -1776,7 +1783,7 @@ record Entity() {}
         val namespace = Namespace("myDatabase", "book")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -1832,7 +1839,7 @@ record Entity() {}
         val namespace = Namespace("myDatabase", "book")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -1888,7 +1895,7 @@ record Entity() {}
         val namespace = Namespace("myDatabase", "book")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -1944,7 +1951,7 @@ record Entity() {}
         val namespace = Namespace("myDatabase", "book")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -2001,7 +2008,7 @@ record Entity() {}
         val namespace = Namespace("myDatabase", "book")
 
         `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)))
+            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
