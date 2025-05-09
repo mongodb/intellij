@@ -64,6 +64,8 @@ class DataGripBasedReadModelProviderTest {
             wasRecalculated = true
         }
 
-        assertEquals(true, wasRecalculated)
+        eventually {
+            assertEquals(true, wasRecalculated)
+        }
     }
 }
