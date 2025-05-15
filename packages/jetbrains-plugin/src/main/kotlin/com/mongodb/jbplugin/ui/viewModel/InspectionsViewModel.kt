@@ -18,6 +18,7 @@ import com.mongodb.jbplugin.inspections.environmentmismatch.MongoDbNoCollectionS
 import com.mongodb.jbplugin.inspections.environmentmismatch.MongoDbNoDatabaseInferred
 import com.mongodb.jbplugin.inspections.performance.MongoDbQueryNotUsingIndex
 import com.mongodb.jbplugin.inspections.performance.MongoDbQueryNotUsingIndexEffectively
+import com.mongodb.jbplugin.inspections.performance.MongoDbQueryNotUsingProject
 import com.mongodb.jbplugin.linting.ALL_MDB_INSPECTIONS
 import com.mongodb.jbplugin.linting.Inspection
 import com.mongodb.jbplugin.linting.Inspection.CollectionDoesNotExist
@@ -50,6 +51,7 @@ fun Inspection.getToolShortName(): String {
     return when (this) {
         NotUsingIndex -> MongoDbQueryNotUsingIndex::class.simpleName!!
         NotUsingIndexEffectively -> MongoDbQueryNotUsingIndexEffectively::class.simpleName!!
+        Inspection.NotUsingProject -> MongoDbQueryNotUsingProject::class.simpleName!!
         FieldDoesNotExist -> MongoDbFieldDoesNotExist::class.simpleName!!
         TypeMismatch -> MongoDbTypeMismatch::class.simpleName!!
         DatabaseDoesNotExist -> MongoDbDatabaseDoesNotExist::class.simpleName!!

@@ -9,7 +9,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlin.coroutines.CoroutineContext
 
 @OptIn(ExperimentalCoroutinesApi::class)
-private val UI_COMPUTE = Dispatchers.IO.limitedParallelism(1)
+private val UI_COMPUTE = Dispatchers.IO
 
 @Composable
 fun useCoroutineContext(): State<CoroutineContext> =

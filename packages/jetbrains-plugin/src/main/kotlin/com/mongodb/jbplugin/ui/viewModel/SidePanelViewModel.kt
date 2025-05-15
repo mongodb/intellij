@@ -34,7 +34,7 @@ class SidePanelViewModel(
     private val coroutineScope: CoroutineScope,
 ) {
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val sidePanelEventsDispatcher = Dispatchers.IO.limitedParallelism(1)
+    private val sidePanelEventsDispatcher = Dispatchers.IO
 
     private val mutableSidePanelEvents = MutableSharedFlow<SidePanelEvents>(
         replay = 0,

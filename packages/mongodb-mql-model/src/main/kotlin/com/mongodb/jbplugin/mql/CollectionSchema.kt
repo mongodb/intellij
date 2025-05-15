@@ -11,6 +11,7 @@ data class CollectionSchema(
     val namespace: Namespace,
     val schema: BsonObject,
     val dataDistribution: DataDistribution = DataDistribution.generate(emptyList()),
+    val sampleDocuments: List<Map<String, Any>> = emptyList(),
 ) {
     fun typeOf(
         @Language("JSONPath") jsonPath: String,

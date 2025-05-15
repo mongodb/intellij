@@ -489,7 +489,7 @@ internal class ConnectionSaga(
     internal val emitDatabasesLoadingStateChange: suspend (DatabasesLoadingState) -> Unit,
 ) {
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val connectionDispatcher = Dispatchers.IO.limitedParallelism(1)
+    private val connectionDispatcher = Dispatchers.IO
 
     private val onGoingConnection = AtomicReference<Job?>(null)
 

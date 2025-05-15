@@ -19,6 +19,7 @@ data class GetCollectionSchema(
     data class Slice(
         private val namespace: Namespace,
         private val documentsSampleSize: Int,
+        private val preserveSampleDocuments: Boolean = true,
     ) : com.mongodb.jbplugin.accessadapter.Slice<GetCollectionSchema> {
         override val id = "${javaClass.canonicalName}::$namespace"
 
@@ -69,7 +70,8 @@ data class GetCollectionSchema(
                 CollectionSchema(
                     namespace = namespace,
                     schema = schema,
-                    dataDistribution = DataDistribution.generate(sampleSomeDocs)
+                    dataDistribution = DataDistribution.generate(sampleSomeDocs),
+                    sampleDocuments = if (preserveSampleDocuments) sampleSomeDocs else emptyList(),
                 ),
             )
         }

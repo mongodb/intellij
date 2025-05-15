@@ -78,6 +78,15 @@
             key="query-not-using-index-effectively"
             enabledByDefault="true"
         />
+        <localInspection implementationClass="com.mongodb.jbplugin.inspections.performance.MongoDbQueryNotUsingProject"
+            language="JAVA"
+            bundle="messages.InspectionsAndInlaysBundle"
+            groupPath="MongoDB"
+            groupBundle="messages.InspectionsAndInlaysBundle"
+            groupKey="group.names.probable.bugs"
+            key="query-not-using-project"
+            enabledByDefault="true"
+        />
         <!-- Correctness Inspections -->
         <localInspection implementationClass="com.mongodb.jbplugin.inspections.correctness.MongoDbFieldDoesNotExist"
             language="JAVA"

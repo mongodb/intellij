@@ -69,6 +69,13 @@ dependencies {
     compileOnly(compose.desktop.common)
     compileOnly(compose.desktop.currentOs)
 
+    implementation(libs.gson)
+    implementation("io.ktor:ktor-client-cio-jvm:3.1.3")
+    implementation("io.ktor:ktor-client-core:3.1.3")
+    implementation("io.ktor:ktor-client-content-negotiation:3.1.3")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:3.1.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json")
+
     implementation(libs.compose.jewel.laf.bridge)
     implementation(libs.compose.jewel.laf.standalone) {
         exclude(group = "org.jetbrains.kotlinx")

@@ -58,6 +58,12 @@ sealed interface Inspection {
         override val category = PERFORMANCE
     }
 
+    data object NotUsingProject : Inspection {
+        override val primaryAction = ChooseConnection
+        override val secondaryActions = emptyArray<InspectionAction>()
+        override val category = PERFORMANCE
+    }
+
     data object FieldDoesNotExist : Inspection {
         override val primaryAction = RunQuery
         override val secondaryActions = emptyArray<InspectionAction>()
@@ -100,7 +106,8 @@ data class QueryInsight<S, I : Inspection>(
     val source: S,
     val description: String,
     val descriptionArguments: List<String>,
-    val inspection: I
+    val inspection: I,
+    val message: String? = null,
 ) {
     companion object {
         fun <S> notUsingIndex(query: Node<S>): QueryInsight<S, NotUsingIndex> {
@@ -209,6 +216,20 @@ data class QueryInsight<S, I : Inspection>(
                 description = "insight.no-collection-specified",
                 descriptionArguments = listOf(),
                 inspection = NoCollectionSpecified
+            )
+        }
+
+        fun <S> notUsingProject(
+            query: Node<S>,
+            message: String,
+        ): QueryInsight<S, Inspection.NotUsingProject> {
+            return QueryInsight(
+                query = query,
+                source = query.source,
+                description = "insight.not-using-project",
+                descriptionArguments = emptyList(),
+                message = message,
+                inspection = Inspection.NotUsingProject
             )
         }
     }

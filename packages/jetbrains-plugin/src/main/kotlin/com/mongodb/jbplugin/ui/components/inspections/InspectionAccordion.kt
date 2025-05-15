@@ -282,6 +282,11 @@ private fun InsightCard(insight: QueryInsight<PsiElement, *>) {
                 .padding(8.dp)
         ) {
             LinkToQueryInsight(insight)
+            if (insight.message != null) {
+                Row {
+                    Text(insight.message!!)
+                }
+            }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 InsightActions(insight)
             }

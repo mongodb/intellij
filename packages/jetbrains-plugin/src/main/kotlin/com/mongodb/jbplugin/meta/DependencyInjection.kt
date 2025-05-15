@@ -45,7 +45,7 @@ inline fun <reified T> Project.service(): DependencyInjection<T> {
 
 // We probably don't want to use a lot of threads for this. First because updating the state should
 // be straightforward (to avoid lag) and because state updates should be sequential.
-private val asyncStatusRefreshScope = Dispatchers.IO.limitedParallelism(1)
+private val asyncStatusRefreshScope = Dispatchers.IO
 
 class AsyncState<E : Any, T : Any>(
     parent: Disposable,
