@@ -22,6 +22,7 @@ import com.mongodb.jbplugin.mql.components.HasFieldReference.FromSchema
 import com.mongodb.jbplugin.mql.flattenAnyOfReferences
 import com.mongodb.jbplugin.mql.toBsonType
 
+internal const val MONGO_REACTIVE_CLUSTER_FQN = "com.mongodb.reactivestreams.client.MongoCluster"
 internal const val MONGO_CLUSTER_FQN = "com.mongodb.client.MongoCluster"
 internal const val MONGO_CLIENT_FQN = "com.mongodb.client.MongoClient"
 internal const val DATABASE_FQN = "com.mongodb.client.MongoDatabase"
