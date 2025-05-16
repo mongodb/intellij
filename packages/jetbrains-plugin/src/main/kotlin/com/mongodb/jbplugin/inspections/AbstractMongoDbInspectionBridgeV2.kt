@@ -25,7 +25,6 @@ import com.mongodb.jbplugin.ui.viewModel.InspectionsViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
 /**
@@ -88,7 +87,7 @@ abstract class AbstractMongoDbInspectionBridgeV2<Settings, I : Inspection>(
                         val settings = buildSettings(query)
                         val problems = IntelliJBasedQueryInsightsHolder(coroutineScope, holder, inspectionsViewModel, ::afterInsight)
 
-                        runBlocking(Dispatchers.IO) {
+                        coroutineScope.launch(Dispatchers.IO) {
                             queryInspection.run(query, problems, settings)
                         }
                     }
