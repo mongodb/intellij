@@ -91,7 +91,9 @@ object NamespaceExtractor {
 
         val resolvedGetDatabaseCall = databaseRef.resolveToMethodCallExpression { _, method ->
             method.name == "getDatabase" &&
-                method.containingClass?.qualifiedName == MONGO_CLIENT_FQN
+                listOf(MONGO_REACTIVE_CLUSTER_FQN, MONGO_CLUSTER_FQN, MONGO_CLIENT_FQN).contains(
+                    method.containingClass?.qualifiedName
+                )
         } ?: return null
 
         return resolvedGetDatabaseCall.argumentList.expressions.firstOrNull()?.let {
