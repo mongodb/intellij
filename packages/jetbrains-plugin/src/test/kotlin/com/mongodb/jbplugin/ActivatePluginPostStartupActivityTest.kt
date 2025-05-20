@@ -3,12 +3,8 @@ package com.mongodb.jbplugin
 import com.intellij.openapi.application.Application
 import com.intellij.openapi.project.Project
 import com.mongodb.jbplugin.fixtures.IntegrationTest
-import com.mongodb.jbplugin.fixtures.eventually
 import com.mongodb.jbplugin.fixtures.withMockedService
 import com.mongodb.jbplugin.observability.probe.PluginActivatedProbe
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock

@@ -1,13 +1,11 @@
 package com.mongodb.jbplugin.inspections.environmentmismatch
 
-import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
 import com.mongodb.jbplugin.editor.dataSource
 import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionBridgeV2
 import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionGlobalTool
-import com.mongodb.jbplugin.linting.Inspection.CollectionDoesNotExist
 import com.mongodb.jbplugin.linting.Inspection.DatabaseDoesNotExist
 import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.linting.environmentmismatch.DatabaseDoesNotExistInspection
@@ -53,7 +51,7 @@ class MongoDbDatabaseDoesNotExist(
         val probe by service<InspectionStatusChangedProbe>()
         probe.finishedProcessingInspections(
             TelemetryEvent.InspectionStatusChangeEvent.InspectionType.DATABASE_DOES_NOT_EXIST,
-          queryInsights
+            queryInsights
         )
     }
 }

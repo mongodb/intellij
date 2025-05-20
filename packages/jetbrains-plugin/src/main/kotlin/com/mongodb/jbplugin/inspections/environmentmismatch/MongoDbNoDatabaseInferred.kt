@@ -1,10 +1,8 @@
 package com.mongodb.jbplugin.inspections.environmentmismatch
 
-import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionBridgeV2
 import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionGlobalTool
-import com.mongodb.jbplugin.linting.Inspection.NoCollectionSpecified
 import com.mongodb.jbplugin.linting.Inspection.NoDatabaseInferred
 import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.linting.environmentmismatch.NoDatabaseInferredInspection
@@ -36,8 +34,8 @@ class MongoDbNoDatabaseInferred(
     override fun emitFinishedInspectionTelemetryEvent(queryInsights: List<QueryInsight<PsiElement, NoDatabaseInferred>>) {
         val probe by service<InspectionStatusChangedProbe>()
         probe.finishedProcessingInspections(
-          TelemetryEvent.InspectionStatusChangeEvent.InspectionType.NO_DATABASE_INFERRED,
-          queryInsights
+            TelemetryEvent.InspectionStatusChangeEvent.InspectionType.NO_DATABASE_INFERRED,
+            queryInsights
         )
     }
 }

@@ -1,6 +1,5 @@
 package com.mongodb.jbplugin.inspections.environmentmismatch
 
-import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionBridgeV2
 import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionGlobalTool
@@ -36,8 +35,8 @@ class MongoDbNoCollectionSpecified(
     override fun emitFinishedInspectionTelemetryEvent(queryInsights: List<QueryInsight<PsiElement, NoCollectionSpecified>>) {
         val probe by service<InspectionStatusChangedProbe>()
         probe.finishedProcessingInspections(
-          TelemetryEvent.InspectionStatusChangeEvent.InspectionType.NO_COLLECTION_SPECIFIED,
-          queryInsights
+            TelemetryEvent.InspectionStatusChangeEvent.InspectionType.NO_COLLECTION_SPECIFIED,
+            queryInsights
         )
     }
 }

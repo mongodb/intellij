@@ -15,7 +15,7 @@ import com.mongodb.jbplugin.fixtures.eventually
 import com.mongodb.jbplugin.mql.Node
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestScope
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock

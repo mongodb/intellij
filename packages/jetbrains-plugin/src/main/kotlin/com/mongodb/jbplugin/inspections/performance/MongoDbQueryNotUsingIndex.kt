@@ -1,6 +1,5 @@
 package com.mongodb.jbplugin.inspections.performance
 
-import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
@@ -56,8 +55,8 @@ class MongoDbQueryNotUsingIndex(coroutineScope: CoroutineScope) : AbstractMongoD
     override fun emitFinishedInspectionTelemetryEvent(queryInsights: List<QueryInsight<PsiElement, NotUsingIndex>>) {
         val probe by service<InspectionStatusChangedProbe>()
         probe.finishedProcessingInspections(
-          TelemetryEvent.InspectionStatusChangeEvent.InspectionType.QUERY_NOT_COVERED_BY_INDEX,
-          queryInsights,
+            TelemetryEvent.InspectionStatusChangeEvent.InspectionType.QUERY_NOT_COVERED_BY_INDEX,
+            queryInsights,
         )
     }
 }

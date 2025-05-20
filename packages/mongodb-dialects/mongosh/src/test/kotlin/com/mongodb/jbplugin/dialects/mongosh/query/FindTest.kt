@@ -6,7 +6,6 @@ import com.mongodb.jbplugin.mql.BsonArray
 import com.mongodb.jbplugin.mql.BsonInt32
 import com.mongodb.jbplugin.mql.BsonString
 import com.mongodb.jbplugin.mql.Namespace
-import com.mongodb.jbplugin.mql.Namespace.Companion.invoke
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasFieldReference

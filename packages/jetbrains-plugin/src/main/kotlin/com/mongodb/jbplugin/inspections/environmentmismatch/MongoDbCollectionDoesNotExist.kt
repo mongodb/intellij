@@ -1,6 +1,5 @@
 package com.mongodb.jbplugin.inspections.environmentmismatch
 
-import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
@@ -53,8 +52,8 @@ class MongoDbCollectionDoesNotExist(
     override fun emitFinishedInspectionTelemetryEvent(queryInsights: List<QueryInsight<PsiElement, CollectionDoesNotExist>>) {
         val probe by service<InspectionStatusChangedProbe>()
         probe.finishedProcessingInspections(
-          TelemetryEvent.InspectionStatusChangeEvent.InspectionType.COLLECTION_DOES_NOT_EXIST,
-          queryInsights
+            TelemetryEvent.InspectionStatusChangeEvent.InspectionType.COLLECTION_DOES_NOT_EXIST,
+            queryInsights
         )
     }
 }

@@ -12,7 +12,7 @@ import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.mql.Node
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy

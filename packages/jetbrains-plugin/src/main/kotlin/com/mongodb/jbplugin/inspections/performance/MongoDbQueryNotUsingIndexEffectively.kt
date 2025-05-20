@@ -55,8 +55,8 @@ class MongoDbQueryNotUsingIndexEffectively(coroutineScope: CoroutineScope) : Abs
     override fun emitFinishedInspectionTelemetryEvent(queryInsights: List<QueryInsight<PsiElement, NotUsingIndexEffectively>>) {
         val probe by service<InspectionStatusChangedProbe>()
         probe.finishedProcessingInspections(
-          TelemetryEvent.InspectionStatusChangeEvent.InspectionType.QUERY_NOT_COVERED_BY_INDEX,
-          queryInsights,
+            TelemetryEvent.InspectionStatusChangeEvent.InspectionType.QUERY_NOT_COVERED_BY_INDEX,
+            queryInsights,
         )
     }
 }

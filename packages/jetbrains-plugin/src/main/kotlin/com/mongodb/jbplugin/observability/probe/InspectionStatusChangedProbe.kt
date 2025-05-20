@@ -154,19 +154,19 @@ class InspectionStatusChangedProbe(
                         elementWithProblem.on.get()?.component<HasSourceDialect>() ?: continue
                     val telemetry by service<TelemetryService>()
                     val event = TelemetryEvent.InspectionStatusChangeEvent(
-                      dialect = dialect.name,
-                      inspectionType = inspectionType,
-                      inspectionStatus = TelemetryEvent.InspectionStatusChangeEvent.InspectionStatus.RESOLVED,
-                      null,
-                      null
+                        dialect = dialect.name,
+                        inspectionType = inspectionType,
+                        inspectionStatus = TelemetryEvent.InspectionStatusChangeEvent.InspectionStatus.RESOLVED,
+                        null,
+                        null
                     )
 
                     telemetry.sendEvent(event)
                     logger.info(
-                      useLogMessage("Inspection resolved")
-                        .put("inspection_id", elementWithProblem.id.toString())
-                        .mergeTelemetryEventProperties(event)
-                        .build()
+                        useLogMessage("Inspection resolved")
+                            .put("inspection_id", elementWithProblem.id.toString())
+                            .mergeTelemetryEventProperties(event)
+                            .build()
                     )
                 }
             }

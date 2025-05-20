@@ -1,6 +1,5 @@
 package com.mongodb.jbplugin.inspections.correctness
 
-import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
@@ -17,7 +16,6 @@ import com.mongodb.jbplugin.observability.TelemetryEvent
 import com.mongodb.jbplugin.observability.probe.InspectionStatusChangedProbe
 import com.mongodb.jbplugin.settings.pluginSetting
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
 
 class MongoDbFieldDoesNotExistGlobalTool : AbstractMongoDbInspectionGlobalTool(FieldDoesNotExist)
 class MongoDbFieldDoesNotExist(coroutineScope: CoroutineScope) : AbstractMongoDbInspectionBridgeV2<
@@ -52,8 +50,8 @@ class MongoDbFieldDoesNotExist(coroutineScope: CoroutineScope) : AbstractMongoDb
         val probe by service<InspectionStatusChangedProbe>()
 
         probe.finishedProcessingInspections(
-          TelemetryEvent.InspectionStatusChangeEvent.InspectionType.FIELD_DOES_NOT_EXIST,
-          queryInsights
+            TelemetryEvent.InspectionStatusChangeEvent.InspectionType.FIELD_DOES_NOT_EXIST,
+            queryInsights
         )
     }
 }

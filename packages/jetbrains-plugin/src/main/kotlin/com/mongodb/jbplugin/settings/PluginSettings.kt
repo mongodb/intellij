@@ -5,7 +5,11 @@
 
 package com.mongodb.jbplugin.settings
 
-import com.intellij.openapi.components.*
+import com.intellij.openapi.components.BaseState
+import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.SimplePersistentStateComponent
+import com.intellij.openapi.components.State
+import com.intellij.openapi.components.Storage
 import com.mongodb.jbplugin.meta.service
 import java.io.Serializable
 import kotlin.reflect.KMutableProperty0

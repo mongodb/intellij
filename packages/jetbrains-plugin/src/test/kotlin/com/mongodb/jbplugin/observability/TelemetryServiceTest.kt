@@ -11,7 +11,11 @@ import com.mongodb.jbplugin.settings.PluginSettings
 import com.segment.analytics.Analytics
 import com.segment.analytics.messages.TrackMessage
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.*
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argThat
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 
 @IntegrationTest
 internal class TelemetryServiceTest {

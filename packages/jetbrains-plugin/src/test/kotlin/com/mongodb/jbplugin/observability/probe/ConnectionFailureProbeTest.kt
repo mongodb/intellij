@@ -4,8 +4,11 @@ import com.intellij.database.dataSource.DatabaseConnectionPoint
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.openapi.application.Application
 import com.intellij.openapi.project.Project
-import com.mongodb.jbplugin.fixtures.*
+import com.mongodb.jbplugin.fixtures.IntegrationTest
+import com.mongodb.jbplugin.fixtures.MongoDbServerUrl
 import com.mongodb.jbplugin.fixtures.mockLogMessage
+import com.mongodb.jbplugin.fixtures.withMockedService
+import com.mongodb.jbplugin.fixtures.withMockedUnconnectedMongoDbConnection
 import com.mongodb.jbplugin.observability.TelemetryProperty
 import com.mongodb.jbplugin.observability.TelemetryService
 import kotlinx.coroutines.runBlocking

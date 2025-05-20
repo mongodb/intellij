@@ -1,6 +1,5 @@
 package com.mongodb.jbplugin.inspections.correctness
 
-import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
@@ -56,8 +55,8 @@ class MongoDbTypeMismatch(coroutineScope: CoroutineScope) : AbstractMongoDbInspe
         val probe by service<InspectionStatusChangedProbe>()
 
         probe.finishedProcessingInspections(
-          TelemetryEvent.InspectionStatusChangeEvent.InspectionType.TYPE_MISMATCH,
-          queryInsights
+            TelemetryEvent.InspectionStatusChangeEvent.InspectionType.TYPE_MISMATCH,
+            queryInsights
         )
     }
 }

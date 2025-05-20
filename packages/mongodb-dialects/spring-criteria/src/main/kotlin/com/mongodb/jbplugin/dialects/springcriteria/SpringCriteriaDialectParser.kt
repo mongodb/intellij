@@ -1,11 +1,29 @@
 package com.mongodb.jbplugin.dialects.springcriteria
 
-import com.intellij.psi.*
+import com.intellij.psi.PsiAnnotation
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiExpression
+import com.intellij.psi.PsiExpressionList
+import com.intellij.psi.PsiJavaToken
+import com.intellij.psi.PsiLiteralExpression
+import com.intellij.psi.PsiMethod
+import com.intellij.psi.PsiMethodCallExpression
+import com.intellij.psi.PsiWhiteSpace
 import com.intellij.psi.util.elementType
 import com.intellij.psi.util.findParentOfType
 import com.intellij.psi.util.parentOfType
 import com.mongodb.jbplugin.dialects.DialectParser
-import com.mongodb.jbplugin.dialects.javadriver.glossary.*
+import com.mongodb.jbplugin.dialects.javadriver.glossary.findTopParentBy
+import com.mongodb.jbplugin.dialects.javadriver.glossary.fuzzyResolveMethod
+import com.mongodb.jbplugin.dialects.javadriver.glossary.inferFromSingleArrayArgument
+import com.mongodb.jbplugin.dialects.javadriver.glossary.inferFromSingleVarArgElement
+import com.mongodb.jbplugin.dialects.javadriver.glossary.inferValueReferenceFromVarArg
+import com.mongodb.jbplugin.dialects.javadriver.glossary.isArray
+import com.mongodb.jbplugin.dialects.javadriver.glossary.isJavaIterable
+import com.mongodb.jbplugin.dialects.javadriver.glossary.meaningfulExpression
+import com.mongodb.jbplugin.dialects.javadriver.glossary.toBsonType
+import com.mongodb.jbplugin.dialects.javadriver.glossary.tryToResolveAsConstant
+import com.mongodb.jbplugin.dialects.javadriver.glossary.tryToResolveAsConstantString
 import com.mongodb.jbplugin.dialects.springcriteria.QueryTargetCollectionExtractor.extractCollectionFromClassTypeParameter
 import com.mongodb.jbplugin.dialects.springcriteria.QueryTargetCollectionExtractor.extractCollectionFromQueryChain
 import com.mongodb.jbplugin.dialects.springcriteria.QueryTargetCollectionExtractor.extractCollectionFromStringTypeParameter
@@ -20,7 +38,17 @@ import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.Unwi
 import com.mongodb.jbplugin.mql.BsonAny
 import com.mongodb.jbplugin.mql.BsonArray
 import com.mongodb.jbplugin.mql.Node
-import com.mongodb.jbplugin.mql.components.*
+import com.mongodb.jbplugin.mql.components.HasAggregation
+import com.mongodb.jbplugin.mql.components.HasCollectionReference
+import com.mongodb.jbplugin.mql.components.HasFieldReference
+import com.mongodb.jbplugin.mql.components.HasFilter
+import com.mongodb.jbplugin.mql.components.HasSorts
+import com.mongodb.jbplugin.mql.components.HasSourceDialect
+import com.mongodb.jbplugin.mql.components.HasUpdates
+import com.mongodb.jbplugin.mql.components.HasValueReference
+import com.mongodb.jbplugin.mql.components.IsCommand
+import com.mongodb.jbplugin.mql.components.Name
+import com.mongodb.jbplugin.mql.components.Named
 import com.mongodb.jbplugin.mql.toBsonType
 
 internal const val CRITERIA_CLASS_FQN = "org.springframework.data.mongodb.core.query.Criteria"
