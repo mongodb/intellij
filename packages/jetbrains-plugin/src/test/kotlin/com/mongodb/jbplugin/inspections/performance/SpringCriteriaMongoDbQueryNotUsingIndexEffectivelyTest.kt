@@ -42,7 +42,7 @@ class SpringCriteriaMongoDbQueryNotUsingIndexEffectivelyTest {
             ExplainQuery(ExplainPlan.CollectionScan)
         )
 
-        fixture.enableInspections(MongoDbQueryNotUsingIndexEffectively::class.java)
+        // fixture.enableInspections(MongoDbQueryNotUsingIndexEffectively::class.java)
         fixture.testHighlighting()
     }
 
@@ -70,7 +70,7 @@ class SpringCriteriaMongoDbQueryNotUsingIndexEffectivelyTest {
             ExplainQuery(ExplainPlan.IneffectiveIndexUsage(""))
         )
 
-        fixture.enableInspections(MongoDbQueryNotUsingIndexEffectively::class.java)
+        // fixture.enableInspections(MongoDbQueryNotUsingIndexEffectively::class.java)
         fixture.testHighlighting()
     }
 }

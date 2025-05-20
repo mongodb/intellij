@@ -122,12 +122,7 @@ internal class InspectionStatusChangedProbeTest {
         testScope: TestScope
     ) = runTest {
         val telemetryService = mock<TelemetryService>()
-        val problemsHolder = mock<ProblemsHolder>()
-
         val dialect = HasSourceDialect.DialectName.entries.toTypedArray().random()
-
-        `when`(problemsHolder.results).thenReturn(emptyList())
-
         val query = Node<PsiElement?>(null, listOf(HasSourceDialect(dialect))) as Node<PsiElement>
 
         application.withMockedService(telemetryService)
@@ -141,7 +136,7 @@ internal class InspectionStatusChangedProbeTest {
         )
         probe.finishedProcessingInspections(
             TelemetryEvent.InspectionStatusChangeEvent.InspectionType.FIELD_DOES_NOT_EXIST,
-            problemsHolder
+            emptyList()
         )
 
         eventually {

@@ -51,7 +51,7 @@ class BookRepository {
             ExplainQuery(ExplainPlan.CollectionScan)
         )
 
-        fixture.enableInspections(MongoDbQueryNotUsingIndex::class.java)
+        // fixture.enableInspections(MongoDbQueryNotUsingIndex::class.java)
         fixture.testHighlighting()
     }
 
@@ -88,7 +88,7 @@ class BookRepository {
             ExplainQuery(ExplainPlan.IneffectiveIndexUsage(""))
         )
 
-        fixture.enableInspections(MongoDbQueryNotUsingIndex::class.java)
+        // fixture.enableInspections(MongoDbQueryNotUsingIndex::class.java)
         fixture.testHighlighting()
     }
 }

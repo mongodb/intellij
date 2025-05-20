@@ -12,14 +12,12 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.startup.StartupActivity
+import com.intellij.openapi.startup.ProjectActivity
 import com.mongodb.jbplugin.i18n.TelemetryMessages
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.observability.probe.PluginActivatedProbe
 import com.mongodb.jbplugin.settings.PluginSettingsConfigurable
 import com.mongodb.jbplugin.settings.pluginSetting
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
 /**
  * Class that represents the link that opens the settings page for MongoDB.
@@ -49,33 +47,29 @@ class OpenPrivacyPolicyPage : AnAction(TelemetryMessages.message("action.view-pr
  *
  * @param cs
  */
-class ActivatePluginPostStartupActivity(
-    private val cs: CoroutineScope
-) : StartupActivity, DumbAware {
-    override fun runActivity(project: Project) {
-        cs.launch {
-            val pluginActivated by service<PluginActivatedProbe>()
-            pluginActivated.pluginActivated()
+class ActivatePluginPostStartupActivity : ProjectActivity, DumbAware {
+    override suspend fun execute(project: Project) {
+        val pluginActivated by service<PluginActivatedProbe>()
+        pluginActivated.pluginActivated()
 
-            var firstTimeTelemetry by pluginSetting<Boolean> {
-                ::hasTelemetryOptOutputNotificationBeenShown
-            }
+        var firstTimeTelemetry by pluginSetting<Boolean> {
+            ::hasTelemetryOptOutputNotificationBeenShown
+        }
 
-            if (!firstTimeTelemetry) {
-                NotificationGroupManager.getInstance()
-                    .getNotificationGroup("com.mongodb.jbplugin.notifications.Telemetry")
-                    .createNotification(
-                        TelemetryMessages.message("notification.title"),
-                        TelemetryMessages.message("notification.message"),
-                        NotificationType.INFORMATION,
-                    )
-                    .setImportant(true)
-                    .addAction(OpenPrivacyPolicyPage())
-                    .addAction(OpenMongoDbPluginSettingsAction())
-                    .notify(project)
+        if (!firstTimeTelemetry) {
+            NotificationGroupManager.getInstance()
+                .getNotificationGroup("com.mongodb.jbplugin.notifications.Telemetry")
+                .createNotification(
+                    TelemetryMessages.message("notification.title"),
+                    TelemetryMessages.message("notification.message"),
+                    NotificationType.INFORMATION,
+                )
+                .setImportant(true)
+                .addAction(OpenPrivacyPolicyPage())
+                .addAction(OpenMongoDbPluginSettingsAction())
+                .notify(project)
 
-                firstTimeTelemetry = true
-            }
+            firstTimeTelemetry = true
         }
     }
 }

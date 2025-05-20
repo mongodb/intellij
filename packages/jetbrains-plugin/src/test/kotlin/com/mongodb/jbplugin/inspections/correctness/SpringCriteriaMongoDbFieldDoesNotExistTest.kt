@@ -391,7 +391,7 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
             ),
         )
 
-        fixture.enableInspections(MongoDbFieldDoesNotExist::class.java)
+        // fixture.enableInspections(MongoDbFieldDoesNotExist::class.java)
         fixture.testHighlighting()
     }
 }

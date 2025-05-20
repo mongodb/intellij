@@ -71,7 +71,7 @@ public void exampleAggregate2() {
             ListDatabases(emptyList())
         )
 
-        fixture.enableInspections(MongoDbDatabaseDoesNotExist::class.java)
+        // fixture.enableInspections(MongoDbDatabaseDoesNotExist::class.java)
         fixture.testHighlighting()
     }
 
@@ -98,7 +98,7 @@ public FindIterable<Document> exampleFind() {
             ListDatabases(listOf(Database("myDatabase")))
         )
 
-        fixture.enableInspections(MongoDbDatabaseDoesNotExist::class.java)
+        // fixture.enableInspections(MongoDbDatabaseDoesNotExist::class.java)
         fixture.testHighlighting()
     }
 
@@ -127,7 +127,7 @@ public void exampleAggregate() {
             ListDatabases(listOf(Database("myDatabase")))
         )
 
-        fixture.enableInspections(MongoDbDatabaseDoesNotExist::class.java)
+        // fixture.enableInspections(MongoDbDatabaseDoesNotExist::class.java)
         fixture.testHighlighting()
     }
 }

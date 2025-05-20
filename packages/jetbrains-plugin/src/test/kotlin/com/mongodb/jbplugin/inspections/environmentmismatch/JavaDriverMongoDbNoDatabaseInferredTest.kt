@@ -47,7 +47,7 @@ public void exampleAggregate(MongoDatabase db) {
             ListCollections(emptyList())
         )
 
-        fixture.enableInspections(MongoDbNoDatabaseInferred::class.java)
+        // fixture.enableInspections(MongoDbNoDatabaseInferred::class.java)
         fixture.testHighlighting()
     }
 
@@ -80,7 +80,7 @@ public void exampleAggregate() {
             ListCollections(emptyList())
         )
 
-        fixture.enableInspections(MongoDbNoDatabaseInferred::class.java)
+        // fixture.enableInspections(MongoDbNoDatabaseInferred::class.java)
         fixture.testHighlighting()
     }
 }

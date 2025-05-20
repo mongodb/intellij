@@ -9,6 +9,7 @@ import com.mongodb.jbplugin.observability.probe.PluginActivatedProbe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.kotlin.verify
@@ -16,16 +17,13 @@ import org.mockito.kotlin.verify
 @IntegrationTest
 class ActivatePluginPostStartupActivityTest {
     @Test
-    fun `emits a plugin activated probe`(application: Application, project: Project) = runBlocking {
+    fun `emits a plugin activated probe`(application: Application, project: Project) = runTest {
         val pluginActivatedProbe = mock<PluginActivatedProbe>()
         application.withMockedService(pluginActivatedProbe)
 
-        val listener = ActivatePluginPostStartupActivity(CoroutineScope(Dispatchers.Default))
+        val listener = ActivatePluginPostStartupActivity()
 
-        listener.runActivity(project)
-
-        eventually {
-            verify(pluginActivatedProbe).pluginActivated()
-        }
+        listener.execute(project)
+        verify(pluginActivatedProbe).pluginActivated()
     }
 }

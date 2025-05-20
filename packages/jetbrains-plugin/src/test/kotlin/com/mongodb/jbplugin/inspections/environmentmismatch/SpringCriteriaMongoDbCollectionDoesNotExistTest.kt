@@ -61,7 +61,7 @@ public void exampleAggregate() {
             ListCollections(listOf())
         )
 
-        fixture.enableInspections(MongoDbCollectionDoesNotExist::class.java)
+        // fixture.enableInspections(MongoDbCollectionDoesNotExist::class.java)
         fixture.testHighlighting()
     }
 
@@ -105,7 +105,7 @@ public void exampleAggregate() {
             ListCollections(listOf(Collection("book", "collection")))
         )
 
-        fixture.enableInspections(MongoDbCollectionDoesNotExist::class.java)
+        // fixture.enableInspections(MongoDbCollectionDoesNotExist::class.java)
         fixture.testHighlighting()
     }
 }

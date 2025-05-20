@@ -6,6 +6,8 @@ import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
 import com.mongodb.jbplugin.editor.dataSource
 import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionBridgeV2
+import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionGlobalTool
+import com.mongodb.jbplugin.linting.Inspection.CollectionDoesNotExist
 import com.mongodb.jbplugin.linting.Inspection.DatabaseDoesNotExist
 import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.linting.environmentmismatch.DatabaseDoesNotExistInspection
@@ -16,6 +18,7 @@ import com.mongodb.jbplugin.observability.TelemetryEvent
 import com.mongodb.jbplugin.observability.probe.InspectionStatusChangedProbe
 import kotlinx.coroutines.CoroutineScope
 
+class MongoDbDatabaseDoesNotExistGlobalTool : AbstractMongoDbInspectionGlobalTool(DatabaseDoesNotExist)
 class MongoDbDatabaseDoesNotExist(
     coroutineScope: CoroutineScope
 ) : AbstractMongoDbInspectionBridgeV2<
@@ -46,11 +49,11 @@ class MongoDbDatabaseDoesNotExist(
         )
     }
 
-    override fun emitFinishedInspectionTelemetryEvent(problemsHolder: ProblemsHolder) {
+    override fun emitFinishedInspectionTelemetryEvent(queryInsights: List<QueryInsight<PsiElement, DatabaseDoesNotExist>>) {
         val probe by service<InspectionStatusChangedProbe>()
         probe.finishedProcessingInspections(
             TelemetryEvent.InspectionStatusChangeEvent.InspectionType.DATABASE_DOES_NOT_EXIST,
-            problemsHolder
+          queryInsights
         )
     }
 }

@@ -53,7 +53,7 @@ public void exampleAggregate(Class collectionClass) {
             ListDatabases(listOf(Database("myDb")))
         )
 
-        fixture.enableInspections(MongoDbNoCollectionSpecified::class.java)
+        // fixture.enableInspections(MongoDbNoCollectionSpecified::class.java)
         fixture.testHighlighting()
     }
 
@@ -93,7 +93,7 @@ public void exampleAggregate() {
             ListDatabases(listOf(Database("myDb")))
         )
 
-        fixture.enableInspections(MongoDbNoCollectionSpecified::class.java)
+        // fixture.enableInspections(MongoDbNoCollectionSpecified::class.java)
         fixture.testHighlighting()
     }
 }

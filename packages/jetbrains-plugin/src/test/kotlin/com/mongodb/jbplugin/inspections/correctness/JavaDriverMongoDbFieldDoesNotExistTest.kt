@@ -10,8 +10,12 @@ import com.mongodb.jbplugin.accessadapter.slice.ListDatabases.Database
 import com.mongodb.jbplugin.dialects.javadriver.glossary.JavaDriverDialect
 import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.ParsingTest
+import com.mongodb.jbplugin.fixtures.enableGlobalTool
+import com.mongodb.jbplugin.fixtures.eventually
 import com.mongodb.jbplugin.fixtures.setupConnection
 import com.mongodb.jbplugin.fixtures.specifyDialect
+import com.mongodb.jbplugin.meta.withinReadAction
+import com.mongodb.jbplugin.meta.withinReadActionBlocking
 import com.mongodb.jbplugin.mql.BsonObject
 import com.mongodb.jbplugin.mql.BsonString
 import com.mongodb.jbplugin.mql.CollectionSchema
@@ -60,7 +64,7 @@ public FindIterable<Document> exampleFind() {
             ),
         )
 
-        fixture.enableInspections(MongoDbFieldDoesNotExist::class.java)
+        fixture.enableInspections(MongoDbFieldDoesNotExistGlobalTool())
         fixture.testHighlighting()
 
         verify(telemetryService, atLeastOnce()).sendEvent(any())
@@ -194,7 +198,7 @@ private Bson getNorQueryWithFieldNameFromMethodCall() {
             ),
         )
 
-        fixture.enableInspections(MongoDbFieldDoesNotExist::class.java)
+        fixture.enableInspections(MongoDbFieldDoesNotExistGlobalTool())
         fixture.testHighlighting()
     }
 
@@ -233,7 +237,7 @@ public AggregateIterable<Document> exampleAggregate() {
             ),
         )
 
-        fixture.enableInspections(MongoDbFieldDoesNotExist::class.java)
+        fixture.enableInspections(MongoDbFieldDoesNotExistGlobalTool())
         fixture.testHighlighting()
     }
 
@@ -291,16 +295,16 @@ public AggregateIterable<Document> exampleUnwind3() {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
-        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
+        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice), eq(null))).thenReturn(
             ListDatabases(listOf(Database("myDatabase")))
         )
 
-        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>())).thenReturn(
+        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>(), eq(null))).thenReturn(
             ListCollections(listOf(Collection("myCollection", "collection")))
         )
 
         `when`(
-            readModelProvider.slice(eq(dataSource), any<GetCollectionSchema.Slice>())
+            readModelProvider.slice(eq(dataSource), any<GetCollectionSchema.Slice>(), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -314,7 +318,7 @@ public AggregateIterable<Document> exampleUnwind3() {
             ),
         )
 
-        fixture.enableInspections(MongoDbFieldDoesNotExist::class.java)
+        fixture.enableGlobalTool(MongoDbFieldDoesNotExistGlobalTool())
         fixture.testHighlighting()
     }
 
@@ -382,7 +386,7 @@ public AggregateIterable<Document> exampleAggregateFields() {
             ),
         )
 
-        fixture.enableInspections(MongoDbFieldDoesNotExist::class.java)
+        fixture.enableInspections(MongoDbFieldDoesNotExistGlobalTool())
         fixture.testHighlighting()
     }
 
@@ -450,7 +454,7 @@ public AggregateIterable<Document> exampleAggregateOrderBy() {
             ),
         )
 
-        fixture.enableInspections(MongoDbFieldDoesNotExist::class.java)
+        fixture.enableInspections(MongoDbFieldDoesNotExistGlobalTool())
         fixture.testHighlighting()
     }
 
@@ -489,7 +493,7 @@ public AggregateIterable<Document> exampleAggregateOrderBy() {
             ),
         )
 
-        fixture.enableInspections(MongoDbFieldDoesNotExist::class.java)
+        fixture.enableInspections(MongoDbFieldDoesNotExistGlobalTool())
         fixture.testHighlighting()
     }
 
@@ -540,7 +544,7 @@ public AggregateIterable<Document> goodGroupAggregate1() {
             ),
         )
 
-        fixture.enableInspections(MongoDbFieldDoesNotExist::class.java)
+        fixture.enableInspections(MongoDbFieldDoesNotExistGlobalTool())
         fixture.testHighlighting()
     }
 
@@ -594,7 +598,7 @@ public AggregateIterable<Document> goodGroupAggregate2() {
             ),
         )
 
-        fixture.enableInspections(MongoDbFieldDoesNotExist::class.java)
+        fixture.enableInspections(MongoDbFieldDoesNotExistGlobalTool())
         fixture.testHighlighting()
     }
 }

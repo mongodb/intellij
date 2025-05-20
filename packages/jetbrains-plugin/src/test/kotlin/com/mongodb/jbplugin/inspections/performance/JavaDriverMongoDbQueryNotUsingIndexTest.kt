@@ -43,7 +43,7 @@ public FindIterable<Document> exampleFind() {
             ExplainQuery(ExplainPlan.CollectionScan)
         )
 
-        fixture.enableInspections(MongoDbQueryNotUsingIndex::class.java)
+        // fixture.enableInspections(MongoDbQueryNotUsingIndex::class.java)
         fixture.testHighlighting()
 
         verify(telemetryService, atLeastOnce()).sendEvent(any())
@@ -69,7 +69,7 @@ public FindIterable<Document> exampleFind() {
             ExplainQuery(ExplainPlan.IneffectiveIndexUsage(""))
         )
 
-        fixture.enableInspections(MongoDbQueryNotUsingIndex::class.java)
+        // fixture.enableInspections(MongoDbQueryNotUsingIndex::class.java)
         fixture.testHighlighting()
     }
 }

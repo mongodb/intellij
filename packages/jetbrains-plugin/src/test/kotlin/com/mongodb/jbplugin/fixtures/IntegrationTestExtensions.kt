@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import com.google.gson.Gson
+import com.intellij.codeInspection.ex.GlobalInspectionToolWrapper
 import com.intellij.database.Dbms
 import com.intellij.database.dataSource.DatabaseConnection
 import com.intellij.database.dataSource.DatabaseConnectionManager
@@ -33,6 +34,7 @@ import com.intellij.openapi.roots.ModifiableRootModel
 import com.intellij.openapi.util.Disposer
 import com.intellij.pom.java.AcceptedLanguageLevelsSettings
 import com.intellij.pom.java.LanguageLevel
+import com.intellij.profile.codeInspection.InspectionProfileManager
 import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
@@ -43,6 +45,7 @@ import com.intellij.testFramework.IdeaTestUtil
 import com.intellij.testFramework.PsiTestUtil
 import com.intellij.testFramework.TestApplicationManager
 import com.intellij.testFramework.common.cleanApplicationState
+import com.intellij.testFramework.disableAllTools
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.fixtures.DefaultLightProjectDescriptor
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
@@ -54,6 +57,7 @@ import com.mongodb.jbplugin.dialects.javadriver.glossary.JavaDriverDialect
 import com.mongodb.jbplugin.dialects.javadriver.glossary.findAllChildrenOfType
 import com.mongodb.jbplugin.dialects.springcriteria.SpringCriteriaDialect
 import com.mongodb.jbplugin.editor.MongoDbVirtualFileDataSourceProvider
+import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionGlobalTool
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.observability.LogMessage
@@ -77,7 +81,6 @@ import org.intellij.lang.annotations.Language
 import org.jetbrains.jewel.intui.standalone.theme.IntUiTheme
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.*
-import org.mockito.Mockito
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
@@ -501,7 +504,7 @@ internal fun mockDatabaseConnection(dataSource: LocalDataSource) =
     }
 
 internal fun Project.mockReadModelProvider(): DataGripBasedReadModelProvider {
-    val readModelProvider = Mockito.mock(DataGripBasedReadModelProvider::class.java)
+    val readModelProvider = mock(DataGripBasedReadModelProvider::class.java)
     withMockedService(readModelProvider)
     return readModelProvider
 }
@@ -703,4 +706,14 @@ fun resetClipboard() {
 
 fun readClipboard(flavor: DataFlavor = DataFlavor.stringFlavor): String? {
     return Toolkit.getDefaultToolkit().systemClipboard.getData(flavor)?.toString()
+}
+
+fun CodeInsightTestFixture.enableGlobalTool(inspectionGlobalTool: AbstractMongoDbInspectionGlobalTool) {
+    val profileManager = InspectionProfileManager.getInstance(project)
+    val profile = profileManager.currentProfile
+    profile.disableAllTools()
+
+    val wrapper = GlobalInspectionToolWrapper(inspectionGlobalTool)
+    profile.addTool(project, wrapper, emptyMap())
+    profile.enableTool(wrapper.shortName, project)
 }

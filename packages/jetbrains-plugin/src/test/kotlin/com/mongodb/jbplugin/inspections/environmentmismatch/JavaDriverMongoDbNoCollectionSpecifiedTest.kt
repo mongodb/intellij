@@ -49,7 +49,7 @@ public void exampleAggregate(String collectionName) {
             ListCollections(emptyList())
         )
 
-        fixture.enableInspections(MongoDbNoCollectionSpecified::class.java)
+        // fixture.enableInspections(MongoDbNoCollectionSpecified::class.java)
         fixture.testHighlighting()
     }
 
@@ -85,7 +85,7 @@ public void exampleAggregate() {
             ListCollections(emptyList())
         )
 
-        fixture.enableInspections(MongoDbNoCollectionSpecified::class.java)
+        // fixture.enableInspections(MongoDbNoCollectionSpecified::class.java)
         fixture.testHighlighting()
     }
 }

@@ -16,12 +16,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeout
 import org.jetbrains.annotations.VisibleForTesting
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
-import kotlin.time.Duration.Companion.seconds
 
 private typealias DriverFactory = (Project, LocalDataSource) -> MongoDbDriver
 
@@ -72,28 +70,26 @@ class DataGripBasedReadModelProvider(
         onCacheRecalculation: (suspend (T) -> Unit)?,
     ): T {
         return withContext(Dispatchers.IO) {
-            withTimeout(10.seconds) {
-                val entryKey = "${dataSource.uniqueId}/${slice.id}"
+            val entryKey = "${dataSource.uniqueId}/${slice.id}"
 
-                rwLock.read {
-                    wasCached = true
-                    if (cachedValues.containsKey(entryKey)) {
-                        val entry = cachedValues[entryKey]!!
-                        if (entry.first < dataSource.modificationCount) {
-                            refreshCache(entryKey, slice, dataSource)
-                        }
-                    } else {
+            rwLock.read {
+                wasCached = true
+                if (cachedValues.containsKey(entryKey)) {
+                    val entry = cachedValues[entryKey]!!
+                    if (entry.first < dataSource.modificationCount) {
                         refreshCache(entryKey, slice, dataSource)
                     }
-
-                    val result = cachedValues[entryKey]?.second as T
-                    if (!wasCached && onCacheRecalculation != null) {
-                        coroutineScope.launch(Dispatchers.IO) {
-                            onCacheRecalculation(result)
-                        }
-                    }
-                    result
+                } else {
+                    refreshCache(entryKey, slice, dataSource)
                 }
+
+                val result = cachedValues[entryKey]?.second as T
+                if (!wasCached && onCacheRecalculation != null) {
+                    coroutineScope.launch(Dispatchers.IO) {
+                        onCacheRecalculation(result)
+                    }
+                }
+                result
             }
         }
     }

@@ -27,6 +27,8 @@ class ConnectionString(hostInfo: List<String>) {
     val hosts = hostInfo.map { it.replace("mongodb://", "").replace("mongodb+srv://", "") }
 }
 
+val SERVER_TIMEOUT = 30.seconds
+
 /**
  * Represents the MongoDB Driver facade that we will use internally.
  * Usually, we won't use this class directly, only in tests. What we
@@ -49,7 +51,7 @@ interface MongoDbDriver {
         query: Node<S>,
         result: KClass<T>,
         queryContext: QueryContext
-    ): QueryResult<T> = runQuery(query, result, queryContext, 1.seconds)
+    ): QueryResult<T> = runQuery(query, result, queryContext, SERVER_TIMEOUT)
 
     suspend fun <T : Any, S> runQuery(
         query: Node<S>,

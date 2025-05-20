@@ -75,7 +75,7 @@ class SpringCriteriaMongoDbTypeMismatchTest {
             ),
         )
 
-        fixture.enableInspections(MongoDbTypeMismatch::class.java)
+        // fixture.enableInspections(MongoDbTypeMismatch::class.java)
         fixture.testHighlighting()
     }
 }

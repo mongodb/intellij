@@ -6,6 +6,7 @@ import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
 import com.mongodb.jbplugin.editor.dataSource
 import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionBridgeV2
+import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionGlobalTool
 import com.mongodb.jbplugin.linting.Inspection.TypeMismatch
 import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.linting.correctness.TypeMismatchInspection
@@ -19,6 +20,7 @@ import com.mongodb.jbplugin.observability.probe.InspectionStatusChangedProbe
 import com.mongodb.jbplugin.settings.pluginSetting
 import kotlinx.coroutines.CoroutineScope
 
+class MongoDbTypeMismatchGlobalTool : AbstractMongoDbInspectionGlobalTool(TypeMismatch)
 class MongoDbTypeMismatch(coroutineScope: CoroutineScope) : AbstractMongoDbInspectionBridgeV2<
     TypeMismatchInspectionSettings<LocalDataSource>,
     TypeMismatch
@@ -50,12 +52,12 @@ class MongoDbTypeMismatch(coroutineScope: CoroutineScope) : AbstractMongoDbInspe
         )
     }
 
-    override fun emitFinishedInspectionTelemetryEvent(problemsHolder: ProblemsHolder) {
+    override fun emitFinishedInspectionTelemetryEvent(queryInsights: List<QueryInsight<PsiElement, TypeMismatch>>) {
         val probe by service<InspectionStatusChangedProbe>()
 
         probe.finishedProcessingInspections(
-            TelemetryEvent.InspectionStatusChangeEvent.InspectionType.TYPE_MISMATCH,
-            problemsHolder
+          TelemetryEvent.InspectionStatusChangeEvent.InspectionType.TYPE_MISMATCH,
+          queryInsights
         )
     }
 }
