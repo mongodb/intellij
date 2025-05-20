@@ -4,7 +4,7 @@ import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
 import com.mongodb.jbplugin.editor.dataSource
-import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionBridgeV2
+import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionBridge
 import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionGlobalTool
 import com.mongodb.jbplugin.linting.Inspection.FieldDoesNotExist
 import com.mongodb.jbplugin.linting.QueryInsight
@@ -18,7 +18,7 @@ import com.mongodb.jbplugin.settings.pluginSetting
 import kotlinx.coroutines.CoroutineScope
 
 class MongoDbFieldDoesNotExistGlobalTool : AbstractMongoDbInspectionGlobalTool(FieldDoesNotExist)
-class MongoDbFieldDoesNotExist(coroutineScope: CoroutineScope) : AbstractMongoDbInspectionBridgeV2<
+class MongoDbFieldDoesNotExist(coroutineScope: CoroutineScope) : AbstractMongoDbInspectionBridge<
     FieldDoesNotExistInspectionSettings<LocalDataSource>,
     FieldDoesNotExist
     >(

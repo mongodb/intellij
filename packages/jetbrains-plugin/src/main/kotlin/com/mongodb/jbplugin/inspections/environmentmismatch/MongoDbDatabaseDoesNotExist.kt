@@ -4,7 +4,7 @@ import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
 import com.mongodb.jbplugin.editor.dataSource
-import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionBridgeV2
+import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionBridge
 import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionGlobalTool
 import com.mongodb.jbplugin.linting.Inspection.DatabaseDoesNotExist
 import com.mongodb.jbplugin.linting.QueryInsight
@@ -19,7 +19,7 @@ import kotlinx.coroutines.CoroutineScope
 class MongoDbDatabaseDoesNotExistGlobalTool : AbstractMongoDbInspectionGlobalTool(DatabaseDoesNotExist)
 class MongoDbDatabaseDoesNotExist(
     coroutineScope: CoroutineScope
-) : AbstractMongoDbInspectionBridgeV2<
+) : AbstractMongoDbInspectionBridge<
     DatabaseDoesNotExistInspectionSettings<LocalDataSource>,
     DatabaseDoesNotExist
     >(

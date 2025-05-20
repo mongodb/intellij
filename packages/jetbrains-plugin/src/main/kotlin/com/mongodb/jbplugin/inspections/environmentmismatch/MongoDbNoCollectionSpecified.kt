@@ -1,7 +1,7 @@
 package com.mongodb.jbplugin.inspections.environmentmismatch
 
 import com.intellij.psi.PsiElement
-import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionBridgeV2
+import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionBridge
 import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionGlobalTool
 import com.mongodb.jbplugin.linting.Inspection.NoCollectionSpecified
 import com.mongodb.jbplugin.linting.QueryInsight
@@ -18,7 +18,7 @@ class MongoDbNoCollectionSpecifiedGlobalTool : AbstractMongoDbInspectionGlobalTo
 
 class MongoDbNoCollectionSpecified(
     coroutineScope: CoroutineScope,
-) : AbstractMongoDbInspectionBridgeV2<
+) : AbstractMongoDbInspectionBridge<
     Unit,
     NoCollectionSpecified
     >(coroutineScope, NoCollectionSpecifiedInspection(), NoCollectionSpecified) {

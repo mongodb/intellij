@@ -53,14 +53,14 @@ abstract class AbstractMongoDbInspectionGlobalTool(
 ) : GlobalInspectionTool() {
     override fun getGroupDisplayName() = SidePanelMessages.message(inspection.category.displayName)
     override fun getDisplayName() = inspection.getToolShortName()
-    override fun getShortName() = inspection.javaClass.simpleName
+    override fun getShortName(): String = inspection.javaClass.simpleName
 
     override fun isEnabledByDefault() = true
     override fun getStaticDescription() = inspection.getToolShortName()
     override fun worksInBatchModeOnly() = false
 
     companion object {
-        fun toInspectionRunner(coroutineScope: CoroutineScope, tool: InspectionToolWrapper<*, *>): AbstractMongoDbInspectionBridgeV2<*, *>? {
+        fun toInspectionRunner(coroutineScope: CoroutineScope, tool: InspectionToolWrapper<*, *>): AbstractMongoDbInspectionBridge<*, *>? {
             return when (tool.shortName) {
                 NotUsingIndex::class.simpleName -> MongoDbQueryNotUsingIndex(coroutineScope)
                 NotUsingIndexEffectively::class.simpleName -> MongoDbQueryNotUsingIndexEffectively(coroutineScope)
@@ -76,7 +76,7 @@ abstract class AbstractMongoDbInspectionGlobalTool(
     }
 }
 
-abstract class AbstractMongoDbInspectionBridgeV2<Settings, I : Inspection>(
+abstract class AbstractMongoDbInspectionBridge<Settings, I : Inspection>(
     private val coroutineScope: CoroutineScope,
     private val queryInspection: QueryInspection<Settings, I>,
     private val inspection: I
@@ -84,8 +84,8 @@ abstract class AbstractMongoDbInspectionBridgeV2<Settings, I : Inspection>(
     protected abstract fun buildSettings(query: Node<PsiElement>): Settings
     protected abstract fun emitFinishedInspectionTelemetryEvent(queryInsights: List<QueryInsight<PsiElement, I>>)
     protected open fun afterInsight(queryInsight: QueryInsight<PsiElement, I>) {}
-    override fun getPairedBatchInspectionShortName() = inspection.javaClass.simpleName
-    override fun getShortName() = inspection.javaClass.simpleName
+    override fun getPairedBatchInspectionShortName(): String = inspection.javaClass.simpleName
+    override fun getShortName(): String = inspection.javaClass.simpleName
 
     // 1st step: collect basic information to trigger the annotator
     // this runs in the EDT, so don't do anything slow
