@@ -41,16 +41,16 @@ public AggregateIterable<Document> exampleFind() {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
-        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
+        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice), eq(null))).thenReturn(
             ListDatabases(listOf(Database("myDatabase")))
         )
 
-        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>())).thenReturn(
+        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>(), eq(null))).thenReturn(
             ListCollections(listOf(Collection("myCollection", "collection")))
         )
 
         `when`(
-            readModelProvider.slice(eq(dataSource), any<GetCollectionSchema.Slice>())
+            readModelProvider.slice(eq(dataSource), any<GetCollectionSchema.Slice>(), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -60,7 +60,7 @@ public AggregateIterable<Document> exampleFind() {
             ),
         )
 
-        // fixture.enableInspections(MongoDbTypeMismatch::class.java)
+        fixture.enableInspections(MongoDbTypeMismatchGlobalTool())
         fixture.testHighlighting()
     }
 }

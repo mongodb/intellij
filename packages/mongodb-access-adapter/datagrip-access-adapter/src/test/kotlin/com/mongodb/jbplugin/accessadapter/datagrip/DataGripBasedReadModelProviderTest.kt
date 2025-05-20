@@ -3,9 +3,11 @@ package com.mongodb.jbplugin.accessadapter.datagrip
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.openapi.project.Project
 import com.mongodb.jbplugin.accessadapter.slice.BuildInfo
+import com.mongodb.jbplugin.accessadapter.slice.ListDatabases
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import java.util.concurrent.atomic.AtomicBoolean
 
 @IntegrationTest
 class DataGripBasedReadModelProviderTest {
@@ -57,15 +59,15 @@ class DataGripBasedReadModelProviderTest {
         dataSource: LocalDataSource,
     ) = runTest {
         val service = project.getService(DataGripBasedReadModelProvider::class.java)
+        val wasRecalculated = AtomicBoolean(false)
 
-        var wasRecalculated = false
         // Cache will be calculated on the first call to Slice
-        service.slice(dataSource, BuildInfo.Slice) {
-            wasRecalculated = true
+        service.slice(dataSource, ListDatabases.Slice) {
+            wasRecalculated.set(true)
         }
 
         eventually {
-            assertEquals(true, wasRecalculated)
+            assertEquals(true, wasRecalculated.get())
         }
     }
 }

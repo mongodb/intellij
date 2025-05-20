@@ -70,15 +70,15 @@ public void exampleAggregate2() {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
-        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
+        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice), eq(null))).thenReturn(
             ListDatabases(listOf(Database("myDatabase")))
         )
 
-        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>())).thenReturn(
+        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>(), eq(null))).thenReturn(
             ListCollections(emptyList())
         )
 
-        // fixture.enableInspections(MongoDbCollectionDoesNotExist::class.java)
+        fixture.enableInspections(MongoDbCollectionDoesNotExistGlobalTool())
         fixture.testHighlighting()
     }
 
@@ -103,15 +103,15 @@ public FindIterable<Document> exampleFind() {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
-        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
+        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice), eq(null))).thenReturn(
             ListDatabases(listOf(Database("myDatabase")))
         )
 
-        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>())).thenReturn(
+        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>(), eq(null))).thenReturn(
             ListCollections(listOf(Collection("myCollection", "collection")))
         )
 
-        // fixture.enableInspections(MongoDbCollectionDoesNotExist::class.java)
+        fixture.enableInspections(MongoDbCollectionDoesNotExistGlobalTool())
         fixture.testHighlighting()
     }
 
@@ -136,15 +136,15 @@ public void exampleAggregate() {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
-        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
+        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice), eq(null))).thenReturn(
             ListDatabases(listOf(Database("myDatabase")))
         )
 
-        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>())).thenReturn(
+        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>(), eq(null))).thenReturn(
             ListCollections(listOf(Collection("myCollection", "collection")))
         )
 
-        // fixture.enableInspections(MongoDbCollectionDoesNotExist::class.java)
+        fixture.enableInspections(MongoDbCollectionDoesNotExistGlobalTool())
         fixture.testHighlighting()
     }
 }

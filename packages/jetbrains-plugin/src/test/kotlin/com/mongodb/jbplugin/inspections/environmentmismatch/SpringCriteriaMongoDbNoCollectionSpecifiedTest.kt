@@ -49,11 +49,11 @@ public void exampleAggregate(Class collectionClass) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
+        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice), eq(null))).thenReturn(
             ListDatabases(listOf(Database("myDb")))
         )
 
-        // fixture.enableInspections(MongoDbNoCollectionSpecified::class.java)
+        fixture.enableInspections(MongoDbNoCollectionSpecifiedGlobalTool())
         fixture.testHighlighting()
     }
 
@@ -89,11 +89,11 @@ public void exampleAggregate() {
         fixture.specifyDatabase(dataSource, "myDb")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
+        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice), eq(null))).thenReturn(
             ListDatabases(listOf(Database("myDb")))
         )
 
-        // fixture.enableInspections(MongoDbNoCollectionSpecified::class.java)
+        fixture.enableInspections(MongoDbNoCollectionSpecifiedGlobalTool())
         fixture.testHighlighting()
     }
 }

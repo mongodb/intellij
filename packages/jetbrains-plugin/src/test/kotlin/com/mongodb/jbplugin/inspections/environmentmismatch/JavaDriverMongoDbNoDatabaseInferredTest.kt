@@ -39,15 +39,15 @@ public void exampleAggregate(MongoDatabase db) {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
-        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
+        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice), eq(null))).thenReturn(
             ListDatabases(listOf(Database("myDb")))
         )
 
-        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>())).thenReturn(
+        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>(), eq(null))).thenReturn(
             ListCollections(emptyList())
         )
 
-        // fixture.enableInspections(MongoDbNoDatabaseInferred::class.java)
+        fixture.enableInspections(MongoDbNoDatabaseInferredGlobalTool())
         fixture.testHighlighting()
     }
 
@@ -72,15 +72,15 @@ public void exampleAggregate() {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
-        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
+        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice), eq(null))).thenReturn(
             ListDatabases(listOf(Database("myDb")))
         )
 
-        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>())).thenReturn(
+        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>(), eq(null))).thenReturn(
             ListCollections(emptyList())
         )
 
-        // fixture.enableInspections(MongoDbNoDatabaseInferred::class.java)
+        fixture.enableInspections(MongoDbNoDatabaseInferredGlobalTool())
         fixture.testHighlighting()
     }
 }

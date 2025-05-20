@@ -80,7 +80,7 @@ private object NoConfigurable : ImmediateConfigurable {
     }
 }
 
-private class QueriesInFileCollector(private val coroutineScope: CoroutineScope) : InlayHintsCollector {
+internal class QueriesInFileCollector(private val coroutineScope: CoroutineScope) : InlayHintsCollector {
     override fun collect(
         element: PsiElement,
         editor: Editor,

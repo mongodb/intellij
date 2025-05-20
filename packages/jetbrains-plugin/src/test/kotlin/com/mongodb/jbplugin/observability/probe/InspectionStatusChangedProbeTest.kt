@@ -1,6 +1,5 @@
 package com.mongodb.jbplugin.observability.probe
 
-import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.openapi.application.Application
 import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.fixtures.IntegrationTest
@@ -14,11 +13,9 @@ import com.mongodb.jbplugin.observability.TelemetryService
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.timeout
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 
 @IntegrationTest

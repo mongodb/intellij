@@ -56,16 +56,16 @@ class SpringCriteriaMongoDbTypeMismatchTest {
         fixture.specifyDatabase(dataSource, "sample_books")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
+        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice), eq(null))).thenReturn(
             ListDatabases(listOf(Database("sample_books")))
         )
 
-        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>())).thenReturn(
+        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>(), eq(null))).thenReturn(
             ListCollections(listOf(Collection("book", "collection")))
         )
 
         `when`(
-            readModelProvider.slice(eq(dataSource), any<GetCollectionSchema.Slice>())
+            readModelProvider.slice(eq(dataSource), any<GetCollectionSchema.Slice>(), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(
@@ -75,7 +75,7 @@ class SpringCriteriaMongoDbTypeMismatchTest {
             ),
         )
 
-        // fixture.enableInspections(MongoDbTypeMismatch::class.java)
+        fixture.enableInspections(MongoDbTypeMismatchGlobalTool())
         fixture.testHighlighting()
     }
 }

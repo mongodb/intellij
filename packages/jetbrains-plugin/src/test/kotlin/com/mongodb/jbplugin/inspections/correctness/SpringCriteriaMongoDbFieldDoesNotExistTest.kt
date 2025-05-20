@@ -375,23 +375,23 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
         fixture.specifyDatabase(dataSource, "bad_db")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
+        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice), eq(null))).thenReturn(
             ListDatabases(listOf(Database("bad_db")))
         )
 
-        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>())).thenReturn(
+        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>(), eq(null))).thenReturn(
             ListCollections(listOf(Collection("book", "collection")))
         )
 
         `when`(
-            readModelProvider.slice(eq(dataSource), any<GetCollectionSchema.Slice>())
+            readModelProvider.slice(eq(dataSource), any<GetCollectionSchema.Slice>(), eq(null))
         ).thenReturn(
             GetCollectionSchema(
                 CollectionSchema(Namespace("bad_db", "book"), BsonObject(emptyMap()))
             ),
         )
 
-        // fixture.enableInspections(MongoDbFieldDoesNotExist::class.java)
+        fixture.enableInspections(MongoDbFieldDoesNotExistGlobalTool())
         fixture.testHighlighting()
     }
 }

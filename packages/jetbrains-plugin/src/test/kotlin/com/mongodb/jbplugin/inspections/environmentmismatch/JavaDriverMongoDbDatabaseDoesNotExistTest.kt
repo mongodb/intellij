@@ -67,11 +67,11 @@ public void exampleAggregate2() {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
-        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
+        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice), eq(null))).thenReturn(
             ListDatabases(emptyList())
         )
 
-        // fixture.enableInspections(MongoDbDatabaseDoesNotExist::class.java)
+        fixture.enableInspections(MongoDbDatabaseDoesNotExistGlobalTool())
         fixture.testHighlighting()
     }
 
@@ -94,11 +94,11 @@ public FindIterable<Document> exampleFind() {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
-        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
+        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice), eq(null))).thenReturn(
             ListDatabases(listOf(Database("myDatabase")))
         )
 
-        // fixture.enableInspections(MongoDbDatabaseDoesNotExist::class.java)
+        fixture.enableInspections(MongoDbDatabaseDoesNotExistGlobalTool())
         fixture.testHighlighting()
     }
 
@@ -123,11 +123,11 @@ public void exampleAggregate() {
         val (dataSource, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
-        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
+        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice), eq(null))).thenReturn(
             ListDatabases(listOf(Database("myDatabase")))
         )
 
-        // fixture.enableInspections(MongoDbDatabaseDoesNotExist::class.java)
+        fixture.enableInspections(MongoDbDatabaseDoesNotExistGlobalTool())
         fixture.testHighlighting()
     }
 }

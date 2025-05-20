@@ -9,8 +9,10 @@ import com.mongodb.jbplugin.accessadapter.slice.ListDatabases
 import com.mongodb.jbplugin.dialects.javadriver.glossary.JavaDriverDialect
 import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.ParsingTest
+import com.mongodb.jbplugin.fixtures.eventually
 import com.mongodb.jbplugin.fixtures.setupConnection
 import com.mongodb.jbplugin.fixtures.specifyDialect
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.*
 import org.mockito.kotlin.any
@@ -33,14 +35,14 @@ class MongoDbQueryIndexStatusInlayTest {
     ) = runTest {
         val (dataSource, readModel) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
-        whenever(readModel.slice(eq(dataSource), any<ListDatabases.Slice>()))
+        whenever(readModel.slice(eq(dataSource), any<ListDatabases.Slice>(), eq(null)))
             .thenReturn(
                 ListDatabases(
                     listOf(ListDatabases.Database("myDatabase1"))
                 )
             )
 
-        whenever(readModel.slice(eq(dataSource), any<ListCollections.Slice>()))
+        whenever(readModel.slice(eq(dataSource), any<ListCollections.Slice>(), eq(null)))
             .thenReturn(
                 ListCollections(
                     listOf(
@@ -49,10 +51,10 @@ class MongoDbQueryIndexStatusInlayTest {
                 )
             )
 
-        whenever(readModel.slice(eq(dataSource), any<ExplainQuery.Slice<Any>>()))
+        whenever(readModel.slice(eq(dataSource), any<ExplainQuery.Slice<Any>>(), any()))
             .thenReturn(ExplainQuery(ExplainPlan.CollectionScan))
 
-        fixture.testIndexInlay()
+        testIndexInlay(fixture)
     }
 
     @ParsingTest(
@@ -69,14 +71,14 @@ class MongoDbQueryIndexStatusInlayTest {
     ) = runTest {
         val (dataSource, readModel) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
-        whenever(readModel.slice(eq(dataSource), any<ListDatabases.Slice>()))
+        whenever(readModel.slice(eq(dataSource), any<ListDatabases.Slice>(), eq(null)))
             .thenReturn(
                 ListDatabases(
                     listOf(ListDatabases.Database("myDatabase"))
                 )
             )
 
-        whenever(readModel.slice(eq(dataSource), any<ListCollections.Slice>()))
+        whenever(readModel.slice(eq(dataSource), any<ListCollections.Slice>(), eq(null)))
             .thenReturn(
                 ListCollections(
                     listOf(
@@ -85,10 +87,10 @@ class MongoDbQueryIndexStatusInlayTest {
                 )
             )
 
-        whenever(readModel.slice(eq(dataSource), any<ExplainQuery.Slice<Any>>()))
+        whenever(readModel.slice(eq(dataSource), any<ExplainQuery.Slice<Any>>(), any()))
             .thenReturn(ExplainQuery(ExplainPlan.CollectionScan))
 
-        fixture.testIndexInlay()
+        testIndexInlay(fixture)
     }
 
     @ParsingTest(
@@ -105,14 +107,14 @@ class MongoDbQueryIndexStatusInlayTest {
     ) = runTest {
         val (dataSource, readModel) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
-        whenever(readModel.slice(eq(dataSource), any<ListDatabases.Slice>()))
+        whenever(readModel.slice(eq(dataSource), any<ListDatabases.Slice>(), eq(null)))
             .thenReturn(
                 ListDatabases(
                     listOf(ListDatabases.Database("myDatabase"))
                 )
             )
 
-        whenever(readModel.slice(eq(dataSource), any<ListCollections.Slice>()))
+        whenever(readModel.slice(eq(dataSource), any<ListCollections.Slice>(), eq(null)))
             .thenReturn(
                 ListCollections(
                     listOf(
@@ -121,10 +123,10 @@ class MongoDbQueryIndexStatusInlayTest {
                 )
             )
 
-        whenever(readModel.slice(eq(dataSource), any<ExplainQuery.Slice<Any>>()))
+        whenever(readModel.slice(eq(dataSource), any<ExplainQuery.Slice<Any>>(), any()))
             .thenReturn(ExplainQuery(ExplainPlan.CollectionScan))
 
-        fixture.testIndexInlay()
+        testIndexInlay(fixture)
     }
 
     @ParsingTest(
@@ -142,14 +144,14 @@ class MongoDbQueryIndexStatusInlayTest {
         val (dataSource, readModel) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
-        whenever(readModel.slice(eq(dataSource), any<ListDatabases.Slice>()))
+        whenever(readModel.slice(eq(dataSource), any<ListDatabases.Slice>(), eq(null)))
             .thenReturn(
                 ListDatabases(
                     listOf(ListDatabases.Database("myDatabase"))
                 )
             )
 
-        whenever(readModel.slice(eq(dataSource), any<ListCollections.Slice>()))
+        whenever(readModel.slice(eq(dataSource), any<ListCollections.Slice>(), eq(null)))
             .thenReturn(
                 ListCollections(
                     listOf(
@@ -158,10 +160,10 @@ class MongoDbQueryIndexStatusInlayTest {
                 )
             )
 
-        whenever(readModel.slice(eq(dataSource), any<ExplainQuery.Slice<Any>>()))
+        whenever(readModel.slice(eq(dataSource), any<ExplainQuery.Slice<Any>>(), any()))
             .thenReturn(ExplainQuery(ExplainPlan.IndexScan("my_index")))
 
-        fixture.testIndexInlay()
+        testIndexInlay(fixture)
     }
 
     @ParsingTest(
@@ -179,14 +181,14 @@ class MongoDbQueryIndexStatusInlayTest {
         val (dataSource, readModel) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
-        whenever(readModel.slice(eq(dataSource), any<ListDatabases.Slice>()))
+        whenever(readModel.slice(eq(dataSource), any<ListDatabases.Slice>(), eq(null)))
             .thenReturn(
                 ListDatabases(
                     listOf(ListDatabases.Database("myDatabase"))
                 )
             )
 
-        whenever(readModel.slice(eq(dataSource), any<ListCollections.Slice>()))
+        whenever(readModel.slice(eq(dataSource), any<ListCollections.Slice>(), eq(null)))
             .thenReturn(
                 ListCollections(
                     listOf(
@@ -195,10 +197,10 @@ class MongoDbQueryIndexStatusInlayTest {
                 )
             )
 
-        whenever(readModel.slice(eq(dataSource), any<ExplainQuery.Slice<Any>>()))
+        whenever(readModel.slice(eq(dataSource), any<ExplainQuery.Slice<Any>>(), any()))
             .thenReturn(ExplainQuery(ExplainPlan.IneffectiveIndexUsage("my_index")))
 
-        fixture.testIndexInlay()
+        testIndexInlay(fixture)
     }
 
     @ParsingTest(
@@ -216,14 +218,14 @@ class MongoDbQueryIndexStatusInlayTest {
         val (dataSource, readModel) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
-        whenever(readModel.slice(eq(dataSource), any<ListDatabases.Slice>()))
+        whenever(readModel.slice(eq(dataSource), any<ListDatabases.Slice>(), eq(null)))
             .thenReturn(
                 ListDatabases(
                     listOf(ListDatabases.Database("myDatabase"))
                 )
             )
 
-        whenever(readModel.slice(eq(dataSource), any<ListCollections.Slice>()))
+        whenever(readModel.slice(eq(dataSource), any<ListCollections.Slice>(), eq(null)))
             .thenReturn(
                 ListCollections(
                     listOf(
@@ -232,21 +234,23 @@ class MongoDbQueryIndexStatusInlayTest {
                 )
             )
 
-        whenever(readModel.slice(eq(dataSource), any<ExplainQuery.Slice<Any>>()))
+        whenever(readModel.slice(eq(dataSource), any<ExplainQuery.Slice<Any>>(), any()))
             .thenReturn(ExplainQuery(ExplainPlan.NotRun))
 
-        fixture.testIndexInlay()
+        testIndexInlay(fixture)
     }
 
     /**
      * We use this because testInlays() without parameters only tests
      * parameter inlays, and that's not our use case.
      */
-    private fun CodeInsightTestFixture.testIndexInlay() {
-        testInlays({
-            (it.renderer as InlineInlayRenderer).toString()
-        }, {
-            it.renderer is InlineInlayRenderer
-        })
+    private fun TestScope.testIndexInlay(fixture: CodeInsightTestFixture) {
+        eventually {
+            fixture.testInlays({
+                (it.renderer as InlineInlayRenderer).toString()
+            }, {
+                it.renderer is InlineInlayRenderer
+            })
+        }
     }
 }

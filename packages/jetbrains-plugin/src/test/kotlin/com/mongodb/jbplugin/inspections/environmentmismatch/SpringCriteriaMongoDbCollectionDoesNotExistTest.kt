@@ -53,15 +53,15 @@ public void exampleAggregate() {
         fixture.specifyDialect(SpringCriteriaDialect)
         fixture.specifyDatabase(dataSource, "myDatabase")
 
-        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
+        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice), eq(null))).thenReturn(
             ListDatabases(listOf(Database("myDatabase")))
         )
 
-        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>())).thenReturn(
+        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>(), eq(null))).thenReturn(
             ListCollections(listOf())
         )
 
-        // fixture.enableInspections(MongoDbCollectionDoesNotExist::class.java)
+        fixture.enableInspections(MongoDbCollectionDoesNotExistGlobalTool())
         fixture.testHighlighting()
     }
 
@@ -97,15 +97,15 @@ public void exampleAggregate() {
         fixture.specifyDialect(SpringCriteriaDialect)
         fixture.specifyDatabase(dataSource, "myDatabase")
 
-        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
+        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice), eq(null))).thenReturn(
             ListDatabases(listOf(Database("myDatabase")))
         )
 
-        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>())).thenReturn(
+        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>(), eq(null))).thenReturn(
             ListCollections(listOf(Collection("book", "collection")))
         )
 
-        // fixture.enableInspections(MongoDbCollectionDoesNotExist::class.java)
+        fixture.enableInspections(MongoDbCollectionDoesNotExistGlobalTool())
         fixture.testHighlighting()
     }
 }

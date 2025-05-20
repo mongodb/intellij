@@ -53,6 +53,7 @@ abstract class AbstractMongoDbInspectionGlobalTool(
 ) : GlobalInspectionTool() {
     override fun getGroupDisplayName() = SidePanelMessages.message(inspection.category.displayName)
     override fun getDisplayName() = inspection.getToolShortName()
+    override fun getShortName() = inspection.javaClass.simpleName
 
     override fun isEnabledByDefault() = true
     override fun getStaticDescription() = inspection.getToolShortName()
