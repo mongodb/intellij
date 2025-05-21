@@ -9,6 +9,7 @@ import com.intellij.database.dialects.base.startOffset
 import com.intellij.lang.annotation.AnnotationHolder
 import com.intellij.lang.annotation.ExternalAnnotator
 import com.intellij.lang.annotation.HighlightSeverity
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
@@ -41,12 +42,15 @@ import com.mongodb.jbplugin.linting.QueryInspection
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.meta.withinReadActionBlocking
 import com.mongodb.jbplugin.mql.Node
+import com.mongodb.jbplugin.observability.useLogMessage
 import com.mongodb.jbplugin.ui.viewModel.InspectionsViewModel
 import com.mongodb.jbplugin.ui.viewModel.getToolShortName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+
+private val logger = logger<AbstractMongoDbInspectionBridge<*, *>>()
 
 abstract class AbstractMongoDbInspectionGlobalTool(
     private val inspection: Inspection
@@ -113,7 +117,7 @@ abstract class AbstractMongoDbInspectionBridge<Settings, I : Inspection>(
 
         val problemsHolder = InspectionViewModelQueryInsightsHolder<I>(inspectionsViewModel, mutableListOf())
 
-        runCatching {
+        try {
             runBlocking(Dispatchers.IO) {
                 for (it in allQueriesInFile) {
                     ProgressManager.checkCanceled()
@@ -122,6 +126,13 @@ abstract class AbstractMongoDbInspectionBridge<Settings, I : Inspection>(
                     queryInspection.run(it, problemsHolder, settings)
                 }
             }
+        } catch (e: Exception) {
+            logger.warn(
+                useLogMessage("Inspection run failed")
+                    .put("Inspection", queryInspection::class.java.simpleName)
+                    .build(),
+                e
+            )
         }
 
         return problemsHolder.currentInsights()
