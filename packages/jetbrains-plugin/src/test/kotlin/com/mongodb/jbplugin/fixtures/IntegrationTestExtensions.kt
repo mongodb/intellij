@@ -51,14 +51,18 @@ import com.intellij.testFramework.runInEdtAndWait
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
 import com.mongodb.jbplugin.accessadapter.slice.ExplainPlan
 import com.mongodb.jbplugin.accessadapter.slice.ExplainQuery
+import com.mongodb.jbplugin.accessadapter.slice.GetCollectionSchema
 import com.mongodb.jbplugin.accessadapter.slice.ListCollections
 import com.mongodb.jbplugin.accessadapter.slice.ListDatabases
+import com.mongodb.jbplugin.accessadapter.toNs
 import com.mongodb.jbplugin.dialects.Dialect
 import com.mongodb.jbplugin.dialects.javadriver.glossary.JavaDriverDialect
 import com.mongodb.jbplugin.dialects.javadriver.glossary.findAllChildrenOfType
 import com.mongodb.jbplugin.dialects.springcriteria.SpringCriteriaDialect
 import com.mongodb.jbplugin.editor.MongoDbVirtualFileDataSourceProvider
 import com.mongodb.jbplugin.meta.service
+import com.mongodb.jbplugin.mql.BsonObject
+import com.mongodb.jbplugin.mql.CollectionSchema
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.observability.LogMessage
 import com.mongodb.jbplugin.observability.LogMessageBuilder
@@ -730,6 +734,16 @@ suspend fun DataGripBasedReadModelProvider.whenListCollections(vararg collection
 suspend fun DataGripBasedReadModelProvider.whenExplainQuery(plan: ExplainPlan) {
     whenever(slice(any(), any<ExplainQuery.Slice<Any>>(), any()))
         .thenReturn(ExplainQuery(plan))
+}
+
+suspend fun DataGripBasedReadModelProvider.whenQueryingCollectionSchema(ns: String, schema: BsonObject) {
+    `when`(
+        slice(any(), any<GetCollectionSchema.Slice>(), eq(null))
+    ).thenReturn(
+        GetCollectionSchema(
+            CollectionSchema(ns.toNs(), schema)
+        ),
+    )
 }
 
 fun resetClipboard() {

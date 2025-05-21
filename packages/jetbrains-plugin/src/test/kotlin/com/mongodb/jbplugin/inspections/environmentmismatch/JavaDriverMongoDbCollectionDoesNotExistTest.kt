@@ -1,20 +1,15 @@
 package com.mongodb.jbplugin.inspections.environmentmismatch
 
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
-import com.mongodb.jbplugin.accessadapter.slice.ListCollections
-import com.mongodb.jbplugin.accessadapter.slice.ListCollections.Collection
-import com.mongodb.jbplugin.accessadapter.slice.ListDatabases
-import com.mongodb.jbplugin.accessadapter.slice.ListDatabases.Database
 import com.mongodb.jbplugin.dialects.javadriver.glossary.JavaDriverDialect
 import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.ParsingTest
 import com.mongodb.jbplugin.fixtures.setupConnection
 import com.mongodb.jbplugin.fixtures.specifyDialect
+import com.mongodb.jbplugin.fixtures.whenListCollections
+import com.mongodb.jbplugin.fixtures.whenListDatabases
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
-import org.mockito.Mockito.`when`
-import org.mockito.kotlin.any
-import org.mockito.kotlin.eq
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @IntegrationTest
@@ -67,16 +62,11 @@ public void exampleAggregate2() {
     fun `shows an inspection when the collection does not exist in the current data source`(
         fixture: CodeInsightTestFixture,
     ) = runTest {
-        val (dataSource, readModelProvider) = fixture.setupConnection()
+        val (_, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
-        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice), eq(null))).thenReturn(
-            ListDatabases(listOf(Database("myDatabase")))
-        )
-
-        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>(), eq(null))).thenReturn(
-            ListCollections(emptyList())
-        )
+        readModelProvider.whenListDatabases("myDatabase")
+        readModelProvider.whenListCollections(collections = emptyArray())
 
         fixture.enableInspections(MongoDbCollectionDoesNotExistGlobalTool())
         fixture.testHighlighting()
@@ -100,16 +90,11 @@ public FindIterable<Document> exampleFind() {
     fun `shows collection not existing insight correctly when there are multiple queries in the same method`(
         fixture: CodeInsightTestFixture,
     ) = runTest {
-        val (dataSource, readModelProvider) = fixture.setupConnection()
+        val (_, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
-        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice), eq(null))).thenReturn(
-            ListDatabases(listOf(Database("myDatabase")))
-        )
-
-        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>(), eq(null))).thenReturn(
-            ListCollections(listOf(Collection("myCollection", "collection")))
-        )
+        readModelProvider.whenListDatabases("myDatabase")
+        readModelProvider.whenListCollections("myCollection")
 
         fixture.enableInspections(MongoDbCollectionDoesNotExistGlobalTool())
         fixture.testHighlighting()
@@ -133,16 +118,11 @@ public void exampleAggregate() {
     fun `shows no inspection when the collection exists in the current data source`(
         fixture: CodeInsightTestFixture,
     ) = runTest {
-        val (dataSource, readModelProvider) = fixture.setupConnection()
+        val (_, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
-        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice), eq(null))).thenReturn(
-            ListDatabases(listOf(Database("myDatabase")))
-        )
-
-        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>(), eq(null))).thenReturn(
-            ListCollections(listOf(Collection("myCollection", "collection")))
-        )
+        readModelProvider.whenListDatabases("myDatabase")
+        readModelProvider.whenListCollections("myCollection")
 
         fixture.enableInspections(MongoDbCollectionDoesNotExistGlobalTool())
         fixture.testHighlighting()
