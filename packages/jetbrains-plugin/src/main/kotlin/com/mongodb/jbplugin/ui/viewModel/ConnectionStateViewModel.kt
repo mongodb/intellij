@@ -15,6 +15,7 @@ import com.intellij.database.view.ui.DataSourceManagerDialog
 import com.intellij.ide.impl.ProjectUtil
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.ModificationTracker
 import com.intellij.openapi.wm.ToolWindow
@@ -28,6 +29,7 @@ import com.mongodb.jbplugin.editor.services.MdbPluginDisposable
 import com.mongodb.jbplugin.editor.services.implementations.getConnectionPreferences
 import com.mongodb.jbplugin.meta.eventCount
 import com.mongodb.jbplugin.meta.service
+import com.mongodb.jbplugin.observability.useLogMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -44,6 +46,8 @@ import org.jetbrains.annotations.VisibleForTesting
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.cancellation.CancellationException
+
+private val logger = logger<ConnectionStateViewModel>()
 
 sealed interface SelectedConnectionState {
     val connection: LocalDataSource?
@@ -592,13 +596,20 @@ internal class ConnectionSaga(
                         )
                     )
                 } catch (exception: CancellationException) {
-                    // Do nothing
+                    logger.info(
+                        useLogMessage("Databases loading cancelled").build(),
+                        exception
+                    )
                 } catch (exception: Exception) {
                     emitDatabasesLoadingStateChange(
                         DatabasesLoadingState.Failed(
                             connection = connection,
                             errorMessage = exception.cause?.message ?: "Could not load databases for connection."
                         )
+                    )
+                    logger.warn(
+                        useLogMessage("Failed load databases").build(),
+                        exception
                     )
                 }
             }

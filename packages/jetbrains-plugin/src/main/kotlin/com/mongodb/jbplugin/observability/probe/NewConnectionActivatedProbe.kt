@@ -49,7 +49,15 @@ class NewConnectionActivatedProbe(
         }
 
         coroutineScope.launch(Dispatchers.IO) {
-            val serverInfo = readModelProvider.slice(dataSource, BuildInfo.Slice)
+            val serverInfo = try {
+                readModelProvider.slice(dataSource, BuildInfo.Slice)
+            } catch (e: Exception) {
+                logger.warn(
+                    useLogMessage("Failed to get server info").build(),
+                    e
+                )
+                return@launch
+            }
 
             val newConnectionEvent =
                 TelemetryEvent.NewConnection(

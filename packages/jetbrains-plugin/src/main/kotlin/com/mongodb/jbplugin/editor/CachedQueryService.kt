@@ -2,6 +2,7 @@ package com.mongodb.jbplugin.editor
 
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.psi.PsiElement
@@ -22,6 +23,7 @@ import com.mongodb.jbplugin.mql.SiblingQueriesFinder
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasCollectionReference.Known
 import com.mongodb.jbplugin.mql.components.HasTargetCluster
+import com.mongodb.jbplugin.observability.useLogMessage
 import com.mongodb.jbplugin.settings.pluginSetting
 import com.mongodb.jbplugin.ui.viewModel.ConnectionStateViewModel
 import io.github.z4kn4fein.semver.Version
@@ -30,6 +32,8 @@ import kotlinx.coroutines.runBlocking
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
+
+private val logger = logger<CachedQueryService>()
 
 /**
  * Attempts to parse a query for a PsiElement if there is one, given the dialect of the current
@@ -162,32 +166,50 @@ class CachedQueryService(
         } ?: query
 
         return runBlocking {
-            runCatching {
-                if (dataSource != null && dataSource.isConnected()) {
-                    val readModel by query.source.project.service<DataGripBasedReadModelProvider>()
-                    val buildInfo = readModel.slice(dataSource, BuildInfo.Slice)
+            if (dataSource == null || !dataSource.isConnected()) {
+                return@runBlocking queryWithDb
+            }
 
-                    val queryWithTargetCluster = queryWithDb.withTargetCluster(
-                        HasTargetCluster(Version.parse(buildInfo.version))
+            val readModel by query.source.project.service<DataGripBasedReadModelProvider>()
+            val buildInfo = try {
+                readModel.slice(dataSource, BuildInfo.Slice)
+            } catch (e: Exception) {
+                logger.warn(
+                    useLogMessage("Failed to get build info for the current cluster.").build(),
+                    e
+                )
+                return@runBlocking queryWithDb
+            }
+
+            val queryWithTargetCluster = queryWithDb.withTargetCluster(
+                HasTargetCluster(Version.parse(buildInfo.version))
+            )
+
+            val knownReference = queryWithTargetCluster.component<HasCollectionReference<*>>()?.reference as? Known<*>
+            if (knownReference == null) {
+                return@runBlocking queryWithTargetCluster
+            }
+
+            val sampleSize by pluginSetting { ::sampleSize }
+            val collectionSchema = try {
+                readModel.slice(
+                    dataSource,
+                    GetCollectionSchema.Slice(
+                        knownReference.namespace,
+                        sampleSize
                     )
+                )
+            } catch (e: Exception) {
+                logger.warn(
+                    useLogMessage("Failed to get collection schema for the current cluster.").build(),
+                    e
+                )
+                return@runBlocking queryWithTargetCluster
+            }
 
-                    val knownReference = queryWithTargetCluster.component<HasCollectionReference<*>>()?.reference as? Known<*>
-                    if (knownReference != null) {
-                        val sampleSize by pluginSetting { ::sampleSize }
-                        val collectionSchema = readModel.slice(
-                            dataSource,
-                            GetCollectionSchema.Slice(knownReference.namespace, sampleSize)
-                        )
-                        queryWithTargetCluster.queryWithInjectedCollectionSchema(
-                            collectionSchema.schema
-                        )
-                    } else {
-                        queryWithTargetCluster
-                    }
-                } else {
-                    queryWithDb
-                }
-            }.getOrDefault(queryWithDb)
+            queryWithTargetCluster.queryWithInjectedCollectionSchema(
+                collectionSchema.schema
+            )
         }
     }
 }

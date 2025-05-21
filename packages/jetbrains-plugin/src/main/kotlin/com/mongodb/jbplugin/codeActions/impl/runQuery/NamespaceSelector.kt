@@ -2,6 +2,7 @@ package com.mongodb.jbplugin.codeActions.impl.runQuery
 
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.openapi.application.EDT
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.ui.AnimatedIcon.ANIMATION_IN_RENDERER_ALLOWED
@@ -13,6 +14,7 @@ import com.mongodb.jbplugin.i18n.Icons
 import com.mongodb.jbplugin.i18n.Icons.scaledToText
 import com.mongodb.jbplugin.meta.latest
 import com.mongodb.jbplugin.meta.service
+import com.mongodb.jbplugin.observability.useLogMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -22,6 +24,8 @@ import kotlinx.coroutines.withContext
 import java.awt.Component
 import javax.swing.DefaultComboBoxModel
 import javax.swing.SwingConstants
+
+private val logger = logger<NamespaceSelector>()
 
 class NamespaceSelector(
     private val project: Project,
@@ -115,12 +119,24 @@ class NamespaceSelector(
     private suspend fun loadDatabases() {
         events.emit(Event.DatabasesLoading)
         val readModel by project.service<DataGripBasedReadModelProvider>()
-        val result = readModel.slice(
-            dataSource,
-            ListDatabases.Slice
-        )
+        val result = try {
+            readModel.slice(
+                dataSource,
+                ListDatabases.Slice
+            )
+        } catch (e: Exception) {
+            logger.warn(
+                useLogMessage("Failed to get databases").build(),
+                e
+            )
+            null
+        }
 
-        events.emit(Event.DatabasesLoaded(result.databases.map { it.name }))
+        events.emit(
+            Event.DatabasesLoaded(
+                result?.databases?.map { it.name } ?: emptyList()
+            )
+        )
     }
 
     private suspend fun handleEvent(event: Event) {
@@ -140,12 +156,24 @@ class NamespaceSelector(
                 events.tryEmit(Event.CollectionsLoading)
 
                 val readModel by project.service<DataGripBasedReadModelProvider>()
-                val result = readModel.slice(
-                    dataSource,
-                    ListCollections.Slice(event.database)
-                )
+                val result = try {
+                    readModel.slice(
+                        dataSource,
+                        ListCollections.Slice(event.database)
+                    )
+                } catch (e: Exception) {
+                    logger.warn(
+                        useLogMessage("Failed to get collections").build(),
+                        e
+                    )
+                    null
+                }
 
-                events.emit(Event.CollectionsLoaded(result.collections.map { it.name }))
+                events.emit(
+                    Event.CollectionsLoaded(
+                        result?.collections?.map { it.name } ?: emptyList()
+                    )
+                )
             }
             is Event.CollectionsLoading -> withContext(Dispatchers.EDT) {
                 collectionModel.removeAllElements()

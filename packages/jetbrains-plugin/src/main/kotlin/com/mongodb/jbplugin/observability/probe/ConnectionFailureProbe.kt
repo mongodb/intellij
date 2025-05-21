@@ -49,7 +49,16 @@ class ConnectionFailureProbe(
 
         coroutineScope.launch(Dispatchers.IO) {
             val dataSource = connectionPoint.dataSource
-            val serverInfo = readModelProvider.slice(dataSource, BuildInfo.Slice)
+            val serverInfo = try {
+                readModelProvider.slice(dataSource, BuildInfo.Slice)
+            } catch (e: Exception) {
+                logger.warn(
+                    useLogMessage("Failed to get server info").build(),
+                    e
+                )
+                return@launch
+            }
+
             val telemetryEvent =
                 if (exception is RemoteObject.ForeignException) {
                     connectionFailureEvent(
