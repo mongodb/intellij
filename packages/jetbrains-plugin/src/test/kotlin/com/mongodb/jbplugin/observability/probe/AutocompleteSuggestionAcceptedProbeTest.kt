@@ -9,9 +9,7 @@ import com.mongodb.jbplugin.mql.components.HasSourceDialect
 import com.mongodb.jbplugin.mql.components.IsCommand.CommandType
 import com.mongodb.jbplugin.observability.TelemetryEvent
 import com.mongodb.jbplugin.observability.TelemetryService
-import kotlinx.coroutines.test.*
-import org.bouncycastle.util.test.SimpleTest.runTest
-import org.junit.jupiter.api.Assertions.*
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock

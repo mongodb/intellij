@@ -12,8 +12,18 @@ import com.mongodb.jbplugin.mql.CollectionSchema
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.adt.Either
 import com.mongodb.jbplugin.mql.components.HasFieldReference
-import com.mongodb.jbplugin.mql.parser.*
-import com.mongodb.jbplugin.mql.parser.components.*
+import com.mongodb.jbplugin.mql.parser.components.ParsedValueReference
+import com.mongodb.jbplugin.mql.parser.components.allNodesWithSchemaFieldReferences
+import com.mongodb.jbplugin.mql.parser.components.extractValueReferencesRelevantForIndexing
+import com.mongodb.jbplugin.mql.parser.components.knownCollection
+import com.mongodb.jbplugin.mql.parser.components.schemaFieldReference
+import com.mongodb.jbplugin.mql.parser.filter
+import com.mongodb.jbplugin.mql.parser.first
+import com.mongodb.jbplugin.mql.parser.map
+import com.mongodb.jbplugin.mql.parser.mapMany
+import com.mongodb.jbplugin.mql.parser.otherwise
+import com.mongodb.jbplugin.mql.parser.parse
+import com.mongodb.jbplugin.mql.parser.zip
 
 data class TypeMismatchInspectionSettings<D>(
     val dataSource: D,

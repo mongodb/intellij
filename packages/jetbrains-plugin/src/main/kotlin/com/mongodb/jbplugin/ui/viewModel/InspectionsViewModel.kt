@@ -10,24 +10,8 @@ import com.intellij.profile.codeInspection.ProjectInspectionProfileManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.mongodb.jbplugin.editor.services.MdbPluginDisposable
-import com.mongodb.jbplugin.inspections.correctness.MongoDbFieldDoesNotExist
-import com.mongodb.jbplugin.inspections.correctness.MongoDbTypeMismatch
-import com.mongodb.jbplugin.inspections.environmentmismatch.MongoDbCollectionDoesNotExist
-import com.mongodb.jbplugin.inspections.environmentmismatch.MongoDbDatabaseDoesNotExist
-import com.mongodb.jbplugin.inspections.environmentmismatch.MongoDbNoCollectionSpecified
-import com.mongodb.jbplugin.inspections.environmentmismatch.MongoDbNoDatabaseInferred
-import com.mongodb.jbplugin.inspections.performance.MongoDbQueryNotUsingIndex
-import com.mongodb.jbplugin.inspections.performance.MongoDbQueryNotUsingIndexEffectively
 import com.mongodb.jbplugin.linting.ALL_MDB_INSPECTIONS
 import com.mongodb.jbplugin.linting.Inspection
-import com.mongodb.jbplugin.linting.Inspection.CollectionDoesNotExist
-import com.mongodb.jbplugin.linting.Inspection.DatabaseDoesNotExist
-import com.mongodb.jbplugin.linting.Inspection.FieldDoesNotExist
-import com.mongodb.jbplugin.linting.Inspection.NoCollectionSpecified
-import com.mongodb.jbplugin.linting.Inspection.NoDatabaseInferred
-import com.mongodb.jbplugin.linting.Inspection.NotUsingIndex
-import com.mongodb.jbplugin.linting.Inspection.NotUsingIndexEffectively
-import com.mongodb.jbplugin.linting.Inspection.TypeMismatch
 import com.mongodb.jbplugin.linting.InspectionCategory
 import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.meta.containingFileOrNull
@@ -47,16 +31,7 @@ import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.VisibleForTesting
 
 fun Inspection.getToolShortName(): String {
-    return when (this) {
-        NotUsingIndex -> MongoDbQueryNotUsingIndex::class.simpleName!!
-        NotUsingIndexEffectively -> MongoDbQueryNotUsingIndexEffectively::class.simpleName!!
-        FieldDoesNotExist -> MongoDbFieldDoesNotExist::class.simpleName!!
-        TypeMismatch -> MongoDbTypeMismatch::class.simpleName!!
-        DatabaseDoesNotExist -> MongoDbDatabaseDoesNotExist::class.simpleName!!
-        CollectionDoesNotExist -> MongoDbCollectionDoesNotExist::class.simpleName!!
-        NoDatabaseInferred -> MongoDbNoDatabaseInferred::class.simpleName!!
-        NoCollectionSpecified -> MongoDbNoCollectionSpecified::class.simpleName!!
-    }
+    return this.javaClass.simpleName
 }
 
 fun Inspection.getToolWrapper(

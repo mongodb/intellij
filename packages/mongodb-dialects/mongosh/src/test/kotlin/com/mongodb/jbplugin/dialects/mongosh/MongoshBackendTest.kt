@@ -2,7 +2,21 @@ package com.mongodb.jbplugin.dialects.mongosh
 
 import com.mongodb.jbplugin.dialects.mongosh.backend.DefaultContext
 import com.mongodb.jbplugin.dialects.mongosh.backend.MongoshBackend
-import com.mongodb.jbplugin.mql.*
+import com.mongodb.jbplugin.mql.BsonAny
+import com.mongodb.jbplugin.mql.BsonAnyOf
+import com.mongodb.jbplugin.mql.BsonArray
+import com.mongodb.jbplugin.mql.BsonBoolean
+import com.mongodb.jbplugin.mql.BsonDate
+import com.mongodb.jbplugin.mql.BsonDecimal128
+import com.mongodb.jbplugin.mql.BsonDouble
+import com.mongodb.jbplugin.mql.BsonEnum
+import com.mongodb.jbplugin.mql.BsonInt32
+import com.mongodb.jbplugin.mql.BsonInt64
+import com.mongodb.jbplugin.mql.BsonNull
+import com.mongodb.jbplugin.mql.BsonObject
+import com.mongodb.jbplugin.mql.BsonObjectId
+import com.mongodb.jbplugin.mql.BsonString
+import com.mongodb.jbplugin.mql.BsonType
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.bson.types.ObjectId

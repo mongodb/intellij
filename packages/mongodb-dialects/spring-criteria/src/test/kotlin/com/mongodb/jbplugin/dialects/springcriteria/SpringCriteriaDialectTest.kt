@@ -2,7 +2,9 @@ package com.mongodb.jbplugin.dialects.springcriteria
 
 import com.intellij.psi.PsiFile
 import com.mongodb.jbplugin.dialects.javadriver.glossary.JavaDriverDialectFormatter
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 @IntegrationTest

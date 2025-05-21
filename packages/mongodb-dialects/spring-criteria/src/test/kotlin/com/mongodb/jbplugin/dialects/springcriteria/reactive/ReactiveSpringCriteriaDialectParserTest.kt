@@ -26,9 +26,15 @@ import com.mongodb.jbplugin.mql.BsonBoolean
 import com.mongodb.jbplugin.mql.BsonInt32
 import com.mongodb.jbplugin.mql.BsonNull
 import com.mongodb.jbplugin.mql.BsonString
-import com.mongodb.jbplugin.mql.components.*
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
-import org.junit.jupiter.api.Assertions.*
+import com.mongodb.jbplugin.mql.components.HasFieldReference
+import com.mongodb.jbplugin.mql.components.HasSourceDialect
+import com.mongodb.jbplugin.mql.components.HasValueReference
+import com.mongodb.jbplugin.mql.components.IsCommand
+import com.mongodb.jbplugin.mql.components.Name
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 

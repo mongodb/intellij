@@ -10,9 +10,7 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.CoroutineContext
-import kotlin.time.Duration.Companion.seconds
 
 class SingleExecutionJob(
     private val coroutineScope: CoroutineScope,
@@ -54,12 +52,6 @@ suspend fun <T> withinReadAction(cb: suspend () -> T): T = withContext(Dispatche
 
 fun <T> withinReadActionBlocking(cb: () -> T): T {
     return ApplicationManager.getApplication().runReadAction<T> {
-        cb()
-    }
-}
-
-suspend fun <T> withDefaultTimeoutOrNull(cb: suspend () -> T): T? {
-    return withTimeoutOrNull(2.seconds) {
         cb()
     }
 }

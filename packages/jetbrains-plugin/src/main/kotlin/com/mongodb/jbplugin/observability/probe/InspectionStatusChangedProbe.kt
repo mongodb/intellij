@@ -1,10 +1,10 @@
 package com.mongodb.jbplugin.observability.probe
 
-import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.psi.PsiElement
+import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.meta.withinReadActionBlocking
 import com.mongodb.jbplugin.mql.Node
@@ -130,9 +130,8 @@ class InspectionStatusChangedProbe(
         }
     }
 
-    fun finishedProcessingInspections(inspectionType: InspectionType, problemsHolder: ProblemsHolder) = runSafe {
+    fun finishedProcessingInspections(inspectionType: InspectionType, results: List<QueryInsight<PsiElement, *>>) = runSafe {
         cs.launch(Dispatchers.IO) {
-            val results = problemsHolder.results
             // check all our registered problems
             // if at the end of the processing cycle it's empty
             // we will assume they are
@@ -141,7 +140,7 @@ class InspectionStatusChangedProbe(
 
                 for (elementWithProblem in elementsWithProblems) {
                     val findEquivalentProblem = results.find {
-                        isElementRegistered(elementsWithProblems, it::getPsiElement)
+                        isElementRegistered(elementsWithProblems) { it.source }
                     }
                     if (findEquivalentProblem != null) {
                         // the problem is still there, so don't do anything

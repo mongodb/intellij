@@ -1,11 +1,11 @@
 package com.mongodb.jbplugin.inspections.performance
 
-import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
 import com.mongodb.jbplugin.editor.dataSource
-import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionBridgeV2
+import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionBridge
+import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionGlobalTool
 import com.mongodb.jbplugin.linting.Inspection.NotUsingIndex
 import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.linting.performance.QueryNotUsingIndexInspection
@@ -19,7 +19,8 @@ import com.mongodb.jbplugin.observability.probe.InspectionStatusChangedProbe
 import com.mongodb.jbplugin.settings.pluginSetting
 import kotlinx.coroutines.CoroutineScope
 
-class MongoDbQueryNotUsingIndex(coroutineScope: CoroutineScope) : AbstractMongoDbInspectionBridgeV2<
+class MongoDbQueryNotUsingIndexGlobalTool : AbstractMongoDbInspectionGlobalTool(NotUsingIndex)
+class MongoDbQueryNotUsingIndex(coroutineScope: CoroutineScope) : AbstractMongoDbInspectionBridge<
     QueryNotUsingIndexInspectionSettings<LocalDataSource>,
     NotUsingIndex
     >(
@@ -51,11 +52,11 @@ class MongoDbQueryNotUsingIndex(coroutineScope: CoroutineScope) : AbstractMongoD
         )
     }
 
-    override fun emitFinishedInspectionTelemetryEvent(problemsHolder: ProblemsHolder) {
+    override fun emitFinishedInspectionTelemetryEvent(queryInsights: List<QueryInsight<PsiElement, NotUsingIndex>>) {
         val probe by service<InspectionStatusChangedProbe>()
         probe.finishedProcessingInspections(
             TelemetryEvent.InspectionStatusChangeEvent.InspectionType.QUERY_NOT_COVERED_BY_INDEX,
-            problemsHolder,
+            queryInsights,
         )
     }
 }

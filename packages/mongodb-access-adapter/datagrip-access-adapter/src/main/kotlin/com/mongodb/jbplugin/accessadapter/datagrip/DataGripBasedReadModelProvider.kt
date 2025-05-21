@@ -12,14 +12,14 @@ import com.mongodb.jbplugin.accessadapter.MongoDbDriver
 import com.mongodb.jbplugin.accessadapter.MongoDbReadModelProvider
 import com.mongodb.jbplugin.accessadapter.Slice
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.DataGripMongoDbDriver
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeout
 import org.jetbrains.annotations.VisibleForTesting
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
-import kotlin.time.Duration.Companion.seconds
 
 private typealias DriverFactory = (Project, LocalDataSource) -> MongoDbDriver
 
@@ -41,6 +41,7 @@ private typealias DriverFactory = (Project, LocalDataSource) -> MongoDbDriver
 @Service(Service.Level.PROJECT)
 class DataGripBasedReadModelProvider(
     private val project: Project,
+    private val coroutineScope: CoroutineScope,
 ) : MongoDbReadModelProvider<LocalDataSource> {
     var driverFactory: DriverFactory = { project, dataSource ->
         DataGripMongoDbDriver(project, dataSource)
@@ -66,23 +67,29 @@ class DataGripBasedReadModelProvider(
     override suspend fun <T : Any> slice(
         dataSource: LocalDataSource,
         slice: Slice<T>,
+        onCacheRecalculation: (suspend (T) -> Unit)?,
     ): T {
         return withContext(Dispatchers.IO) {
-            withTimeout(10.seconds) {
-                val entryKey = "${dataSource.uniqueId}/${slice.id}"
+            val entryKey = "${dataSource.uniqueId}/${slice.id}"
 
-                rwLock.read {
-                    wasCached = true
-                    if (cachedValues.containsKey(entryKey)) {
-                        val entry = cachedValues[entryKey]!!
-                        if (entry.first < dataSource.modificationCount) {
-                            refreshCache(entryKey, slice, dataSource)
-                        }
-                    } else {
+            rwLock.read {
+                wasCached = true
+                if (cachedValues.containsKey(entryKey)) {
+                    val entry = cachedValues[entryKey]!!
+                    if (entry.first < dataSource.modificationCount) {
                         refreshCache(entryKey, slice, dataSource)
                     }
-                    cachedValues[entryKey]?.second as T
+                } else {
+                    refreshCache(entryKey, slice, dataSource)
                 }
+
+                val result = cachedValues[entryKey]?.second as T
+                if (!wasCached && onCacheRecalculation != null) {
+                    coroutineScope.launch(Dispatchers.IO) {
+                        onCacheRecalculation(result)
+                    }
+                }
+                result
             }
         }
     }

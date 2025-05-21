@@ -1,6 +1,5 @@
 package com.mongodb.jbplugin.observability.probe
 
-import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.openapi.application.Application
 import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.fixtures.IntegrationTest
@@ -14,11 +13,9 @@ import com.mongodb.jbplugin.observability.TelemetryService
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.timeout
-import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 
 @IntegrationTest
@@ -122,12 +119,7 @@ internal class InspectionStatusChangedProbeTest {
         testScope: TestScope
     ) = runTest {
         val telemetryService = mock<TelemetryService>()
-        val problemsHolder = mock<ProblemsHolder>()
-
         val dialect = HasSourceDialect.DialectName.entries.toTypedArray().random()
-
-        `when`(problemsHolder.results).thenReturn(emptyList())
-
         val query = Node<PsiElement?>(null, listOf(HasSourceDialect(dialect))) as Node<PsiElement>
 
         application.withMockedService(telemetryService)
@@ -141,7 +133,7 @@ internal class InspectionStatusChangedProbeTest {
         )
         probe.finishedProcessingInspections(
             TelemetryEvent.InspectionStatusChangeEvent.InspectionType.FIELD_DOES_NOT_EXIST,
-            problemsHolder
+            emptyList()
         )
 
         eventually {

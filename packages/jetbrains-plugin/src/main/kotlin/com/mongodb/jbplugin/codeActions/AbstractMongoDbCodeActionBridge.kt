@@ -4,8 +4,8 @@ import com.intellij.codeInsight.daemon.LineMarkerInfo
 import com.intellij.codeInsight.daemon.LineMarkerProvider
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
-import com.intellij.psi.util.*
 import com.intellij.psi.util.PsiTreeUtil.getParentOfType
+import com.intellij.psi.util.firstLeaf
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
 import com.mongodb.jbplugin.editor.CachedQueryService
 import com.mongodb.jbplugin.editor.dataSource

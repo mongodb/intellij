@@ -4,7 +4,15 @@
 
 package com.mongodb.jbplugin.dialects.javadriver.glossary
 
-import com.intellij.psi.*
+import com.intellij.psi.PsiAssignmentExpression
+import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiExpression
+import com.intellij.psi.PsiField
+import com.intellij.psi.PsiMethod
+import com.intellij.psi.PsiMethodCallExpression
+import com.intellij.psi.PsiParameter
+import com.intellij.psi.PsiReference
 import com.intellij.psi.search.GlobalSearchScopes
 import com.intellij.psi.search.searches.ReferencesSearch
 import com.intellij.psi.util.findParentOfType

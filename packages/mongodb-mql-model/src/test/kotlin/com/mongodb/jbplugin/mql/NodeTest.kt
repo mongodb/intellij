@@ -1,12 +1,23 @@
 package com.mongodb.jbplugin.mql
 
-import com.mongodb.jbplugin.mql.components.*
+import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasCollectionReference.Known
+import com.mongodb.jbplugin.mql.components.HasFieldReference
+import com.mongodb.jbplugin.mql.components.HasFilter
+import com.mongodb.jbplugin.mql.components.HasTargetCluster
+import com.mongodb.jbplugin.mql.components.HasValueReference
+import com.mongodb.jbplugin.mql.components.IsCommand
 import com.mongodb.jbplugin.mql.components.IsCommand.CommandType
 import com.mongodb.jbplugin.mql.components.IsCommand.CommandType.FIND_ONE
+import com.mongodb.jbplugin.mql.components.Name
+import com.mongodb.jbplugin.mql.components.Named
 import io.github.z4kn4fein.semver.Version
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource

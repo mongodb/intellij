@@ -1,17 +1,14 @@
 package com.mongodb.jbplugin.inspections.environmentmismatch
 
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
-import com.mongodb.jbplugin.accessadapter.slice.ListDatabases
-import com.mongodb.jbplugin.accessadapter.slice.ListDatabases.Database
 import com.mongodb.jbplugin.dialects.javadriver.glossary.JavaDriverDialect
 import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.ParsingTest
 import com.mongodb.jbplugin.fixtures.setupConnection
 import com.mongodb.jbplugin.fixtures.specifyDialect
+import com.mongodb.jbplugin.fixtures.whenListDatabases
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
-import org.mockito.Mockito.`when`
-import org.mockito.kotlin.eq
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @IntegrationTest
@@ -64,14 +61,12 @@ public void exampleAggregate2() {
     fun `shows an inspection when the database does not exist in the current data source`(
         fixture: CodeInsightTestFixture,
     ) = runTest {
-        val (dataSource, readModelProvider) = fixture.setupConnection()
+        val (_, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
-        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
-            ListDatabases(emptyList())
-        )
+        readModelProvider.whenListDatabases(databases = emptyArray())
 
-        fixture.enableInspections(MongoDbDatabaseDoesNotExist::class.java)
+        fixture.enableInspections(MongoDbDatabaseDoesNotExistGlobalTool())
         fixture.testHighlighting()
     }
 
@@ -91,14 +86,12 @@ public FindIterable<Document> exampleFind() {
     fun `shows database not existing insight correctly when there are multiple queries in the same method`(
         fixture: CodeInsightTestFixture,
     ) = runTest {
-        val (dataSource, readModelProvider) = fixture.setupConnection()
+        val (_, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
-        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
-            ListDatabases(listOf(Database("myDatabase")))
-        )
+        readModelProvider.whenListDatabases("myDatabase")
 
-        fixture.enableInspections(MongoDbDatabaseDoesNotExist::class.java)
+        fixture.enableInspections(MongoDbDatabaseDoesNotExistGlobalTool())
         fixture.testHighlighting()
     }
 
@@ -120,14 +113,12 @@ public void exampleAggregate() {
     fun `shows no inspection when the database exist in the current data source`(
         fixture: CodeInsightTestFixture,
     ) = runTest {
-        val (dataSource, readModelProvider) = fixture.setupConnection()
+        val (_, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
-        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
-            ListDatabases(listOf(Database("myDatabase")))
-        )
+        readModelProvider.whenListDatabases("myDatabase")
 
-        fixture.enableInspections(MongoDbDatabaseDoesNotExist::class.java)
+        fixture.enableInspections(MongoDbDatabaseDoesNotExistGlobalTool())
         fixture.testHighlighting()
     }
 }

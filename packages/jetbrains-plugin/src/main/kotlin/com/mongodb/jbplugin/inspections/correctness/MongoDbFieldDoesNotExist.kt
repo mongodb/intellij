@@ -1,11 +1,11 @@
 package com.mongodb.jbplugin.inspections.correctness
 
-import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
 import com.mongodb.jbplugin.editor.dataSource
-import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionBridgeV2
+import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionBridge
+import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionGlobalTool
 import com.mongodb.jbplugin.linting.Inspection.FieldDoesNotExist
 import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.linting.correctness.FieldDoesNotExistInspection
@@ -17,7 +17,8 @@ import com.mongodb.jbplugin.observability.probe.InspectionStatusChangedProbe
 import com.mongodb.jbplugin.settings.pluginSetting
 import kotlinx.coroutines.CoroutineScope
 
-class MongoDbFieldDoesNotExist(coroutineScope: CoroutineScope) : AbstractMongoDbInspectionBridgeV2<
+class MongoDbFieldDoesNotExistGlobalTool : AbstractMongoDbInspectionGlobalTool(FieldDoesNotExist)
+class MongoDbFieldDoesNotExist(coroutineScope: CoroutineScope) : AbstractMongoDbInspectionBridge<
     FieldDoesNotExistInspectionSettings<LocalDataSource>,
     FieldDoesNotExist
     >(
@@ -45,12 +46,12 @@ class MongoDbFieldDoesNotExist(coroutineScope: CoroutineScope) : AbstractMongoDb
         )
     }
 
-    override fun emitFinishedInspectionTelemetryEvent(problemsHolder: ProblemsHolder) {
+    override fun emitFinishedInspectionTelemetryEvent(queryInsights: List<QueryInsight<PsiElement, FieldDoesNotExist>>) {
         val probe by service<InspectionStatusChangedProbe>()
 
         probe.finishedProcessingInspections(
             TelemetryEvent.InspectionStatusChangeEvent.InspectionType.FIELD_DOES_NOT_EXIST,
-            problemsHolder
+            queryInsights
         )
     }
 }

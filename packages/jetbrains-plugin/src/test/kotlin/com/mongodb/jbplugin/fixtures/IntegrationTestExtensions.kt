@@ -49,12 +49,20 @@ import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
 import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.runInEdtAndWait
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
+import com.mongodb.jbplugin.accessadapter.slice.ExplainPlan
+import com.mongodb.jbplugin.accessadapter.slice.ExplainQuery
+import com.mongodb.jbplugin.accessadapter.slice.GetCollectionSchema
+import com.mongodb.jbplugin.accessadapter.slice.ListCollections
+import com.mongodb.jbplugin.accessadapter.slice.ListDatabases
+import com.mongodb.jbplugin.accessadapter.toNs
 import com.mongodb.jbplugin.dialects.Dialect
 import com.mongodb.jbplugin.dialects.javadriver.glossary.JavaDriverDialect
 import com.mongodb.jbplugin.dialects.javadriver.glossary.findAllChildrenOfType
 import com.mongodb.jbplugin.dialects.springcriteria.SpringCriteriaDialect
 import com.mongodb.jbplugin.editor.MongoDbVirtualFileDataSourceProvider
 import com.mongodb.jbplugin.meta.service
+import com.mongodb.jbplugin.mql.BsonObject
+import com.mongodb.jbplugin.mql.CollectionSchema
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.observability.LogMessage
 import com.mongodb.jbplugin.observability.LogMessageBuilder
@@ -75,12 +83,22 @@ import org.assertj.swing.core.BasicRobot
 import org.assertj.swing.core.Robot
 import org.intellij.lang.annotations.Language
 import org.jetbrains.jewel.intui.standalone.theme.IntUiTheme
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.*
-import org.mockito.Mockito
+import org.junit.jupiter.api.extension.AfterAllCallback
+import org.junit.jupiter.api.extension.AfterTestExecutionCallback
+import org.junit.jupiter.api.extension.BeforeAllCallback
+import org.junit.jupiter.api.extension.BeforeTestExecutionCallback
+import org.junit.jupiter.api.extension.ExtendWith
+import org.junit.jupiter.api.extension.ExtensionContext
+import org.junit.jupiter.api.extension.ParameterContext
+import org.junit.jupiter.api.extension.ParameterResolver
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.whenever
 import java.awt.Toolkit
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.StringSelection
@@ -501,7 +519,7 @@ internal fun mockDatabaseConnection(dataSource: LocalDataSource) =
     }
 
 internal fun Project.mockReadModelProvider(): DataGripBasedReadModelProvider {
-    val readModelProvider = Mockito.mock(DataGripBasedReadModelProvider::class.java)
+    val readModelProvider = mock(DataGripBasedReadModelProvider::class.java)
     withMockedService(readModelProvider)
     return readModelProvider
 }
@@ -694,6 +712,53 @@ fun ComposeUiTest.setContentWithTheme(composable: @Composable () -> Unit) {
 
     setContent {
         IntUiTheme(isDark = true) { composable() }
+    }
+}
+
+suspend fun DataGripBasedReadModelProvider.whenListDatabases(vararg databases: String) {
+    whenever(slice(any(), any<ListDatabases.Slice>(), eq(null)))
+        .thenReturn(
+            ListDatabases(
+                databases.map { ListDatabases.Database(it) }
+            )
+        )
+}
+
+suspend fun DataGripBasedReadModelProvider.whenListCollections(vararg collections: String) {
+    whenever(slice(any(), any<ListCollections.Slice>(), eq(null)))
+        .thenReturn(
+            ListCollections(
+                collections.map { ListCollections.Collection(it, "collection") }
+            )
+        )
+}
+
+suspend fun DataGripBasedReadModelProvider.whenExplainQuery(plan: ExplainPlan) {
+    whenever(slice(any(), any<ExplainQuery.Slice<Any>>(), any()))
+        .thenReturn(ExplainQuery(plan))
+}
+
+suspend fun DataGripBasedReadModelProvider.whenQueryingCollectionSchema(ns: String, schema: BsonObject) {
+    `when`(
+        slice(any(), any<GetCollectionSchema.Slice>(), eq(null))
+    ).thenReturn(
+        GetCollectionSchema(
+            CollectionSchema(ns.toNs(), schema)
+        ),
+    )
+}
+
+fun CodeInsightTestFixture.assertAutocompletes(vararg options: String) {
+    val elements = completeBasic().map { it.lookupString }
+    for (option in options) {
+        assertTrue(elements.contains(option), "$option has not been found in $elements")
+    }
+}
+
+fun CodeInsightTestFixture.assertDoesNotAutocomplete(vararg options: String) {
+    val elements = completeBasic().map { it.lookupString }
+    for (option in options) {
+        assertFalse(elements.contains(option), "$option has been found in $elements")
     }
 }
 

@@ -1,7 +1,25 @@
 package com.mongodb.jbplugin.mql.components
 
 import com.mongodb.jbplugin.mql.components.IsCommand.CommandType
-import com.mongodb.jbplugin.mql.components.IsCommand.CommandType.*
+import com.mongodb.jbplugin.mql.components.IsCommand.CommandType.AGGREGATE
+import com.mongodb.jbplugin.mql.components.IsCommand.CommandType.COUNT_DOCUMENTS
+import com.mongodb.jbplugin.mql.components.IsCommand.CommandType.DELETE_MANY
+import com.mongodb.jbplugin.mql.components.IsCommand.CommandType.DELETE_ONE
+import com.mongodb.jbplugin.mql.components.IsCommand.CommandType.DISTINCT
+import com.mongodb.jbplugin.mql.components.IsCommand.CommandType.ESTIMATED_DOCUMENT_COUNT
+import com.mongodb.jbplugin.mql.components.IsCommand.CommandType.FIND_MANY
+import com.mongodb.jbplugin.mql.components.IsCommand.CommandType.FIND_ONE
+import com.mongodb.jbplugin.mql.components.IsCommand.CommandType.FIND_ONE_AND_DELETE
+import com.mongodb.jbplugin.mql.components.IsCommand.CommandType.FIND_ONE_AND_REPLACE
+import com.mongodb.jbplugin.mql.components.IsCommand.CommandType.FIND_ONE_AND_UPDATE
+import com.mongodb.jbplugin.mql.components.IsCommand.CommandType.INSERT_MANY
+import com.mongodb.jbplugin.mql.components.IsCommand.CommandType.INSERT_ONE
+import com.mongodb.jbplugin.mql.components.IsCommand.CommandType.REPLACE_ONE
+import com.mongodb.jbplugin.mql.components.IsCommand.CommandType.RUN_COMMAND
+import com.mongodb.jbplugin.mql.components.IsCommand.CommandType.UNKNOWN
+import com.mongodb.jbplugin.mql.components.IsCommand.CommandType.UPDATE_MANY
+import com.mongodb.jbplugin.mql.components.IsCommand.CommandType.UPDATE_ONE
+import com.mongodb.jbplugin.mql.components.IsCommand.CommandType.UPSERT
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource

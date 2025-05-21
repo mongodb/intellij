@@ -1,24 +1,17 @@
 package com.mongodb.jbplugin.inspections.correctness
 
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
-import com.mongodb.jbplugin.accessadapter.slice.GetCollectionSchema
-import com.mongodb.jbplugin.accessadapter.slice.ListCollections
-import com.mongodb.jbplugin.accessadapter.slice.ListCollections.Collection
-import com.mongodb.jbplugin.accessadapter.slice.ListDatabases
-import com.mongodb.jbplugin.accessadapter.slice.ListDatabases.Database
 import com.mongodb.jbplugin.dialects.javadriver.glossary.JavaDriverDialect
 import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.ParsingTest
 import com.mongodb.jbplugin.fixtures.setupConnection
 import com.mongodb.jbplugin.fixtures.specifyDialect
+import com.mongodb.jbplugin.fixtures.whenListCollections
+import com.mongodb.jbplugin.fixtures.whenListDatabases
+import com.mongodb.jbplugin.fixtures.whenQueryingCollectionSchema
 import com.mongodb.jbplugin.mql.BsonDouble
 import com.mongodb.jbplugin.mql.BsonObject
-import com.mongodb.jbplugin.mql.CollectionSchema
-import com.mongodb.jbplugin.mql.Namespace
 import kotlinx.coroutines.test.runTest
-import org.mockito.Mockito.`when`
-import org.mockito.kotlin.any
-import org.mockito.kotlin.eq
 
 @IntegrationTest
 class JavaDriverMongoDbTypeMismatchTest {
@@ -38,29 +31,21 @@ public AggregateIterable<Document> exampleFind() {
     fun `shows an inspection for Aggregates#match call when a provided value cannot be assigned to a field because of detected type mismatch`(
         fixture: CodeInsightTestFixture,
     ) = runTest {
-        val (dataSource, readModelProvider) = fixture.setupConnection()
+        val (_, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
-        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
-            ListDatabases(listOf(Database("myDatabase")))
-        )
-
-        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>())).thenReturn(
-            ListCollections(listOf(Collection("myCollection", "collection")))
-        )
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), any<GetCollectionSchema.Slice>())
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    Namespace("myDatabase", "myCollection"),
-                    BsonObject(mapOf("thisIsDouble" to BsonDouble))
+        readModelProvider.whenListDatabases("myDatabase")
+        readModelProvider.whenListCollections("myCollection")
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.myCollection",
+            BsonObject(
+                mapOf(
+                    "thisIsDouble" to BsonDouble
                 )
-            ),
+            )
         )
 
-        fixture.enableInspections(MongoDbTypeMismatch::class.java)
+        fixture.enableInspections(MongoDbTypeMismatchGlobalTool())
         fixture.testHighlighting()
     }
 }

@@ -7,9 +7,13 @@ import com.mongodb.jbplugin.accessadapter.slice.ListDatabases
 import com.mongodb.jbplugin.autocomplete.Autocompletion.autocompleteCollections
 import com.mongodb.jbplugin.autocomplete.Autocompletion.autocompleteDatabases
 import com.mongodb.jbplugin.autocomplete.Autocompletion.autocompleteFields
-import com.mongodb.jbplugin.mql.*
+import com.mongodb.jbplugin.mql.BsonObject
+import com.mongodb.jbplugin.mql.BsonObjectId
+import com.mongodb.jbplugin.mql.BsonString
+import com.mongodb.jbplugin.mql.CollectionSchema
+import com.mongodb.jbplugin.mql.Namespace
 import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.mock

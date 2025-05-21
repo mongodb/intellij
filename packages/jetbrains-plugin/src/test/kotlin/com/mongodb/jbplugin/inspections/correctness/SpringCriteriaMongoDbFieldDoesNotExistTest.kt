@@ -1,11 +1,6 @@
 package com.mongodb.jbplugin.inspections.correctness
 
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
-import com.mongodb.jbplugin.accessadapter.slice.GetCollectionSchema
-import com.mongodb.jbplugin.accessadapter.slice.ListCollections
-import com.mongodb.jbplugin.accessadapter.slice.ListCollections.Collection
-import com.mongodb.jbplugin.accessadapter.slice.ListDatabases
-import com.mongodb.jbplugin.accessadapter.slice.ListDatabases.Database
 import com.mongodb.jbplugin.dialects.springcriteria.SpringCriteriaDialect
 import com.mongodb.jbplugin.fixtures.DefaultSetup
 import com.mongodb.jbplugin.fixtures.IntegrationTest
@@ -13,13 +8,11 @@ import com.mongodb.jbplugin.fixtures.ParsingTest
 import com.mongodb.jbplugin.fixtures.setupConnection
 import com.mongodb.jbplugin.fixtures.specifyDatabase
 import com.mongodb.jbplugin.fixtures.specifyDialect
+import com.mongodb.jbplugin.fixtures.whenListCollections
+import com.mongodb.jbplugin.fixtures.whenListDatabases
+import com.mongodb.jbplugin.fixtures.whenQueryingCollectionSchema
 import com.mongodb.jbplugin.mql.BsonObject
-import com.mongodb.jbplugin.mql.CollectionSchema
-import com.mongodb.jbplugin.mql.Namespace
 import kotlinx.coroutines.test.runTest
-import org.mockito.Mockito.`when`
-import org.mockito.kotlin.any
-import org.mockito.kotlin.eq
 
 @IntegrationTest
 class SpringCriteriaMongoDbFieldDoesNotExistTest {
@@ -375,23 +368,16 @@ class SpringCriteriaMongoDbFieldDoesNotExistTest {
         fixture.specifyDatabase(dataSource, "bad_db")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
-            ListDatabases(listOf(Database("bad_db")))
+        readModelProvider.whenListDatabases("bad_db")
+        readModelProvider.whenListCollections("book")
+        readModelProvider.whenQueryingCollectionSchema(
+            "bad_db.book",
+            BsonObject(
+                emptyMap()
+            )
         )
 
-        `when`(readModelProvider.slice(eq(dataSource), any<ListCollections.Slice>())).thenReturn(
-            ListCollections(listOf(Collection("book", "collection")))
-        )
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), any<GetCollectionSchema.Slice>())
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(Namespace("bad_db", "book"), BsonObject(emptyMap()))
-            ),
-        )
-
-        fixture.enableInspections(MongoDbFieldDoesNotExist::class.java)
+        fixture.enableInspections(MongoDbFieldDoesNotExistGlobalTool())
         fixture.testHighlighting()
     }
 }

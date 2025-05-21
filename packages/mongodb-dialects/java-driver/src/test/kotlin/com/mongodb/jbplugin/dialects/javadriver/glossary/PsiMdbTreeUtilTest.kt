@@ -10,11 +10,24 @@ import com.intellij.psi.PsiTypes
 import com.mongodb.jbplugin.dialects.javadriver.IntegrationTest
 import com.mongodb.jbplugin.dialects.javadriver.ParsingTest
 import com.mongodb.jbplugin.dialects.javadriver.getQueryAtMethod
-import com.mongodb.jbplugin.mql.*
+import com.mongodb.jbplugin.mql.BsonAny
+import com.mongodb.jbplugin.mql.BsonAnyOf
+import com.mongodb.jbplugin.mql.BsonArray
+import com.mongodb.jbplugin.mql.BsonBoolean
+import com.mongodb.jbplugin.mql.BsonDate
+import com.mongodb.jbplugin.mql.BsonDecimal128
+import com.mongodb.jbplugin.mql.BsonDouble
+import com.mongodb.jbplugin.mql.BsonEnum
+import com.mongodb.jbplugin.mql.BsonInt32
+import com.mongodb.jbplugin.mql.BsonInt64
+import com.mongodb.jbplugin.mql.BsonNull
+import com.mongodb.jbplugin.mql.BsonObjectId
+import com.mongodb.jbplugin.mql.BsonString
+import com.mongodb.jbplugin.mql.BsonType
 import com.mongodb.jbplugin.mql.components.HasFieldReference
 import com.mongodb.jbplugin.mql.components.HasFilter
 import com.mongodb.jbplugin.mql.components.HasValueReference
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 

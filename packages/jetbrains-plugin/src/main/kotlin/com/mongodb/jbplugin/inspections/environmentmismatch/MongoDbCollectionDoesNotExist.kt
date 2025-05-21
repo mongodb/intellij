@@ -1,11 +1,11 @@
 package com.mongodb.jbplugin.inspections.environmentmismatch
 
-import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
 import com.mongodb.jbplugin.editor.dataSource
-import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionBridgeV2
+import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionBridge
+import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionGlobalTool
 import com.mongodb.jbplugin.linting.Inspection.CollectionDoesNotExist
 import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.linting.environmentmismatch.CollectionDoesNotExistInspection
@@ -16,9 +16,12 @@ import com.mongodb.jbplugin.observability.TelemetryEvent
 import com.mongodb.jbplugin.observability.probe.InspectionStatusChangedProbe
 import kotlinx.coroutines.CoroutineScope
 
+class MongoDbCollectionDoesNotExistGlobalTool : AbstractMongoDbInspectionGlobalTool(
+    CollectionDoesNotExist
+)
 class MongoDbCollectionDoesNotExist(
     coroutineScope: CoroutineScope,
-) : AbstractMongoDbInspectionBridgeV2<
+) : AbstractMongoDbInspectionBridge<
     CollectionDoesNotExistInspectionSettings<LocalDataSource>,
     CollectionDoesNotExist
     >(
@@ -46,11 +49,11 @@ class MongoDbCollectionDoesNotExist(
         )
     }
 
-    override fun emitFinishedInspectionTelemetryEvent(problemsHolder: ProblemsHolder) {
+    override fun emitFinishedInspectionTelemetryEvent(queryInsights: List<QueryInsight<PsiElement, CollectionDoesNotExist>>) {
         val probe by service<InspectionStatusChangedProbe>()
         probe.finishedProcessingInspections(
             TelemetryEvent.InspectionStatusChangeEvent.InspectionType.COLLECTION_DOES_NOT_EXIST,
-            problemsHolder
+            queryInsights
         )
     }
 }

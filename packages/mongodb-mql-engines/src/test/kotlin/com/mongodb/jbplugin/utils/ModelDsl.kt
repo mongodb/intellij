@@ -21,7 +21,6 @@ import com.mongodb.jbplugin.mql.components.Name
 import com.mongodb.jbplugin.mql.components.Name.AND
 import com.mongodb.jbplugin.mql.components.Named
 import com.mongodb.jbplugin.mql.toBsonType
-import kotlin.jvm.javaClass
 
 class ComponentHolder(internal val components: MutableList<Component>)
 class NodeHolder(internal val nodes: MutableList<Node<Unit>>)

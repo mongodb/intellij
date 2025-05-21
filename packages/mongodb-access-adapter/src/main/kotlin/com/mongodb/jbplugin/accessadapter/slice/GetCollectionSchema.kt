@@ -2,11 +2,23 @@ package com.mongodb.jbplugin.accessadapter.slice
 
 import com.mongodb.jbplugin.accessadapter.MongoDbDriver
 import com.mongodb.jbplugin.accessadapter.QueryResult
-import com.mongodb.jbplugin.mql.*
+import com.mongodb.jbplugin.mql.BsonAnyOf
+import com.mongodb.jbplugin.mql.BsonArray
+import com.mongodb.jbplugin.mql.BsonNull
+import com.mongodb.jbplugin.mql.BsonObject
+import com.mongodb.jbplugin.mql.BsonType
+import com.mongodb.jbplugin.mql.CollectionSchema
+import com.mongodb.jbplugin.mql.DataDistribution
+import com.mongodb.jbplugin.mql.Namespace
+import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasFilter
 import com.mongodb.jbplugin.mql.components.HasLimit
 import com.mongodb.jbplugin.mql.components.IsCommand
+import com.mongodb.jbplugin.mql.flattenAnyOfReferences
+import com.mongodb.jbplugin.mql.mergeSchemaTogether
+import com.mongodb.jbplugin.mql.primitiveOrWrapper
+import com.mongodb.jbplugin.mql.toBsonType
 
 /**
  * Slice to be used when querying the schema of a given collection.

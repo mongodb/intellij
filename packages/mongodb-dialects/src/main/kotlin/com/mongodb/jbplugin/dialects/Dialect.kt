@@ -6,6 +6,9 @@
 
 package com.mongodb.jbplugin.dialects
 
+import com.mongodb.jbplugin.dialects.OutputQuery.CanBeRun
+import com.mongodb.jbplugin.dialects.OutputQuery.Incomplete
+import com.mongodb.jbplugin.dialects.OutputQuery.None
 import com.mongodb.jbplugin.indexing.IndexAnalyzer
 import com.mongodb.jbplugin.mql.BsonType
 import com.mongodb.jbplugin.mql.Node

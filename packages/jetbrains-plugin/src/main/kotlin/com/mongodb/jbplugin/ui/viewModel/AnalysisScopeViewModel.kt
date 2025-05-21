@@ -1,12 +1,11 @@
 package com.mongodb.jbplugin.ui.viewModel
 
-import com.intellij.codeInspection.InspectionEngine
-import com.intellij.codeInspection.InspectionManager
 import com.intellij.codeInspection.ex.InspectionToolWrapper
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.findPsiFile
+import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionGlobalTool
 import com.mongodb.jbplugin.inspections.analysisScope.AnalysisScope
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.meta.singleExecutionJob
@@ -111,18 +110,22 @@ class AnalysisScopeViewModel(
         ensureActive()
         log.info(useLogMessage("Analysis in progress...").build())
         withinReadActionBlocking {
-            val inspectionContext = InspectionManager.getInstance(project).createNewGlobalContext()
             val tools = getEnabledToolWrappers()
 
             for (file in files) {
                 ensureActive()
                 val psiFile = file.findPsiFile(project)
-
                 if (psiFile != null) {
+                    ensureActive()
                     log.info(useLogMessage("Running inspection for file ${psiFile.name}").build())
 
                     for (tool in tools) {
-                        InspectionEngine.runInspectionOnFile(psiFile, tool, inspectionContext)
+                        ensureActive()
+                        val externalAnnotator = AbstractMongoDbInspectionGlobalTool.toInspectionRunner(coroutineScope, tool)
+                        ensureActive()
+                        val info = externalAnnotator?.collectInformation(psiFile)
+                        ensureActive()
+                        externalAnnotator?.doAnnotate(info)
                     }
 
                     val currentState = analysisStatus.value as? AnalysisStatus.InProgress ?: continue

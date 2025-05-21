@@ -1,11 +1,11 @@
 package com.mongodb.jbplugin.inspections.performance
 
-import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
 import com.mongodb.jbplugin.editor.dataSource
-import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionBridgeV2
+import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionBridge
+import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionGlobalTool
 import com.mongodb.jbplugin.linting.Inspection.NotUsingIndexEffectively
 import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.linting.performance.QueryNotUsingIndexEffectivelyInspection
@@ -19,7 +19,8 @@ import com.mongodb.jbplugin.observability.probe.InspectionStatusChangedProbe
 import com.mongodb.jbplugin.settings.pluginSetting
 import kotlinx.coroutines.CoroutineScope
 
-class MongoDbQueryNotUsingIndexEffectively(coroutineScope: CoroutineScope) : AbstractMongoDbInspectionBridgeV2<
+class MongoDbQueryNotUsingIndexEffectivelyGlobalTool : AbstractMongoDbInspectionGlobalTool(NotUsingIndexEffectively)
+class MongoDbQueryNotUsingIndexEffectively(coroutineScope: CoroutineScope) : AbstractMongoDbInspectionBridge<
     QueryNotUsingIndexEffectivelyInspectionSettings<LocalDataSource>,
     NotUsingIndexEffectively
     >(
@@ -51,11 +52,11 @@ class MongoDbQueryNotUsingIndexEffectively(coroutineScope: CoroutineScope) : Abs
         )
     }
 
-    override fun emitFinishedInspectionTelemetryEvent(problemsHolder: ProblemsHolder) {
+    override fun emitFinishedInspectionTelemetryEvent(queryInsights: List<QueryInsight<PsiElement, NotUsingIndexEffectively>>) {
         val probe by service<InspectionStatusChangedProbe>()
         probe.finishedProcessingInspections(
             TelemetryEvent.InspectionStatusChangeEvent.InspectionType.QUERY_NOT_COVERED_BY_INDEX,
-            problemsHolder,
+            queryInsights,
         )
     }
 }

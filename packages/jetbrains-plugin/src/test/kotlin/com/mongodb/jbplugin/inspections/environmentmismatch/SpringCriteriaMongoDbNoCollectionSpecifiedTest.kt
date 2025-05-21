@@ -1,8 +1,6 @@
 package com.mongodb.jbplugin.inspections.environmentmismatch
 
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
-import com.mongodb.jbplugin.accessadapter.slice.ListDatabases
-import com.mongodb.jbplugin.accessadapter.slice.ListDatabases.Database
 import com.mongodb.jbplugin.dialects.springcriteria.SpringCriteriaDialect
 import com.mongodb.jbplugin.fixtures.DefaultSetup.SPRING_DATA
 import com.mongodb.jbplugin.fixtures.IntegrationTest
@@ -10,10 +8,10 @@ import com.mongodb.jbplugin.fixtures.ParsingTest
 import com.mongodb.jbplugin.fixtures.setupConnection
 import com.mongodb.jbplugin.fixtures.specifyDatabase
 import com.mongodb.jbplugin.fixtures.specifyDialect
+import com.mongodb.jbplugin.fixtures.whenListCollections
+import com.mongodb.jbplugin.fixtures.whenListDatabases
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
-import org.mockito.Mockito.`when`
-import org.mockito.kotlin.eq
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @IntegrationTest
@@ -46,14 +44,13 @@ public void exampleAggregate(Class collectionClass) {
     fun `shows an inspection when the collection cannot be detected`(
         fixture: CodeInsightTestFixture,
     ) = runTest {
-        val (dataSource, readModelProvider) = fixture.setupConnection()
+        val (_, readModelProvider) = fixture.setupConnection()
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
-            ListDatabases(listOf(Database("myDb")))
-        )
+        readModelProvider.whenListDatabases("myDb")
+        readModelProvider.whenListCollections(collections = emptyArray())
 
-        fixture.enableInspections(MongoDbNoCollectionSpecified::class.java)
+        fixture.enableInspections(MongoDbNoCollectionSpecifiedGlobalTool())
         fixture.testHighlighting()
     }
 
@@ -89,11 +86,10 @@ public void exampleAggregate() {
         fixture.specifyDatabase(dataSource, "myDb")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        `when`(readModelProvider.slice(eq(dataSource), eq(ListDatabases.Slice))).thenReturn(
-            ListDatabases(listOf(Database("myDb")))
-        )
+        readModelProvider.whenListDatabases("myDb")
+        readModelProvider.whenListCollections(collections = emptyArray())
 
-        fixture.enableInspections(MongoDbNoCollectionSpecified::class.java)
+        fixture.enableInspections(MongoDbNoCollectionSpecifiedGlobalTool())
         fixture.testHighlighting()
     }
 }

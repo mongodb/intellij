@@ -1,6 +1,9 @@
 package com.mongodb.jbplugin.dialects.springcriteria
 
-import com.intellij.psi.*
+import com.intellij.psi.PsiClassObjectAccessExpression
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiExpression
+import com.intellij.psi.PsiMethodCallExpression
 import com.intellij.psi.util.PsiTypesUtil
 import com.mongodb.jbplugin.dialects.javadriver.glossary.fuzzyResolveMethod
 import com.mongodb.jbplugin.dialects.javadriver.glossary.meaningfulExpression

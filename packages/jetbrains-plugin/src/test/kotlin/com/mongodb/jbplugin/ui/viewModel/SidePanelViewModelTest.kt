@@ -7,7 +7,6 @@ import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.withMockedService
 import com.mongodb.jbplugin.ui.viewModel.SidePanelStatus.Ok
 import kotlinx.coroutines.test.TestScope
-import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.timeout

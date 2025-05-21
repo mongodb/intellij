@@ -1,8 +1,8 @@
 package com.mongodb.jbplugin.inspections.environmentmismatch
 
-import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.psi.PsiElement
-import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionBridgeV2
+import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionBridge
+import com.mongodb.jbplugin.inspections.AbstractMongoDbInspectionGlobalTool
 import com.mongodb.jbplugin.linting.Inspection.NoCollectionSpecified
 import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.linting.environmentmismatch.NoCollectionSpecifiedInspection
@@ -12,9 +12,13 @@ import com.mongodb.jbplugin.observability.TelemetryEvent
 import com.mongodb.jbplugin.observability.probe.InspectionStatusChangedProbe
 import kotlinx.coroutines.CoroutineScope
 
+class MongoDbNoCollectionSpecifiedGlobalTool : AbstractMongoDbInspectionGlobalTool(
+    NoCollectionSpecified
+)
+
 class MongoDbNoCollectionSpecified(
     coroutineScope: CoroutineScope,
-) : AbstractMongoDbInspectionBridgeV2<
+) : AbstractMongoDbInspectionBridge<
     Unit,
     NoCollectionSpecified
     >(coroutineScope, NoCollectionSpecifiedInspection(), NoCollectionSpecified) {
@@ -28,11 +32,11 @@ class MongoDbNoCollectionSpecified(
         )
     }
 
-    override fun emitFinishedInspectionTelemetryEvent(problemsHolder: ProblemsHolder) {
+    override fun emitFinishedInspectionTelemetryEvent(queryInsights: List<QueryInsight<PsiElement, NoCollectionSpecified>>) {
         val probe by service<InspectionStatusChangedProbe>()
         probe.finishedProcessingInspections(
             TelemetryEvent.InspectionStatusChangeEvent.InspectionType.NO_COLLECTION_SPECIFIED,
-            problemsHolder
+            queryInsights
         )
     }
 }
