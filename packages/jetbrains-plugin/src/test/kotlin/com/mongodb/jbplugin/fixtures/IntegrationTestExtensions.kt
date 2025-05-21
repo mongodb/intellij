@@ -195,7 +195,7 @@ annotation class ParsingTest(
 @ExtendWith(IntegrationTestExtension::class)
 @kotlinx.coroutines.ExperimentalCoroutinesApi
 annotation class IntegrationTest(
-    val newProjectForTest: Boolean = false
+    val newProjectForTest: Boolean = true
 )
 
 /**
