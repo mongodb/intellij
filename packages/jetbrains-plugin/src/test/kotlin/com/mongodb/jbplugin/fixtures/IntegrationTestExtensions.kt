@@ -49,6 +49,10 @@ import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
 import com.intellij.testFramework.replaceService
 import com.intellij.testFramework.runInEdtAndWait
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
+import com.mongodb.jbplugin.accessadapter.slice.ExplainPlan
+import com.mongodb.jbplugin.accessadapter.slice.ExplainQuery
+import com.mongodb.jbplugin.accessadapter.slice.ListCollections
+import com.mongodb.jbplugin.accessadapter.slice.ListDatabases
 import com.mongodb.jbplugin.dialects.Dialect
 import com.mongodb.jbplugin.dialects.javadriver.glossary.JavaDriverDialect
 import com.mongodb.jbplugin.dialects.javadriver.glossary.findAllChildrenOfType
@@ -87,6 +91,8 @@ import org.junit.jupiter.api.extension.ParameterResolver
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.whenever
 import java.awt.Toolkit
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.StringSelection
@@ -701,6 +707,29 @@ fun ComposeUiTest.setContentWithTheme(composable: @Composable () -> Unit) {
     setContent {
         IntUiTheme(isDark = true) { composable() }
     }
+}
+
+suspend fun DataGripBasedReadModelProvider.whenListDatabases(vararg databases: String) {
+    whenever(slice(any(), any<ListDatabases.Slice>(), eq(null)))
+        .thenReturn(
+            ListDatabases(
+                databases.map { ListDatabases.Database(it) }
+            )
+        )
+}
+
+suspend fun DataGripBasedReadModelProvider.whenListCollections(vararg collections: String) {
+    whenever(slice(any(), any<ListCollections.Slice>(), eq(null)))
+        .thenReturn(
+            ListCollections(
+                collections.map { ListCollections.Collection(it, "collection") }
+            )
+        )
+}
+
+suspend fun DataGripBasedReadModelProvider.whenExplainQuery(plan: ExplainPlan) {
+    whenever(slice(any(), any<ExplainQuery.Slice<Any>>(), any()))
+        .thenReturn(ExplainQuery(plan))
 }
 
 fun resetClipboard() {
