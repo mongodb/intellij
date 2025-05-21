@@ -2,6 +2,7 @@ package com.mongodb.jbplugin.meta
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.platform.util.coroutines.childScope
+import com.intellij.util.ui.EDT
 import com.jetbrains.rd.util.AtomicReference
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -10,7 +11,6 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import javax.swing.SwingUtilities
 import kotlin.coroutines.CoroutineContext
 
 class SingleExecutionJob(
@@ -58,7 +58,7 @@ fun <T> withinReadActionBlocking(cb: () -> T): T {
 }
 
 fun inEdt(): Boolean {
-    return SwingUtilities.isEventDispatchThread()
+    return EDT.isCurrentThreadEdt()
 }
 
 fun invokeInEdt(cb: () -> Unit) {

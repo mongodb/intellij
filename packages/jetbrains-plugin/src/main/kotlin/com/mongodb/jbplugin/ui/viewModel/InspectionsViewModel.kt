@@ -20,15 +20,19 @@ import com.mongodb.jbplugin.meta.withinReadAction
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.zip
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.VisibleForTesting
+import kotlin.time.Duration.Companion.seconds
 
 fun Inspection.getToolShortName(): String {
     return this.javaClass.simpleName
@@ -47,7 +51,11 @@ class InspectionsViewModel(
     val coroutineScope: CoroutineScope
 ) : ProfileChangeAdapter {
     private val mutableInsights = MutableStateFlow<List<QueryInsight<PsiElement, *>>>(emptyList())
-    val insights = mutableInsights.asStateFlow()
+
+    // We don't need all the states during the processing in the UI, so we can debounce to 1 second
+    // This means that every second we will get the latest event, this avoids jumps on the UI while
+    // typing in the editor or during background analysis
+    val insights = mutableInsights.debounce(1.seconds).stateIn(coroutineScope, SharingStarted.Eagerly, emptyList())
 
     private val mutableOpenCategories = MutableStateFlow<InspectionCategory?>(null)
     val openCategories = mutableOpenCategories.asStateFlow()
