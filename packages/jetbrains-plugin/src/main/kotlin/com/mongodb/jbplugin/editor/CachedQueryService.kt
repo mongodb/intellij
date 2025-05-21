@@ -178,8 +178,8 @@ class CachedQueryService(
                     useLogMessage("Failed to get build info for the current cluster.").build(),
                     e
                 )
-                return@runBlocking queryWithDb
-            }
+                null
+            } ?: return@runBlocking queryWithDb
 
             val queryWithTargetCluster = queryWithDb.withTargetCluster(
                 HasTargetCluster(Version.parse(buildInfo.version))
@@ -202,8 +202,8 @@ class CachedQueryService(
                     useLogMessage("Failed to get collection schema for the current cluster.").build(),
                     e
                 )
-                return@runBlocking queryWithTargetCluster
-            }
+                null
+            } ?: return@runBlocking queryWithTargetCluster
 
             queryWithTargetCluster.queryWithInjectedCollectionSchema(
                 collectionSchema.schema
