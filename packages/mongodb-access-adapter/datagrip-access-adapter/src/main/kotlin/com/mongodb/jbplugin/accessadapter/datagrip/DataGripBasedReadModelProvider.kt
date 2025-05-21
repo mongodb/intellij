@@ -97,7 +97,7 @@ class DataGripBasedReadModelProvider(
     private suspend fun <T : Any> refreshCache(entry: String, slice: Slice<T>, dataSource: LocalDataSource) {
         rwLock.write {
             val driver = driverFactory(project, dataSource)
-            val newValue = runCatching { slice.queryUsingDriver(driver) }.getOrNull()
+            val newValue = slice.queryUsingDriver(driver)
             wasCached = false
             cachedValues[entry] = dataSource.modificationCount to newValue
         }
