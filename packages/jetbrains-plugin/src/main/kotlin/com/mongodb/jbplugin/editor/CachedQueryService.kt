@@ -186,9 +186,7 @@ class CachedQueryService(
             )
 
             val knownReference = queryWithTargetCluster.component<HasCollectionReference<*>>()?.reference as? Known<*>
-            if (knownReference == null) {
-                return@runBlocking queryWithTargetCluster
-            }
+                ?: return@runBlocking queryWithTargetCluster
 
             val sampleSize by pluginSetting { ::sampleSize }
             val collectionSchema = try {
