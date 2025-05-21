@@ -40,7 +40,7 @@ import kotlin.reflect.KClass
 @IntegrationTest
 class RunQueryModalTest {
     @Test
-    fun `has a title and subtitle`(robot: Robot, project: Project, coroutineScope: CoroutineScope) {
+    fun `has a title and subtitle`(robot: Robot, project: Project, coroutineScope: CoroutineScope) = runTest {
         val dataSource = mockDataSource()
 
         val query = project.parseJavaQuery(
@@ -68,7 +68,7 @@ class RunQueryModalTest {
         robot: Robot,
         project: Project,
         coroutineScope: CoroutineScope
-    ) {
+    ) = runTest {
         val dataSource = mockDataSource()
 
         val query = project.parseJavaQuery(
@@ -142,7 +142,7 @@ class RunQueryModalTest {
         robot: Robot,
         project: Project,
         coroutineScope: CoroutineScope
-    ) {
+    ) = runTest {
         val dataSource = mockDataSource()
 
         val query = project.parseJavaQuery(
@@ -174,7 +174,7 @@ class RunQueryModalTest {
         robot: Robot,
         project: Project,
         coroutineScope: CoroutineScope,
-    ) {
+    ) = runTest {
         val dataSource = mockDataSource()
 
         val query = project.parseJavaQuery(
@@ -199,7 +199,7 @@ class RunQueryModalTest {
         robot: Robot,
         project: Project,
         coroutineScope: CoroutineScope
-    ) {
+    ) = runTest {
         val dataSource = mockDataSource()
 
         val query = project.parseJavaQuery(
@@ -226,7 +226,7 @@ class RunQueryModalTest {
         robot: Robot,
         project: Project,
         coroutineScope: CoroutineScope
-    ) {
+    ) = runTest {
         val dataSource = mockDataSource()
 
         val query = project.parseJavaQuery(
@@ -258,7 +258,7 @@ class RunQueryModalTest {
         robot: Robot,
         project: Project,
         coroutineScope: CoroutineScope
-    ) {
+    ) = runTest {
         val dataSource = mockDataSource()
 
         val query = project.parseJavaQuery(
@@ -295,7 +295,7 @@ class RunQueryModalTest {
         robot: Robot,
         project: Project,
         coroutineScope: CoroutineScope
-    ) {
+    ) = runTest {
         assertTrue(
             RunQueryModal.sampleDateTime().endsWith("Z")
         )

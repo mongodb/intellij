@@ -2,23 +2,23 @@ package com.mongodb.jbplugin.autocomplete
 
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.mongodb.jbplugin.accessadapter.slice.GetCollectionSchema
-import com.mongodb.jbplugin.accessadapter.slice.ListCollections
-import com.mongodb.jbplugin.accessadapter.slice.ListDatabases
 import com.mongodb.jbplugin.dialects.javadriver.glossary.JavaDriverDialect
 import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.ParsingTest
+import com.mongodb.jbplugin.fixtures.assertAutocompletes
 import com.mongodb.jbplugin.fixtures.eventually
 import com.mongodb.jbplugin.fixtures.setupConnection
 import com.mongodb.jbplugin.fixtures.specifyDialect
+import com.mongodb.jbplugin.fixtures.whenListCollections
+import com.mongodb.jbplugin.fixtures.whenListDatabases
+import com.mongodb.jbplugin.fixtures.whenQueryingCollectionSchema
 import com.mongodb.jbplugin.mql.BsonObject
 import com.mongodb.jbplugin.mql.BsonString
 import com.mongodb.jbplugin.mql.CollectionSchema
 import com.mongodb.jbplugin.mql.Namespace
 import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.mockito.Mockito.`when`
-import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 
 @IntegrationTest
@@ -34,30 +34,12 @@ class JavaDriverCompletionContributorTest {
         fixture: CodeInsightTestFixture,
     ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
-        val (dataSource, readModelProvider) = fixture.setupConnection()
+        val (_, readModelProvider) = fixture.setupConnection()
 
-        `when`(readModelProvider.slice(eq(dataSource), any<ListDatabases.Slice>(), eq(null))).thenReturn(
-            ListDatabases(
-                listOf(
-                    ListDatabases.Database("myDatabase1"),
-                    ListDatabases.Database("myDatabase2"),
-                ),
-            ),
-        )
+        readModelProvider.whenListDatabases("myDatabase1", "myDatabase2")
 
         eventually {
-            val elements = fixture.completeBasic()
-
-            assertNotNull(
-                elements.firstOrNull {
-                    it.lookupString == "myDatabase1"
-                },
-            )
-            assertNotNull(
-                elements.firstOrNull {
-                    it.lookupString == "myDatabase2"
-                },
-            )
+            fixture.assertAutocompletes("myDatabase1", "myDatabase2")
         }
     }
 
@@ -72,27 +54,12 @@ class JavaDriverCompletionContributorTest {
         fixture: CodeInsightTestFixture,
     ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
+        val (_, readModelProvider) = fixture.setupConnection()
 
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(ListCollections.Slice("myDatabase")), eq(null))
-        ).thenReturn(
-            ListCollections(
-                listOf(
-                    ListCollections.Collection("myCollection", "collection"),
-                ),
-            ),
-        )
+        readModelProvider.whenListCollections("myCollection")
 
         eventually {
-            val elements = fixture.completeBasic()
-
-            assertNotNull(
-                elements.firstOrNull {
-                    it.lookupString == "myCollection"
-                },
-            )
+            fixture.assertAutocompletes("myCollection")
         }
     }
 
@@ -107,27 +74,12 @@ class JavaDriverCompletionContributorTest {
         fixture: CodeInsightTestFixture,
     ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
+        val (_, readModelProvider) = fixture.setupConnection()
 
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(ListCollections.Slice("myDatabase")), eq(null))
-        ).thenReturn(
-            ListCollections(
-                listOf(
-                    ListCollections.Collection("myCollection", "collection"),
-                ),
-            ),
-        )
+        readModelProvider.whenListCollections("myCollection")
 
         eventually {
-            val elements = fixture.completeBasic()
-
-            assertNotNull(
-                elements.firstOrNull {
-                    it.lookupString == "myCollection"
-                },
-            )
+            fixture.assertAutocompletes("myCollection")
         }
     }
 
@@ -144,33 +96,20 @@ class JavaDriverCompletionContributorTest {
     ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
 
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        val namespace = Namespace("myDatabase", "myCollection")
+        val (_, readModelProvider) = fixture.setupConnection()
 
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.myCollection",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
         eventually {
-            val elements = fixture.completeBasic()
-
-            assertNotNull(
-                elements.firstOrNull {
-                    it.lookupString == "myField"
-                },
-            )
+            fixture.assertAutocompletes("myField")
         }
     }
 
@@ -186,33 +125,19 @@ class JavaDriverCompletionContributorTest {
         fixture: CodeInsightTestFixture,
     ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
+        val (_, readModelProvider) = fixture.setupConnection()
 
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        val namespace = Namespace("myDatabase", "myCollection")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.myCollection",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
                 ),
-            ),
+            )
         )
 
         eventually {
-            val elements = fixture.completeBasic()
-
-            assertNotNull(
-                elements.firstOrNull {
-                    it.lookupString == "myField"
-                },
-            )
+            fixture.assertAutocompletes("myField")
         }
     }
 
@@ -229,32 +154,19 @@ class JavaDriverCompletionContributorTest {
     ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
 
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        val namespace = Namespace("myDatabase", "myCollection")
+        val (_, readModelProvider) = fixture.setupConnection()
 
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.myCollection",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
                 ),
-            ),
+            )
         )
 
         eventually {
-            val elements = fixture.completeBasic()
-
-            assertNotNull(
-                elements.firstOrNull {
-                    it.lookupString == "myField"
-                },
-            )
+            fixture.assertAutocompletes("myField")
         }
     }
 
@@ -274,33 +186,19 @@ class JavaDriverCompletionContributorTest {
         fixture: CodeInsightTestFixture,
     ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
+        val (_, readModelProvider) = fixture.setupConnection()
 
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        val namespace = Namespace("myDatabase", "myCollection")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.myCollection",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
                 ),
-            ),
+            )
         )
 
         eventually {
-            val elements = fixture.completeBasic()
-
-            assertNotNull(
-                elements.firstOrNull {
-                    it.lookupString == "myField"
-                },
-            )
+            fixture.assertAutocompletes("myField")
         }
     }
 
@@ -320,33 +218,19 @@ class JavaDriverCompletionContributorTest {
         fixture: CodeInsightTestFixture,
     ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
+        val (_, readModelProvider) = fixture.setupConnection()
 
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        val namespace = Namespace("myDatabase", "myCollection")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.myCollection",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
                 ),
-            ),
+            )
         )
 
         eventually {
-            val elements = fixture.completeBasic()
-
-            assertNotNull(
-                elements.firstOrNull {
-                    it.lookupString == "myField"
-                },
-            )
+            fixture.assertAutocompletes("myField")
         }
     }
 
@@ -368,33 +252,19 @@ class JavaDriverCompletionContributorTest {
         fixture: CodeInsightTestFixture,
     ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
+        val (_, readModelProvider) = fixture.setupConnection()
 
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        val namespace = Namespace("myDatabase", "myCollection")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.myCollection",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
                 ),
-            ),
+            )
         )
 
         eventually {
-            val elements = fixture.completeBasic()
-
-            assertNotNull(
-                elements.firstOrNull {
-                    it.lookupString == "myField"
-                },
-            )
+            fixture.assertAutocompletes("myField")
         }
     }
 
@@ -416,33 +286,19 @@ class JavaDriverCompletionContributorTest {
         fixture: CodeInsightTestFixture,
     ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
+        val (_, readModelProvider) = fixture.setupConnection()
 
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        val namespace = Namespace("myDatabase", "myCollection")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.myCollection",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
                 ),
-            ),
+            )
         )
 
         eventually {
-            val elements = fixture.completeBasic()
-
-            assertNotNull(
-                elements.firstOrNull {
-                    it.lookupString == "myField"
-                },
-            )
+            fixture.assertAutocompletes("myField")
         }
     }
 
@@ -462,33 +318,19 @@ class JavaDriverCompletionContributorTest {
         fixture: CodeInsightTestFixture,
     ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
+        val (_, readModelProvider) = fixture.setupConnection()
 
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        val namespace = Namespace("myDatabase", "myCollection")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.myCollection",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
                 ),
-            ),
+            )
         )
 
         eventually {
-            val elements = fixture.completeBasic()
-
-            assertNotNull(
-                elements.firstOrNull {
-                    it.lookupString == "myField"
-                },
-            )
+            fixture.assertAutocompletes("myField")
         }
     }
 
@@ -510,33 +352,19 @@ class JavaDriverCompletionContributorTest {
         fixture: CodeInsightTestFixture,
     ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
+        val (_, readModelProvider) = fixture.setupConnection()
 
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        val namespace = Namespace("myDatabase", "myCollection")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.myCollection",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
                 ),
-            ),
+            )
         )
 
         eventually {
-            val elements = fixture.completeBasic()
-
-            assertNotNull(
-                elements.firstOrNull {
-                    it.lookupString == "myField"
-                },
-            )
+            fixture.assertAutocompletes("myField")
         }
     }
 
@@ -558,33 +386,19 @@ class JavaDriverCompletionContributorTest {
         fixture: CodeInsightTestFixture,
     ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
+        val (_, readModelProvider) = fixture.setupConnection()
 
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        val namespace = Namespace("myDatabase", "myCollection")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.myCollection",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
                 ),
-            ),
+            )
         )
 
         eventually {
-            val elements = fixture.completeBasic()
-
-            assertNotNull(
-                elements.firstOrNull {
-                    it.lookupString == "myField"
-                },
-            )
+            fixture.assertAutocompletes("myField")
         }
     }
 
@@ -606,33 +420,19 @@ class JavaDriverCompletionContributorTest {
         fixture: CodeInsightTestFixture,
     ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
+        val (_, readModelProvider) = fixture.setupConnection()
 
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        val namespace = Namespace("myDatabase", "myCollection")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.myCollection",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
                 ),
-            ),
+            )
         )
 
         eventually {
-            val elements = fixture.completeBasic()
-
-            assertNotNull(
-                elements.firstOrNull {
-                    it.lookupString == "myField"
-                },
-            )
+            fixture.assertAutocompletes("myField")
         }
     }
 
@@ -656,33 +456,19 @@ class JavaDriverCompletionContributorTest {
         fixture: CodeInsightTestFixture,
     ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
+        val (_, readModelProvider) = fixture.setupConnection()
 
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        val namespace = Namespace("myDatabase", "myCollection")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.myCollection",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
                 ),
-            ),
+            )
         )
 
         eventually {
-            val elements = fixture.completeBasic()
-
-            assertNotNull(
-                elements.firstOrNull {
-                    it.lookupString == "myField"
-                },
-            )
+            fixture.assertAutocompletes("myField")
         }
     }
 
@@ -706,33 +492,19 @@ class JavaDriverCompletionContributorTest {
         fixture: CodeInsightTestFixture,
     ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
+        val (_, readModelProvider) = fixture.setupConnection()
 
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        val namespace = Namespace("myDatabase", "myCollection")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.myCollection",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
                 ),
-            ),
+            )
         )
 
         eventually {
-            val elements = fixture.completeBasic()
-
-            assertNotNull(
-                elements.firstOrNull {
-                    it.lookupString == "myField"
-                },
-            )
+            fixture.assertAutocompletes("myField")
         }
     }
 
@@ -752,33 +524,19 @@ class JavaDriverCompletionContributorTest {
         fixture: CodeInsightTestFixture,
     ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
+        val (_, readModelProvider) = fixture.setupConnection()
 
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        val namespace = Namespace("myDatabase", "myCollection")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.myCollection",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
                 ),
-            ),
+            )
         )
 
         eventually {
-            val elements = fixture.completeBasic()
-
-            assertNotNull(
-                elements.firstOrNull {
-                    it.lookupString == "myField"
-                },
-            )
+            fixture.assertAutocompletes("myField")
         }
     }
 
@@ -798,33 +556,19 @@ class JavaDriverCompletionContributorTest {
         fixture: CodeInsightTestFixture,
     ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
+        val (_, readModelProvider) = fixture.setupConnection()
 
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        val namespace = Namespace("myDatabase", "myCollection")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.myCollection",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
                 ),
-            ),
+            )
         )
 
         eventually {
-            val elements = fixture.completeBasic()
-
-            assertNotNull(
-                elements.firstOrNull {
-                    it.lookupString == "myField"
-                },
-            )
+            fixture.assertAutocompletes("myField")
         }
     }
 
@@ -846,33 +590,19 @@ class JavaDriverCompletionContributorTest {
         fixture: CodeInsightTestFixture,
     ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
+        val (_, readModelProvider) = fixture.setupConnection()
 
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        val namespace = Namespace("myDatabase", "myCollection")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.myCollection",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
                 ),
-            ),
+            )
         )
 
         eventually {
-            val elements = fixture.completeBasic()
-
-            assertNotNull(
-                elements.firstOrNull {
-                    it.lookupString == "myField"
-                },
-            )
+            fixture.assertAutocompletes("myField")
         }
     }
 
@@ -938,33 +668,19 @@ class JavaDriverCompletionContributorTest {
         fixture: CodeInsightTestFixture,
     ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
+        val (_, readModelProvider) = fixture.setupConnection()
 
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        val namespace = Namespace("myDatabase", "myCollection")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.myCollection",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
                 ),
-            ),
+            )
         )
 
         eventually {
-            val elements = fixture.completeBasic()
-
-            assertNotNull(
-                elements.firstOrNull {
-                    it.lookupString == "myField"
-                },
-            )
+            fixture.assertAutocompletes("myField")
         }
     }
 
@@ -985,33 +701,19 @@ class JavaDriverCompletionContributorTest {
         fixture: CodeInsightTestFixture,
     ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
+        val (_, readModelProvider) = fixture.setupConnection()
 
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        val namespace = Namespace("myDatabase", "myCollection")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.myCollection",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
                 ),
-            ),
+            )
         )
 
         eventually {
-            val elements = fixture.completeBasic()
-
-            assertNotNull(
-                elements.firstOrNull {
-                    it.lookupString == "myField"
-                },
-            )
+            fixture.assertAutocompletes("myField")
         }
     }
 
@@ -1029,33 +731,19 @@ class JavaDriverCompletionContributorTest {
         fixture: CodeInsightTestFixture,
     ) = runTest {
         fixture.specifyDialect(JavaDriverDialect)
+        val (_, readModelProvider) = fixture.setupConnection()
 
-        val (dataSource, readModelProvider) = fixture.setupConnection()
-        val namespace = Namespace("myDatabase", "myCollection")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.myCollection",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
                 ),
-            ),
+            )
         )
 
         eventually {
-            val elements = fixture.completeBasic()
-
-            assertNotNull(
-                elements.firstOrNull {
-                    it.lookupString == "myField"
-                },
-            )
+            fixture.assertAutocompletes("myField")
         }
     }
 }
