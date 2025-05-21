@@ -3,13 +3,13 @@ package com.mongodb.jbplugin.codeActions.impl.runQuery
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
-import com.mongodb.jbplugin.accessadapter.slice.ListCollections
-import com.mongodb.jbplugin.accessadapter.slice.ListDatabases
 import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.eventually
 import com.mongodb.jbplugin.fixtures.mockDataSource
 import com.mongodb.jbplugin.fixtures.mockReadModelProvider
 import com.mongodb.jbplugin.fixtures.parseJavaQuery
+import com.mongodb.jbplugin.fixtures.whenListCollections
+import com.mongodb.jbplugin.fixtures.whenListDatabases
 import com.mongodb.jbplugin.mql.BsonBoolean
 import com.mongodb.jbplugin.mql.BsonEnum
 import com.mongodb.jbplugin.mql.BsonString
@@ -29,7 +29,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import org.mockito.kotlin.whenever
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -81,8 +80,10 @@ class RunQueryModalTest {
 
         val (fixture, _) = render(robot, query, dataSource, coroutineScope)
 
-        assertThrows<ComponentLookupException> { fixture.comboBox("DatabaseComboBox") }
-        assertThrows<ComponentLookupException> { fixture.comboBox("CollectionComboBox") }
+        eventually {
+            assertThrows<ComponentLookupException> { fixture.comboBox("DatabaseComboBox") }
+            assertThrows<ComponentLookupException> { fixture.comboBox("CollectionComboBox") }
+        }
     }
 
     @Test
@@ -94,21 +95,8 @@ class RunQueryModalTest {
         val dataSource = mockDataSource()
         val readModel = project.mockReadModelProvider()
 
-        whenever(readModel.slice(dataSource, ListDatabases.Slice)).thenReturn(
-            ListDatabases(
-                listOf(
-                    ListDatabases.Database("db1")
-                )
-            )
-        )
-
-        whenever(readModel.slice(dataSource, ListCollections.Slice("db1"))).thenReturn(
-            ListCollections(
-                listOf(
-                    ListCollections.Collection("coll1", "collection"),
-                )
-            )
-        )
+        readModel.whenListDatabases("db1")
+        readModel.whenListCollections("coll1")
 
         val query = project.parseJavaQuery(
             code = """

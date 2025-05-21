@@ -2,19 +2,21 @@ package com.mongodb.jbplugin.codeActions.impl.runQuery
 
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.openapi.project.Project
+import com.mongodb.jbplugin.accessadapter.slice.ListCollections
+import com.mongodb.jbplugin.accessadapter.slice.ListDatabases
 import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.eventually
 import com.mongodb.jbplugin.fixtures.mockDataSource
 import com.mongodb.jbplugin.fixtures.mockReadModelProvider
-import com.mongodb.jbplugin.fixtures.whenListCollections
-import com.mongodb.jbplugin.fixtures.whenListDatabases
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.assertj.swing.core.Robot
 import org.assertj.swing.edt.GuiActionRunner
 import org.assertj.swing.fixture.FrameFixture
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.whenever
 import javax.swing.JFrame
 
 @IntegrationTest
@@ -23,9 +25,10 @@ class NamespaceSelectorTest {
     fun `renders both comboboxes with their default states`(
         robot: Robot,
         project: Project,
+        coroutineScope: CoroutineScope
     ) = runTest {
         val dataSource = mockDataSource()
-        val (fixture, _) = render(robot, project, dataSource, this)
+        val (fixture, _) = render(robot, project, dataSource, coroutineScope)
 
         eventually {
             fixture.comboBox("DatabaseComboBox").requireDisabled()
@@ -37,12 +40,20 @@ class NamespaceSelectorTest {
     fun `loads existing databases in cluster`(
         robot: Robot,
         project: Project,
+        coroutineScope: TestScope
     ) = runTest {
         val dataSource = mockDataSource()
         val readModel = project.mockReadModelProvider()
 
-        readModel.whenListDatabases("db1")
-        val (fixture, _) = render(robot, project, dataSource, this)
+        whenever(readModel.slice(dataSource, ListDatabases.Slice)).thenReturn(
+            ListDatabases(
+                listOf(
+                    ListDatabases.Database("db1")
+                )
+            )
+        )
+
+        val (fixture, _) = render(robot, project, dataSource, coroutineScope)
 
         eventually {
             val databaseComboBox = fixture.comboBox("DatabaseComboBox")
@@ -57,14 +68,29 @@ class NamespaceSelectorTest {
     fun `loads existing collections of the selected database in cluster`(
         robot: Robot,
         project: Project,
+        coroutineScope: TestScope
     ) = runTest {
         val dataSource = mockDataSource()
         val readModel = project.mockReadModelProvider()
 
-        readModel.whenListDatabases("db1")
-        readModel.whenListCollections("coll1", "coll2")
+        whenever(readModel.slice(dataSource, ListDatabases.Slice)).thenReturn(
+            ListDatabases(
+                listOf(
+                    ListDatabases.Database("db1")
+                )
+            )
+        )
 
-        val (fixture, selector) = render(robot, project, dataSource, this)
+        whenever(readModel.slice(dataSource, ListCollections.Slice("db1"))).thenReturn(
+            ListCollections(
+                listOf(
+                    ListCollections.Collection("coll1", "collection"),
+                    ListCollections.Collection("coll2", "collection"),
+                )
+            )
+        )
+
+        val (fixture, selector) = render(robot, project, dataSource, coroutineScope)
 
         eventually {
             val databaseComboBox = fixture.comboBox("DatabaseComboBox")
