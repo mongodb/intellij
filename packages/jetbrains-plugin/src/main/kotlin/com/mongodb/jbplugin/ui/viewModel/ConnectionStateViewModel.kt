@@ -188,12 +188,12 @@ class ConnectionStateViewModel(
                 } else if (selectedConnectionState is SelectedConnectionState.Connecting) {
                     mutableDatabaseState.update { databaseState ->
                         databaseState.copy(
-                            databasesLoadingState = DatabasesLoadingState.Loading(selectedConnection!!),
+                            databasesLoadingState = DatabasesLoadingState.Loading(selectedConnection),
                             selectedDatabase = null,
                         )
                     }
                 } else if (isConnected) {
-                    connectionSaga.listDatabases(selectedConnection!!)
+                    connectionSaga.listDatabases(selectedConnection)
                 }
             }
         }
