@@ -2,6 +2,7 @@ package com.mongodb.jbplugin.editor
 
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.psi.PsiElement
@@ -15,6 +16,7 @@ import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvide
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
 import com.mongodb.jbplugin.accessadapter.slice.BuildInfo
 import com.mongodb.jbplugin.accessadapter.slice.GetCollectionSchema
+import com.mongodb.jbplugin.meta.inEdt
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.Node
@@ -22,6 +24,7 @@ import com.mongodb.jbplugin.mql.SiblingQueriesFinder
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasCollectionReference.Known
 import com.mongodb.jbplugin.mql.components.HasTargetCluster
+import com.mongodb.jbplugin.observability.useLogMessage
 import com.mongodb.jbplugin.settings.pluginSetting
 import com.mongodb.jbplugin.ui.viewModel.ConnectionStateViewModel
 import io.github.z4kn4fein.semver.Version
@@ -30,6 +33,8 @@ import kotlinx.coroutines.runBlocking
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
+
+private val logger = logger<CachedQueryService>()
 
 /**
  * Attempts to parse a query for a PsiElement if there is one, given the dialect of the current
@@ -160,6 +165,19 @@ class CachedQueryService(
         val queryWithDb = query.source.containingFile.database?.let {
             query.queryWithOverwrittenDatabase(it)
         } ?: query
+
+        if (inEdt()) {
+            logger.info(
+                useLogMessage(
+                    """`decorateWithMetadata` should not be used in the EDT thread.
+                  |Breaking into a fast-path that does not query MongoDB.
+                  |This avoids freezes in the IDE.
+                    """.trimMargin()
+                ).build()
+            )
+
+            return queryWithDb
+        }
 
         return runBlocking {
             runCatching {

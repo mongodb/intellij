@@ -10,6 +10,7 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import javax.swing.SwingUtilities
 import kotlin.coroutines.CoroutineContext
 
 class SingleExecutionJob(
@@ -54,6 +55,10 @@ fun <T> withinReadActionBlocking(cb: () -> T): T {
     return ApplicationManager.getApplication().runReadAction<T> {
         cb()
     }
+}
+
+fun inEdt(): Boolean {
+    return SwingUtilities.isEventDispatchThread()
 }
 
 fun invokeInEdt(cb: () -> Unit) {
