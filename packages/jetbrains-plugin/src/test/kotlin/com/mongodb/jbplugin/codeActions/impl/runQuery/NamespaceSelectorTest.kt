@@ -9,7 +9,6 @@ import com.mongodb.jbplugin.fixtures.mockReadModelProvider
 import com.mongodb.jbplugin.fixtures.whenListCollections
 import com.mongodb.jbplugin.fixtures.whenListDatabases
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.assertj.swing.core.Robot
 import org.assertj.swing.edt.GuiActionRunner
@@ -24,10 +23,9 @@ class NamespaceSelectorTest {
     fun `renders both comboboxes with their default states`(
         robot: Robot,
         project: Project,
-        coroutineScope: CoroutineScope
     ) = runTest {
         val dataSource = mockDataSource()
-        val (fixture, _) = render(robot, project, dataSource, coroutineScope)
+        val (fixture, _) = render(robot, project, dataSource, this)
 
         eventually {
             fixture.comboBox("DatabaseComboBox").requireDisabled()
@@ -39,13 +37,12 @@ class NamespaceSelectorTest {
     fun `loads existing databases in cluster`(
         robot: Robot,
         project: Project,
-        coroutineScope: TestScope
     ) = runTest {
         val dataSource = mockDataSource()
         val readModel = project.mockReadModelProvider()
 
         readModel.whenListDatabases("db1")
-        val (fixture, _) = render(robot, project, dataSource, coroutineScope)
+        val (fixture, _) = render(robot, project, dataSource, this)
 
         eventually {
             val databaseComboBox = fixture.comboBox("DatabaseComboBox")
@@ -60,7 +57,6 @@ class NamespaceSelectorTest {
     fun `loads existing collections of the selected database in cluster`(
         robot: Robot,
         project: Project,
-        coroutineScope: TestScope
     ) = runTest {
         val dataSource = mockDataSource()
         val readModel = project.mockReadModelProvider()
@@ -68,7 +64,7 @@ class NamespaceSelectorTest {
         readModel.whenListDatabases("db1")
         readModel.whenListCollections("coll1", "coll2")
 
-        val (fixture, selector) = render(robot, project, dataSource, coroutineScope)
+        val (fixture, selector) = render(robot, project, dataSource, this)
 
         eventually {
             val databaseComboBox = fixture.comboBox("DatabaseComboBox")

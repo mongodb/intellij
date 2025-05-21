@@ -175,6 +175,8 @@ abstract class AbstractMongoDbInspectionBridge<Settings, I : Inspection>(
 
 internal class InspectionViewModelQueryInsightsHolder<I : Inspection>(
     private val inspectionsViewModel: InspectionsViewModel,
+    // We are also storing a shallow copy of the insights
+    // so we can return them during the doAnnotate phase.
     private val insights: MutableList<QueryInsight<PsiElement, I>>
 ) : QueryInsightsHolder<PsiElement, I> {
     override suspend fun register(insight: QueryInsight<PsiElement, I>) {

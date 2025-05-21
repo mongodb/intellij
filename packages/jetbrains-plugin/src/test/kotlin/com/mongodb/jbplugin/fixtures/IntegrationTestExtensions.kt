@@ -83,6 +83,7 @@ import org.assertj.swing.core.BasicRobot
 import org.assertj.swing.core.Robot
 import org.intellij.lang.annotations.Language
 import org.jetbrains.jewel.intui.standalone.theme.IntUiTheme
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.AfterAllCallback
@@ -751,6 +752,13 @@ fun CodeInsightTestFixture.assertAutocompletes(vararg options: String) {
     val elements = completeBasic().map { it.lookupString }
     for (option in options) {
         assertTrue(elements.contains(option), "$option has not been found in $elements")
+    }
+}
+
+fun CodeInsightTestFixture.assertDoesNotAutocomplete(vararg options: String) {
+    val elements = completeBasic().map { it.lookupString }
+    for (option in options) {
+        assertFalse(elements.contains(option), "$option has been found in $elements")
     }
 }
 

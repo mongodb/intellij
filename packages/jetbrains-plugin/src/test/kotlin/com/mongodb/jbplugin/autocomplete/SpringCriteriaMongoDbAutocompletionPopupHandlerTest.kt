@@ -1,25 +1,21 @@
 package com.mongodb.jbplugin.autocomplete
 
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
-import com.mongodb.jbplugin.accessadapter.slice.GetCollectionSchema
-import com.mongodb.jbplugin.accessadapter.slice.ListCollections
 import com.mongodb.jbplugin.dialects.springcriteria.SpringCriteriaDialect
 import com.mongodb.jbplugin.fixtures.DefaultSetup
 import com.mongodb.jbplugin.fixtures.IntegrationTest
 import com.mongodb.jbplugin.fixtures.ParsingTest
+import com.mongodb.jbplugin.fixtures.assertAutocompletes
+import com.mongodb.jbplugin.fixtures.assertDoesNotAutocomplete
 import com.mongodb.jbplugin.fixtures.eventually
 import com.mongodb.jbplugin.fixtures.setupConnection
 import com.mongodb.jbplugin.fixtures.specifyDatabase
 import com.mongodb.jbplugin.fixtures.specifyDialect
+import com.mongodb.jbplugin.fixtures.whenListCollections
+import com.mongodb.jbplugin.fixtures.whenQueryingCollectionSchema
 import com.mongodb.jbplugin.mql.BsonObject
 import com.mongodb.jbplugin.mql.BsonString
-import com.mongodb.jbplugin.mql.CollectionSchema
-import com.mongodb.jbplugin.mql.Namespace
 import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertNull
-import org.mockito.Mockito.`when`
-import org.mockito.kotlin.eq
 
 @IntegrationTest
 class SpringCriteriaMongoDbAutocompletionPopupHandlerTest {
@@ -37,31 +33,12 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(ListCollections.Slice("myDatabase")), eq(null))
-        ).thenReturn(
-            ListCollections(
-                listOf(
-                    ListCollections.Collection("myCollection", "collection"),
-                    ListCollections.Collection("anotherCollection", "collection"),
-                ),
-            ),
-        )
+        readModelProvider.whenListCollections("myCollection", "anotherCollection")
 
         fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myCollection"
-            },
-        )
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "anotherCollection"
-            },
-        )
+        eventually {
+            fixture.assertAutocompletes("myCollection", "anotherCollection")
+        }
     }
 
     @ParsingTest(
@@ -79,40 +56,19 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
         fixture.type('"')
-
         eventually {
-            val elements = fixture.completeBasic()
-
-            assertNotNull(
-                elements.firstOrNull {
-                    it.lookupString == "myField"
-                },
-            )
-
-            assertNotNull(
-                elements.firstOrNull {
-                    it.lookupString == "myField2"
-                },
-            )
+            fixture.assertAutocompletes("myField", "myField2")
         }
     }
 
@@ -135,38 +91,20 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
         fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField2"
-            },
-        )
+        eventually {
+            fixture.assertAutocompletes("myField", "myField2")
+        }
     }
 
     @ParsingTest(
@@ -184,32 +122,11 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(ListCollections.Slice("myDatabase")), eq(null))
-        ).thenReturn(
-            ListCollections(
-                listOf(
-                    ListCollections.Collection("myCollection", "collection"),
-                    ListCollections.Collection("anotherCollection", "collection"),
-                ),
-            ),
-        )
+        readModelProvider.whenListCollections("myCollection", "anotherCollection")
 
         fixture.type('"')
         eventually {
-            val elements = fixture.completeBasic()
-
-            assertNotNull(
-                elements.firstOrNull {
-                    it.lookupString == "myCollection"
-                },
-            )
-
-            assertNotNull(
-                elements.firstOrNull {
-                    it.lookupString == "anotherCollection"
-                },
-            )
+            fixture.assertAutocompletes("myCollection", "anotherCollection")
         }
     }
 
@@ -228,32 +145,11 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(ListCollections.Slice("myDatabase")), eq(null))
-        ).thenReturn(
-            ListCollections(
-                listOf(
-                    ListCollections.Collection("myCollection", "collection"),
-                    ListCollections.Collection("anotherCollection", "collection"),
-                ),
-            ),
-        )
+        readModelProvider.whenListCollections("myCollection", "anotherCollection")
 
         fixture.type('"')
         eventually {
-            val elements = fixture.completeBasic()
-
-            assertNotNull(
-                elements.firstOrNull {
-                    it.lookupString == "myCollection"
-                },
-            )
-
-            assertNotNull(
-                elements.firstOrNull {
-                    it.lookupString == "anotherCollection"
-                },
-            )
+            fixture.assertAutocompletes("myCollection", "anotherCollection")
         }
     }
 
@@ -278,38 +174,20 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
         fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField2"
-            },
-        )
+        eventually {
+            fixture.assertAutocompletes("myField", "myField2")
+        }
     }
 
     @ParsingTest(
@@ -333,38 +211,20 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
         fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField2"
-            },
-        )
+        eventually {
+            fixture.assertAutocompletes("myField", "myField2")
+        }
     }
 
     @ParsingTest(
@@ -388,38 +248,20 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
         fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField2"
-            },
-        )
+        eventually {
+            fixture.assertAutocompletes("myField", "myField2")
+        }
     }
 
     @ParsingTest(
@@ -443,38 +285,20 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
         fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField2"
-            },
-        )
+        eventually {
+            fixture.assertAutocompletes("myField", "myField2")
+        }
     }
 
     @ParsingTest(
@@ -498,38 +322,20 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
         fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField2"
-            },
-        )
+        eventually {
+            fixture.assertAutocompletes("myField", "myField2")
+        }
     }
 
     @ParsingTest(
@@ -553,38 +359,20 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
         fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField2"
-            },
-        )
+        eventually {
+            fixture.assertAutocompletes("myField", "myField2")
+        }
     }
 
     @ParsingTest(
@@ -608,38 +396,20 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
         fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField2"
-            },
-        )
+        eventually {
+            fixture.assertAutocompletes("myField", "myField2")
+        }
     }
 
     @ParsingTest(
@@ -663,38 +433,20 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
         fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField2"
-            },
-        )
+        eventually {
+            fixture.assertAutocompletes("myField", "myField2")
+        }
     }
 
     @ParsingTest(
@@ -718,38 +470,20 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
         fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField2"
-            },
-        )
+        eventually {
+            fixture.assertAutocompletes("myField", "myField2")
+        }
     }
 
     @ParsingTest(
@@ -773,38 +507,20 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
         fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField2"
-            },
-        )
+        eventually {
+            fixture.assertAutocompletes("myField", "myField2")
+        }
     }
 
     @ParsingTest(
@@ -830,38 +546,20 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
         fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField2"
-            },
-        )
+        eventually {
+            fixture.assertAutocompletes("myField", "myField2")
+        }
     }
 
     @ParsingTest(
@@ -887,38 +585,20 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
         fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField2"
-            },
-        )
+        eventually {
+            fixture.assertAutocompletes("myField", "myField2")
+        }
     }
 
     @ParsingTest(
@@ -946,38 +626,20 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
         fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField2"
-            },
-        )
+        eventually {
+            fixture.assertAutocompletes("myField", "myField2")
+        }
     }
 
     @ParsingTest(
@@ -1005,38 +667,20 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
         fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField2"
-            },
-        )
+        eventually {
+            fixture.assertAutocompletes("myField", "myField2")
+        }
     }
 
     @ParsingTest(
@@ -1064,38 +708,20 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
         fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField2"
-            },
-        )
+        eventually {
+            fixture.assertAutocompletes("myField", "myField2")
+        }
     }
 
     @ParsingTest(
@@ -1125,38 +751,20 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
         fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField2"
-            },
-        )
+        eventually {
+            fixture.assertAutocompletes("myField", "myField2")
+        }
     }
 
     @ParsingTest(
@@ -1180,38 +788,20 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
         fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField2"
-            },
-        )
+        eventually {
+            fixture.assertAutocompletes("myField", "myField2")
+        }
     }
 
     @ParsingTest(
@@ -1235,38 +825,20 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
         fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField2"
-            },
-        )
+        eventually {
+            fixture.assertAutocompletes("myField", "myField2")
+        }
     }
 
     @ParsingTest(
@@ -1290,38 +862,20 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
         fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField2"
-            },
-        )
+        eventually {
+            fixture.assertAutocompletes("myField", "myField2")
+        }
     }
 
     @ParsingTest(
@@ -1345,38 +899,20 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
         fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField2"
-            },
-        )
+        eventually {
+            fixture.assertAutocompletes("myField", "myField2")
+        }
     }
 
     @ParsingTest(
@@ -1400,37 +936,19 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
-        val elements = fixture.completeBasic()
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField2"
-            },
-        )
+        eventually {
+            fixture.assertAutocompletes("myField", "myField2")
+        }
     }
 
     @ParsingTest(
@@ -1454,37 +972,19 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
-        val elements = fixture.completeBasic()
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField2"
-            },
-        )
+        eventually {
+            fixture.assertAutocompletes("myField", "myField2")
+        }
     }
 
     @ParsingTest(
@@ -1508,37 +1008,19 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
-        val elements = fixture.completeBasic()
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField2"
-            },
-        )
+        eventually {
+            fixture.assertAutocompletes("myField", "myField2")
+        }
     }
 
     @ParsingTest(
@@ -1563,38 +1045,20 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
         fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField2"
-            },
-        )
+        eventually {
+            fixture.assertAutocompletes("myField", "myField2")
+        }
     }
 
     @ParsingTest(
@@ -1619,38 +1083,20 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
         fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField2"
-            },
-        )
+        eventually {
+            fixture.assertAutocompletes("myField", "myField2")
+        }
     }
 
     @ParsingTest(
@@ -1675,38 +1121,20 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
         fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField2"
-            },
-        )
+        eventually {
+            fixture.assertAutocompletes("myField", "myField2")
+        }
     }
 
     @ParsingTest(
@@ -1731,38 +1159,20 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
         fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField2"
-            },
-        )
+        eventually {
+            fixture.assertAutocompletes("myField", "myField2")
+        }
     }
 
     @ParsingTest(
@@ -1787,38 +1197,20 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
         fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField2"
-            },
-        )
+        eventually {
+            fixture.assertAutocompletes("myField", "myField2")
+        }
     }
 
     @ParsingTest(
@@ -1843,38 +1235,20 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
         fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField2"
-            },
-        )
+        eventually {
+            fixture.assertAutocompletes("myField", "myField2")
+        }
     }
 
     @ParsingTest(
@@ -1899,38 +1273,20 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
         fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField2"
-            },
-        )
+        eventually {
+            fixture.assertAutocompletes("myField", "myField2")
+        }
     }
 
     @ParsingTest(
@@ -1955,38 +1311,20 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
         fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertNotNull(
-            elements.firstOrNull {
-                it.lookupString == "myField2"
-            },
-        )
+        eventually {
+            fixture.assertAutocompletes("myField", "myField2")
+        }
     }
 
     @ParsingTest(
@@ -2012,37 +1350,19 @@ record Entity() {}
         fixture.specifyDatabase(dataSource, "myDatabase")
         fixture.specifyDialect(SpringCriteriaDialect)
 
-        val namespace = Namespace("myDatabase", "book")
-
-        `when`(
-            readModelProvider.slice(eq(dataSource), eq(GetCollectionSchema.Slice(namespace, 50)), eq(null))
-        ).thenReturn(
-            GetCollectionSchema(
-                CollectionSchema(
-                    namespace,
-                    BsonObject(
-                        mapOf(
-                            "myField" to BsonString,
-                            "myField2" to BsonString,
-                        ),
-                    ),
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
                 ),
-            ),
+            )
         )
 
         fixture.type('"')
-        val elements = fixture.completeBasic()
-
-        assertNull(
-            elements.firstOrNull {
-                it.lookupString == "myField"
-            },
-        )
-
-        assertNull(
-            elements.firstOrNull {
-                it.lookupString == "myField2"
-            },
-        )
+        eventually {
+            fixture.assertDoesNotAutocomplete("myField", "myField2")
+        }
     }
 }
