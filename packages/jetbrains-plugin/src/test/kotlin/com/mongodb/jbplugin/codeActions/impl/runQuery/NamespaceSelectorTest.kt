@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.whenever
 import javax.swing.JFrame
 
-@IntegrationTest
+@IntegrationTest(true)
 class NamespaceSelectorTest {
     @Test
     fun `renders both comboboxes with their default states`(

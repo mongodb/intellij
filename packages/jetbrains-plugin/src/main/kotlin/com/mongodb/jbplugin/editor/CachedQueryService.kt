@@ -180,32 +180,48 @@ class CachedQueryService(
         }
 
         return runBlocking {
-            runCatching {
-                if (dataSource != null && dataSource.isConnected()) {
-                    val readModel by query.source.project.service<DataGripBasedReadModelProvider>()
-                    val buildInfo = readModel.slice(dataSource, BuildInfo.Slice)
+            if (dataSource == null || !dataSource.isConnected()) {
+                return@runBlocking queryWithDb
+            }
 
-                    val queryWithTargetCluster = queryWithDb.withTargetCluster(
-                        HasTargetCluster(Version.parse(buildInfo.version))
+            val readModel by query.source.project.service<DataGripBasedReadModelProvider>()
+            val buildInfo = try {
+                readModel.slice(dataSource, BuildInfo.Slice)
+            } catch (e: Exception) {
+                logger.warn(
+                    useLogMessage("Failed to get build info for the current cluster.").build(),
+                    e
+                )
+                null
+            } ?: return@runBlocking queryWithDb
+
+            val queryWithTargetCluster = queryWithDb.withTargetCluster(
+                HasTargetCluster(Version.parse(buildInfo.version))
+            )
+
+            val knownReference = queryWithTargetCluster.component<HasCollectionReference<*>>()?.reference as? Known<*>
+                ?: return@runBlocking queryWithTargetCluster
+
+            val sampleSize by pluginSetting { ::sampleSize }
+            val collectionSchema = try {
+                readModel.slice(
+                    dataSource,
+                    GetCollectionSchema.Slice(
+                        knownReference.namespace,
+                        sampleSize
                     )
+                )
+            } catch (e: Exception) {
+                logger.warn(
+                    useLogMessage("Failed to get collection schema for the current cluster.").build(),
+                    e
+                )
+                null
+            } ?: return@runBlocking queryWithTargetCluster
 
-                    val knownReference = queryWithTargetCluster.component<HasCollectionReference<*>>()?.reference as? Known<*>
-                    if (knownReference != null) {
-                        val sampleSize by pluginSetting { ::sampleSize }
-                        val collectionSchema = readModel.slice(
-                            dataSource,
-                            GetCollectionSchema.Slice(knownReference.namespace, sampleSize)
-                        )
-                        queryWithTargetCluster.queryWithInjectedCollectionSchema(
-                            collectionSchema.schema
-                        )
-                    } else {
-                        queryWithTargetCluster
-                    }
-                } else {
-                    queryWithDb
-                }
-            }.getOrDefault(queryWithDb)
+            queryWithTargetCluster.queryWithInjectedCollectionSchema(
+                collectionSchema.schema
+            )
         }
     }
 }
