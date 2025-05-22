@@ -58,7 +58,7 @@ jobs:
           echo "consecutive=${CONSECUTIVE_ERRORS}" >> $GITHUB_OUTPUT
 
   submit-compatibility-warning-ticket:
-    name: "Submit Compatibility Warning Ticket"
+    name: "Submit Compatibility Warning"
     runs-on: ubuntu-latest
     needs:
       - verify-plugin
@@ -92,8 +92,8 @@ jobs:
           webhook: ${{ secrets.INTELLIJ_DEVEL_WEBHOOK_URL }}
           webhook-type: incoming-webhook
 
-  submit-compatibility-warning-message:
-    name: "Submit Compatibility Warning Message"
+  submit-compatibility-warning-reminder:
+    name: "Send Reminder"
     runs-on: ubuntu-latest
     needs:
       - verify-plugin
