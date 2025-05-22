@@ -124,7 +124,7 @@ tasks {
         group = "ideCompat"
 
         doLast {
-            when (val status = getWorkflowStatus("Quality Gate")) {
+            when (val status = getWorkflowStatus("Verify Compatibility with latest IDE version")) {
                 is Failure -> {
                     if (status.consecutiveFailures == 1) {
                         println("InitialFailure")
