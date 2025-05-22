@@ -39,11 +39,16 @@ jobs:
           gradle-home-cache-cleanup: true
 
       - name: Run IntelliJ Verifier
+        id: intellij-verifier
         run: |
           VERIFY_OUTPUT=$(./gradlew --quiet --console=plain ":packages:jetbrains-plugin:verifyPlugin")
           echo "verify<<EOF" >> $GITHUB_ENV
           echo "VERIFY_OUTPUT" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
+
+      - name: Print IntelliJ Verifier Output
+        run: |
+          echo '${{steps.intellij-verifier.outputs.verify }}'
 
   verification-failed:
     name: "Verification Failed Dispatch"
