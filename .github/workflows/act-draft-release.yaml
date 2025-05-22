@@ -90,17 +90,17 @@ jobs:
           fi
       - name: Verify Checks in main
         run: |
-          ./gradlew "mainStatus"
+          ./gradlew --quiet --console=plain "mainStatus"
 
       - name: Patch Plugin XML
         run: |
-          ./gradlew ":packages:jetbrains-plugin:patchPluginXml"
+          ./gradlew --quiet --console=plain ":packages:jetbrains-plugin:patchPluginXml"
 
       - name: Verify Plugin
         env:
           BUILD_SEGMENT_API_KEY: ''
         run: |
-          ./gradlew ":packages:jetbrains-plugin:verifyPlugin"
+          ./gradlew --quiet --console=plain ":packages:jetbrains-plugin:verifyPlugin"
 
       - name: Sign and Publish Plugin in Beta
         if: ${{ github.event.inputs.dryRun != 'true' }}
@@ -112,11 +112,11 @@ jobs:
           JB_PRIVATE_KEY: ${{ secrets.JB_PRIVATE_KEY }}
           JB_PRIVATE_KEY_PASSWORD: ${{ secrets.JB_PRIVATE_KEY_PASSWORD }}
         run: |
-          ./gradlew ":packages:jetbrains-plugin:publishPlugin"
+          ./gradlew --quiet --console=plain ":packages:jetbrains-plugin:publishPlugin"
 
       - name: Patch Changelog
         run: |
-          ./gradlew ":packages:jetbrains-plugin:patchChangelog"
+          ./gradlew --quiet --console=plain ":packages:jetbrains-plugin:patchChangelog"
 
       - name: Create Draft Release
         shell: bash

@@ -1,0 +1,122 @@
+name: "Verify Compatibility with latest IDE version"
+on:
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: "00 23 * * *"
+
+env:
+  BUILD_SEGMENT_API_KEY: ""
+
+jobs:
+  verify-plugin:
+    name: "Verify Plugin"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch Main
+        run: |
+          git fetch origin main --depth 1
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
+        with:
+          gradle-home-cache-cleanup: true
+
+      - name: Run IntelliJ Verifier
+        run: |
+          VERIFY_OUTPUT=$(./gradlew --quiet --console=plain ":packages:jetbrains-plugin:verifyPlugin")
+          echo "verify<<EOF" >> $GITHUB_ENV
+          echo "VERIFY_OUTPUT" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+  verification-failed:
+    name: "Verify Plugin"
+    runs-on: ubuntu-latest
+    needs:
+      - verify-plugin
+    if: ${{ needs.verify-plugin.result == 'failure' }}
+    steps:
+      - name: "Check Consecutive Failures"
+        run: |
+          CONSECUTIVE_ERRORS=$(./gradlew verifyNextVersionCompatibility --quiet --console=plain)
+          echo "consecutive=${CONSECUTIVE_ERRORS}" >> $GITHUB_OUTPUT
+
+  submit-compatibility-warning-ticket:
+    name: "Submit Compatibility Warning Ticket"
+    runs-on: ubuntu-latest
+    needs:
+      - verify-plugin
+      - verification-failed
+    if: ${{ needs.verification-failed.outputs.consecutive == 'InitialFailure' }}
+    steps:
+      - name: "Register Issue in JIRA"
+        id: register-jira-issue
+        env:
+          JIRA_TOKEN: ${{ secrets.INTELLIJ_DEVEL_JIRA_TOKEN }}
+          JIRA_ISSUE_DESCRIPTION: ${{ needs.verify-plugin.outputs.verify }}
+        run: |
+          TICKET=$(./gradlew registerBuildError --quiet --console=plain)
+          echo "ticket=${TICKET}" >> $GITHUB_OUTPUT
+      - name: "Report Failure to Slack"
+        uses: slackapi/slack-github-action@b0fa283ad8fea605de13dc3f449259339835fc52 # 2.1.0
+        with:
+          payload: |
+            {
+              "text": "Found a compatibility issue with the latest version of IntelliJ IDEA.",
+              "blocks: [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "JIRA Issue: ${{ steps.register-jira-issue.outputs.ticket }}"
+                  }
+                }
+              ]
+            }
+          webhook: ${{ secrets.INTELLIJ_DEVEL_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+
+  submit-compatibility-warning-message:
+    name: "Submit Compatibility Warning Message"
+    runs-on: ubuntu-latest
+    needs:
+      - verify-plugin
+      - verification-failed
+    if: ${{ needs.verification-failed.outputs.consecutive == 'RepeatedFailure' }}
+    steps:
+      - name: "Register Issue in JIRA"
+        id: register-jira-issue
+        env:
+          JIRA_TOKEN: ${{ secrets.INTELLIJ_DEVEL_JIRA_TOKEN }}
+          JIRA_ISSUE_DESCRIPTION: ${{ needs.verify-plugin.outputs.verify }}
+        run: |
+          TICKET=$(./gradlew registerBuildError --quiet --console=plain)
+          echo "ticket=${TICKET}" >> $GITHUB_OUTPUT
+      - name: "Report Failure to Slack"
+        uses: slackapi/slack-github-action@b0fa283ad8fea605de13dc3f449259339835fc52 # 2.1.0
+        with:
+          payload: |
+            {
+              "text": "Compatibility issue with the latest IntelliJ IDEA is still not fixed..",
+              "blocks: [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "JIRA Issue: ${{ steps.register-jira-issue.outputs.ticket }}"
+                  }
+                }
+              ]
+            }
+          webhook: ${{ secrets.INTELLIJ_DEVEL_WEBHOOK_URL }}
+          webhook-type: incoming-webhook

@@ -1,5 +1,10 @@
-import groovy.json.JsonSlurper
-import java.net.URL
+import com.mongodb.intellij.GitHubWorkflowStatus.Failure
+import com.mongodb.intellij.GitHubWorkflowStatus.Fixed
+import com.mongodb.intellij.GitHubWorkflowStatus.Success
+import com.mongodb.intellij.createBuildErrorJiraTask
+import com.mongodb.intellij.getLastCheckOnMain
+import com.mongodb.intellij.getWorkflowStatus
+import com.mongodb.intellij.keyOfCurrentCompatibilityErrorTask
 
 group = "com.mongodb"
 // This should be bumped when releasing a new version using the versionBump task:
@@ -97,25 +102,68 @@ tasks {
         group = "environment"
 
         doLast {
-            val checks = JsonSlurper().parse(URL("https://api.github.com/repos/mongodb-js/intellij/commits/main/check-runs")) as Map<String, Any>
-            val checkRuns = checks["check_runs"] as List<Map<String, Any>>
+            val checks = getLastCheckOnMain().filter { it.isRelevantForProjectHealth }
             var success = true
-            for (check in checkRuns) {
-                if (check["name"] == "Prepare Release" || check["name"].toString().contains("Qodana")) {
-                    continue
-                }
 
-                if (check["conclusion"] != "success") {
-                    System.err.println("[❌] Check ${check["name"]} is still with status ${check["status"]} and conclusion ${check["conclusion"]}: ${check["html_url"]}")
+            for (check in checks) {
+                if (!check.conclusion) {
+                    System.err.println("[❌] Check ${check.name} is in status ${check.status}: ${check.url}")
                     success = false
                 } else {
-                    println("[✅] Check ${check["name"]} has finished successfully: ${check["html_url"]}")
+                    println("[✅] Check ${check.name} has finished successfully: ${check.url}")
                 }
             }
 
             if (!success) {
                 throw GradleException("Checks in main must be successful.")
             }
+        }
+    }
+
+    register("verifyNextVersionCompatibility") {
+        group = "ideCompat"
+
+        doLast {
+            when (val status = getWorkflowStatus("Quality Gate")) {
+                is Failure -> {
+                    if (status.consecutiveFailures == 1) {
+                        println("InitialFailure")
+                    } else if (status.consecutiveFailures % 2 == 0) {
+                        println("RepeatedFailure")
+                    }
+                }
+                Fixed -> {
+                    println("Fixed")
+                }
+                Success -> {
+                    println("Success")
+                }
+                else -> {
+                    throw GradleException("Could not verify compatibility.")
+                }
+            }
+        }
+    }
+
+    register("registerBuildError") {
+        group = "ideCompat"
+
+        doLast {
+            val currentKey = keyOfCurrentCompatibilityErrorTask() ?:
+                createBuildErrorJiraTask(
+                  "Plugin is not compatible with the latest IDEA Version.",
+                  """This task has been created from build.gradle.kts:registerBuildError.
+                      |
+                      |It means that the pluginVerifier task complained that using the plugin in the
+                      |next IDEA version will break, as there is a compatibility issue.
+                      |
+                      |{code}
+                      |${System.getenv("JIRA_ISSUE_DESCRIPTION")}
+                      |{code}
+                  """.trimMargin()
+                )
+
+            println(currentKey)
         }
     }
 }
