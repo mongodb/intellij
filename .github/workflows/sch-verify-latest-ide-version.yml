@@ -42,9 +42,9 @@ jobs:
         id: intellij-verifier
         run: |
           VERIFY_OUTPUT=$(./gradlew --quiet --console=plain ":packages:jetbrains-plugin:verifyPlugin")
-          echo "verify<<EOF" >> $GITHUB_ENV
-          echo "VERIFY_OUTPUT" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+          echo "verify<<EOF" >> $GITHUB_OUTPUT
+          echo "VERIFY_OUTPUT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Print IntelliJ Verifier Output
         run: |
