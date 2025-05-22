@@ -16,6 +16,7 @@ import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvide
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
 import com.mongodb.jbplugin.accessadapter.slice.BuildInfo
 import com.mongodb.jbplugin.accessadapter.slice.GetCollectionSchema
+import com.mongodb.jbplugin.meta.inEdt
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.mql.Namespace
 import com.mongodb.jbplugin.mql.Node
@@ -164,6 +165,19 @@ class CachedQueryService(
         val queryWithDb = query.source.containingFile.database?.let {
             query.queryWithOverwrittenDatabase(it)
         } ?: query
+
+        if (inEdt()) {
+            logger.info(
+                useLogMessage(
+                    """`decorateWithMetadata` should not be used in the EDT thread.
+                  |Breaking into a fast-path that does not query MongoDB.
+                  |This avoids freezes in the IDE.
+                    """.trimMargin()
+                ).build()
+            )
+
+            return queryWithDb
+        }
 
         return runBlocking {
             if (dataSource == null || !dataSource.isConnected()) {

@@ -2,6 +2,7 @@ package com.mongodb.jbplugin.meta
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.platform.util.coroutines.childScope
+import com.intellij.util.ui.EDT
 import com.jetbrains.rd.util.AtomicReference
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -54,6 +55,10 @@ fun <T> withinReadActionBlocking(cb: () -> T): T {
     return ApplicationManager.getApplication().runReadAction<T> {
         cb()
     }
+}
+
+fun inEdt(): Boolean {
+    return EDT.isCurrentThreadEdt()
 }
 
 fun invokeInEdt(cb: () -> Unit) {
