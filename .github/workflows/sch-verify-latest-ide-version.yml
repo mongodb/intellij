@@ -43,7 +43,7 @@ jobs:
         run: |
           VERIFY_OUTPUT=$(./gradlew --quiet --console=plain ":packages:jetbrains-plugin:verifyPlugin")
           echo "verify<<EOF" >> $GITHUB_OUTPUT
-          echo "VERIFY_OUTPUT" >> $GITHUB_OUTPUT
+          echo "$VERIFY_OUTPUT" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Print IntelliJ Verifier Output
@@ -61,7 +61,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - verify-plugin
-    if: ${{ needs.verify-plugin.outputs.consecutive == 'InitialFailure' }}
+    # if: ${{ needs.verify-plugin.outputs.consecutive == 'InitialFailure' }}
     steps:
       - name: "Register Issue in JIRA"
         id: register-jira-issue
@@ -95,7 +95,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - verify-plugin
-    if: ${{ needs.verify-plugin.outputs.consecutive == 'RepeatedFailure' }}
+    # if: ${{ needs.verify-plugin.outputs.consecutive == 'RepeatedFailure' }}
     steps:
       - name: "Register Issue in JIRA"
         id: register-jira-issue
