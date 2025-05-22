@@ -46,15 +46,16 @@ jobs:
           echo "$VERIFY_OUTPUT" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Print IntelliJ Verifier Output
-        run: |
-          echo '${{steps.intellij-verifier.outputs.verify }}'
-
       - name: Check Consecutive Failures
-        if: ${{ steps.intellij-verifier.result == 'failure' }}
+        id: consecutive-failures
         run: |
           CONSECUTIVE_ERRORS=$(./gradlew verifyNextVersionCompatibility --quiet --console=plain)
           echo "consecutive=${CONSECUTIVE_ERRORS}" >> $GITHUB_OUTPUT
+
+      - name: Print Outputs
+        run: |
+          echo '${{steps.intellij-verifier.outputs.verify }}'
+          echo '${{steps.consecutive-failures.outputs.consecutive }}'
 
   submit-compatibility-warning-ticket:
     name: "Submit Compatibility Warning"
