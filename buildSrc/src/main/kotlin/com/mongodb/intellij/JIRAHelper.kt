@@ -42,8 +42,6 @@ fun keyOfCurrentCompatibilityErrorTask(): String? {
 }
 
 fun createBuildErrorJiraTask(summary: String, logs: String): String? {
-    println("Creating ticket ${summary}\n${logs}")
-
     val endpointUrl = URI.create("${JIRA_URL}/rest/api/2/issue/")
     val client = HttpClient.newHttpClient()
     val issue = mapOf(

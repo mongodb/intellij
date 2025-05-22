@@ -51,7 +51,7 @@ jobs:
           echo '${{steps.intellij-verifier.outputs.verify }}'
 
       - name: Check Consecutive Failures
-        # if: ${{ steps.intellij-verifier.result == 'failure' }}
+        if: ${{ steps.intellij-verifier.result == 'failure' }}
         run: |
           CONSECUTIVE_ERRORS=$(./gradlew verifyNextVersionCompatibility --quiet --console=plain)
           echo "consecutive=${CONSECUTIVE_ERRORS}" >> $GITHUB_OUTPUT
@@ -61,8 +61,26 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - verify-plugin
-    # if: ${{ needs.verify-plugin.outputs.consecutive == 'InitialFailure' }}
+    if: ${{ needs.verify-plugin.outputs.consecutive == 'InitialFailure' }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch Main
+        run: |
+          git fetch origin main --depth 1
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
+        with:
+          gradle-home-cache-cleanup: true
+
       - name: "Register Issue in JIRA"
         id: register-jira-issue
         env:
@@ -95,8 +113,26 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - verify-plugin
-    # if: ${{ needs.verify-plugin.outputs.consecutive == 'RepeatedFailure' }}
+    if: ${{ needs.verify-plugin.outputs.consecutive == 'RepeatedFailure' }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch Main
+        run: |
+          git fetch origin main --depth 1
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
+        with:
+          gradle-home-cache-cleanup: true
+
       - name: "Register Issue in JIRA"
         id: register-jira-issue
         env:
