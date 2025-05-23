@@ -14,8 +14,10 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiMethodCallExpression
+import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
 import com.mongodb.jbplugin.dialects.javadriver.glossary.findAllChildrenOfType
 import com.mongodb.jbplugin.editor.CachedQueryService
+import com.mongodb.jbplugin.editor.dataSource
 import com.mongodb.jbplugin.i18n.InspectionsAndInlaysMessages
 import com.mongodb.jbplugin.i18n.SidePanelMessages
 import com.mongodb.jbplugin.inspections.correctness.MongoDbFieldDoesNotExist
@@ -103,7 +105,10 @@ abstract class AbstractMongoDbInspectionBridge<Settings, I : Inspection>(
 
     // 2nd step: generate insights, this can block because happens in a thread pool
     override fun doAnnotate(psiFile: PsiFile?): List<QueryInsight<PsiElement, I>>? {
-        if (psiFile == null) return null // early return if no file is provided
+        // early return if no file is provided or if DataSource is not connected
+        if (psiFile == null || psiFile.dataSource?.isConnected() != true) {
+            return null
+        }
 
         // get all relevant method calls
         val queryService by psiFile.project.service<CachedQueryService>()
