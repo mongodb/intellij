@@ -73,64 +73,58 @@ tasks {
 
     register<Exec>("gitHooks") {
         group = "environment"
-        doFirst {
-            rootProject.file(".git/hooks").mkdirs()
-        }
+
+        rootProject.file(".git/hooks").mkdirs()
         commandLine("cp", "./gradle/pre-commit", "./.git/hooks")
     }
 
     register("getVersion") {
         group = "environment"
-        doLast {
-            println(rootProject.version)
-        }
+
+        println(rootProject.version)
     }
 
     register("mainStatus") {
         group = "environment"
 
-        doLast {
-            val checks = getLastCheckOnMain().filter { it.isRelevantForProjectHealth }
-            var success = true
+        val checks = getLastCheckOnMain().filter { it.isRelevantForProjectHealth }
+        var success = true
 
-            for (check in checks) {
-                if (!check.conclusion) {
-                    System.err.println("[❌] Check ${check.name} is in status ${check.status}: ${check.url}")
-                    success = false
-                } else {
-                    println("[✅] Check ${check.name} has finished successfully: ${check.url}")
-                }
+        for (check in checks) {
+            if (!check.conclusion) {
+                System.err.println("[❌] Check ${check.name} is in status ${check.status}: ${check.url}")
+                success = false
+            } else {
+                println("[✅] Check ${check.name} has finished successfully: ${check.url}")
             }
+        }
 
-            if (!success) {
-                throw GradleException("Checks in main must be successful.")
-            }
+        if (!success) {
+            throw GradleException("Checks in main must be successful.")
         }
     }
 
     register("verifyNextVersionCompatibility") {
         group = "ideCompat"
 
-        doLast {
-            when (val status = getWorkflowStatus("Verify Compatibility with latest IDE version")) {
-                is Failure -> {
-                    if (status.consecutiveFailures == 1) {
-                        println("InitialFailure")
-                    } else if (status.consecutiveFailures % 2 == 0) {
-                        println("RepeatedFailure")
-                    } else {
-                        println("RepeatedFailureWithoutNotification")
-                    }
+        when (val status = getWorkflowStatus("Verify Compatibility with latest IDE version")) {
+            is Failure -> {
+                if (status.consecutiveFailures == 1) {
+                    println("InitialFailure")
+                } else if (status.consecutiveFailures % 2 == 0) {
+                    println("RepeatedFailure")
+                } else {
+                    println("RepeatedFailureWithoutNotification")
                 }
-                Fixed -> {
-                    println("Fixed")
-                }
-                Success -> {
-                    println("Success")
-                }
-                else -> {
-                    throw GradleException("Could not verify compatibility.")
-                }
+            }
+            Fixed -> {
+                println("Fixed")
+            }
+            Success -> {
+                println("Success")
+            }
+            else -> {
+                throw GradleException("Could not verify compatibility.")
             }
         }
     }
