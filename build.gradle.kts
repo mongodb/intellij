@@ -118,6 +118,8 @@ tasks {
                         println("InitialFailure")
                     } else if (status.consecutiveFailures % 2 == 0) {
                         println("RepeatedFailure")
+                    } else {
+                        println("RepeatedFailureWithoutNotification")
                     }
                 }
                 Fixed -> {
