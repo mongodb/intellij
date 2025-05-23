@@ -34,9 +34,8 @@ jobs:
           java-version: "21"
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
-        with:
-          gradle-home-cache-cleanup: true
+        uses: gradle/actions/setup-gradle@8379f6a1328ee0e06e2bb424dadb7b159856a326 # v.4.4.0
+        
 
       - name: Run IntelliJ Verifier
         id: intellij-verifier
@@ -78,9 +77,8 @@ jobs:
           java-version: "21"
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
-        with:
-          gradle-home-cache-cleanup: true
+        uses: gradle/actions/setup-gradle@8379f6a1328ee0e06e2bb424dadb7b159856a326 # v.4.4.0
+        
 
       - name: "Register Issue in JIRA"
         id: register-jira-issue
@@ -130,9 +128,8 @@ jobs:
           java-version: "21"
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
-        with:
-          gradle-home-cache-cleanup: true
+        uses: gradle/actions/setup-gradle@8379f6a1328ee0e06e2bb424dadb7b159856a326 # v.4.4.0
+        
 
       - name: "Register Issue in JIRA"
         id: register-jira-issue

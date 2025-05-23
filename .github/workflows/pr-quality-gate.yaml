@@ -30,9 +30,8 @@ jobs:
           java-version: "21"
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
-        with:
-          gradle-home-cache-cleanup: true
+        uses: gradle/actions/setup-gradle@8379f6a1328ee0e06e2bb424dadb7b159856a326 # v.4.4.0
+        
 
       - name: Run Linter
         run: |
@@ -73,9 +72,8 @@ jobs:
           java-version: "21"
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
-        with:
-          gradle-home-cache-cleanup: true
+        uses: gradle/actions/setup-gradle@8379f6a1328ee0e06e2bb424dadb7b159856a326 # v.4.4.0
+        
 
       - name: Qodana - Code Inspection
         uses: JetBrains/qodana-action@b60a4b9259f448dd00f2ca4763db5677d69ba868 # v2024.3.4
@@ -105,9 +103,7 @@ jobs:
           java-version: "21"
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
-        with:
-          gradle-home-cache-cleanup: true
+        uses: gradle/actions/setup-gradle@8379f6a1328ee0e06e2bb424dadb7b159856a326 # v.4.4.0
 
       - name: Setup Docker (for Test Containers)
         run: |
@@ -177,9 +173,8 @@ jobs:
           java-version: "21"
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
-        with:
-          gradle-home-cache-cleanup: true
+        uses: gradle/actions/setup-gradle@8379f6a1328ee0e06e2bb424dadb7b159856a326 # v.4.4.0
+        
 
       - name: Verify Plugin
         run: |
