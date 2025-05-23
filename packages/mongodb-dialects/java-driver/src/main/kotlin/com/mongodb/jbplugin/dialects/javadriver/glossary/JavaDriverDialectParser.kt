@@ -67,6 +67,9 @@ private const val FIELD_FQN = "com.mongodb.client.model.Field"
 private const val JAVA_LIST_FQN = "java.util.List"
 private const val JAVA_ARRAYS_FQN = "java.util.Arrays"
 private const val JAVA_COLLECTIONS_FQN = "java.util.Collections"
+private const val MONGO_ITERABLE_FQN = "com.mongodb.client.MongoIterable"
+private const val FIND_ITERABLE_FQN = "com.mongodb.client.FindIterable"
+private const val AGGREGATE_ITERABLE_FQN = "com.mongodb.client.AggregateIterable"
 
 private val PARSEABLE_AGGREGATION_STAGE_METHODS = listOf(
     "match",
@@ -889,28 +892,34 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
     }
 
     private fun methodCallToCommand(methodCall: PsiMethodCallExpression?): IsCommand {
-        if (methodCall == null) {
-            return IsCommand(IsCommand.CommandType.UNKNOWN)
-        }
+        val method = methodCall?.fuzzyResolveMethod() ?: return IsCommand(
+            IsCommand.CommandType.UNKNOWN
+        )
 
-        val method = methodCall.fuzzyResolveMethod()
+        val iteratorsFqn = listOf(
+            MONGO_ITERABLE_FQN,
+            FIND_ITERABLE_FQN,
+            AGGREGATE_ITERABLE_FQN,
+        )
 
-        if (method?.containingClass?.qualifiedName?.contains("MongoIterable") == true) {
-            // We are in a cursor, so the actual operation is in the upper method calls
+        if (iteratorsFqn.contains(method.containingClass?.qualifiedName)) {
+            // We are in a cursor / iterable, so the actual operation is in the upper method calls
             // For context, the current call is somewhat like this:
             //   MongoCollection.find(Filters.eq(...)).first()
-            // and to correctly identify the command we need to be analysing
+            // and to correctly identify the command we need to analyze
             //   MongoCollection.find(Filters.eq(...))
             val allCallExpressions = methodCall.findAllChildrenOfType(
                 PsiMethodCallExpression::class.java
             )
-            val lastCallExpression = allCallExpressions.getOrNull(allCallExpressions.lastIndex - 1)
-            val result = methodCallToCommand(lastCallExpression)
+            val lastCallExpression = allCallExpressions.getOrNull(
+                allCallExpressions.lastIndex - 1
+            )
+            val command = methodCallToCommand(lastCallExpression)
 
-            // FindIterable.first() translates to a valid MongoDB driver command so we need to take
-            // that into account and return correct command result. Because we analysed the earlier
+            // FindIterable.first() translates to a valid MongoDB driver command, so we need to take
+            // that into account and return a correct command result. Because we analyzed the earlier
             // chained call using the lastCallExpression, the result in this case will be FIND_MANY
-            if (result.type == IsCommand.CommandType.FIND_MANY && method.name == "first") {
+            if (command.type == IsCommand.CommandType.FIND_MANY && method.name == "first") {
                 return IsCommand(IsCommand.CommandType.FIND_ONE)
             }
 
@@ -922,11 +931,11 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
         }
 
         return IsCommand(
-            when (method?.name) {
+            when (method.name) {
                 "countDocuments" -> IsCommand.CommandType.COUNT_DOCUMENTS
                 "estimatedDocumentCount" -> IsCommand.CommandType.ESTIMATED_DOCUMENT_COUNT
                 "distinct" -> IsCommand.CommandType.DISTINCT
-                "find", "iterator" -> IsCommand.CommandType.FIND_MANY
+                "find" -> IsCommand.CommandType.FIND_MANY
                 "first" -> IsCommand.CommandType.FIND_ONE
                 "aggregate" -> IsCommand.CommandType.AGGREGATE
                 "insertOne" -> IsCommand.CommandType.INSERT_ONE
