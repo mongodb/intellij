@@ -61,7 +61,7 @@ jobs:
 
       - name: "Register Issue in JIRA"
         id: register-jira-issue
-        if: ${{ steps.consecutive-failures.outputs.consecutive == 'InitialFailure' }}
+#        if: ${{ steps.consecutive-failures.outputs.consecutive == 'InitialFailure' }}
         env:
           JIRA_TOKEN: ${{ secrets.INTELLIJ_DEVEL_JIRA_TOKEN }}
           JIRA_ISSUE_DESCRIPTION: ${{ steps.intellij-verifier.outputs.verify }}
@@ -72,7 +72,7 @@ jobs:
 
       - name: "Report Failure to Slack"
         uses: slackapi/slack-github-action@b0fa283ad8fea605de13dc3f449259339835fc52 # 2.1.0
-        if: ${{ steps.consecutive-failures.outputs.consecutive == 'InitialFailure' || steps.consecutive-failures.outputs.consecutive == 'RepeatedFailure' }}
+#       if: ${{ steps.consecutive-failures.outputs.consecutive == 'InitialFailure' || steps.consecutive-failures.outputs.consecutive == 'RepeatedFailure' }}
         with:
           payload: |
             {
