@@ -46,10 +46,6 @@ dependencies {
     jacocoAggregation(project(":packages:mongodb-mql-model"))
 }
 
-tasks.check {
-    dependsOn(tasks.named<JacocoReport>("testCodeCoverageReport"))
-}
-
 tasks {
     register("versionBump") {
         group = "versioning"
