@@ -134,6 +134,7 @@ tasks {
 
         doLast {
             val currentKey = keyOfCurrentCompatibilityErrorTask() ?:
+                // take only the last 30000 characters of the logs because JIRA has a limit on 32767 chars.
                 createBuildErrorJiraTask(
                   "Plugin is not compatible with the latest IDEA Version.",
                   """This task has been created from build.gradle.kts:registerBuildError.
@@ -142,7 +143,7 @@ tasks {
                       |next IDEA version will break, as there is a compatibility issue.
                       |
                       |{code}
-                      |${System.getenv("JIRA_ISSUE_DESCRIPTION")}
+                      |${System.getenv("JIRA_ISSUE_DESCRIPTION").takeLast(30_000)}
                       |{code}
                   """.trimMargin()
                 )
