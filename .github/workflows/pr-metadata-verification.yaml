@@ -1,4 +1,11 @@
 name: "Metadata Verification"
+
+env:
+  ORG_GRADLE_CACHING: false
+  ORG_GRADLE_PARALLEL: false
+  ORG_GRADLE_DAEMON: false
+  BUILD_SEGMENT_API_KEY: ""
+
 on:
   pull_request:
     branches:
@@ -8,9 +15,6 @@ on:
 permissions:
   contents: write
   pull-requests: write
-
-env:
-  BUILD_SEGMENT_API_KEY: ""
 
 jobs:
   check-pr-title:

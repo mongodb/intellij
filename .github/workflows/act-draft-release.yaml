@@ -1,5 +1,10 @@
 name: Draft release
 
+env:
+  ORG_GRADLE_CACHING: false
+  ORG_GRADLE_PARALLEL: false
+  ORG_GRADLE_DAEMON: false
+
 on:
   workflow_dispatch:
     inputs:

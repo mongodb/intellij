@@ -1,13 +1,17 @@
 name: "Verify Compatibility with latest IDE version"
+
+env:
+  ORG_GRADLE_CACHING: false
+  ORG_GRADLE_PARALLEL: false
+  ORG_GRADLE_DAEMON: false
+  BUILD_SEGMENT_API_KEY: ""
+
 on:
   pull_request:
     branches:
       - main
   schedule:
     - cron: "00 23 * * *"
-
-env:
-  BUILD_SEGMENT_API_KEY: ""
 
 jobs:
   verify-plugin:

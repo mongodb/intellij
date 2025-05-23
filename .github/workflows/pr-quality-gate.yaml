@@ -1,4 +1,11 @@
 name: "Quality Gate"
+
+env:
+  ORG_GRADLE_CACHING: false
+  ORG_GRADLE_PARALLEL: false
+  ORG_GRADLE_DAEMON: false
+  BUILD_SEGMENT_API_KEY: ""
+
 on:
   push:
     branches:
@@ -11,9 +18,6 @@ permissions:
   contents: write
   pull-requests: write
   checks: write
-
-env:
-  BUILD_SEGMENT_API_KEY: ""
 
 jobs:
   style-check:
