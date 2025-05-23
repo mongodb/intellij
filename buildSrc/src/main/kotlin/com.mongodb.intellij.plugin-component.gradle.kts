@@ -42,7 +42,8 @@ intellijPlatform {
 
         ideaVersion {
             sinceBuild = libs.versions.intellij.minRelease
-            untilBuild = "${libs.versions.intellij.maxRelease.get()}.*"
+            // https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-extension.html#intellijPlatform-pluginConfiguration-vendor
+            untilBuild = provider { null }
         }
 
         val changelog = rootProject.changelog

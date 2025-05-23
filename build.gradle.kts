@@ -46,14 +46,6 @@ dependencies {
     jacocoAggregation(project(":packages:mongodb-mql-model"))
 }
 
-reporting {
-    reports {
-        val testCodeCoverageReport by creating(JacocoCoverageReport::class) {
-            testType = TestSuiteType.UNIT_TEST
-        }
-    }
-}
-
 tasks.check {
     dependsOn(tasks.named<JacocoReport>("testCodeCoverageReport"))
 }
@@ -83,12 +75,12 @@ tasks {
         }
     }
 
-    register("gitHooks") {
+    register<Exec>("gitHooks") {
         group = "environment"
-        exec {
+        doFirst {
             rootProject.file(".git/hooks").mkdirs()
-            commandLine("cp", "./gradle/pre-commit", "./.git/hooks")
         }
+        commandLine("cp", "./gradle/pre-commit", "./.git/hooks")
     }
 
     register("getVersion") {
