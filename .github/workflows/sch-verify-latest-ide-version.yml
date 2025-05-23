@@ -69,6 +69,7 @@ jobs:
           ./gradlew getVersion --quiet --console=plain
           TICKET=$(./gradlew registerBuildError --quiet --console=plain)
           echo "ticket=${TICKET}" >> $GITHUB_OUTPUT
+          echo "Ticket: ${TICKET}"
 
       - name: "Report Failure to Slack"
         uses: slackapi/slack-github-action@b0fa283ad8fea605de13dc3f449259339835fc52 # 2.1.0
