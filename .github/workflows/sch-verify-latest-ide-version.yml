@@ -82,7 +82,6 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@8379f6a1328ee0e06e2bb424dadb7b159856a326 # v.4.4.0
-        
 
       - name: "Register Issue in JIRA"
         id: register-jira-issue
@@ -90,8 +89,10 @@ jobs:
           JIRA_TOKEN: ${{ secrets.INTELLIJ_DEVEL_JIRA_TOKEN }}
           JIRA_ISSUE_DESCRIPTION: ${{ needs.verify-plugin.outputs.verify }}
         run: |
+          ./gradlew getVersion --quiet --console=plain
           TICKET=$(./gradlew registerBuildError --quiet --console=plain)
           echo "ticket=${TICKET}" >> $GITHUB_OUTPUT
+
       - name: "Report Failure to Slack"
         uses: slackapi/slack-github-action@b0fa283ad8fea605de13dc3f449259339835fc52 # 2.1.0
         with:
