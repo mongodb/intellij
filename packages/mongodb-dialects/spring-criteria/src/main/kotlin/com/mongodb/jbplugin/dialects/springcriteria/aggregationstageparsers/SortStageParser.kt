@@ -39,10 +39,8 @@ class SortStageParser : StageParser {
 
     override fun canParse(stageCallMethod: PsiMethod): Boolean {
         val methodFqn = stageCallMethod.containingClass?.qualifiedName ?: return false
-        return listOf(AGGREGATE_FQN, SORT_OPERATION_FQN).contains(methodFqn) &&
-            // we consider the root call sort and any chained calls which we currently
-            // support
-            listOf("sort", "and").contains(stageCallMethod.name)
+        val isSortStageCall = methodFqn == AGGREGATE_FQN && stageCallMethod.name == "sort"
+        return isSortStageCall || SORT_OPERATION_FQN == methodFqn
     }
 
     override fun parse(stageCall: PsiMethodCallExpression): Node<PsiElement> {
@@ -52,7 +50,12 @@ class SortStageParser : StageParser {
                 val method = methodCall.fuzzyResolveMethod() ?: return@flatMap emptyList()
                 when (method.name) {
                     "sort", "and" -> parseSortOrAndCall(methodCall)
-                    else -> emptyList()
+                    else -> listOf(
+                        Node(
+                            source = methodCall,
+                            components = listOf(Named(Name.UNKNOWN))
+                        )
+                    )
                 }
             }
         )
@@ -86,7 +89,12 @@ class SortStageParser : StageParser {
                 reverseCountForcedFromParentChain = 0
             )
         } else {
-            emptyList()
+            listOf(
+                Node(
+                    source = methodCall,
+                    components = listOf(Named(Name.UNKNOWN))
+                )
+            )
         }
     }
 
@@ -126,7 +134,9 @@ class SortStageParser : StageParser {
                 val method = methodCall.fuzzyResolveMethod()
 
                 if (method?.containingClass?.qualifiedName != SORT_FQN) {
-                    return@flatMapIndexed emptyList<Node<PsiElement>>()
+                    return@flatMapIndexed listOf(
+                        Node(methodCall, listOf(Named(Name.UNKNOWN)))
+                    )
                 }
 
                 if (method.name == "ascending" || method.name == "descending") {
@@ -184,7 +194,9 @@ class SortStageParser : StageParser {
                         reverseCountForcedFromParentChain = reverseCount
                     )
                 } else {
-                    return@flatMapIndexed emptyList<Node<PsiElement>>()
+                    return@flatMapIndexed listOf(
+                        Node(methodCall, listOf(Named(Name.UNKNOWN)))
+                    )
                 }
             }
         }

@@ -23,6 +23,7 @@ import com.mongodb.jbplugin.mql.components.HasSourceDialect
 import com.mongodb.jbplugin.mql.components.HasValueReference
 import com.mongodb.jbplugin.mql.components.IsCommand
 import com.mongodb.jbplugin.mql.components.Name
+import com.mongodb.jbplugin.mql.components.Named
 import org.junit.jupiter.api.Assertions.assertEquals
 
 @IntegrationTest
@@ -665,6 +666,47 @@ class Repository {
                 ),
             )
         )
+    }
+
+    @ParsingTest(
+        fileName = "Book.java",
+        """
+import org.springframework.data.domain.Sort;import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.util.List;
+
+@Document
+record Book() {}
+
+class Repository {
+    private final MongoTemplate template;
+    
+    public Repository(MongoTemplate template) {
+        this.template = template;
+    }
+    
+    public AggregationResults<Book> allReleasedBooks() {
+        return template.aggregate(
+            Aggregation.newAggregation(
+                Aggregation.sort(
+                    Sort.unsorted()
+                )
+            )
+        );
+    }
+}
+"""
+    )
+    fun `should be able to parse unidentified methods as UNKNOWN operations`(psiFile: PsiFile) {
+        val query = psiFile.getQueryAtMethod("Repository", "allReleasedBooks")
+        val parsed = SpringCriteriaDialectParser.parse(query)
+        val sortStage = parsed.component<HasAggregation<PsiElement>>()!!.children.first()
+        val sortCriteria = sortStage.component<HasSorts<PsiElement>>()!!.children
+        assertEquals(1, sortCriteria.size)
+        val criterion = sortCriteria.first().component<Named>()
+        assertEquals(Name.UNKNOWN, criterion!!.name)
     }
 
     companion object {
