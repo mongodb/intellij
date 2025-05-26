@@ -56,6 +56,8 @@ internal const val DOCUMENT_FQN = "org.springframework.data.mongodb.core.mapping
 internal const val MONGO_TEMPLATE_FQN = "org.springframework.data.mongodb.core.MongoTemplate"
 internal const val AGGREGATE_FQN = "org.springframework.data.mongodb.core.aggregation.Aggregation"
 internal const val PROJECTION_OPERATION_FQN = "org.springframework.data.mongodb.core.aggregation.ProjectionOperation"
+internal const val PROJECTION_OPERATION_BUILDER_FQN = "$PROJECTION_OPERATION_FQN.ProjectionOperationBuilder"
+internal const val ARRAY_PROJECTION_OPERATION_BUILDER_FQN = "$PROJECTION_OPERATION_FQN.ArrayProjectionOperationBuilder"
 internal const val FIELDS_FQN = "org.springframework.data.mongodb.core.aggregation.Fields"
 
 object SpringCriteriaDialectParser : DialectParser<PsiElement> {
