@@ -166,11 +166,17 @@ class SortStageParser : StageParser {
                         reverseCount = 0
                     }
                     return@flatMapIndexed emptyList<Node<PsiElement>>()
-                }
-                // Accounting for reverse only makes sense when there is no direction forced already
-                // either from the current chain or from parent chain
-                else if (method.name == "reverse" && forcedDirection == null) {
-                    reverseCount += 1
+                } else if (method.name == "reverse") {
+                    if (forcedDirection == null) {
+                        reverseCount += 1
+                    } else {
+                        // Do nothing because accounting for reverse only makes sense when there is
+                        // no direction forced already either from the current chain or from the
+                        // parent chain.
+                        // We also wouldn't want to lift the forced == null condition up because
+                        // then we might incorrectly classify reverse as a UNKNOWN operation in the
+                        // final else part.
+                    }
                     return@flatMapIndexed emptyList<Node<PsiElement>>()
                 }
                 // This is how we chain additional Sort criteria chains onto the current chain.
