@@ -1832,6 +1832,63 @@ public class Repository {
     public Repository(MongoClient client) {
         this.client = client;
     }
+
+    public FindIterable<Document> findReleasedBooks() {
+        return findAllByReleaseFlag(true);
+    }
+    
+    private Document findAllByReleaseFlag(boolean released) {
+        try (var session = client.startSession()) {
+            return client.getDatabase("myDatabase")
+                    .getCollection("myCollection")
+                    .updateOne(eq("released", released), addEachToSet("field", "value"));  
+        }
+        
+    }
+}
+        """,
+    )
+    fun `supports parsing unidentified update method calls as UNKNOWN`(psiFile: PsiFile) {
+        val query = psiFile.getQueryAtMethod("Repository", "findReleasedBooks")
+        val parsedQuery = JavaDriverDialect.parser.parse(query)
+
+        val hasFilter =
+            parsedQuery.component<HasFilter<Unit?>>()!!
+        val hasUpdates =
+            parsedQuery.component<HasUpdates<Unit?>>()!!
+
+        val eq = hasFilter.children[0]
+        assertEquals(Name.EQ, eq.component<Named>()!!.name)
+        assertEquals(
+            "released",
+            (eq.component<HasFieldReference<Unit?>>()!!.reference as HasFieldReference.FromSchema).fieldName,
+        )
+        assertEquals(
+            BsonBoolean,
+            (eq.component<HasValueReference<PsiElement>>()!!.reference as HasValueReference.Runtime).type,
+        )
+
+        // It is unknown for now but it might change when we start supporting that update
+        // operator. In that case the test should be updated as well.
+        val addEachToSet = hasUpdates.children[0]
+        assertEquals(Name.UNKNOWN, addEachToSet.component<Named>()!!.name)
+    }
+
+    @ParsingTest(
+        fileName = "Repository.java",
+        value = """
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoClient;
+import org.bson.Document;
+import static com.mongodb.client.model.Filters.*;
+import static com.mongodb.client.model.Updates.*;
+
+public class Repository {
+    private final MongoClient client;
+
+    public Repository(MongoClient client) {
+        this.client = client;
+    }
     
     private FindIterable<Document> findBooksByGenre(String[] validGenres) {
         return client.getDatabase("myDatabase")

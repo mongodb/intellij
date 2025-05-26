@@ -489,8 +489,11 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
                 ),
             )
         }
-        // here we really don't know much, so just don't attempt to parse the query
-        return null
+        // here we really don't know much, so classify this operation as UNKNOWN
+        return Node(
+            source = filter,
+            components = listOf(Named(Name.from(method.name))),
+        )
     }
 
     private fun resolveToAggregationStageCalls(maybeIterableElement: PsiElement): List<PsiMethodCallExpression> {
