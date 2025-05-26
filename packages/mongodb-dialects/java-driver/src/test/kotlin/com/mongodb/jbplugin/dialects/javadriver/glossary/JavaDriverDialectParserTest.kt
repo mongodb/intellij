@@ -386,6 +386,39 @@ public final class Repository {
         this.collection = collection;
     }
 
+    public FindIterable<Document> filter1(Bson schema) {
+        return this.collection.find(Filters.jsonSchema(schema));
+    }
+}
+        """,
+    )
+    fun `parses unidentified filters as UNKNOWN`(psiFile: PsiFile) {
+        val query = psiFile.getQueryAtMethod("Repository", "filter1")
+        val parsedQuery = JavaDriverDialect.parser.parse(query)
+
+        val hasFilter = parsedQuery.component<HasFilter<Unit?>>()!!
+
+        val eq = hasFilter.children[0]
+        println("parsedQuery=$parsedQuery isSupported = ${parsedQuery.isSupportedBlocking()}")
+        assertEquals(Name.UNKNOWN, eq.component<Named>()!!.name)
+    }
+
+    @ParsingTest(
+        fileName = "Repository.java",
+        value = """
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Filters;
+import org.bson.Document;
+import org.bson.types.ObjectId;
+import com.mongodb.client.FindIterable;
+
+public final class Repository {
+    private final MongoCollection<Document> collection;
+
+    public Repository(MongoCollection<Document> collection) {
+        this.collection = collection;
+    }
+
     public Document findBookById(ObjectId id) {
         return this.collection.find(Filters.eq("_id", id)).first();
     }
