@@ -147,14 +147,15 @@ class ProjectStageParser : StageParser {
 
     override fun canParse(stageCallMethod: PsiMethod): Boolean {
         val methodFqn = stageCallMethod.containingClass?.qualifiedName ?: return false
+        val isProjectStageCall = methodFqn == AGGREGATE_FQN && stageCallMethod.name == "project"
         // Project stage call might contain chained operations which might result
         // in a method call from `PROJECTION_OPERATION_FQN` so we account for both
-        return listOf(
-            AGGREGATE_FQN,
-            PROJECTION_OPERATION_FQN,
-            PROJECTION_OPERATION_BUILDER_FQN,
-            ARRAY_PROJECTION_OPERATION_BUILDER_FQN,
-        ).contains(methodFqn)
+        return isProjectStageCall ||
+            listOf(
+                PROJECTION_OPERATION_FQN,
+                PROJECTION_OPERATION_BUILDER_FQN,
+                ARRAY_PROJECTION_OPERATION_BUILDER_FQN,
+            ).contains(methodFqn)
     }
 
     override fun parse(stageCall: PsiMethodCallExpression): Node<PsiElement> {
