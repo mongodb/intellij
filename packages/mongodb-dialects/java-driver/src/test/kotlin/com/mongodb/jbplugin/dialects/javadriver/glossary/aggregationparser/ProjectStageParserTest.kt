@@ -1122,6 +1122,65 @@ public final class Aggregation {
         commonAssertionsForFieldsProjection(projectStageNode)
     }
 
+    @ParsingTest(
+        fileName = "Aggregation.java",
+        value = """
+import com.mongodb.client.AggregateIterable;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Aggregates;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Projections;
+import org.bson.Document;
+import org.bson.types.ObjectId;
+
+import java.util.List;
+
+import static com.mongodb.client.model.Filters.*;
+
+public final class Aggregation {
+    private final MongoCollection<Document> collection;
+
+    public Aggregation(MongoClient client) {
+        this.collection = client.getDatabase("simple").getCollection("books");
+    }
+
+    public AggregateIterable<Document> getAllBookTitles(ObjectId id) {
+        String yearField = "year"; 
+        return this.collection.aggregate(List.of(
+            Aggregates.project(
+                Projections.fields(
+                    Projections.computed("newField", Document.parse("")),
+                    Projections.computedSearchMeta("score", SearchMeta.searchScore()),
+                    Projections.elemMatch("arrayField", Filters.eq("field", "value")),
+                    Projections.excludeId(),
+                    Projections.meta("fieldName", "metaDataKeyword"),
+                    Projections.metaSearchScore("score"),
+                    Projections.metaSearchHighlights("highlights"),
+                    Projections.metaTextScore("score"),
+                    Projections.metaVectorSearchScore("vectorScore"),
+                    Projections.slice("arrayField", 3)
+                )
+            )
+        ));
+    }
+}
+      """
+    )
+    fun `should parse unknown operators as UNKNOWN`(psiFile: PsiFile) {
+        val aggregate = psiFile.getQueryAtMethod(
+            "Aggregation",
+            "getAllBookTitles"
+        )
+        val parsedAggregate = JavaDriverDialect.parser.parse(aggregate)
+        val hasAggregation = parsedAggregate.component<HasAggregation<PsiElement>>()
+        assertEquals(1, hasAggregation?.children?.size)
+
+        val projectStageNode = hasAggregation?.children?.get(0)!!
+        val projections = projectStageNode.component<HasProjections<PsiElement>>()!!.children
+        assertEquals(10, projections.size)
+    }
+
     companion object {
         fun commonAssertionsForIncludeProjection(projectStageNode: Node<PsiElement>) {
             val named = projectStageNode.component<Named>()!!

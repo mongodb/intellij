@@ -283,6 +283,82 @@ public final class Aggregation {
     @ParameterizedTest
     @CsvSource(
         value = [
+            "percentile;;UNKNOWN",
+            "median;;UNKNOWN",
+            "firstN;;UNKNOWN",
+            "lastN;;UNKNOWN",
+            "maxN;;UNKNOWN",
+            "minN;;UNKNOWN",
+            "mergeObjects;;UNKNOWN",
+            "stdDevPop;;UNKNOWN",
+            "stdDevSamp;;UNKNOWN",
+            "accumulator;;UNKNOWN",
+        ],
+        delimiterString = ";;",
+        useHeadersInDisplayName = true
+    )
+    fun `supports parsing unidentified accumulators from the driver as UNKNOWN`(
+        method: String,
+        expected: Name,
+        psiFile: PsiFile
+    ) {
+        WriteCommandAction.runWriteCommandAction(psiFile.project) {
+            val elementAtCaret = psiFile.caret()
+            val javaFacade = JavaPsiFacade.getInstance(psiFile.project)
+            val methodToTest = javaFacade.parserFacade.createReferenceFromText(method, null)
+            elementAtCaret.replace(methodToTest)
+        }
+
+        ApplicationManager.getApplication().runReadAction {
+            val aggregate = psiFile.getQueryAtMethod("Aggregation", "getAllBookTitles")
+            val parsedAggregate = JavaDriverDialect.parser.parse(aggregate)
+            val hasAggregation = parsedAggregate.component<HasAggregation<PsiElement>>()
+            assertEquals(1, hasAggregation?.children?.size)
+
+            val groupStage = hasAggregation?.children?.get(0)!!
+            val named = groupStage.component<Named>()!!
+            assertEquals(Name.GROUP, named.name)
+
+            val accumulator = groupStage.component<HasAccumulatedFields<PsiElement>>()!!.children[0]
+            val accumulatorName = accumulator.component<Named>()!!
+            assertEquals(expected, accumulatorName.name)
+        }
+    }
+
+    @WithFile(
+        fileName = "Repository.java",
+        value = """
+import com.mongodb.client.AggregateIterable;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Aggregates;
+import com.mongodb.client.model.Accumulators;
+import com.mongodb.client.model.Filters;
+import org.bson.Document;
+import org.bson.types.ObjectId;
+
+import java.util.List;
+
+import static com.mongodb.client.model.Filters.*;
+
+public final class Aggregation {
+    private final MongoCollection<Document> collection;
+
+    public Aggregation(MongoClient client) {
+        this.collection = client.getDatabase("simple").getCollection("books");
+    }
+
+    public AggregateIterable<Document> getAllBookTitles(ObjectId id) {
+        return this.collection.aggregate(List.of(
+            Aggregates.group("${'$'}myField", Accumulators."|"("myKey", "myVal"))
+        ));
+    }
+}
+        """,
+    )
+    @ParameterizedTest
+    @CsvSource(
+        value = [
             "method;;expected",
             "sum;;SUM",
             "avg;;AVG",

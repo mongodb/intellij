@@ -1126,6 +1126,54 @@ public final class Aggregation {
         commonAssertionsForOrderBySort(sortStageNode)
     }
 
+    @ParsingTest(
+        fileName = "Aggregation.java",
+        value = """
+import com.mongodb.client.AggregateIterable;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Aggregates;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Projections;
+import com.mongodb.client.model.Sorts;import org.bson.Document;
+import org.bson.types.ObjectId;
+
+import java.util.List;
+
+import static com.mongodb.client.model.Filters.*;
+
+public final class Aggregation {
+    private final MongoCollection<Document> collection;
+
+    public Aggregation(MongoClient client) {
+        this.collection = client.getDatabase("simple").getCollection("books");
+    }
+
+    public AggregateIterable<Document> getAllBookTitles(ObjectId id) {
+        String yearField = "year"; 
+        return this.collection.aggregate(List.of(
+            Aggregates.sort(
+                Sorts.metaTextScore("score")
+            )
+        ));
+    }
+}
+      """
+    )
+    fun `should parse unknown operators as UNKNOWN`(psiFile: PsiFile) {
+        val aggregate = psiFile.getQueryAtMethod(
+            "Aggregation",
+            "getAllBookTitles"
+        )
+        val parsedAggregate = JavaDriverDialect.parser.parse(aggregate)
+        val hasAggregation = parsedAggregate.component<HasAggregation<PsiElement>>()
+        assertEquals(1, hasAggregation?.children?.size)
+
+        val sortStageNode = hasAggregation?.children?.get(0)!!
+        val sorts = sortStageNode.component<HasSorts<PsiElement>>()!!.children
+        assertEquals(1, sorts.size)
+    }
+
     companion object {
         fun commonAssertionsForAscendingSort(sortStageNode: Node<PsiElement>) {
             val named = sortStageNode.component<Named>()!!

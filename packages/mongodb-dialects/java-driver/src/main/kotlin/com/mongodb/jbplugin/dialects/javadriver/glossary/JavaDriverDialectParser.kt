@@ -527,7 +527,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
                             )
                         )
                     }
-                // There will only be one argument to Aggregates.match and that has to be the Bson
+                // There will only be one argument to Aggregates.match, and that has to be the Bson
                 // filters. We retrieve that and resolve the values.
                 val filterExpression = stageCall.argumentList.expressions.getOrNull(0)
                     ?: return nodeWithFilters(emptyList())
@@ -567,7 +567,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
                         )
                     }
 
-                // There will only be one argument to Aggregates.project and Aggregates.sort and
+                // There will only be one argument to Aggregates.project and Aggregates.sort, and
                 // that has to be the Bson projections or sorts. We retrieve that and resolve the
                 // values.
                 val bsonBuilderExpression = stageCall.argumentList.expressions.getOrNull(0)
@@ -585,32 +585,42 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
 
                 return nodeWithParsedComponents(parsedComponents)
             }
+
             "group" -> {
-                // the first parameter of group is going to be a string expression representing a
+                // the first parameter of a group is going to be a string expression representing a
                 // field in schema
                 val groupArgument = stageCall.argumentList.expressions.getOrNull(0)
                     ?: return null
 
                 val groupFieldValueExpression = groupArgument.parseFieldExpressionAsValueReference()
 
-                val nodeWithAccumulators: (List<Node<PsiElement>>) -> Node<PsiElement> = { accFields: List<Node<PsiElement>> ->
-                    Node(
-                        stageCall,
-                        listOf(
-                            Named(Name.GROUP),
-                            HasFieldReference(
-                                HasFieldReference.Inferred(groupArgument, "_id", "_id")
-                            ),
-                            groupFieldValueExpression,
-                            HasAccumulatedFields(accFields)
+                val nodeWithAccumulators: (List<Node<PsiElement>>) -> Node<PsiElement> =
+                    { accFields: List<Node<PsiElement>> ->
+                        Node(
+                            stageCall,
+                            listOf(
+                                Named(Name.GROUP),
+                                HasFieldReference(
+                                    HasFieldReference.Inferred(
+                                        groupArgument,
+                                        "_id",
+                                        "_id"
+                                    )
+                                ),
+                                groupFieldValueExpression,
+                                HasAccumulatedFields(accFields)
+                            )
                         )
-                    )
-                }
+                    }
 
                 val accumulators = stageCall.getVarArgsOrIterableArgs().drop(1)
-                    .mapNotNull { resolveBsonBuilderCall(it, ACCUMULATORS_FQN) }
+                    .mapNotNull {
+                        resolveBsonBuilderCall(it, ACCUMULATORS_FQN)
+                    }
 
-                val parsedAccumulators = accumulators.mapNotNull { parseAccumulatorExpression(it) }
+                val parsedAccumulators = accumulators.mapNotNull {
+                    parseAccumulatorExpression(it)
+                }
                 return nodeWithAccumulators(parsedAccumulators)
             }
 
@@ -716,7 +726,14 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
                     }
                 }
 
-            else -> emptyList()
+            else -> listOf(
+                Node(
+                    source = expression,
+                    components = listOf(
+                        Named(Name.UNKNOWN)
+                    )
+                )
+            )
         }
     }
 
@@ -736,7 +753,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
             "min" -> parseKeyValAccumulator(expression, Name.MIN)
             "push" -> parseKeyValAccumulator(expression, Name.PUSH)
             "addToSet" -> parseKeyValAccumulator(expression, Name.ADD_TO_SET)
-            else -> null
+            else -> Node(expression, listOf(Named(Name.UNKNOWN)))
         }
     }
 
