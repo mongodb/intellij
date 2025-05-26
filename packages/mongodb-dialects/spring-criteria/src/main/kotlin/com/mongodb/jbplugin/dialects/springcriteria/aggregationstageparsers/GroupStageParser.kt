@@ -75,6 +75,10 @@ class GroupStageParser : StageParser {
                         )
                     }
 
+                    // we explicitly ignore as method call because it is handled as part of parsed
+                    // method calls
+                    "as" -> null
+
                     else -> Node(
                         source = methodCall,
                         components = listOf(Named(Name.UNKNOWN))

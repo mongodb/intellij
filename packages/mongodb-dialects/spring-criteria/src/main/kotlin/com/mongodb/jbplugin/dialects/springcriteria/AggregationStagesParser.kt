@@ -21,7 +21,8 @@ import com.mongodb.jbplugin.mql.components.Named
  */
 class AggregationStagesParser(private val stageParsers: List<StageParser>) {
     private fun isStageCall(stageCallMethod: PsiMethod): Boolean {
-        return stageCallMethod.containingClass?.qualifiedName == AGGREGATE_FQN
+        return stageParsers.any { it.canParse(stageCallMethod) } ||
+            stageCallMethod.containingClass?.qualifiedName == AGGREGATE_FQN
     }
 
     private fun parseAggregationStages(
