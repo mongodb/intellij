@@ -119,6 +119,8 @@ enum class DefaultSetup(
             """
 import com.mongodb.client.*;
 import com.mongodb.client.model.*;
+import com.mongodb.client.model.fill.*;
+import com.mongodb.client.model.search.*;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;

@@ -13,6 +13,8 @@ import com.mongodb.jbplugin.mql.components.HasAggregation
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasSourceDialect
 import com.mongodb.jbplugin.mql.components.IsCommand
+import com.mongodb.jbplugin.mql.components.Name
+import com.mongodb.jbplugin.mql.components.Named
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -211,5 +213,74 @@ public final class Aggregation {
 
         assertNotNull(hasAggregation)
         assertEquals(hasAggregation?.children?.isEmpty(), true)
+    }
+
+    @ParsingTest(
+        fileName = "Aggregation.java",
+        value = """
+import com.mongodb.client.AggregateIterable;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Aggregates;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.search.SearchOperator;
+import com.mongodb.client.model.search.SearchPath;
+import org.bson.Document;
+import org.bson.types.ObjectId;
+
+import java.util.Arrays;import java.util.List;
+
+import static com.mongodb.client.model.Filters.*;
+
+public final class Aggregation {
+    private final MongoCollection<Document> collection;
+
+    public Aggregation(MongoClient client) {
+        this.collection = client.getDatabase("simple").getCollection("books");
+    }
+
+    public AggregateIterable<Document> findBookById(ObjectId id) {
+        // The following list of aggregation stages was created using the api doc for 5.5 driver.
+        // https://mongodb.github.io/mongo-java-driver/5.5/apidocs/driver-core/com/mongodb/client/model/Aggregates
+        // These are all the aggregation stages that we do not yet support.
+        return this.collection.aggregate(List.of(
+            Aggregates.bucket(),
+            Aggregates.bucketAuto(),
+            Aggregates.count(),
+            Aggregates.densify(),
+            Aggregates.documents(),
+            Aggregates.facet(),
+            Aggregates.fill(),
+            Aggregates.geoNear(),
+            Aggregates.graphLookup(),
+            Aggregates.limit(),
+            Aggregates.lookup(),
+            Aggregates.merge(),
+            Aggregates.out(),
+            Aggregates.replaceRoot(),
+            Aggregates.sample(),
+            Aggregates.search(),
+            Aggregates.searchMeta(),
+            Aggregates.set(),
+            Aggregates.setWindowFields(),
+            Aggregates.skip(),
+            Aggregates.sortByCount(),
+            Aggregates.unionWith(),
+            Aggregates.unset(),
+            Aggregates.vectorSearch()
+        ));
+    }
+}
+      """
+    )
+    fun `should parse unidentified stages as UNKNOWN stage nodes`(psiFile: PsiFile) {
+        val query = psiFile.getQueryAtMethod("Aggregation", "findBookById")
+        val parsedAggregate = JavaDriverDialect.parser.parse(query)
+        val hasAggregation = parsedAggregate.component<HasAggregation<PsiElement>>()
+
+        assertNotNull(hasAggregation)
+        for (stage in hasAggregation!!.children) {
+            assertEquals(Name.UNKNOWN, stage.component<Named>()?.name)
+        }
     }
 }

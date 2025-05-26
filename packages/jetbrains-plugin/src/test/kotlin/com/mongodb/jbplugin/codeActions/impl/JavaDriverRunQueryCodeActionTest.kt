@@ -18,21 +18,32 @@ import org.junit.jupiter.api.Assertions.assertNull
 class JavaDriverRunQueryCodeActionTest {
     @ParsingTest(
         value = """
+    // Unsupported operation
     public FindIterable<Document> exampleFind() {
         return client.getDatabase("myDatabase")
                 .getCollection("myCollection")
                 .find(Filters.regex("field", "value"));
     }
+    
+    // Unsupported command
+    public AggregateIterable<Document> exampleFind() {
+        return client.getDatabase("myDatabase")
+                .getCollection("myCollection")
+                .aggregate(List.of(Aggregates.search()));
+    }
         """,
     )
     fun `does not show the run query gutter icon for unsupported queries`(
+        application: Application,
         fixture: CodeInsightTestFixture,
     ) {
         fixture.setupConnection()
         fixture.specifyDialect(JavaDriverDialect)
 
         val gutters = fixture.findAllGutters()
-        assertNull(gutters.find { it.icon == Icons.runQueryGutter })
+        application.runReadAction {
+            assertNull(gutters.find { it.icon == Icons.runQueryGutter })
+        }
     }
 
     @ParsingTest(

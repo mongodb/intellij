@@ -124,11 +124,14 @@ abstract class AbstractMongoDbInspectionBridge<Settings, I : Inspection>(
 
         try {
             runBlocking(Dispatchers.IO) {
-                for (it in allQueriesInFile) {
+                for (query in allQueriesInFile) {
                     ProgressManager.checkCanceled()
+                    if (!query.isSupported()) {
+                        continue
+                    }
 
-                    val settings = withinReadActionBlocking { buildSettings(it) }
-                    queryInspection.run(it, problemsHolder, settings)
+                    val settings = withinReadActionBlocking { buildSettings(query) }
+                    queryInspection.run(query, problemsHolder, settings)
                 }
             }
         } catch (e: Exception) {

@@ -71,15 +71,6 @@ private const val MONGO_ITERABLE_FQN = "com.mongodb.client.MongoIterable"
 private const val FIND_ITERABLE_FQN = "com.mongodb.client.FindIterable"
 private const val AGGREGATE_ITERABLE_FQN = "com.mongodb.client.AggregateIterable"
 
-private val PARSEABLE_AGGREGATION_STAGE_METHODS = listOf(
-    "match",
-    "project",
-    "sort",
-    "group",
-    "unwind",
-    "addFields"
-)
-
 object JavaDriverDialectParser : DialectParser<PsiElement> {
     override fun isCandidateForQuery(source: PsiElement) =
         methodCallToCommand((source as? PsiMethodCallExpression)).type !=
@@ -667,7 +658,12 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
                 )
             }
 
-            else -> return null
+            else -> return Node(
+                source = stageCall,
+                components = listOf(
+                    Named(Name.UNKNOWN)
+                )
+            )
         }
     }
 
@@ -859,8 +855,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
     }
 
     private fun isAggregationStageMethodCall(callMethod: PsiMethod?): Boolean {
-        return PARSEABLE_AGGREGATION_STAGE_METHODS.contains(callMethod?.name) &&
-            callMethod?.containingClass?.qualifiedName == AGGREGATES_FQN
+        return callMethod?.containingClass?.qualifiedName == AGGREGATES_FQN
     }
 
     private fun resolveValueFromExpression(expression: PsiExpression): HasValueReference.ValueReference<PsiElement> {
