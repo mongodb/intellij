@@ -30,6 +30,7 @@ import com.mongodb.jbplugin.mql.components.HasSourceDialect
 import com.mongodb.jbplugin.mql.components.HasValueReference
 import com.mongodb.jbplugin.mql.components.IsCommand
 import com.mongodb.jbplugin.mql.components.Name
+import com.mongodb.jbplugin.mql.components.Named
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 
@@ -596,6 +597,50 @@ class Repository {
                 )
             ),
         )
+    }
+
+    @ParsingTest(
+        fileName = "Book.java",
+        """
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.AddFieldsOperation;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.Fields;
+import org.springframework.data.mongodb.core.mapping.Document;
+import java.util.List;
+import java.util.Map;
+
+@Document
+record Book() {}
+
+class Repository {
+    private final MongoTemplate template;
+    
+    public Repository(MongoTemplate template) {
+        this.template = template;
+    }
+    
+    public AggregationResults<Book> allReleasedBooks() {
+        return template.aggregate(
+            Aggregation.newAggregation(
+                Aggregation.addFields().addField("something").withValueOfExpression()
+            ),
+            Book.class,
+            Book.class
+        );
+    }
+}
+        """
+    )
+    fun `should parse unidentified method calls as UNKNOWN operation`(
+        psiFile: PsiFile
+    ) {
+        val query = psiFile.getQueryAtMethod("Repository", "allReleasedBooks")
+        val parsed = SpringCriteriaDialectParser.parse(query)
+        val addFieldsStage = parsed.component<HasAggregation<PsiElement>>()!!.children.first()
+        val addedField = addFieldsStage.component<HasAddedFields<PsiElement>>()!!.children.first()
+        val addedFieldName = addedField.component<Named>()
+        assertEquals(Name.UNKNOWN, addedFieldName!!.name)
     }
 
     companion object {
