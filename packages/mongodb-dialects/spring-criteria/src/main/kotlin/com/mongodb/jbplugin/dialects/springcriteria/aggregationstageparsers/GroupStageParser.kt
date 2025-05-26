@@ -36,14 +36,13 @@ class GroupStageParser : StageParser {
     }
 
     override fun canParse(stageCallMethod: PsiMethod): Boolean {
-        return listOf(
-            AGGREGATE_FQN,
-            GROUP_OPERATION_FQN,
-            GROUP_OPERATION_BUILDER_FQN
-        ).contains(stageCallMethod.containingClass?.qualifiedName) &&
+        val methodFqn = stageCallMethod.containingClass?.qualifiedName
+        val isGroupStageCall = methodFqn == AGGREGATE_FQN && stageCallMethod.name == "group"
+        return isGroupStageCall ||
             listOf(
-                "group", "sum", "avg", "first", "last", "max", "min", "push", "addToSet", "as"
-            ).contains(stageCallMethod.name)
+                GROUP_OPERATION_FQN,
+                GROUP_OPERATION_BUILDER_FQN
+            ).contains(methodFqn)
     }
 
     override fun parse(stageCall: PsiMethodCallExpression): Node<PsiElement> {
@@ -76,7 +75,10 @@ class GroupStageParser : StageParser {
                         )
                     }
 
-                    else -> null
+                    else -> Node(
+                        source = methodCall,
+                        components = listOf(Named(Name.UNKNOWN))
+                    )
                 }
             }
         )
