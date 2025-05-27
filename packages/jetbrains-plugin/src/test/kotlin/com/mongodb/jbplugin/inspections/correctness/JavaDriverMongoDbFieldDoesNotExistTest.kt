@@ -27,6 +27,38 @@ public FindIterable<Document> exampleFind() {
             .getCollection("myCollection")
             .find(eq(<warning descr="Field \"nonExistingField\" does not seem to exist in collection.">"nonExistingField"</warning>, "123"));
 }
+// Additional tests to verify INTELLIJ-317
+public MongoCursor<Document> exampleFind1() {
+    return client.getDatabase("myDatabase")
+            .getCollection("myCollection")
+            .find(eq(<warning descr="Field \"nonExistingField\" does not seem to exist in collection.">"nonExistingField"</warning>, "123")).iterator();
+}
+public MongoCursor<Document> exampleFind3() {
+    return client.getDatabase("myDatabase")
+            .getCollection("myCollection")
+            .find(eq(<warning descr="Field \"nonExistingField\" does not seem to exist in collection.">"nonExistingField"</warning>, "123")).cursor();
+}
+public AggregateIterable<Document> exampleAggregate() {
+    return client.getDatabase("myDatabase")
+            .getCollection("myCollection")
+            .aggregate(List.of(
+                Aggregates.match(eq(<warning descr="Field \"nonExistingField\" does not seem to exist in collection.">"nonExistingField"</warning>, "123"))
+            ));
+}
+public MongoCursor<Document> exampleAggregate1() {
+    return client.getDatabase("myDatabase")
+            .getCollection("myCollection")
+            .aggregate(List.of(
+                Aggregates.match(eq(<warning descr="Field \"nonExistingField\" does not seem to exist in collection.">"nonExistingField"</warning>, "123"))
+            )).iterator();
+}
+public MongoCursor<Document> exampleAggregate2() {
+    return client.getDatabase("myDatabase")
+            .getCollection("myCollection")
+            .aggregate(List.of(
+                Aggregates.match(eq(<warning descr="Field \"nonExistingField\" does not seem to exist in collection.">"nonExistingField"</warning>, "123"))
+            )).cursor();
+}
 """,
     )
     fun `shows an inspection when the field does not exist in the current namespace`(

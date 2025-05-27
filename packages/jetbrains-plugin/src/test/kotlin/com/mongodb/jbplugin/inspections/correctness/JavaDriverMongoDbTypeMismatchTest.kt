@@ -17,7 +17,7 @@ import kotlinx.coroutines.test.runTest
 class JavaDriverMongoDbTypeMismatchTest {
     @ParsingTest(
         """
-public AggregateIterable<Document> exampleFind() {
+public AggregateIterable<Document> exampleAggregate() {
     return client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .aggregate(List.of(
@@ -25,6 +25,40 @@ public AggregateIterable<Document> exampleFind() {
                     eq("thisIsDouble", <warning descr="Type \"String\" is not compatible with the type of field \"thisIsDouble\" (double).">"123"</warning>)
                 )
             ));
+}
+// Additional tests to verify INTELLIJ-317
+public MongoCursor<Document> exampleAggregate1() {
+    return client.getDatabase("myDatabase")
+            .getCollection("myCollection")
+            .aggregate(List.of(
+                Aggregates.match(
+                    eq("thisIsDouble", <warning descr="Type \"String\" is not compatible with the type of field \"thisIsDouble\" (double).">"123"</warning>)
+                )
+            )).iterator();
+}
+public MongoCursor<Document> exampleAggregate2() {
+    return client.getDatabase("myDatabase")
+            .getCollection("myCollection")
+            .aggregate(List.of(
+                Aggregates.match(
+                    eq("thisIsDouble", <warning descr="Type \"String\" is not compatible with the type of field \"thisIsDouble\" (double).">"123"</warning>)
+                )
+            )).cursor();
+}
+public FindIterable<Document> exampleFind() {
+    return client.getDatabase("myDatabase")
+            .getCollection("myCollection")
+            .find(eq("thisIsDouble", <warning descr="Type \"String\" is not compatible with the type of field \"thisIsDouble\" (double).">"123"</warning>));
+}
+public MongoCursor<Document> exampleFind1() {
+    return client.getDatabase("myDatabase")
+            .getCollection("myCollection")
+            .find(eq("thisIsDouble", <warning descr="Type \"String\" is not compatible with the type of field \"thisIsDouble\" (double).">"123"</warning>)).iterator();
+}
+public MongoCursor<Document> exampleFind2() {
+    return client.getDatabase("myDatabase")
+            .getCollection("myCollection")
+            .find(eq("thisIsDouble", <warning descr="Type \"String\" is not compatible with the type of field \"thisIsDouble\" (double).">"123"</warning>)).cursor();
 }
 """,
     )
