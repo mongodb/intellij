@@ -22,37 +22,37 @@ import org.mockito.kotlin.verify
 class JavaDriverMongoDbFieldDoesNotExistTest {
     @ParsingTest(
         """
-public FindIterable<Document> exampleFind() {
+public FindIterable<Document> findIterableShowsWarning() {
     return client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .find(eq(<warning descr="Field \"nonExistingField\" does not seem to exist in collection.">"nonExistingField"</warning>, "123"));
 }
 // Additional tests to verify INTELLIJ-317
-public MongoCursor<Document> exampleFind1() {
+public MongoCursor<Document> findIteratorShowsWarning() {
     return client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .find(eq(<warning descr="Field \"nonExistingField\" does not seem to exist in collection.">"nonExistingField"</warning>, "123")).iterator();
 }
-public MongoCursor<Document> exampleFind3() {
+public MongoCursor<Document> findCursorShowsWarning() {
     return client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .find(eq(<warning descr="Field \"nonExistingField\" does not seem to exist in collection.">"nonExistingField"</warning>, "123")).cursor();
 }
-public AggregateIterable<Document> exampleAggregate() {
+public AggregateIterable<Document> aggregateIterableShowsWarning() {
     return client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .aggregate(List.of(
                 Aggregates.match(eq(<warning descr="Field \"nonExistingField\" does not seem to exist in collection.">"nonExistingField"</warning>, "123"))
             ));
 }
-public MongoCursor<Document> exampleAggregate1() {
+public MongoCursor<Document> aggregateIteratorShowsWarning() {
     return client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .aggregate(List.of(
                 Aggregates.match(eq(<warning descr="Field \"nonExistingField\" does not seem to exist in collection.">"nonExistingField"</warning>, "123"))
             )).iterator();
 }
-public MongoCursor<Document> exampleAggregate2() {
+public MongoCursor<Document> aggregateCursorShowsWarning() {
     return client.getDatabase("myDatabase")
             .getCollection("myCollection")
             .aggregate(List.of(
