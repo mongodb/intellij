@@ -74,9 +74,9 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
         inferCommandFromMethod((source as? PsiMethodCallExpression)?.fuzzyResolveMethod()).type !=
             IsCommand.CommandType.UNKNOWN
 
-    override fun attachment(source: PsiElement): PsiElement = source.findTopParentBy {
+    override fun attachment(source: PsiElement): PsiElement? = source.findTopParentBy {
         isCandidateForQuery(it)
-    }!!
+    }
 
     override fun parseCollectionReference(source: PsiElement): HasCollectionReference<PsiElement> {
         val methodCallExpression = source.parentOfType<PsiMethodCallExpression>(withSelf = true)
