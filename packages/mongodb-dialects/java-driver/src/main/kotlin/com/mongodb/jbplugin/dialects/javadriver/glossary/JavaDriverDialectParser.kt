@@ -67,15 +67,9 @@ private const val FIELD_FQN = "com.mongodb.client.model.Field"
 private const val JAVA_LIST_FQN = "java.util.List"
 private const val JAVA_ARRAYS_FQN = "java.util.Arrays"
 private const val JAVA_COLLECTIONS_FQN = "java.util.Collections"
-
-private val PARSEABLE_AGGREGATION_STAGE_METHODS = listOf(
-    "match",
-    "project",
-    "sort",
-    "group",
-    "unwind",
-    "addFields"
-)
+private const val MONGO_ITERABLE_FQN = "com.mongodb.client.MongoIterable"
+private const val FIND_ITERABLE_FQN = "com.mongodb.client.FindIterable"
+private const val AGGREGATE_ITERABLE_FQN = "com.mongodb.client.AggregateIterable"
 
 object JavaDriverDialectParser : DialectParser<PsiElement> {
     override fun isCandidateForQuery(source: PsiElement) =
@@ -418,8 +412,11 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
                 ),
             )
         }
-        // here we really don't know much, so just don't attempt to parse the query
-        return null
+        // here we really don't know much, so classify this operation as UNKNOWN
+        return Node(
+            source = filter,
+            components = listOf(Named(Name.from(method.name))),
+        )
     }
 
     private fun parseUpdatesExpression(filter: PsiMethodCallExpression): Node<PsiElement>? {
@@ -492,8 +489,11 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
                 ),
             )
         }
-        // here we really don't know much, so just don't attempt to parse the query
-        return null
+        // here we really don't know much, so classify this operation as UNKNOWN
+        return Node(
+            source = filter,
+            components = listOf(Named(Name.from(method.name))),
+        )
     }
 
     private fun resolveToAggregationStageCalls(maybeIterableElement: PsiElement): List<PsiMethodCallExpression> {
@@ -527,7 +527,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
                             )
                         )
                     }
-                // There will only be one argument to Aggregates.match and that has to be the Bson
+                // There will only be one argument to Aggregates.match, and that has to be the Bson
                 // filters. We retrieve that and resolve the values.
                 val filterExpression = stageCall.argumentList.expressions.getOrNull(0)
                     ?: return nodeWithFilters(emptyList())
@@ -567,7 +567,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
                         )
                     }
 
-                // There will only be one argument to Aggregates.project and Aggregates.sort and
+                // There will only be one argument to Aggregates.project and Aggregates.sort, and
                 // that has to be the Bson projections or sorts. We retrieve that and resolve the
                 // values.
                 val bsonBuilderExpression = stageCall.argumentList.expressions.getOrNull(0)
@@ -585,32 +585,42 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
 
                 return nodeWithParsedComponents(parsedComponents)
             }
+
             "group" -> {
-                // the first parameter of group is going to be a string expression representing a
+                // the first parameter of a group is going to be a string expression representing a
                 // field in schema
                 val groupArgument = stageCall.argumentList.expressions.getOrNull(0)
                     ?: return null
 
                 val groupFieldValueExpression = groupArgument.parseFieldExpressionAsValueReference()
 
-                val nodeWithAccumulators: (List<Node<PsiElement>>) -> Node<PsiElement> = { accFields: List<Node<PsiElement>> ->
-                    Node(
-                        stageCall,
-                        listOf(
-                            Named(Name.GROUP),
-                            HasFieldReference(
-                                HasFieldReference.Inferred(groupArgument, "_id", "_id")
-                            ),
-                            groupFieldValueExpression,
-                            HasAccumulatedFields(accFields)
+                val nodeWithAccumulators: (List<Node<PsiElement>>) -> Node<PsiElement> =
+                    { accFields: List<Node<PsiElement>> ->
+                        Node(
+                            stageCall,
+                            listOf(
+                                Named(Name.GROUP),
+                                HasFieldReference(
+                                    HasFieldReference.Inferred(
+                                        groupArgument,
+                                        "_id",
+                                        "_id"
+                                    )
+                                ),
+                                groupFieldValueExpression,
+                                HasAccumulatedFields(accFields)
+                            )
                         )
-                    )
-                }
+                    }
 
                 val accumulators = stageCall.getVarArgsOrIterableArgs().drop(1)
-                    .mapNotNull { resolveBsonBuilderCall(it, ACCUMULATORS_FQN) }
+                    .mapNotNull {
+                        resolveBsonBuilderCall(it, ACCUMULATORS_FQN)
+                    }
 
-                val parsedAccumulators = accumulators.mapNotNull { parseAccumulatorExpression(it) }
+                val parsedAccumulators = accumulators.mapNotNull {
+                    parseAccumulatorExpression(it)
+                }
                 return nodeWithAccumulators(parsedAccumulators)
             }
 
@@ -664,7 +674,12 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
                 )
             }
 
-            else -> return null
+            else -> return Node(
+                source = stageCall,
+                components = listOf(
+                    Named(Name.UNKNOWN)
+                )
+            )
         }
     }
 
@@ -711,7 +726,14 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
                     }
                 }
 
-            else -> emptyList()
+            else -> listOf(
+                Node(
+                    source = expression,
+                    components = listOf(
+                        Named(Name.UNKNOWN)
+                    )
+                )
+            )
         }
     }
 
@@ -731,7 +753,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
             "min" -> parseKeyValAccumulator(expression, Name.MIN)
             "push" -> parseKeyValAccumulator(expression, Name.PUSH)
             "addToSet" -> parseKeyValAccumulator(expression, Name.ADD_TO_SET)
-            else -> null
+            else -> Node(expression, listOf(Named(Name.UNKNOWN)))
         }
     }
 
@@ -856,8 +878,7 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
     }
 
     private fun isAggregationStageMethodCall(callMethod: PsiMethod?): Boolean {
-        return PARSEABLE_AGGREGATION_STAGE_METHODS.contains(callMethod?.name) &&
-            callMethod?.containingClass?.qualifiedName == AGGREGATES_FQN
+        return callMethod?.containingClass?.qualifiedName == AGGREGATES_FQN
     }
 
     private fun resolveValueFromExpression(expression: PsiExpression): HasValueReference.ValueReference<PsiElement> {
@@ -889,28 +910,34 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
     }
 
     private fun methodCallToCommand(methodCall: PsiMethodCallExpression?): IsCommand {
-        if (methodCall == null) {
-            return IsCommand(IsCommand.CommandType.UNKNOWN)
-        }
+        val method = methodCall?.fuzzyResolveMethod() ?: return IsCommand(
+            IsCommand.CommandType.UNKNOWN
+        )
 
-        val method = methodCall.fuzzyResolveMethod()
+        val iteratorsFqn = listOf(
+            MONGO_ITERABLE_FQN,
+            FIND_ITERABLE_FQN,
+            AGGREGATE_ITERABLE_FQN,
+        )
 
-        if (method?.containingClass?.qualifiedName?.contains("MongoIterable") == true) {
-            // We are in a cursor, so the actual operation is in the upper method calls
+        if (iteratorsFqn.contains(method.containingClass?.qualifiedName)) {
+            // We are in a cursor / iterable, so the actual operation is in the upper method calls
             // For context, the current call is somewhat like this:
             //   MongoCollection.find(Filters.eq(...)).first()
-            // and to correctly identify the command we need to be analysing
+            // and to correctly identify the command we need to analyze
             //   MongoCollection.find(Filters.eq(...))
             val allCallExpressions = methodCall.findAllChildrenOfType(
                 PsiMethodCallExpression::class.java
             )
-            val lastCallExpression = allCallExpressions.getOrNull(allCallExpressions.lastIndex - 1)
-            val result = methodCallToCommand(lastCallExpression)
+            val lastCallExpression = allCallExpressions.getOrNull(
+                allCallExpressions.lastIndex - 1
+            )
+            val command = methodCallToCommand(lastCallExpression)
 
-            // FindIterable.first() translates to a valid MongoDB driver command so we need to take
-            // that into account and return correct command result. Because we analysed the earlier
+            // FindIterable.first() translates to a valid MongoDB driver command, so we need to take
+            // that into account and return a correct command result. Because we analyzed the earlier
             // chained call using the lastCallExpression, the result in this case will be FIND_MANY
-            if (result.type == IsCommand.CommandType.FIND_MANY && method.name == "first") {
+            if (command.type == IsCommand.CommandType.FIND_MANY && method.name == "first") {
                 return IsCommand(IsCommand.CommandType.FIND_ONE)
             }
 
@@ -922,11 +949,11 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
         }
 
         return IsCommand(
-            when (method?.name) {
+            when (method.name) {
                 "countDocuments" -> IsCommand.CommandType.COUNT_DOCUMENTS
                 "estimatedDocumentCount" -> IsCommand.CommandType.ESTIMATED_DOCUMENT_COUNT
                 "distinct" -> IsCommand.CommandType.DISTINCT
-                "find", "iterator" -> IsCommand.CommandType.FIND_MANY
+                "find" -> IsCommand.CommandType.FIND_MANY
                 "first" -> IsCommand.CommandType.FIND_ONE
                 "aggregate" -> IsCommand.CommandType.AGGREGATE
                 "insertOne" -> IsCommand.CommandType.INSERT_ONE

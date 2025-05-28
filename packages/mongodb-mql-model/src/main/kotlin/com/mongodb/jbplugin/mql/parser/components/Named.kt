@@ -29,9 +29,35 @@ fun <S> extractOperation(): Parser<Node<S>, HasNoNamedOperation, Named> {
     }
 }
 
+data object NoNamedComponents
+
+fun <S> allNamedComponentsRecursively(): Parser<Node<S>, NoNamedComponents, List<Named>> {
+    return { input ->
+        fun namedComponentsFromNode(node: Node<S>): List<Named> {
+            val directNamedComponents: List<Named> = node.components<Named>()
+            val nestedNamedComponents = mutableListOf<Named>()
+            for (componentWithChildren in node.componentsWithChildren()) {
+                nestedNamedComponents.addAll(
+                    componentWithChildren.children.flatMap(
+                        ::namedComponentsFromNode
+                    )
+                )
+            }
+            return directNamedComponents + nestedNamedComponents
+        }
+
+        val allNamedComponents = namedComponentsFromNode(input)
+        if (allNamedComponents.isEmpty()) {
+            Either.left(NoNamedComponents)
+        } else {
+            Either.right(allNamedComponents)
+        }
+    }
+}
+
 fun <S> whenAllNamedOperationsAreIn(names: Set<Name>): Parser<Node<S>, Any, Boolean> {
-    return allFiltersRecursively<S>()
+    return allNamedComponentsRecursively<S>()
         .anyError()
-        .map { filters -> filters.all { names.contains(it.component<Named>()?.name) } }
-        .recoverError { it is NoFilters }
+        .map { namedComponents -> namedComponents.all { names.contains(it.name) } }
+        .recoverError { it is NoNamedComponents }
 }

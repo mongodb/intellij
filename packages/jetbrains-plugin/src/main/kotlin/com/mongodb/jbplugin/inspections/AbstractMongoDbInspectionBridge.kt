@@ -14,10 +14,11 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiMethodCallExpression
+import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
 import com.mongodb.jbplugin.dialects.javadriver.glossary.findAllChildrenOfType
 import com.mongodb.jbplugin.editor.CachedQueryService
+import com.mongodb.jbplugin.editor.dataSource
 import com.mongodb.jbplugin.i18n.InspectionsAndInlaysMessages
-import com.mongodb.jbplugin.i18n.SidePanelMessages
 import com.mongodb.jbplugin.inspections.correctness.MongoDbFieldDoesNotExist
 import com.mongodb.jbplugin.inspections.correctness.MongoDbTypeMismatch
 import com.mongodb.jbplugin.inspections.environmentmismatch.MongoDbCollectionDoesNotExist
@@ -44,7 +45,6 @@ import com.mongodb.jbplugin.meta.withinReadActionBlocking
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.observability.useLogMessage
 import com.mongodb.jbplugin.ui.viewModel.InspectionsViewModel
-import com.mongodb.jbplugin.ui.viewModel.getToolShortName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -55,12 +55,11 @@ private val logger = logger<AbstractMongoDbInspectionBridge<*, *>>()
 abstract class AbstractMongoDbInspectionGlobalTool(
     private val inspection: Inspection
 ) : GlobalInspectionTool() {
-    override fun getGroupDisplayName() = SidePanelMessages.message(inspection.category.displayName)
-    override fun getDisplayName() = inspection.getToolShortName()
+    // This override is not required because the same metadata is defined in plugin.xml, but we
+    // still do it here anyway to avoid as much human error as possible when modifying metadata
+    // in plugin.xml.
     override fun getShortName(): String = inspection.javaClass.simpleName
 
-    override fun isEnabledByDefault() = true
-    override fun getStaticDescription() = inspection.getToolShortName()
     override fun worksInBatchModeOnly() = false
 
     companion object {
@@ -88,7 +87,14 @@ abstract class AbstractMongoDbInspectionBridge<Settings, I : Inspection>(
     protected abstract fun buildSettings(query: Node<PsiElement>): Settings
     protected abstract fun emitFinishedInspectionTelemetryEvent(queryInsights: List<QueryInsight<PsiElement, I>>)
     protected open fun afterInsight(queryInsight: QueryInsight<PsiElement, I>) {}
+
+    // This override is required to pair an ExternalAnnotator with a GlobalInspectionTool. The
+    // shortName of ExternalAnnotator must match that of the GlobalInspectionTool for the pairing
+    // to work.
     override fun getPairedBatchInspectionShortName(): String = inspection.javaClass.simpleName
+
+    // We need to implement this method as it is abstract, but otherwise it has no real impact on
+    // how the ExternalAnnotator pairs with GlobalInspectionTool.
     override fun getShortName(): String = inspection.javaClass.simpleName
 
     // 1st step: collect basic information to trigger the annotator
@@ -103,7 +109,10 @@ abstract class AbstractMongoDbInspectionBridge<Settings, I : Inspection>(
 
     // 2nd step: generate insights, this can block because happens in a thread pool
     override fun doAnnotate(psiFile: PsiFile?): List<QueryInsight<PsiElement, I>>? {
-        if (psiFile == null) return null // early return if no file is provided
+        // early return if no file is provided or if DataSource is not connected
+        if (psiFile == null || psiFile.dataSource?.isConnected() != true) {
+            return null
+        }
 
         // get all relevant method calls
         val queryService by psiFile.project.service<CachedQueryService>()
@@ -119,11 +128,14 @@ abstract class AbstractMongoDbInspectionBridge<Settings, I : Inspection>(
 
         try {
             runBlocking(Dispatchers.IO) {
-                for (it in allQueriesInFile) {
+                for (query in allQueriesInFile) {
                     ProgressManager.checkCanceled()
+                    if (!query.isSupported()) {
+                        continue
+                    }
 
-                    val settings = withinReadActionBlocking { buildSettings(it) }
-                    queryInspection.run(it, problemsHolder, settings)
+                    val settings = withinReadActionBlocking { buildSettings(query) }
+                    queryInspection.run(query, problemsHolder, settings)
                 }
             }
         } catch (e: Exception) {

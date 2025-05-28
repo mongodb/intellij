@@ -6,6 +6,8 @@ import com.mongodb.jbplugin.mql.components.HasAggregation
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasSourceDialect
 import com.mongodb.jbplugin.mql.components.IsCommand
+import com.mongodb.jbplugin.mql.components.Name
+import com.mongodb.jbplugin.mql.components.Named
 import org.junit.jupiter.api.Assertions.assertEquals
 
 @IntegrationTest
@@ -299,6 +301,78 @@ class Repository {
 
             component<HasAggregation<PsiElement>> {
                 assertEquals(0, children.size)
+            }
+        }
+    }
+
+    @ParsingTest(
+        fileName = "Book.java",
+        """
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.util.List;
+
+@Document
+record Book() {}
+
+class Repository {
+    private final MongoTemplate template;
+    
+    public Repository(MongoTemplate template) {
+        this.template = template;
+    }
+    
+    private Aggregation getAggregation() {
+        return Aggregation.newAggregation(
+            Aggregation.bucket(),
+            Aggregation.bucketAuto(),
+            Aggregation.geoNear(),
+            Aggregation.limit(),
+            Aggregation.lookup(),
+            Aggregation.facet(),
+            Aggregation.graphLookup(),
+            Aggregation.merge(),
+            Aggregation.redact(),
+            Aggregation.out(),
+            Aggregation.replaceRoot(),
+            Aggregation.sample(),
+            Aggregation.skip(),
+            Aggregation.sortByCount()
+        );
+    }
+    
+    public AggregationResults<Book> allReleasedBooks() {
+        return template.aggregate(
+            getAggregation(),
+            Book.class,
+            Book.class
+        );
+    }
+}
+        """
+    )
+    fun `should parse unidentified stages as UNKNOWN operation`(
+        psiFile: PsiFile
+    ) {
+        val query = psiFile.getQueryAtMethod("Repository", "allReleasedBooks")
+        SpringCriteriaDialectParser.parse(query).assert(IsCommand.CommandType.AGGREGATE) {
+            component<HasSourceDialect> {
+                assertEquals(HasSourceDialect.DialectName.SPRING_CRITERIA, name)
+            }
+
+            collection<HasCollectionReference.OnlyCollection<PsiElement>> {
+                assertEquals("book", collection)
+            }
+
+            component<HasAggregation<PsiElement>> {
+                assertEquals(14, children.size)
+
+                for (child in children) {
+                    val childName = child.component<Named>()
+                    assertEquals(Name.UNKNOWN, childName!!.name)
+                }
             }
         }
     }

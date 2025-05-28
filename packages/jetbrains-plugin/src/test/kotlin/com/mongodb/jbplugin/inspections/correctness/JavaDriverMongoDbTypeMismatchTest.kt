@@ -48,4 +48,44 @@ public AggregateIterable<Document> exampleFind() {
         fixture.enableInspections(MongoDbTypeMismatchGlobalTool())
         fixture.testHighlighting()
     }
+
+    @ParsingTest(
+        """
+public FindIterable<Document> noInspectionForUnsupportedFilter() {
+    return client.getDatabase("myDatabase")
+            .getCollection("myCollection")
+            .find(regex("nonExistingField", "123"));
+}
+
+public AggregateIterable<Document> noInspectionForUnsupportedAggregationCommand() {
+    return client.getDatabase("myDatabase")
+            .getCollection("myCollection")
+            .aggregate(
+                List.of(
+                    Aggregates.bucket("${'$'}field", Arrays.asList(0, 10, 20)),
+                    Aggregates.bucketAuto("${'$'}field", 5),
+                    Aggregates.count("totalCount")
+                )
+            );
+}
+""",
+    )
+    fun `shows no inspection when there is an unsupported command or operation`(
+        fixture: CodeInsightTestFixture,
+    ) = runTest {
+        val (_, readModelProvider) = fixture.setupConnection()
+        fixture.specifyDialect(JavaDriverDialect)
+
+        readModelProvider.whenListDatabases("myDatabase")
+        readModelProvider.whenListCollections("myCollection")
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.myCollection",
+            BsonObject(
+                emptyMap()
+            )
+        )
+
+        fixture.enableInspections(MongoDbTypeMismatchGlobalTool())
+        fixture.testHighlighting()
+    }
 }

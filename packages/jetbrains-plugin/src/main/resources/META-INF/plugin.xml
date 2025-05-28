@@ -60,29 +60,109 @@
         <database.dataAuditor implementation="com.mongodb.jbplugin.ui.viewModel.DataSourcesChangesAuditor" />
         <!-- Performance Inspections -->
         <externalAnnotator language="JAVA" implementationClass="com.mongodb.jbplugin.inspections.performance.MongoDbQueryNotUsingIndex" />
-        <globalInspection shortName="NotUsingIndex" enabledByDefault="true" language="JAVA" implementationClass="com.mongodb.jbplugin.inspections.performance.MongoDbQueryNotUsingIndexGlobalTool" />
+        <globalInspection
+            groupPath="MongoDB"
+            groupBundle="messages.SidePanelBundle"
+            groupKey="inspection.category.performance"
+            bundle="messages.InspectionsAndInlaysBundle"
+            key="query-not-using-index"
+            shortName="NotUsingIndex"
+            enabledByDefault="true"
+            language="JAVA"
+            implementationClass="com.mongodb.jbplugin.inspections.performance.MongoDbQueryNotUsingIndexGlobalTool"
+        />
 
         <externalAnnotator language="JAVA" implementationClass="com.mongodb.jbplugin.inspections.performance.MongoDbQueryNotUsingIndexEffectively" />
-        <globalInspection shortName="NotUsingIndexEffectively" enabledByDefault="true" language="JAVA" implementationClass="com.mongodb.jbplugin.inspections.performance.MongoDbQueryNotUsingIndexEffectivelyGlobalTool" />
+        <globalInspection
+            groupPath="MongoDB"
+            groupBundle="messages.SidePanelBundle"
+            groupKey="inspection.category.performance"
+            bundle="messages.InspectionsAndInlaysBundle"
+            key="query-not-using-index-effectively"
+            shortName="NotUsingIndexEffectively"
+            enabledByDefault="true"
+            language="JAVA"
+            implementationClass="com.mongodb.jbplugin.inspections.performance.MongoDbQueryNotUsingIndexEffectivelyGlobalTool"
+        />
 
         <!-- Correctness Inspections -->
         <externalAnnotator language="JAVA" implementationClass="com.mongodb.jbplugin.inspections.correctness.MongoDbFieldDoesNotExist" />
-        <globalInspection shortName="FieldDoesNotExist" enabledByDefault="true" language="JAVA" implementationClass="com.mongodb.jbplugin.inspections.correctness.MongoDbFieldDoesNotExistGlobalTool" />
+        <globalInspection
+            groupPath="MongoDB"
+            groupBundle="messages.SidePanelBundle"
+            groupKey="inspection.category.correctness"
+            bundle="messages.InspectionsAndInlaysBundle"
+            key="query-referencing-non-existing-fields"
+            shortName="FieldDoesNotExist"
+            enabledByDefault="true"
+            language="JAVA"
+            implementationClass="com.mongodb.jbplugin.inspections.correctness.MongoDbFieldDoesNotExistGlobalTool"
+        />
 
         <externalAnnotator language="JAVA" implementationClass="com.mongodb.jbplugin.inspections.correctness.MongoDbTypeMismatch" />
-        <globalInspection shortName="TypeMismatch" enabledByDefault="true" language="JAVA" implementationClass="com.mongodb.jbplugin.inspections.correctness.MongoDbTypeMismatchGlobalTool" />
+        <globalInspection
+            groupPath="MongoDB"
+            groupBundle="messages.SidePanelBundle"
+            groupKey="inspection.category.correctness"
+            bundle="messages.InspectionsAndInlaysBundle"
+            key="query-using-incompatible-types"
+            shortName="TypeMismatch"
+            enabledByDefault="true"
+            language="JAVA"
+            implementationClass="com.mongodb.jbplugin.inspections.correctness.MongoDbTypeMismatchGlobalTool"
+        />
         <!-- Environment Mismatch Inspections -->
         <externalAnnotator language="JAVA" implementationClass="com.mongodb.jbplugin.inspections.environmentmismatch.MongoDbDatabaseDoesNotExist" />
-        <globalInspection shortName="DatabaseDoesNotExist" enabledByDefault="true" language="JAVA" implementationClass="com.mongodb.jbplugin.inspections.environmentmismatch.MongoDbDatabaseDoesNotExistGlobalTool" />
+        <globalInspection
+            groupPath="MongoDB"
+            groupBundle="messages.SidePanelBundle"
+            groupKey="inspection.category.environment"
+            bundle="messages.InspectionsAndInlaysBundle"
+            key="query-referencing-non-existent-database"
+            shortName="DatabaseDoesNotExist"
+            enabledByDefault="true"
+            language="JAVA"
+            implementationClass="com.mongodb.jbplugin.inspections.environmentmismatch.MongoDbDatabaseDoesNotExistGlobalTool"
+        />
 
         <externalAnnotator language="JAVA" implementationClass="com.mongodb.jbplugin.inspections.environmentmismatch.MongoDbCollectionDoesNotExist" />
-        <globalInspection shortName="CollectionDoesNotExist" enabledByDefault="true" language="JAVA" implementationClass="com.mongodb.jbplugin.inspections.environmentmismatch.MongoDbCollectionDoesNotExistGlobalTool" />
+        <globalInspection
+            groupPath="MongoDB"
+            groupBundle="messages.SidePanelBundle"
+            groupKey="inspection.category.environment"
+            bundle="messages.InspectionsAndInlaysBundle"
+            key="query-referencing-non-existent-collection"
+            shortName="CollectionDoesNotExist"
+            enabledByDefault="true"
+            language="JAVA"
+            implementationClass="com.mongodb.jbplugin.inspections.environmentmismatch.MongoDbCollectionDoesNotExistGlobalTool"
+        />
 
         <externalAnnotator language="JAVA" implementationClass="com.mongodb.jbplugin.inspections.environmentmismatch.MongoDbNoDatabaseInferred" />
-        <globalInspection shortName="NoDatabaseInferred" enabledByDefault="true" language="JAVA" implementationClass="com.mongodb.jbplugin.inspections.environmentmismatch.MongoDbNoDatabaseInferredGlobalTool" />
+        <globalInspection
+            groupPath="MongoDB"
+            groupBundle="messages.SidePanelBundle"
+            groupKey="inspection.category.environment"
+            bundle="messages.InspectionsAndInlaysBundle"
+            key="query-referencing-unknown-database"
+            shortName="NoDatabaseInferred"
+            enabledByDefault="true"
+            language="JAVA"
+            implementationClass="com.mongodb.jbplugin.inspections.environmentmismatch.MongoDbNoDatabaseInferredGlobalTool"
+        />
 
         <externalAnnotator language="JAVA" implementationClass="com.mongodb.jbplugin.inspections.environmentmismatch.MongoDbNoCollectionSpecified" />
-        <globalInspection shortName="NoCollectionSpecified" enabledByDefault="true" language="JAVA" implementationClass="com.mongodb.jbplugin.inspections.environmentmismatch.MongoDbNoCollectionSpecifiedGlobalTool" />
+        <globalInspection
+            groupPath="MongoDB"
+            groupBundle="messages.SidePanelBundle"
+            groupKey="inspection.category.environment"
+            bundle="messages.InspectionsAndInlaysBundle"
+            key="query-referencing-unspecified-collection"
+            shortName="NoCollectionSpecified"
+            enabledByDefault="true"
+            language="JAVA"
+            implementationClass="com.mongodb.jbplugin.inspections.environmentmismatch.MongoDbNoCollectionSpecifiedGlobalTool"
+        />
         <!-- :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: -->
         <codeInsight.lineMarkerProvider
                 language="JAVA"

@@ -7,6 +7,8 @@ import com.mongodb.jbplugin.dialects.javadriver.glossary.fuzzyResolveMethod
 import com.mongodb.jbplugin.dialects.javadriver.glossary.resolveToMethodCallExpression
 import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.StageParser
 import com.mongodb.jbplugin.mql.Node
+import com.mongodb.jbplugin.mql.components.Name
+import com.mongodb.jbplugin.mql.components.Named
 
 /**
  * Parser for parsing supported patterns of writing an aggregation pipeline.
@@ -19,7 +21,8 @@ import com.mongodb.jbplugin.mql.Node
  */
 class AggregationStagesParser(private val stageParsers: List<StageParser>) {
     private fun isStageCall(stageCallMethod: PsiMethod): Boolean {
-        return stageParsers.any { it.canParse(stageCallMethod) }
+        return stageParsers.any { it.canParse(stageCallMethod) } ||
+            stageCallMethod.containingClass?.qualifiedName == AGGREGATE_FQN
     }
 
     private fun parseAggregationStages(
@@ -40,7 +43,9 @@ class AggregationStagesParser(private val stageParsers: List<StageParser>) {
             val parser = stageParsers.find { it.canParse(stageCallMethod) }
             parser?.parse(stageCall) ?: Node(
                 source = stageCall,
-                components = emptyList()
+                components = listOf(
+                    Named(Name.UNKNOWN)
+                )
             )
         }
     }

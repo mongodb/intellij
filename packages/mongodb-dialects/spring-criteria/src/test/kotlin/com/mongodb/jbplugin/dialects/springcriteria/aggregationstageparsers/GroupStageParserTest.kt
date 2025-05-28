@@ -22,6 +22,7 @@ import com.mongodb.jbplugin.mql.components.HasSourceDialect
 import com.mongodb.jbplugin.mql.components.HasValueReference
 import com.mongodb.jbplugin.mql.components.IsCommand
 import com.mongodb.jbplugin.mql.components.Name
+import com.mongodb.jbplugin.mql.components.Named
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 
@@ -1131,6 +1132,55 @@ class Repository {
                 ),
             )
         )
+    }
+
+    @ParsingTest(
+        fileName = "Book.java",
+        """
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.AddFieldsOperation;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.GroupOperation;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.util.List;
+
+@Document
+record Book() {}
+
+class Repository {
+    private final MongoTemplate template;
+    
+    public Repository(MongoTemplate template) {
+        this.template = template;
+    }
+    
+    public AggregationResults<Book> allReleasedBooks() {
+        return template.aggregate(
+            Aggregation.newAggregation(
+                Aggregation.group().accumulate(),
+                Aggregation.group().count(),
+                Aggregation.group().stdDevPop(),
+                Aggregation.group().stdDevSamp()
+            ),
+            Book.class,
+            Book.class
+        );
+    }
+}
+        """
+    )
+    fun `should parse unidentified GroupOperations as UNKNOWN operations`(psiFile: PsiFile) {
+        val query = psiFile.getQueryAtMethod("Repository", "allReleasedBooks")
+        val parsed = SpringCriteriaDialectParser.parse(query)
+        val groupStageNodes = parsed.component<HasAggregation<PsiElement>>()!!.children
+        assertEquals(4, groupStageNodes.size)
+        for (node in groupStageNodes) {
+            val accumulatedFields = node.component<HasAccumulatedFields<PsiElement>>()!!.children
+            assertEquals(1, accumulatedFields.size)
+            val fieldName = accumulatedFields.first().component<Named>()
+            assertEquals(Name.UNKNOWN, fieldName!!.name)
+        }
     }
 
     companion object {

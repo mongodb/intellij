@@ -18,7 +18,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.timeout
 import org.mockito.kotlin.verify
 
-@IntegrationTest
+@IntegrationTest(true)
 internal class InspectionStatusChangedProbeTest {
     @Test
     fun `should send a InspectionStatusChangeEvent event when found for the first time`(

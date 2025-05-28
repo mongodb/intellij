@@ -386,6 +386,39 @@ public final class Repository {
         this.collection = collection;
     }
 
+    public FindIterable<Document> filter1(Bson schema) {
+        return this.collection.find(Filters.jsonSchema(schema));
+    }
+}
+        """,
+    )
+    fun `parses unidentified filters as UNKNOWN`(psiFile: PsiFile) {
+        val query = psiFile.getQueryAtMethod("Repository", "filter1")
+        val parsedQuery = JavaDriverDialect.parser.parse(query)
+
+        val hasFilter = parsedQuery.component<HasFilter<Unit?>>()!!
+
+        val eq = hasFilter.children[0]
+        println("parsedQuery=$parsedQuery isSupported = ${parsedQuery.isSupportedBlocking()}")
+        assertEquals(Name.UNKNOWN, eq.component<Named>()!!.name)
+    }
+
+    @ParsingTest(
+        fileName = "Repository.java",
+        value = """
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Filters;
+import org.bson.Document;
+import org.bson.types.ObjectId;
+import com.mongodb.client.FindIterable;
+
+public final class Repository {
+    private final MongoCollection<Document> collection;
+
+    public Repository(MongoCollection<Document> collection) {
+        this.collection = collection;
+    }
+
     public Document findBookById(ObjectId id) {
         return this.collection.find(Filters.eq("_id", id)).first();
     }
@@ -1799,6 +1832,63 @@ public class Repository {
     public Repository(MongoClient client) {
         this.client = client;
     }
+
+    public FindIterable<Document> findReleasedBooks() {
+        return findAllByReleaseFlag(true);
+    }
+    
+    private Document findAllByReleaseFlag(boolean released) {
+        try (var session = client.startSession()) {
+            return client.getDatabase("myDatabase")
+                    .getCollection("myCollection")
+                    .updateOne(eq("released", released), addEachToSet("field", "value"));  
+        }
+        
+    }
+}
+        """,
+    )
+    fun `supports parsing unidentified update method calls as UNKNOWN`(psiFile: PsiFile) {
+        val query = psiFile.getQueryAtMethod("Repository", "findReleasedBooks")
+        val parsedQuery = JavaDriverDialect.parser.parse(query)
+
+        val hasFilter =
+            parsedQuery.component<HasFilter<Unit?>>()!!
+        val hasUpdates =
+            parsedQuery.component<HasUpdates<Unit?>>()!!
+
+        val eq = hasFilter.children[0]
+        assertEquals(Name.EQ, eq.component<Named>()!!.name)
+        assertEquals(
+            "released",
+            (eq.component<HasFieldReference<Unit?>>()!!.reference as HasFieldReference.FromSchema).fieldName,
+        )
+        assertEquals(
+            BsonBoolean,
+            (eq.component<HasValueReference<PsiElement>>()!!.reference as HasValueReference.Runtime).type,
+        )
+
+        // It is unknown for now but it might change when we start supporting that update
+        // operator. In that case the test should be updated as well.
+        val addEachToSet = hasUpdates.children[0]
+        assertEquals(Name.UNKNOWN, addEachToSet.component<Named>()!!.name)
+    }
+
+    @ParsingTest(
+        fileName = "Repository.java",
+        value = """
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoClient;
+import org.bson.Document;
+import static com.mongodb.client.model.Filters.*;
+import static com.mongodb.client.model.Updates.*;
+
+public class Repository {
+    private final MongoClient client;
+
+    public Repository(MongoClient client) {
+        this.client = client;
+    }
     
     private FindIterable<Document> findBooksByGenre(String[] validGenres) {
         return client.getDatabase("myDatabase")
@@ -2251,11 +2341,140 @@ public final class Repository {
 }
         """,
     )
-    fun `correctly parses a query with iterator() as FIND_MANY command`(psiFile: PsiFile) {
+    fun `correctly parses a find query with iterator() as FIND_MANY command`(psiFile: PsiFile) {
         val query = psiFile.getQueryAtMethod("Repository", "findBookById")
-        val parsedQuery = JavaDriverDialect.parser.parse(query)
+        // Although the entire query ends with .iterator, that is not our actual query candidate
+        // for parsing. The actual query is right before .iterator. IntelliJ triggers a parse call
+        // for that expression as well, so we are simulating the same here by manually grabbing the
+        // correct expression.
+        val actualQuery = PsiTreeUtil
+            .findChildrenOfType(query, PsiMethodCallExpression::class.java)
+            .first { it.text.endsWith("id))") }
+        val parsedQuery = JavaDriverDialect.parser.parse(actualQuery)
         val command = parsedQuery.component<IsCommand>()
         assertEquals(IsCommand.CommandType.FIND_MANY, command?.type)
+    }
+
+    @ParsingTest(
+        fileName = "Repository.java",
+        value = """
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
+import org.bson.types.ObjectId;
+import java.util.ArrayList;
+import static com.mongodb.client.model.Filters.*;
+public final class Repository {
+    private final MongoClient client;
+    
+    public Repository(MongoClient client) {
+        this.client = client;
+    }
+    
+    public MongoCursor<Document> findBookById(ObjectId id) {
+        return getCollection().find(eq("_id", id)).cursor();
+    }
+    
+    private MongoCollection<Document> getCollection() {
+        return client.getDatabase("simple").getCollection("books");
+    }
+}
+        """,
+    )
+    fun `correctly parses a find query with cursor() as FIND_MANY command`(psiFile: PsiFile) {
+        val query = psiFile.getQueryAtMethod("Repository", "findBookById")
+        // Although the entire query ends with .cursor, that is not our actual query candidate
+        // for parsing. The actual query is right before .cursor. IntelliJ triggers a parse call
+        // for that expression as well, so we are simulating the same here by manually grabbing the
+        // correct expression.
+        val actualQuery = PsiTreeUtil
+            .findChildrenOfType(query, PsiMethodCallExpression::class.java)
+            .first { it.text.endsWith("id))") }
+        val parsedQuery = JavaDriverDialect.parser.parse(actualQuery)
+        val command = parsedQuery.component<IsCommand>()
+        assertEquals(IsCommand.CommandType.FIND_MANY, command?.type)
+    }
+
+    @ParsingTest(
+        fileName = "Repository.java",
+        value = """
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
+import org.bson.types.ObjectId;
+import java.util.ArrayList;
+import java.util.List;
+import static com.mongodb.client.model.Filters.*;
+public final class Repository {
+    private final MongoClient client;
+    
+    public Repository(MongoClient client) {
+        this.client = client;
+    }
+    
+    public MongoCursor<Document> findBookById(ObjectId id) {
+        return getCollection().aggregate(List.of()).iterator();
+    }
+    
+    private MongoCollection<Document> getCollection() {
+        return client.getDatabase("simple").getCollection("books");
+    }
+}
+        """,
+    )
+    fun `correctly parses an aggregate with iterator() as AGGREGATE command`(psiFile: PsiFile) {
+        val query = psiFile.getQueryAtMethod("Repository", "findBookById")
+        // Although the entire agg ends with .iterator, that is not our actual query candidate
+        // for parsing. The actual query is right before .iterator. IntelliJ triggers a parse call
+        // for that expression as well, so we are simulating the same here by manually grabbing the
+        // correct expression.
+        val actualQuery = PsiTreeUtil
+            .findChildrenOfType(query, PsiMethodCallExpression::class.java)
+            .first { it.text.endsWith("of())") }
+        val parsedQuery = JavaDriverDialect.parser.parse(actualQuery)
+        val command = parsedQuery.component<IsCommand>()
+        assertEquals(IsCommand.CommandType.AGGREGATE, command?.type)
+    }
+
+    @ParsingTest(
+        fileName = "Repository.java",
+        value = """
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
+import org.bson.types.ObjectId;
+import java.util.ArrayList;
+import java.util.List;
+import static com.mongodb.client.model.Filters.*;
+public final class Repository {
+    private final MongoClient client;
+    
+    public Repository(MongoClient client) {
+        this.client = client;
+    }
+    
+    public MongoCursor<Document> findBookById(ObjectId id) {
+        return getCollection().aggregate(List.of()).cursor();
+    }
+    
+    private MongoCollection<Document> getCollection() {
+        return client.getDatabase("simple").getCollection("books");
+    }
+}
+        """,
+    )
+    fun `correctly parses an aggregate with cursor() as AGGREGATE command`(psiFile: PsiFile) {
+        val query = psiFile.getQueryAtMethod("Repository", "findBookById")
+        // Although the entire agg ends with .cursor, that is not our actual query candidate
+        // for parsing. The actual query is right before .cursor. IntelliJ triggers a parse call
+        // for that expression as well, so we are simulating the same here by manually grabbing the
+        // correct expression.
+        val actualQuery = PsiTreeUtil
+            .findChildrenOfType(query, PsiMethodCallExpression::class.java)
+            .first { it.text.endsWith("of())") }
+        val parsedQuery = JavaDriverDialect.parser.parse(actualQuery)
+        val command = parsedQuery.component<IsCommand>()
+        assertEquals(IsCommand.CommandType.AGGREGATE, command?.type)
     }
 
     @ParsingTest(

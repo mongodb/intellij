@@ -52,13 +52,19 @@ enum class Name(val canonical: String, val isSupported: Boolean) : HasQueryRole 
     COMBINE("combine", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
-    ELEM_MATCH("elementMatch", isSupported = false) {
+    ELEM_MATCH("elemMatch", isSupported = false) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
+    },
+    EMPTY("empty", isSupported = false) {
+        override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.EQUALITY
     },
     EQ("eq", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.EQUALITY
     },
     EXISTS("exists", isSupported = true) {
+        override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
+    },
+    EXPR("expr", isSupported = false) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
     GEO_INTERSECTS("geoIntersects", isSupported = false) {
@@ -91,10 +97,21 @@ enum class Name(val canonical: String, val isSupported: Boolean) : HasQueryRole 
     INC("inc", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
+
+    // We purposely have it commented out to test for the negative case when there is a new Filter,
+    // and we did not update this table. In such a case, the parser should just identify the filter
+    // as UNKNOWN. If we decide to add support for this operation, then feel free to uncomment this
+    // and also update / remove the test case.
+    // JSON_SCHEMA("jsonSchema", isSupported = false) {
+    //     override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
+    // },
     LT("lt", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.RANGE
     },
     LTE("lte", isSupported = true) {
+        override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.RANGE
+    },
+    MOD("mod", isSupported = false) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.RANGE
     },
     NE("ne", isSupported = true) {
@@ -134,6 +151,9 @@ enum class Name(val canonical: String, val isSupported: Boolean) : HasQueryRole 
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.RANGE
     },
     TYPE("type", isSupported = true) {
+        override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
+    },
+    WHERE("where", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
     UNSET("unset", isSupported = true) {

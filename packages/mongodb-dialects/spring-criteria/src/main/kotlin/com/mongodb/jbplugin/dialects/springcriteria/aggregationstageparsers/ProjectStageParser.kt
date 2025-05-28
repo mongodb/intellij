@@ -8,7 +8,9 @@ import com.mongodb.jbplugin.dialects.javadriver.glossary.fuzzyResolveMethod
 import com.mongodb.jbplugin.dialects.javadriver.glossary.resolveFieldNameFromExpression
 import com.mongodb.jbplugin.dialects.javadriver.glossary.resolveToMethodCallExpression
 import com.mongodb.jbplugin.dialects.springcriteria.AGGREGATE_FQN
+import com.mongodb.jbplugin.dialects.springcriteria.ARRAY_PROJECTION_OPERATION_BUILDER_FQN
 import com.mongodb.jbplugin.dialects.springcriteria.FIELDS_FQN
+import com.mongodb.jbplugin.dialects.springcriteria.PROJECTION_OPERATION_BUILDER_FQN
 import com.mongodb.jbplugin.dialects.springcriteria.PROJECTION_OPERATION_FQN
 import com.mongodb.jbplugin.mql.BsonInt32
 import com.mongodb.jbplugin.mql.Node
@@ -145,12 +147,15 @@ class ProjectStageParser : StageParser {
 
     override fun canParse(stageCallMethod: PsiMethod): Boolean {
         val methodFqn = stageCallMethod.containingClass?.qualifiedName ?: return false
+        val isProjectStageCall = methodFqn == AGGREGATE_FQN && stageCallMethod.name == "project"
         // Project stage call might contain chained operations which might result
         // in a method call from `PROJECTION_OPERATION_FQN` so we account for both
-        return listOf(AGGREGATE_FQN, PROJECTION_OPERATION_FQN).contains(methodFqn) &&
-            // we consider the root call project and any chained calls which we currently
-            // support
-            listOf("project", "andInclude", "andExclude").contains(stageCallMethod.name)
+        return isProjectStageCall ||
+            listOf(
+                PROJECTION_OPERATION_FQN,
+                PROJECTION_OPERATION_BUILDER_FQN,
+                ARRAY_PROJECTION_OPERATION_BUILDER_FQN,
+            ).contains(methodFqn)
     }
 
     override fun parse(stageCall: PsiMethodCallExpression): Node<PsiElement> {
@@ -162,7 +167,12 @@ class ProjectStageParser : StageParser {
                     "andInclude" -> parseAndIncludeCall(methodCall)
                     "andExclude" -> parseAndExcludeCall(methodCall)
                     "project" -> parseProjectCall(methodCall)
-                    else -> emptyList()
+                    else -> listOf(
+                        Node(
+                            source = methodCall,
+                            components = listOf(Named(Name.UNKNOWN))
+                        )
+                    )
                 }
             }
         )

@@ -37,21 +37,14 @@ class AddFieldsStageParser : StageParser {
     }
 
     override fun canParse(stageCallMethod: PsiMethod): Boolean {
-        return listOf(
-            AGGREGATE_FQN,
-            ADD_FIELDS_OPERATION_FQN,
-            ADD_FIELDS_OPERATION_BUILDER_FQN,
-            VALUE_APPENDER_FQN
-        ).contains(stageCallMethod.containingClass?.qualifiedName) &&
+        val methodFqn = stageCallMethod.containingClass?.qualifiedName
+        val isAddFieldsStageCall = methodFqn == AGGREGATE_FQN && stageCallMethod.name == "addFields"
+        return isAddFieldsStageCall ||
             listOf(
-                "addFields",
-                "addFieldWithValue",
-                "addFieldWithValueOf",
-                "addField",
-                "withValue",
-                "withValueOf",
-                "build"
-            ).contains(stageCallMethod.name)
+                ADD_FIELDS_OPERATION_FQN,
+                ADD_FIELDS_OPERATION_BUILDER_FQN,
+                VALUE_APPENDER_FQN
+            ).contains(methodFqn)
     }
 
     override fun parse(stageCall: PsiMethodCallExpression): Node<PsiElement> {
@@ -84,7 +77,10 @@ class AddFieldsStageParser : StageParser {
                         },
                         withValueCall = methodCall
                     )
-                    else -> null
+                    else -> Node(
+                        source = methodCall,
+                        components = listOf(Named(Name.UNKNOWN))
+                    )
                 }
             }
         )

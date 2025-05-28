@@ -835,4 +835,71 @@ class Repository {
             }
         }
     }
+
+    @ParsingTest(
+        fileName = "Book.java",
+        """
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.Fields;import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.util.List;
+
+@Document
+record Book() {}
+
+class Repository {
+    private final MongoTemplate template;
+    
+    public Repository(MongoTemplate template) {
+        this.template = template;
+    }
+    
+    private String fieldCFromMethodCall() {
+        return "fieldC";
+    }
+    
+    public AggregationResults<Book> allReleasedBooks() {
+        String fieldBFromVariable = "fieldB";
+        return template.aggregate(
+            Aggregation.newAggregation(
+                Aggregation.project()
+                    .and("something").as("something2")
+                    .andExpression().as("something3")
+                    .andArrayOf().as()
+            ),
+            Book.class,
+            Book.class
+        );
+    }
+}
+        """
+    )
+    fun `should parse unknown methods as UNKNOWN component`(psiFile: PsiFile) {
+        val query = psiFile.getQueryAtMethod("Repository", "allReleasedBooks")
+        val parsed = SpringCriteriaDialectParser.parse(query)
+        println("parsed = $parsed")
+        parsed.assert(IsCommand.CommandType.AGGREGATE) {
+            component<HasSourceDialect> {
+                assertEquals(HasSourceDialect.DialectName.SPRING_CRITERIA, name)
+            }
+
+            collection<HasCollectionReference.OnlyCollection<PsiElement>> {
+                assertEquals("book", collection)
+            }
+
+            stageN(0, Name.PROJECT) {
+                component<HasProjections<PsiElement>> {
+                    assertEquals(6, children.size)
+                }
+
+                projectionN(0, Name.UNKNOWN)
+                projectionN(1, Name.UNKNOWN)
+                projectionN(2, Name.UNKNOWN)
+                projectionN(3, Name.UNKNOWN)
+                projectionN(4, Name.UNKNOWN)
+                projectionN(5, Name.UNKNOWN)
+            }
+        }
+    }
 }
