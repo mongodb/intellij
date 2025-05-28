@@ -76,9 +76,9 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
         methodCallToCommand((source as? PsiMethodCallExpression)).type !=
             IsCommand.CommandType.UNKNOWN
 
-    override fun attachment(source: PsiElement): PsiElement = source.findTopParentBy {
+    override fun attachment(source: PsiElement): PsiElement? = source.findTopParentBy {
         isCandidateForQuery(it)
-    }!!
+    }
 
     override fun parseCollectionReference(source: PsiElement): HasCollectionReference<PsiElement> {
         return NamespaceExtractor.extractNamespace(source)

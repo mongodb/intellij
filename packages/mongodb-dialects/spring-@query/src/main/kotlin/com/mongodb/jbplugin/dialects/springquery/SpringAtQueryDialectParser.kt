@@ -41,8 +41,8 @@ object SpringAtQueryDialectParser : DialectParser<PsiElement> {
         return findParentMethodWithQueryAnnotation(source) != null
     }
 
-    override fun attachment(source: PsiElement): PsiElement {
-        return findParentMethodWithQueryAnnotation(source)!!
+    override fun attachment(source: PsiElement): PsiElement? {
+        return findParentMethodWithQueryAnnotation(source)
     }
 
     override fun parseCollectionReference(source: PsiElement): HasCollectionReference<PsiElement> {

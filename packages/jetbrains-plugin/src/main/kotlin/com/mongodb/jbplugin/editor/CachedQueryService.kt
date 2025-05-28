@@ -66,7 +66,7 @@ class CachedQueryService(
 
         val attachment = dialect.parser.attachment(expression)
         val psiManager = PsiManager.getInstance(expression.project)
-        if (!psiManager.areElementsEquivalent(expression, attachment)) {
+        if (attachment == null || !psiManager.areElementsEquivalent(expression, attachment)) {
             return null
         }
 
