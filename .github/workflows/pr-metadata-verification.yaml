@@ -21,6 +21,12 @@ jobs:
     name: "Pull Request Title Check"
     runs-on: ubuntu-latest
     steps:
+      - name: Maximize Build Space
+        uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # 1.3.1
+        with:
+          tool-cache: false
+          large-packages: false
+
       - name: Enforce conventional commit style
         uses: realm/ci-actions/title-checker@d6cc8f067474759d38e6d24e272027b4c88bc0a9
         with:
@@ -35,10 +41,17 @@ jobs:
           regex: "[A-Z]{4,10}-[0-9]{1,5}$"
           error-hint: Invalid PR title. Make sure it ends with a JIRA ticket - i.e. VSCODE-1234 or add the no-title-validation label
           ignore-labels: no-title-validation
+
   spec-check:
     name: "MQL Specification Check"
     runs-on: ubuntu-latest
     steps:
+      - name: Maximize Build Space
+        uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # 1.3.1
+        with:
+          tool-cache: false
+          large-packages: false
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -72,10 +85,17 @@ jobs:
         if: github.ref != 'refs/heads/main' && env.SKIP != 'true'
         run: |
           ./gradlew --quiet --console=plain checkSpecUpdates
+
   catalog-check:
     name: "Catalog Updates Check"
     runs-on: ubuntu-latest
     steps:
+      - name: Maximize Build Space
+        uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # 1.3.1
+        with:
+          tool-cache: false
+          large-packages: false
+
       - name: Checkout
         uses: actions/checkout@v4
 
