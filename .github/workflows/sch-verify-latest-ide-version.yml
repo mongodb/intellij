@@ -7,9 +7,6 @@ env:
   BUILD_SEGMENT_API_KEY: ""
 
 on:
-  pull_request:
-    branches:
-      - main
   schedule:
     - cron: "00 23 * * *"
 
@@ -43,7 +40,7 @@ jobs:
       - name: Run IntelliJ Verifier
         id: intellij-verifier
         run: |
-          VERIFY_OUTPUT="Test Error"
+          VERIFY_OUTPUT=$(./gradlew --quiet --console=plain ":packages:jetbrains-plugin:verifyPlugin")
           echo "verify<<EOF" >> $GITHUB_OUTPUT
           echo "$VERIFY_OUTPUT" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
@@ -51,7 +48,7 @@ jobs:
       - name: Check Consecutive Failures
         id: consecutive-failures
         run: |
-          CONSECUTIVE_ERRORS="InitialFailure"
+          CONSECUTIVE_ERRORS=$(./gradlew verifyNextVersionCompatibility --quiet --console=plain)
           echo "consecutive=${CONSECUTIVE_ERRORS}" >> $GITHUB_OUTPUT
 
       - name: Print Outputs
