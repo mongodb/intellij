@@ -76,17 +76,13 @@ jobs:
         if: ${{ steps.consecutive-failures.outputs.consecutive == 'InitialFailure' || steps.consecutive-failures.outputs.consecutive == 'RepeatedFailure' }}
         with:
           payload: |
-            {
-              "text": "Found a compatibility issue with the latest version of IntelliJ IDEA.",
-              "blocks: [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "JIRA Issue: ${{ steps.register-jira-issue.outputs.ticket }}"
-                  }
-                }
-              ]
-            }
+            { "text": "Found a compatibility issue with the latest version of IntelliJ IDEA.",
+              "blocks": [{
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "JIRA Issue: ${{ steps.register-jira-issue.outputs.ticket }}"
+                }}
+            ]}
           webhook: ${{ secrets.INTELLIJ_DEVEL_WEBHOOK_URL }}
           webhook-type: incoming-webhook

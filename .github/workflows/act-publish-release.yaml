@@ -70,8 +70,6 @@ jobs:
         uses: slackapi/slack-github-action@b0fa283ad8fea605de13dc3f449259339835fc52 # 2.1.0
         with:
           payload: |
-            {
-              "text": "Released version ${{ steps.publish.outputs.version }} in GA.",
-            }
+            { "text": "Released version ${{ steps.publish.outputs.version }} in GA." }
           webhook: ${{ secrets.INTELLIJ_DEVEL_WEBHOOK_URL }}
           webhook-type: incoming-webhook

@@ -158,8 +158,6 @@ jobs:
         if: ${{ github.event.inputs.dryRun != 'true' && success() }}
         with:
           payload: |
-            {
-              "text": "Released version ${{ steps.patch-changelog.outputs.version }} in the Beta Channel.",
-            }
+            { "text": "Released version ${{ steps.patch-changelog.outputs.version }} in the Beta Channel." }
           webhook: ${{ secrets.INTELLIJ_DEVEL_WEBHOOK_URL }}
           webhook-type: incoming-webhook
