@@ -45,6 +45,38 @@ class CollectionSchemaTest {
     }
 
     @Test
+    fun `should be able to iterate over an object`() {
+        val schema =
+            CollectionSchema(
+                Namespace("a", "b"),
+                BsonObject(
+                    mapOf(
+                        "myField" to
+                            BsonObject(
+                                mapOf(
+                                    "inner" to
+                                        BsonAnyOf(
+                                            BsonString,
+                                            BsonObject(
+                                                mapOf("otherField" to BsonDouble),
+                                            )
+                                        ),
+                                ),
+                            ),
+                    ),
+                ),
+            )
+
+        assertEquals(
+            BsonAnyOf(
+                BsonNull,
+                BsonDouble,
+            ),
+            schema.typeOf("myField.inner.otherField"),
+        )
+    }
+
+    @Test
     fun `should be able to iterate over an array with objects`() {
         val schema =
             CollectionSchema(
@@ -70,6 +102,32 @@ class CollectionSchemaTest {
                 BsonDouble,
             ),
             schema.typeOf("myField.0.otherField"),
+        )
+    }
+
+    @Test
+    fun `returns all elements for autocompletion`() {
+        val schema =
+            CollectionSchema(
+                Namespace("a", "b"),
+                BsonObject(
+                    mapOf(
+                        "myField" to
+                            BsonArray(
+                                BsonAnyOf(
+                                    BsonString,
+                                    BsonDouble,
+                                ),
+                            ),
+                    ),
+                ),
+            )
+
+        val acElements = schema.allFieldNamesQualified()
+        assertEquals(1, acElements.size)
+        assertEquals(
+            "myField" to BsonArray(BsonAnyOf(BsonString, BsonDouble)),
+            acElements.first()
         )
     }
 }
