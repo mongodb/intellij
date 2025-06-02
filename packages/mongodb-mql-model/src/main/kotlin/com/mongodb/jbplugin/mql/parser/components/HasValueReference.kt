@@ -31,8 +31,3 @@ fun <S> extractValueReferencesRelevantForIndexing() = first(
     runtimeValueReference<S>().map { ParsedValueReference(it.source, it.type, null) },
     inferredValueReference<S>().map { ParsedValueReference(it.source, it.type, it.value) },
 )
-
-fun <S> extractValueReference() = first(
-    constantValueReference<S>().map { ParsedValueReference(it.source, it.type, it.value) },
-    runtimeValueReference<S>().map { ParsedValueReference(it.source, it.type, null) }
-)

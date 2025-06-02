@@ -106,13 +106,6 @@ fun <I, E, O, EE, OO> Parser<I, E, O>.flatMap(
 }
 
 /**
- * Returns a new parser that maps the output to a new type.
- */
-inline fun <reified OO, I, E, O> Parser<I, E, O>.mapAs(): Parser<I, E, OO> {
-    return this as Parser<I, E, OO>
-}
-
-/**
  * Returns a parser that maps the error of the previous parser.
  */
 fun <I, E, O> Parser<I, E, O>.recoverError(mapFn: (E) -> O): Parser<I, E, O> {

@@ -7,8 +7,7 @@ package com.mongodb.jbplugin.codeActions.impl
 
 import com.intellij.codeInsight.daemon.LineMarkerInfo
 import com.intellij.database.dataSource.LocalDataSource
-import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.EDT
+import com.intellij.openapi.application.invokeLater
 import com.intellij.openapi.editor.markup.GutterIconRenderer
 import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
@@ -22,6 +21,7 @@ import com.mongodb.jbplugin.editor.DatagripConsoleEditor
 import com.mongodb.jbplugin.editor.appendText
 import com.mongodb.jbplugin.i18n.CodeActionsMessages
 import com.mongodb.jbplugin.i18n.Icons
+import com.mongodb.jbplugin.meta.invokeInEdt
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.observability.TelemetryEvent
@@ -30,7 +30,6 @@ import com.mongodb.jbplugin.observability.probe.QueryRunProbe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /**
  * Bridge class that connects our query action with IntelliJ.
@@ -65,19 +64,12 @@ internal object RunQueryCodeAction : MongoDbCodeAction {
                     return@LineMarkerInfo
                 }
 
-                val queryContext = RunQueryModal(
-                    query,
-                    dataSource,
-                    coroutineScope
-                ).askForQueryContext()
+                val modal = RunQueryModal(query, dataSource, coroutineScope)
+                val queryContext = modal.askForQueryContext() ?: return@LineMarkerInfo
 
-                if (queryContext != null) {
-                    coroutineScope.launch(Dispatchers.IO) {
-                        val outputQuery = MongoshDialect.formatter.formatQuery(query, queryContext)
-                        withContext(Dispatchers.EDT) {
-                            openDataGripConsole(query, dataSource, outputQuery.query)
-                        }
-                    }
+                coroutineScope.launch(Dispatchers.IO) {
+                    val outputQuery = MongoshDialect.formatter.formatQuery(query, queryContext)
+                    invokeInEdt { openDataGripConsole(query, dataSource, outputQuery.query) }
                 }
             },
             GutterIconRenderer.Alignment.RIGHT,
@@ -104,7 +96,7 @@ internal object RunQueryCodeAction : MongoDbCodeAction {
         newDataSource: LocalDataSource,
         formattedQuery: String
     ) {
-        ApplicationManager.getApplication().invokeLater {
+        invokeLater {
             val editor = DatagripConsoleEditor.openConsoleForDataSource(
                 query.source.project,
                 newDataSource
