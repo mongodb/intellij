@@ -81,7 +81,12 @@ jobs:
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "JIRA Issue: ${{ steps.register-jira-issue.outputs.ticket }}"
+                  "text": "# Found a compatibility issue with the latest version of IntelliJ IDEA :intellij:"
+                }, {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": ":sound_the_alarm::intellij: JIRA Issue: ${{ steps.register-jira-issue.outputs.ticket }} :sound_the_alarm:"
                 }}
             ]}
           webhook: ${{ secrets.INTELLIJ_DEVEL_WEBHOOK_URL }}
