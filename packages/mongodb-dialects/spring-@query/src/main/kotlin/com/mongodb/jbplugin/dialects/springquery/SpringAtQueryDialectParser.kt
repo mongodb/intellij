@@ -151,8 +151,8 @@ object SpringAtQueryDialectParser : DialectParser<PsiElement> {
     }
 
     private fun resolveToFieldNameReference(fieldName: PsiElement): HasFieldReference<PsiElement> {
-        return HasFieldReference(
-            HasFieldReference.FromSchema(fieldName, fieldName.text)
+        return HasFieldReference( // the field name can be wrapped in single quotes and double quotes, so remove them
+            HasFieldReference.FromSchema(fieldName, fieldName.text.trim('\'', '"'))
         )
     }
 
