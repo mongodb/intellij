@@ -120,8 +120,12 @@ jobs:
           ./gradlew --quiet --console=plain ":packages:jetbrains-plugin:publishPlugin"
 
       - name: Patch Changelog
+        id: patch-changelog
         run: |
           ./gradlew --quiet --console=plain ":packages:jetbrains-plugin:patchChangelog"
+          VERSION=$(./gradlew getVersion --quiet --console=plain)
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Version: ${VERSION}"
 
       - name: Create Draft Release
         shell: bash
@@ -148,3 +152,14 @@ jobs:
             --target "${GIT_REF}" \
             --draft \
             packages/jetbrains-plugin/build/distributions/jetbrains-plugin.zip
+
+      - name: "Notify Draft Release"
+        uses: slackapi/slack-github-action@b0fa283ad8fea605de13dc3f449259339835fc52 # 2.1.0
+        if: ${{ github.event.inputs.dryRun != 'true' && success() }}
+        with:
+          payload: |
+            {
+              "text": "Released version ${{ steps.patch-changelog.outputs.version }} in the Beta Channel.",
+            }
+          webhook: ${{ secrets.INTELLIJ_DEVEL_WEBHOOK_URL }}
+          webhook-type: incoming-webhook

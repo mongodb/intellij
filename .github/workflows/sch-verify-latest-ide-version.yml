@@ -7,9 +7,6 @@ env:
   BUILD_SEGMENT_API_KEY: ""
 
 on:
-  pull_request:
-    branches:
-      - main
   schedule:
     - cron: "00 23 * * *"
 
