@@ -29,7 +29,9 @@ data class CollectionSchema(
         root: BsonType,
     ): List<Pair<String, BsonType>> =
         when (root) {
-            is BsonArray -> recursivelyAllFieldNamesQualified(currentPath + "0", root.schema)
+            is BsonArray -> listOf(
+                currentPath.joinToString(".") to recursivelyGetType(currentPath, root)
+            )
             is BsonObject -> root.schema.flatMap {
                 recursivelyAllFieldNamesQualified(
                     currentPath + it.key,
@@ -64,15 +66,15 @@ data class CollectionSchema(
         val listOfOptions = mutableListOf<BsonType>()
 
         when (root) {
-            is BsonArray ->
+            is BsonArray -> {
                 if (isCurrentNumber) {
                     val childType =
                         recursivelyGetType(jsonPath.subList(1, jsonPath.size), root.schema)
                     listOfOptions.add(childType)
                 } else {
-                    listOfOptions.add(BsonNull)
+                    listOfOptions.add(root)
                 }
-            is BsonObject -> {
+            } is BsonObject -> {
                 val objectType = root.schema[jsonPath[0]]
                 listOfOptions.add(
                     objectType?.let {
@@ -80,10 +82,11 @@ data class CollectionSchema(
                     } ?: BsonNull,
                 )
             }
-            is BsonAnyOf ->
+            is BsonAnyOf -> {
                 listOfOptions.addAll(
                     root.types.map { recursivelyGetType(jsonPath, it) },
                 )
+            }
             else -> listOfOptions.add(BsonNull)
         }
 
