@@ -1,4 +1,10 @@
 name: CodeQL
+
+env:
+  ORG_GRADLE_CACHING: false
+  ORG_GRADLE_PARALLEL: false
+  ORG_GRADLE_DAEMON: false
+
 on:
   push:
     branches:

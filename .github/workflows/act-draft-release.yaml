@@ -1,5 +1,10 @@
 name: Draft release
 
+env:
+  ORG_GRADLE_CACHING: false
+  ORG_GRADLE_PARALLEL: false
+  ORG_GRADLE_DAEMON: false
+
 on:
   workflow_dispatch:
     inputs:
@@ -90,17 +95,17 @@ jobs:
           fi
       - name: Verify Checks in main
         run: |
-          ./gradlew "mainStatus"
+          ./gradlew --quiet --console=plain "mainStatus"
 
       - name: Patch Plugin XML
         run: |
-          ./gradlew ":packages:jetbrains-plugin:patchPluginXml"
+          ./gradlew --quiet --console=plain ":packages:jetbrains-plugin:patchPluginXml"
 
       - name: Verify Plugin
         env:
           BUILD_SEGMENT_API_KEY: ''
         run: |
-          ./gradlew ":packages:jetbrains-plugin:verifyPlugin"
+          ./gradlew --quiet --console=plain ":packages:jetbrains-plugin:verifyPlugin"
 
       - name: Sign and Publish Plugin in Beta
         if: ${{ github.event.inputs.dryRun != 'true' }}
@@ -112,11 +117,15 @@ jobs:
           JB_PRIVATE_KEY: ${{ secrets.JB_PRIVATE_KEY }}
           JB_PRIVATE_KEY_PASSWORD: ${{ secrets.JB_PRIVATE_KEY_PASSWORD }}
         run: |
-          ./gradlew ":packages:jetbrains-plugin:publishPlugin"
+          ./gradlew --quiet --console=plain ":packages:jetbrains-plugin:publishPlugin"
 
       - name: Patch Changelog
+        id: patch-changelog
         run: |
-          ./gradlew ":packages:jetbrains-plugin:patchChangelog"
+          ./gradlew --quiet --console=plain ":packages:jetbrains-plugin:patchChangelog"
+          VERSION=$(./gradlew getVersion --quiet --console=plain)
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Version: ${VERSION}"
 
       - name: Create Draft Release
         shell: bash
@@ -143,3 +152,12 @@ jobs:
             --target "${GIT_REF}" \
             --draft \
             packages/jetbrains-plugin/build/distributions/jetbrains-plugin.zip
+
+      - name: "Notify Draft Release"
+        uses: slackapi/slack-github-action@b0fa283ad8fea605de13dc3f449259339835fc52 # 2.1.0
+        if: ${{ github.event.inputs.dryRun != 'true' && success() }}
+        with:
+          payload: |
+            { "text": "Released version ${{ steps.patch-changelog.outputs.version }} in the Beta Channel." }
+          webhook: ${{ secrets.INTELLIJ_DEVEL_WEBHOOK_URL }}
+          webhook-type: incoming-webhook

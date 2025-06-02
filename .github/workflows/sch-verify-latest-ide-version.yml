@@ -1,0 +1,90 @@
+name: "Verify Compatibility with latest IDE version"
+
+env:
+  ORG_GRADLE_CACHING: false
+  ORG_GRADLE_PARALLEL: false
+  ORG_GRADLE_DAEMON: false
+  BUILD_SEGMENT_API_KEY: ""
+
+on:
+  schedule:
+    - cron: "00 23 * * *"
+
+jobs:
+  verify-plugin:
+    name: "Verify Plugin"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Maximize Build Space
+        uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # 1.3.1
+        with:
+          tool-cache: false
+          large-packages: false
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch Main
+        run: |
+          git fetch origin main --depth 1
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@8379f6a1328ee0e06e2bb424dadb7b159856a326 # v.4.4.0
+
+      - name: Run IntelliJ Verifier
+        id: intellij-verifier
+        run: |
+          VERIFY_OUTPUT=$(./gradlew --quiet --console=plain ":packages:jetbrains-plugin:verifyPlugin")
+          echo "verify<<EOF" >> $GITHUB_OUTPUT
+          echo "$VERIFY_OUTPUT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Check Consecutive Failures
+        id: consecutive-failures
+        run: |
+          CONSECUTIVE_ERRORS=$(./gradlew verifyNextVersionCompatibility --quiet --console=plain)
+          echo "consecutive=${CONSECUTIVE_ERRORS}" >> $GITHUB_OUTPUT
+
+      - name: Print Outputs
+        run: |
+          echo '${{ steps.intellij-verifier.outputs.verify }}'
+          echo '${{ steps.consecutive-failures.outputs.consecutive }}'
+
+      - name: "Register Issue in JIRA"
+        id: register-jira-issue
+        if: ${{ steps.consecutive-failures.outputs.consecutive == 'InitialFailure' }}
+        env:
+          JIRA_TOKEN: ${{ secrets.INTELLIJ_DEVEL_JIRA_TOKEN }}
+          JIRA_ISSUE_DESCRIPTION: ${{ steps.intellij-verifier.outputs.verify }}
+        run: |
+          ./gradlew getVersion --quiet --console=plain
+          TICKET=$(./gradlew registerBuildError --quiet --console=plain)
+          echo "ticket=${TICKET}" >> $GITHUB_OUTPUT
+          echo "Ticket: ${TICKET}"
+
+      - name: "Report Failure to Slack"
+        uses: slackapi/slack-github-action@b0fa283ad8fea605de13dc3f449259339835fc52 # 2.1.0
+        if: ${{ steps.consecutive-failures.outputs.consecutive == 'InitialFailure' || steps.consecutive-failures.outputs.consecutive == 'RepeatedFailure' }}
+        with:
+          payload: |
+            { "text": "Found a compatibility issue with the latest version of IntelliJ IDEA.",
+              "blocks": [{
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*Found a compatibility issue with the latest version of IntelliJ IDEA :intellij:*"
+                }}, {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": ":warning: JIRA Issue: <https://jira.mongodb.org/browse/${{ steps.register-jira-issue.outputs.ticket }}|${{ steps.register-jira-issue.outputs.ticket }}>"
+                }}
+            ]}
+          webhook: ${{ secrets.INTELLIJ_DEVEL_WEBHOOK_URL }}
+          webhook-type: incoming-webhook

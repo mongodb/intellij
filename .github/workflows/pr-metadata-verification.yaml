@@ -1,4 +1,11 @@
 name: "Metadata Verification"
+
+env:
+  ORG_GRADLE_CACHING: false
+  ORG_GRADLE_PARALLEL: false
+  ORG_GRADLE_DAEMON: false
+  BUILD_SEGMENT_API_KEY: ""
+
 on:
   pull_request:
     branches:
@@ -8,9 +15,6 @@ on:
 permissions:
   contents: write
   pull-requests: write
-
-env:
-  BUILD_SEGMENT_API_KEY: ""
 
 jobs:
   check-pr-title:
@@ -49,9 +53,8 @@ jobs:
           java-version: "21"
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
-        with:
-          gradle-home-cache-cleanup: true
+        uses: gradle/actions/setup-gradle@8379f6a1328ee0e06e2bb424dadb7b159856a326 # v.4.4.0
+        
 
       - name: Check if PR has "skip-spec-check" label
         id: check-label
@@ -83,11 +86,10 @@ jobs:
           java-version: "21"
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@0bdd871935719febd78681f197cd39af5b6e16a6 # 4.2.2
+        uses: gradle/actions/setup-gradle@8379f6a1328ee0e06e2bb424dadb7b159856a326 # v.4.4.0
         with:
           dependency-graph: "generate-and-submit"
           dependency-graph-continue-on-failure: false
-          gradle-home-cache-cleanup: true
 
       - name: Run Dependency Updates
         run: |

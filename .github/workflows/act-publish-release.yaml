@@ -1,5 +1,10 @@
 name: Publish Release
 
+env:
+  ORG_GRADLE_CACHING: false
+  ORG_GRADLE_PARALLEL: false
+  ORG_GRADLE_DAEMON: false
+
 on:
   release:
     types: [published]
@@ -40,6 +45,7 @@ jobs:
 
       - name: Publish Plugin In General Availability
         shell: bash
+        id: publish
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           JB_PUBLISH_CHANNEL: "ga"
@@ -55,3 +61,15 @@ jobs:
           git checkout main
           git merge ${{ github.ref_name }}
           git push origin main
+          
+          VERSION=$(./gradlew getVersion --quiet --console=plain)
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Version: ${VERSION}"
+
+      - name: "Notify Release"
+        uses: slackapi/slack-github-action@b0fa283ad8fea605de13dc3f449259339835fc52 # 2.1.0
+        with:
+          payload: |
+            { "text": "Released version ${{ steps.publish.outputs.version }} in GA." }
+          webhook: ${{ secrets.INTELLIJ_DEVEL_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
