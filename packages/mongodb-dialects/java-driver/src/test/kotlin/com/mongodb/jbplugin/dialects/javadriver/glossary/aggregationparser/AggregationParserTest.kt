@@ -66,7 +66,7 @@ public final class Aggregation {
         // Only the collection call is the valid query
         assertTrue(
             psiManager.areElementsEquivalent(
-                query,
+                actualQuery,
                 JavaDriverDialectParser.attachment(actualQuery)
             )
         )
