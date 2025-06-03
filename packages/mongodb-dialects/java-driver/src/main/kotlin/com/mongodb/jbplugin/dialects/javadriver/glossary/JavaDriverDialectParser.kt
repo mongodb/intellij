@@ -72,12 +72,9 @@ private const val FIND_ITERABLE_FQN = "com.mongodb.client.FindIterable"
 private const val AGGREGATE_ITERABLE_FQN = "com.mongodb.client.AggregateIterable"
 
 object JavaDriverDialectParser : DialectParser<PsiElement> {
-    override fun isCandidateForQuery(source: PsiElement) =
-        methodCallToCommand((source as? PsiMethodCallExpression)).type !=
-            IsCommand.CommandType.UNKNOWN
-
     override fun attachment(source: PsiElement): PsiElement? = source.findTopParentBy {
-        isCandidateForQuery(it)
+        methodCallToCommand((it as? PsiMethodCallExpression)).type !=
+            IsCommand.CommandType.UNKNOWN
     }
 
     override fun parseCollectionReference(source: PsiElement): HasCollectionReference<PsiElement> {

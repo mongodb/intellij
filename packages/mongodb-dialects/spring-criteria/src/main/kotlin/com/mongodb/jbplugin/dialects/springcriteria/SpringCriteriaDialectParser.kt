@@ -70,12 +70,10 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
         GroupStageParser(),
     )
 
-    override fun isCandidateForQuery(source: PsiElement) =
-        inferCommandFromMethod((source as? PsiMethodCallExpression)?.fuzzyResolveMethod()).type !=
-            IsCommand.CommandType.UNKNOWN
-
     override fun attachment(source: PsiElement): PsiElement? = source.findTopParentBy {
-        isCandidateForQuery(it)
+        inferCommandFromMethod(
+            (it as? PsiMethodCallExpression)?.fuzzyResolveMethod()
+        ).type != IsCommand.CommandType.UNKNOWN
     }
 
     override fun parseCollectionReference(source: PsiElement): HasCollectionReference<PsiElement> {

@@ -53,8 +53,6 @@ interface Dialect<S, C> {
  * @param S
  */
 interface DialectParser<S> {
-    fun isCandidateForQuery(source: S): Boolean
-
     fun attachment(source: S): S?
 
     fun parseCollectionReference(source: S): HasCollectionReference<S>

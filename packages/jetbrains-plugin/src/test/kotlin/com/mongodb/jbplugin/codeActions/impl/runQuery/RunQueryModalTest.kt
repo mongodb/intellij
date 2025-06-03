@@ -36,7 +36,7 @@ import java.util.*
 import javax.swing.JFrame
 import kotlin.reflect.KClass
 
-@IntegrationTest
+@IntegrationTest(true)
 class RunQueryModalTest {
     @Test
     fun `has a title and subtitle`(robot: Robot, project: Project, coroutineScope: CoroutineScope) = runTest {

@@ -38,6 +38,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiFileFactory
 import com.intellij.psi.PsiJavaFile
+import com.intellij.psi.PsiManager
 import com.intellij.psi.PsiMethodCallExpression
 import com.intellij.testFramework.IdeaTestUtil
 import com.intellij.testFramework.PsiTestUtil
@@ -558,8 +559,10 @@ public class Repository {
         val candidateQueryExpr = queryMethod.findAllChildrenOfType(
             PsiMethodCallExpression::class.java
         )
+        val psiManager = PsiManager.getInstance(psiFile.project)
         val queryExpr = candidateQueryExpr.first {
-            setup.dialect.parser.isCandidateForQuery(it)
+            val attachment = setup.dialect.parser.attachment(it)
+            psiManager.areElementsEquivalent(attachment, it)
         }
 
         setup.dialect.parser.parse(queryExpr)
