@@ -15,13 +15,14 @@ import com.mongodb.jbplugin.observability.useLogMessage
 import com.mongodb.jbplugin.ui.viewModel.AnalysisStatus.NoAnalysis
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.toKotlinInstant
@@ -46,6 +47,7 @@ sealed interface AnalysisStatus {
 
 private val log = logger<AnalysisScopeViewModel>()
 
+@OptIn(FlowPreview::class)
 @Service(Service.Level.PROJECT)
 class AnalysisScopeViewModel(
     val project: Project,
@@ -62,7 +64,36 @@ class AnalysisScopeViewModel(
     init {
         val codeEditorViewModel by project.service<CodeEditorViewModel>()
         codeEditorViewModel.editorState.value.run { refreshAnalysisScopeIfNecessary() }
-        codeEditorViewModel.editorState.onEach { refreshAnalysisScopeIfNecessary() }.launchIn(coroutineScope)
+
+        // We are listening to relevant parts of EditorState in different CoroutineScopes because
+        // we want to refresh the analysis of scope at different pace for different types of changes.
+
+        // When the selected file changes, we want the analysis to happen right away and that why
+        // in the Flow subscription below we see that there is no debounce of the flow values
+        coroutineScope.launch {
+            codeEditorViewModel.editorState
+                .distinctUntilChangedBy {
+                    Triple(it.focusedFile, it.focusedFiles, it.openFiles)
+                }
+                .collectLatest {
+                    refreshAnalysisScopeIfNecessary()
+                }
+        }
+
+        // When the carets in the EditorState change, that generally means either user is actively
+        // modifying the query. In that situation we don't want to refresh analysis of Scope on
+        // every keystroke and hence we debounce for a certain time and use the latest carets to
+        // trigger the analysis.
+        coroutineScope.launch {
+            codeEditorViewModel.editorState
+                .distinctUntilChangedBy {
+                    Triple(it.focusedFile, it.focusedFiles, it.carets)
+                }
+                .debounce(500)
+                .collectLatest {
+                    refreshAnalysisScopeIfNecessary()
+                }
+        }
 
         val inspectionsViewModel by project.service<InspectionsViewModel>()
         coroutineScope.launch(Dispatchers.IO) {

@@ -2,6 +2,7 @@ package com.mongodb.jbplugin.dialects.javadriver.glossary.aggregationparser
 
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
+import com.intellij.psi.PsiManager
 import com.intellij.psi.PsiMethodCallExpression
 import com.intellij.psi.util.PsiTreeUtil
 import com.mongodb.jbplugin.dialects.javadriver.IntegrationTest
@@ -49,15 +50,26 @@ public final class Aggregation {
       """
     )
     fun `should identify an aggregation as a valid candidate for parsing`(psiFile: PsiFile) {
+        val psiManager = PsiManager.getInstance(psiFile.project)
         val query = psiFile.getQueryAtMethod("Aggregation", "findBookById")
         // The entire aggregation is not a valid candidate
-        assertFalse(JavaDriverDialectParser.isCandidateForQuery(query))
+        assertFalse(
+            psiManager.areElementsEquivalent(
+                query,
+                JavaDriverDialectParser.attachment(query)
+            )
+        )
 
         val actualQuery = PsiTreeUtil
             .findChildrenOfType(query, PsiMethodCallExpression::class.java)
             .first { it.text.endsWith("of())") }
         // Only the collection call is the valid query
-        assertTrue(JavaDriverDialectParser.isCandidateForQuery(actualQuery))
+        assertTrue(
+            psiManager.areElementsEquivalent(
+                actualQuery,
+                JavaDriverDialectParser.attachment(actualQuery)
+            )
+        )
     }
 
     @ParsingTest(

@@ -19,13 +19,19 @@ import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.meta.withinReadAction
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.flow.zip
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.VisibleForTesting
@@ -41,6 +47,7 @@ fun Inspection.getToolWrapper(
     return profile.getInspectionTool(getToolShortName(), project)
 }
 
+@OptIn(FlowPreview::class)
 @Service(Service.Level.PROJECT)
 class InspectionsViewModel(
     val project: Project,
@@ -48,6 +55,11 @@ class InspectionsViewModel(
 ) : ProfileChangeAdapter {
     private val mutableInsights = MutableStateFlow<List<QueryInsight<PsiElement, *>>>(emptyList())
     val insights = mutableInsights.asStateFlow()
+
+    // Insights filtered by the current value of AnalysisScope in AnalysisScopeViewModel.
+    // We perform this filtering within ViewModel itself to have it done outside of EDT thread
+    // because the filtering might itself involve accessing the PSI tree structure.
+    val scopedInsights: StateFlow<List<QueryInsight<PsiElement, *>>>
 
     private val mutableOpenCategories = MutableStateFlow<InspectionCategory?>(null)
     val openCategories = mutableOpenCategories.asStateFlow()
@@ -61,7 +73,7 @@ class InspectionsViewModel(
 
         val connectionStateViewModel by project.service<ConnectionStateViewModel>()
         connectionStateViewModel.connectionState
-            .zip(insights) { state, insight -> state to insight }
+            .combine(insights) { state, insight -> state to insight }
             .onEach { refreshSidePanelStatusOnInsights(it.first, it.second) }
             .launchIn(coroutineScope)
 
@@ -70,6 +82,19 @@ class InspectionsViewModel(
                 flushInsightsForDisabledInspections(status)
             }
         }
+
+        val analysisScopeViewModel by project.service<AnalysisScopeViewModel>()
+        scopedInsights = insights.combine(
+            analysisScopeViewModel.analysisScope
+        ) { insights, scope -> scope to insights }.map { (analysisScope, insights) ->
+            withinReadAction {
+                analysisScope.getFilteredInsights(project, insights)
+            }
+        }.debounce(500).stateIn(
+            coroutineScope,
+            SharingStarted.Eagerly,
+            emptyList()
+        )
     }
 
     override fun profileChanged(profile: InspectionProfile) {

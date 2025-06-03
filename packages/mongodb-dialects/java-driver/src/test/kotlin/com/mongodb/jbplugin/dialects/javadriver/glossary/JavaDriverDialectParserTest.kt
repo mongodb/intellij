@@ -5,6 +5,7 @@ import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
+import com.intellij.psi.PsiManager
 import com.intellij.psi.PsiMethodCallExpression
 import com.intellij.psi.util.PsiTreeUtil
 import com.mongodb.jbplugin.dialects.javadriver.IntegrationTest
@@ -117,7 +118,13 @@ public final class Repository {
     )
     fun `can parse a mongodb query using the driver`(psiFile: PsiFile) {
         val query = psiFile.getQueryAtMethod("Repository", "findBookById")
-        assertTrue(JavaDriverDialectParser.isCandidateForQuery(query))
+        val psiManager = PsiManager.getInstance(psiFile.project)
+        assertTrue(
+            psiManager.areElementsEquivalent(
+                query,
+                JavaDriverDialectParser.attachment(query)
+            )
+        )
     }
 
     @ParsingTest(
@@ -143,7 +150,13 @@ public final class Repository {
     )
     fun `not a candidate if does not query`(psiFile: PsiFile) {
         val query = psiFile.getQueryAtMethod("Repository", "getCollection")
-        assertFalse(JavaDriverDialectParser.isCandidateForQuery(query))
+        val psiManager = PsiManager.getInstance(psiFile.project)
+        assertFalse(
+            psiManager.areElementsEquivalent(
+                query,
+                JavaDriverDialectParser.attachment(query)
+            )
+        )
     }
 
     @ParsingTest(
@@ -170,7 +183,6 @@ public final class Repository {
     fun `the attachment for findOne command happens at the first() method call`(psiFile: PsiFile) {
         // Returns the value of the entire return expression
         val query = psiFile.getQueryAtMethod("Repository", "findBookById")
-        assertTrue(JavaDriverDialectParser.isCandidateForQuery(query))
         // The entire return value of the method will be the attachment because the entire query
         // constructs a FIND_ONE command
         assertEquals(query, JavaDriverDialectParser.attachment(query))
@@ -204,15 +216,24 @@ public final class Repository {
         // Returns the value of the entire return expression
         val queryWithIterableCall = psiFile.getQueryAtMethod("Repository", "findBookById")
         // The entire return expression is not a candidate for query
-        assertFalse(JavaDriverDialectParser.isCandidateForQuery(queryWithIterableCall))
+        val psiManager = PsiManager.getInstance(psiFile.project)
+        assertFalse(
+            psiManager.areElementsEquivalent(
+                queryWithIterableCall,
+                JavaDriverDialectParser.attachment(queryWithIterableCall)
+            )
+        )
 
         val actualQuery = PsiTreeUtil
             .findChildrenOfType(queryWithIterableCall, PsiMethodCallExpression::class.java)
             .first { it.text.endsWith("id))") }
         // Only the expressions until the actual find call is the valid candidate for query
-        assertTrue(JavaDriverDialectParser.isCandidateForQuery(actualQuery))
-
-        assertEquals(actualQuery, JavaDriverDialectParser.attachment(actualQuery))
+        assertTrue(
+            psiManager.areElementsEquivalent(
+                actualQuery,
+                JavaDriverDialectParser.attachment(actualQuery)
+            )
+        )
     }
 
     @ParsingTest(

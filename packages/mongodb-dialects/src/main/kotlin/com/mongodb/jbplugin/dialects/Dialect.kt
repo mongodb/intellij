@@ -6,9 +6,6 @@
 
 package com.mongodb.jbplugin.dialects
 
-import com.mongodb.jbplugin.dialects.OutputQuery.CanBeRun
-import com.mongodb.jbplugin.dialects.OutputQuery.Incomplete
-import com.mongodb.jbplugin.dialects.OutputQuery.None
 import com.mongodb.jbplugin.indexing.IndexAnalyzer
 import com.mongodb.jbplugin.mql.BsonType
 import com.mongodb.jbplugin.mql.Node
@@ -56,9 +53,7 @@ interface Dialect<S, C> {
  * @param S
  */
 interface DialectParser<S> {
-    fun isCandidateForQuery(source: S): Boolean
-
-    fun attachment(source: S): S
+    fun attachment(source: S): S?
 
     fun parseCollectionReference(source: S): HasCollectionReference<S>
 

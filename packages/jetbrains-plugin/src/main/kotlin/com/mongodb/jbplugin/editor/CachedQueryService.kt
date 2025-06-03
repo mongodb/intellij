@@ -60,11 +60,7 @@ class CachedQueryService(
         val dataSource = fileInExpression.dataSource
 
         val dialect = expression.containingFile.dialect ?: return null
-        if (!dialect.parser.isCandidateForQuery(expression)) {
-            return null
-        }
-
-        val attachment = dialect.parser.attachment(expression)
+        val attachment = dialect.parser.attachment(expression) ?: return null
         val psiManager = PsiManager.getInstance(expression.project)
         if (!psiManager.areElementsEquivalent(expression, attachment)) {
             return null

@@ -30,6 +30,7 @@ import com.mongodb.jbplugin.dialects.springcriteria.SpringCriteriaDialect
 import com.mongodb.jbplugin.dialects.springquery.SpringAtQueryDialect
 import com.mongodb.jbplugin.editor.CachedQueryService
 import com.mongodb.jbplugin.editor.MongoDbVirtualFileDataSourceProvider.Keys
+import com.mongodb.jbplugin.editor.dialect
 import com.mongodb.jbplugin.editor.services.MdbPluginDisposable
 import com.mongodb.jbplugin.meta.containingFileOrNull
 import com.mongodb.jbplugin.meta.service
@@ -64,8 +65,6 @@ private val allDialects: List<Dialect<PsiElement, Project>> = listOf(
     SpringAtQueryDialect,
     SpringCriteriaDialect
 )
-
-private const val MAX_TREE_DEPTH = 100
 
 private val log = logger<CodeEditorViewModel>()
 
@@ -133,7 +132,7 @@ class CodeEditorViewModel(
             // the IDE for null virtualFile, so we catch that here and log it.
             // Unfortunately, it appears that we cannot log the exception as well because the
             // exception message also tries to access the virtualFile and fails again.
-            log.warn(useLogMessage("Unable to track caretPositionChanged event").build())
+            log.warn(useLogMessage("Unable to track caretPositionChanged event").build(), e)
         }
     }
 
@@ -171,22 +170,11 @@ class CodeEditorViewModel(
 
     private fun queryAtCaret(caret: CaretView): Node<PsiElement>? {
         val psiFile = caret.file.findPsiFile(project) ?: return null
-        // iterate upwards until we find a query
-        var currentPsiElement = psiFile.findElementAt(caret.offset)
+        val dialect = psiFile.dialect ?: return null
+        val currentPsiElement = psiFile.findElementAt(caret.offset) ?: return null
+        val queryAttachment = dialect.parser.attachment(currentPsiElement) ?: return null
         val queryService by project.service<CachedQueryService>()
-        for (tries in 0..MAX_TREE_DEPTH) {
-            if (currentPsiElement == null) {
-                return null
-            }
-
-            val query = queryService.queryAt(currentPsiElement)
-            if (query != null) {
-                return query
-            }
-            currentPsiElement = currentPsiElement.parent
-        }
-
-        return null
+        return queryService.queryAt(queryAttachment)
     }
 
     suspend fun allProjectFiles(project: Project): List<VirtualFile> = withContext(Dispatchers.IO) {
