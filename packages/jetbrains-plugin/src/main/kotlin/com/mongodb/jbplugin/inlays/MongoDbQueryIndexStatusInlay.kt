@@ -15,7 +15,6 @@ import com.intellij.codeInsight.hints.InlayHintsSink
 import com.intellij.codeInsight.hints.SettingsKey
 import com.intellij.codeInsight.hints.presentation.MouseButton.Left
 import com.intellij.codeInsight.hints.presentation.PresentationFactory
-import com.intellij.openapi.application.EDT
 import com.intellij.openapi.editor.Editor
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
@@ -34,6 +33,7 @@ import com.mongodb.jbplugin.i18n.InspectionsAndInlaysMessages
 import com.mongodb.jbplugin.linting.InspectionCategory.PERFORMANCE
 import com.mongodb.jbplugin.linting.correctness.isNamespaceAvailableInCluster
 import com.mongodb.jbplugin.meta.service
+import com.mongodb.jbplugin.meta.withinReadActionBlocking
 import com.mongodb.jbplugin.mql.QueryContext
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasExplain
@@ -46,8 +46,8 @@ import com.mongodb.jbplugin.ui.viewModel.SidePanelViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.jetbrains.jewel.bridge.JewelComposePanel
+import org.jetbrains.letsPlot.commons.debounce
 import java.awt.Cursor
 import javax.swing.JComponent
 
@@ -130,11 +130,16 @@ internal class QueriesInFileCollector(private val coroutineScope: CoroutineScope
                         queryContext
                     )
                 ) {
-                    withContext(Dispatchers.EDT) {
-                        InlayHintsPassFactoryInternal.forceHintsUpdateOnNextPass()
-                        DaemonCodeAnalyzer.getInstance(element.project).restart(
-                            element.containingFile
-                        )
+                    debounce<Unit>(
+                        delayMs = 1000,
+                        scope = CoroutineScope(Dispatchers.IO)
+                    ) {
+                        withinReadActionBlocking {
+                            InlayHintsPassFactoryInternal.forceHintsUpdateOnNextPass()
+                            DaemonCodeAnalyzer.getInstance(element.project).restart(
+                                element.containingFile
+                            )
+                        }
                     }
                 }.explainPlan
             }.getOrDefault(NotRun)
