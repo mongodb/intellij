@@ -13,9 +13,10 @@ import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
+import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiMethodCallExpression
 import com.mongodb.jbplugin.accessadapter.datagrip.adapter.isConnected
-import com.mongodb.jbplugin.dialects.javadriver.glossary.findAllChildrenOfType
+import com.mongodb.jbplugin.dialects.javadriver.glossary.findAllChildrenOfAnyType
 import com.mongodb.jbplugin.editor.CachedQueryService
 import com.mongodb.jbplugin.editor.dataSource
 import com.mongodb.jbplugin.i18n.InspectionsAndInlaysMessages
@@ -119,7 +120,7 @@ abstract class AbstractMongoDbInspectionBridge<Settings, I : Inspection>(
         val inspectionsViewModel by psiFile.project.service<InspectionsViewModel>()
 
         val allQueriesInFile = withinReadActionBlocking {
-            psiFile.findAllChildrenOfType(PsiMethodCallExpression::class.java)
+            findAllPotentialQueries(psiFile)
                 .mapNotNull { queryService.queryAt(it) }
                 .distinctBy { it.source.startOffset }
         }
@@ -193,6 +194,13 @@ abstract class AbstractMongoDbInspectionBridge<Settings, I : Inspection>(
         }
 
         emitFinishedInspectionTelemetryEvent(queryInsights)
+    }
+
+    private fun findAllPotentialQueries(psiFile: PsiFile): List<PsiElement> {
+        return psiFile.findAllChildrenOfAnyType(
+            PsiMethodCallExpression::class.java,
+            PsiMethod::class.java
+        )
     }
 }
 

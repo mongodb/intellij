@@ -421,6 +421,22 @@ fun <T> PsiElement.findAllChildrenOfType(type: Class<T>): List<T> {
 }
 
 /**
+ * Returns all children of that match any type of the provided types in a list. Order is not guaranteed
+ * between calls.
+ *
+ * @param types
+ */
+fun PsiElement.findAllChildrenOfAnyType(vararg types: Class<out PsiElement>): List<PsiElement> {
+    val allChildren = this.children.flatMap { it.findAllChildrenOfAnyType(*types) }.toMutableList()
+
+    if (types.any { it.isInstance(this) }) {
+        allChildren += listOf(this)
+    }
+
+    return allChildren
+}
+
+/**
  * Resolves to the first meaningful expression in a tree. Not all expressions have an important
  * meaning for us (like for example, parenthesized expressions) so we drop them and get any
  * inner expression that is relevant for us.

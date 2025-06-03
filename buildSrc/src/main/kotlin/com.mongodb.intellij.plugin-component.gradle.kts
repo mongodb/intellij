@@ -116,6 +116,7 @@ dependencies {
 
         bundledPlugin("com.intellij.java")
         bundledPlugin("com.intellij.database")
+        bundledPlugin("com.intellij.spring.data")
 
         testFramework(TestFrameworkType.Plugin.Java)
     }
