@@ -47,7 +47,6 @@ import com.mongodb.jbplugin.ui.components.utilities.Card
 import com.mongodb.jbplugin.ui.components.utilities.MoreActionItem
 import com.mongodb.jbplugin.ui.components.utilities.MoreActionsButton
 import com.mongodb.jbplugin.ui.components.utilities.Separator
-import com.mongodb.jbplugin.ui.components.utilities.hooks.LocalProject
 import com.mongodb.jbplugin.ui.components.utilities.hooks.useProject
 import com.mongodb.jbplugin.ui.components.utilities.hooks.useTranslation
 import com.mongodb.jbplugin.ui.components.utilities.hooks.useViewModelMutator
@@ -70,7 +69,7 @@ fun InspectionAccordion() {
     val project by useProject()
     val analysisScope by useViewModelState(AnalysisScopeViewModel::analysisScope, AnalysisScope.default())
     val analysisStatus by useViewModelState(AnalysisScopeViewModel::analysisStatus, AnalysisStatus.default())
-    val allInsights by useViewModelState(InspectionsViewModel::insights, emptyList())
+    val scopedInsights by useViewModelState(InspectionsViewModel::scopedInsights, emptyList())
     val openCategory by useViewModelState(InspectionsViewModel::openCategories, null)
     val inspectionsWithStatus by useViewModelState(InspectionsViewModel::inspectionsWithStatus, emptyMap())
 
@@ -96,7 +95,7 @@ fun InspectionAccordion() {
         _InspectionAccordion(
             analysisScope = analysisScope,
             analysisStatus = analysisStatus,
-            allInsights = allInsights,
+            scopedInsights = scopedInsights,
             disabledInspections = useDisabledInspections(inspectionsWithStatus),
             openCategory = openCategory,
         )
@@ -107,16 +106,15 @@ fun InspectionAccordion() {
 fun _InspectionAccordion(
     analysisScope: AnalysisScope,
     analysisStatus: AnalysisStatus,
-    allInsights: List<QueryInsight<PsiElement, *>>,
+    scopedInsights: List<QueryInsight<PsiElement, *>>,
     disabledInspections: Set<Inspection>,
     openCategory: InspectionCategory?
 ) {
-    val insights = useFilteredInsights(analysisScope, allInsights)
     val sectionState by derivedStateOf {
         InspectionCategory.entries.map {
             SectionState(
                 category = it,
-                insights = useInsightsOfCategory(insights, it),
+                insights = useInsightsOfCategory(scopedInsights, it),
                 disabledInspections = disabledInspections.filter { inspection ->
                     inspection.category == it
                 }
@@ -124,7 +122,7 @@ fun _InspectionAccordion(
         }
     }
 
-    if (insights.isEmpty() && analysisStatus == AnalysisStatus.NoAnalysis) {
+    if (scopedInsights.isEmpty() && analysisStatus == AnalysisStatus.NoAnalysis) {
         NoInsightsNotification(analysisScope)
     } else {
         Column {
@@ -400,16 +398,13 @@ private fun useInspectionAccordionCallbacks(): InspectionAccordionCallbacks {
     return LocalInspectionAccordionCallbacks.current
 }
 
-@Composable
-private fun useFilteredInsights(analysisScope: AnalysisScope, allInsights: List<QueryInsight<PsiElement, *>>): List<QueryInsight<PsiElement, *>> {
-    val project = LocalProject.current ?: return emptyList()
-    return withinReadActionBlocking {
-        analysisScope.getFilteredInsights(project, allInsights)
-    }
-}
-
-private fun useInsightsOfCategory(allInsights: List<QueryInsight<PsiElement, *>>, category: InspectionCategory): List<QueryInsight<PsiElement, *>> {
-    return allInsights.filter { it.inspection.category == category }.sortedBy { queryLocation(it.query) }
+private fun useInsightsOfCategory(
+    scopedInsights: List<QueryInsight<PsiElement, *>>,
+    category: InspectionCategory
+): List<QueryInsight<PsiElement, *>> {
+    return scopedInsights.filter {
+        it.inspection.category == category
+    }.sortedBy { queryLocation(it.query) }
 }
 
 private fun useDisabledInspections(
