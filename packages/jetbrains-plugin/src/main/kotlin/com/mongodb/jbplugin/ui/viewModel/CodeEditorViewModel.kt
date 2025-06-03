@@ -44,7 +44,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.jetbrains.letsPlot.commons.debounce
 
 data class CaretView(val file: VirtualFile, val offset: Int)
 
@@ -137,12 +136,9 @@ class CodeEditorViewModel(
         }
     }
 
-    fun reanalyzeRelevantEditors() {
-        debounce<Unit>(
-            delayMs = 1000,
-            scope = CoroutineScope(Dispatchers.IO)
-        ) {
-            withinReadActionBlocking {
+    suspend fun reanalyzeRelevantEditors() {
+        withContext(Dispatchers.IO) {
+            withinReadAction {
                 val allPsiFiles = editorState.value.focusedFiles.mapNotNull {
                     it.findPsiFile(project)
                 }
