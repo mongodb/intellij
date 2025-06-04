@@ -6,6 +6,7 @@ import com.mongodb.jbplugin.accessadapter.QueryResult
 import com.mongodb.jbplugin.mql.QueryContext
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
@@ -35,6 +36,26 @@ class BuildInfoTest {
             val data = BuildInfo.Slice.queryUsingDriver(driver)
             assertEquals("7.8.0", data.version)
             assertEquals("1235abc", data.gitVersion)
+        }
+
+    @Test
+    fun `returns a valid build info when disconnected during the process`(): Unit =
+        runBlocking {
+            val driver = mock<MongoDbDriver>()
+            `when`(driver.connected).thenReturn(true).thenReturn(false)
+            `when`(
+                driver.connectionString()
+            ).thenReturn(ConnectionString(listOf("mongodb://localhost/")))
+            `when`(
+                driver.runQuery<Long, Unit>(any(), eq(Long::class), any(), eq(1.seconds))
+            ).thenReturn(QueryResult.Run(1L))
+            `when`(driver.runQuery<BuildInfoFromMongoDb, Unit>(any(), any())).thenReturn(
+                QueryResult.Run(defaultBuildInfo()),
+            )
+
+            val data = BuildInfo.Slice.queryUsingDriver(driver)
+            assertEquals("8.0", data.version)
+            assertNull(data.gitVersion)
         }
 
     @Test

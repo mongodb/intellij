@@ -9,7 +9,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.psi.util.CachedValue
-import com.intellij.psi.util.CachedValueProvider
+import com.intellij.psi.util.CachedValueProvider.Result
 import com.intellij.psi.util.CachedValuesManager
 import com.intellij.psi.util.PsiTreeUtil.getParentOfType
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
@@ -55,7 +55,7 @@ class CachedQueryService(
         MutableMap<Namespace, Set<Node<PsiElement>>> = mutableMapOf()
     private val rwLock: ReentrantReadWriteLock = ReentrantReadWriteLock(true)
 
-    fun queryAt(expression: PsiElement): Node<PsiElement>? {
+    fun queryAt(expression: PsiElement): Node<PsiElement>? = kotlin.runCatching {
         val fileInExpression = getParentOfType(expression, PsiFile::class.java) ?: return null
         val dataSource = fileInExpression.dataSource
 
@@ -63,12 +63,12 @@ class CachedQueryService(
         val attachment = dialect.parser.attachment(expression) ?: return null
         val psiManager = PsiManager.getInstance(expression.project)
         if (!psiManager.areElementsEquivalent(expression, attachment)) {
-            return null
+            return@runCatching null
         }
 
         val cacheManager = CachedValuesManager.getManager(attachment.project)
         attachment.getUserData(queryCacheKey)?.let {
-            return decorateWithMetadata(dataSource, attachment.getUserData(queryCacheKey)!!.value)
+            return@runCatching decorateWithMetadata(dataSource, attachment.getUserData(queryCacheKey)!!.value)
         }
 
         val connectionStateViewModel by project.service<ConnectionStateViewModel>()
@@ -99,12 +99,18 @@ class CachedQueryService(
                 }
             }
 
-            CachedValueProvider.Result.create(parsedAst, attachment, connectionStateViewModel)
+            Result.create(parsedAst, attachment, connectionStateViewModel)
         }
 
         attachment.putUserData(queryCacheKey, cachedValue)
-        return decorateWithMetadata(dataSource, attachment.getUserData(queryCacheKey)!!.value)
-    }
+        return@runCatching decorateWithMetadata(dataSource, attachment.getUserData(queryCacheKey)!!.value)
+    }.onFailure { ex ->
+        logger.info(
+            useLogMessage("Could not parse query: ${ex.message}")
+                .build(),
+            ex
+        )
+    }.getOrNull()
 
     override fun allSiblingsOf(query: Node<PsiElement>): Array<Node<PsiElement>> {
         val collRef =

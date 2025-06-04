@@ -10,6 +10,7 @@ import com.intellij.lang.annotation.AnnotationHolder
 import com.intellij.lang.annotation.ExternalAnnotator
 import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.openapi.diagnostic.logger
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
@@ -139,6 +140,8 @@ abstract class AbstractMongoDbInspectionBridge<Settings, I : Inspection>(
                     queryInspection.run(query, problemsHolder, settings)
                 }
             }
+        } catch (e: ProcessCanceledException) {
+            throw e
         } catch (e: Exception) {
             logger.warn(
                 useLogMessage("Inspection run failed")
