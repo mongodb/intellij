@@ -139,6 +139,7 @@ jobs:
           max_attempts: 3
           timeout_minutes: 10
           command: './gradlew --quiet --stacktrace --console=plain check jacocoTestReport'
+          on_retry_command: './gradlew --quiet --stacktrace --console=plain cleanTest'
 
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@a427a90771729d8f85b6ab0cdaa1a5929cab985d # 5.0.0
