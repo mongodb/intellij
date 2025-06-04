@@ -112,17 +112,17 @@ class CachedQueryService(
         )
     }.getOrNull()
 
-    override fun allSiblingsOf(query: Node<PsiElement>): Array<Node<PsiElement>> {
+    override fun allSiblingsOf(query: Node<PsiElement>): Array<Node<PsiElement>> = kotlin.runCatching {
         val collRef =
             query.component<HasCollectionReference<PsiElement>>()?.reference as? Known
-                ?: return emptyArray()
+                ?: return@runCatching emptyArray()
 
         val psiManager = PsiManager.getInstance(query.source.project)
 
         // Request a read lock. In this case, we don't block other reader threads, but we will get blocked
         // when someone else requests this lock in write mode. This will only happen when there is a change
         // in a query from the editor and IntelliJs parser kicks in.
-        return rwLock.read {
+        return@runCatching rwLock.read {
             val allQueriesForNamespace = cachedQueriesByNamespace.getOrDefault(
                 collRef.namespace,
                 emptySet()
@@ -138,7 +138,13 @@ class CachedQueryService(
                 .distinct()
                 .toTypedArray()
         }
-    }
+    }.onFailure { ex ->
+        logger.warn(
+            useLogMessage("Could not retrieve sibling queries: ${ex.message}")
+                .build(),
+            ex
+        )
+    }.getOrDefault(emptyArray())
 
     /**
      * We need this because in Spring Data we need the context of the project to get the actual
