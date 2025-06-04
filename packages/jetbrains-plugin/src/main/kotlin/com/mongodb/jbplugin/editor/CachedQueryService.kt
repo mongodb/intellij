@@ -105,7 +105,7 @@ class CachedQueryService(
         attachment.putUserData(queryCacheKey, cachedValue)
         return@runCatching decorateWithMetadata(dataSource, attachment.getUserData(queryCacheKey)!!.value)
     }.onFailure { ex ->
-        logger.info(
+        logger.warn(
             useLogMessage("Could not parse query: ${ex.message}")
                 .build(),
             ex
