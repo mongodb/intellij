@@ -257,31 +257,45 @@ internal val LocalInspectionAccordionCallbacks = compositionLocalOf { Inspection
 
 @Composable
 private fun InsightCard(insight: QueryInsight<PsiElement, *>) {
-    val callbacks = useInspectionAccordionCallbacks()
-    InsightCardStructure(
-        title = useTranslation(
-            insight.description,
-            *insight.descriptionArguments.toTypedArray()
-        ),
-        iconKey = AllIconsKeys.General.Warning,
-        testTag = "InsightCard::${insight.description}::${queryLocation(insight.query)}",
-        moreActionItems = listOf(
-            MoreActionItem(label = useTranslation("insight.action.disable-inspection")) {
-                callbacks.onDisableInspection(insight.inspection)
-            }
-        )
-    ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier
-                .fillMaxWidth(1f)
-                .clip(RoundedCornerShape(8.dp))
-                .background(Card.secondaryBackgroundColor)
-                .padding(8.dp)
+    // in case we can't get the location of the query, the user is likely changing the code heavily
+    // like big refactors, git pull... while we are rendering
+    // in that case, don't show the insight, we will refresh later triggered by the changes in the
+    // editor, and we will eventually render all insights
+    val queryLocation = runCatching {
+        queryLocation(insight.query)
+    }.getOrNull()
+
+    if (queryLocation == null) {
+        return
+    }
+
+    runCatching {
+        val callbacks = useInspectionAccordionCallbacks()
+        InsightCardStructure(
+            title = useTranslation(
+                insight.description,
+                *insight.descriptionArguments.toTypedArray()
+            ),
+            iconKey = AllIconsKeys.General.Warning,
+            testTag = "InsightCard::${insight.description}::${queryLocation(insight.query)}",
+            moreActionItems = listOf(
+                MoreActionItem(label = useTranslation("insight.action.disable-inspection")) {
+                    callbacks.onDisableInspection(insight.inspection)
+                }
+            )
         ) {
-            LinkToQueryInsight(insight)
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                InsightActions(insight)
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier
+                    .fillMaxWidth(1f)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Card.secondaryBackgroundColor)
+                    .padding(8.dp)
+            ) {
+                LinkToQueryInsight(insight, queryLocation)
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    InsightActions(insight)
+                }
             }
         }
     }
@@ -370,11 +384,11 @@ fun InsightCardStructure(
 }
 
 @Composable
-private fun LinkToQueryInsight(insight: QueryInsight<PsiElement, *>) {
+private fun LinkToQueryInsight(insight: QueryInsight<PsiElement, *>, location: String) {
     val callbacks = LocalInspectionAccordionCallbacks.current
 
     ActionLink(
-        text = queryLocation(insight.query),
+        text = location,
         overflow = TextOverflow.Ellipsis,
         maxLines = 1,
     ) {

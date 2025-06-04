@@ -199,9 +199,11 @@ data class BuildInfo(
     }
 
     companion object {
+        private const val DEFAULT_VERSION_IF_INVALID = "8.0"
+
         private fun empty(): BuildInfoFromMongoDb =
             BuildInfoFromMongoDb(
-                "<unknown>",
+                DEFAULT_VERSION_IF_INVALID,
                 null,
                 null,
                 emptyMap(),
