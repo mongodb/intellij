@@ -154,28 +154,3 @@ jobs:
           continue-on-error: true
           pass-emoji: "✅"
           fail-emoji: "🚫"
-  verify-plugin:
-    name: "Verify Plugin"
-    runs-on: ubuntu-latest
-    needs:
-      - qodana-check
-      - unit-and-integration-test
-      - style-check
-    steps:
-      - name: Maximize Build Space
-        uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # 1.3.1
-        with:
-          tool-cache: false
-          large-packages: false
-
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: "temurin"
-          java-version: "21"
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@8379f6a1328ee0e06e2bb424dadb7b159856a326 # v.4.4.0
