@@ -133,7 +133,7 @@ jobs:
           export DISPLAY=:99.0
           Xvfb -ac :99 -screen 0 1920x1080x24 &
           sleep 10
-          ./gradlew --quiet --stacktrace --console=plain check
+          ./gradlew --quiet --stacktrace --console=plain check jacocoTestReport
 
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@a427a90771729d8f85b6ab0cdaa1a5929cab985d # 5.0.0
