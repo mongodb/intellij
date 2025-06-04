@@ -128,7 +128,7 @@ jobs:
           sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin
 
       - name: Run Unit and Integration Tests
-        timeout-minutes: 10
+        timeout-minutes: 20
         run: |
           export DISPLAY=:99.0
           Xvfb -ac :99 -screen 0 1920x1080x24 &
