@@ -29,6 +29,14 @@ repositories {
     maven("https://packages.jetbrains.team/maven/p/kpm/public/")
 }
 
+reporting {
+    reports {
+        val testCodeCoverageReport by creating(JacocoCoverageReport::class) {
+            testSuiteName = "test"
+        }
+    }
+}
+
 dependencies {
     jacocoAggregation(project(":packages:jetbrains-plugin")) {
         exclude(group = "org.jetbrains.skiko")
