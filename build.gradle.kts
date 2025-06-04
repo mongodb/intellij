@@ -63,12 +63,11 @@ tasks {
             }
             return "$newMajor.$newMinor.$newPatch"
         }
-        doLast {
-            val newVersion = rootProject.findProperty("exactVersion") ?: generateVersion()
-            val oldContent = buildFile.readText()
-            val newContent = oldContent.replace(""" = "$version"""", """ = "$newVersion"""")
-            buildFile.writeText(newContent)
-        }
+
+        val newVersion = rootProject.findProperty("exactVersion") ?: generateVersion()
+        val oldContent = buildFile.readText()
+        val newContent = oldContent.replace(""" = "$version"""", """ = "$newVersion"""")
+        buildFile.writeText(newContent)
     }
 
     register<Exec>("gitHooks") {
