@@ -15,6 +15,8 @@ import com.mongodb.jbplugin.mql.components.HasValueReference
 import com.mongodb.jbplugin.mql.components.Name
 import com.mongodb.jbplugin.mql.components.Named
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 
 class TypeMismatchInspectionTest : QueryInspectionTest<TypeMismatch> {
     @Test
@@ -339,8 +341,9 @@ class TypeMismatchInspectionTest : QueryInspectionTest<TypeMismatch> {
         assertNoInsights()
     }
 
-    @Test
-    fun `does not warn on sorts`() = runInspectionTest {
+    @ParameterizedTest
+    @EnumSource(Name::class)
+    fun `does not warn on inferred values independently of the name of the operation`(name: Name) = runInspectionTest {
         val collectionNamespace = Namespace("database", "collection")
 
         whenDatabasesAre(listOf("database"))
@@ -365,12 +368,12 @@ class TypeMismatchInspectionTest : QueryInspectionTest<TypeMismatch> {
                     Node(
                         null,
                         listOf(
-                            Named(Name.SORT),
+                            Named(name),
                             HasFieldReference(
                                 HasFieldReference.FromSchema(null, "myString")
                             ),
                             HasValueReference(
-                                HasValueReference.Constant(null, 42, BsonInt32)
+                                HasValueReference.Inferred(null, 1, BsonInt32)
                             )
                         )
                     ),

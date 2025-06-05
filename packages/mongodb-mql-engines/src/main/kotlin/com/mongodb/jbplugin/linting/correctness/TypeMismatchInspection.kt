@@ -16,7 +16,7 @@ import com.mongodb.jbplugin.mql.components.Name
 import com.mongodb.jbplugin.mql.components.Named
 import com.mongodb.jbplugin.mql.parser.components.ParsedValueReference
 import com.mongodb.jbplugin.mql.parser.components.allNodesWithSchemaFieldReferences
-import com.mongodb.jbplugin.mql.parser.components.extractValueReferencesRelevantForIndexing
+import com.mongodb.jbplugin.mql.parser.components.extractUserProvidedValueReferences
 import com.mongodb.jbplugin.mql.parser.components.knownCollection
 import com.mongodb.jbplugin.mql.parser.components.schemaFieldReference
 import com.mongodb.jbplugin.mql.parser.filter
@@ -68,7 +68,7 @@ class TypeMismatchInspection<D> : QueryInspection<
                         schemaFieldReference<Source>()
                             .zip(
                                 first(
-                                    extractValueReferencesRelevantForIndexing<Source>().map { it },
+                                    extractUserProvidedValueReferences<Source>().map { it },
                                     otherwise { null }
                                 )
                             )

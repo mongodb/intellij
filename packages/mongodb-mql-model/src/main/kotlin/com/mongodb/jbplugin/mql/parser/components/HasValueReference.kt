@@ -26,6 +26,11 @@ fun <S> inferredValueReference() = valueReference<HasValueReference.Inferred<S>,
 
 data class ParsedValueReference<S, V>(val source: S, val type: BsonType, val value: V?)
 
+fun <S> extractUserProvidedValueReferences() = first(
+    constantValueReference<S>().map { ParsedValueReference(it.source, it.type, it.value) },
+    runtimeValueReference<S>().map { ParsedValueReference(it.source, it.type, null) },
+)
+
 fun <S> extractValueReferencesRelevantForIndexing() = first(
     constantValueReference<S>().map { ParsedValueReference(it.source, it.type, it.value) },
     runtimeValueReference<S>().map { ParsedValueReference(it.source, it.type, null) },
