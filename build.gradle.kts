@@ -52,14 +52,15 @@ tasks {
         description = "Increments the version of the plugin."
 
         fun generateVersion(): String {
-            val updateMode = rootProject.findProperty("mode") ?: "patch"
+            val updateMode = rootProject.findProperty("mode") ?: return rootProject.version.toString()
             val (oldMajor, oldMinor, oldPatch) = rootProject.version.toString().split(".").map(String::toInt)
             var (newMajor, newMinor, newPatch) = arrayOf(oldMajor, oldMinor, 0)
 
             when (updateMode) {
                 "major" -> newMajor = (oldMajor + 1).also { newMinor = 0 }
                 "minor" -> newMinor = (oldMinor + 1)
-                else -> newPatch = oldPatch + 1
+                "patch" -> newPatch = oldPatch + 1
+                else -> throw GradleException("Invalid mode: $updateMode")
             }
             return "$newMajor.$newMinor.$newPatch"
         }
