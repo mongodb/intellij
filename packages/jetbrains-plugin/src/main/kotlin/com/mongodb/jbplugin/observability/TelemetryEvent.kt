@@ -253,6 +253,7 @@ sealed class TelemetryEvent(
         enum class InspectionType {
             FIELD_DOES_NOT_EXIST,
             TYPE_MISMATCH,
+            INVALID_PROJECTION,
             QUERY_NOT_COVERED_BY_INDEX,
             NO_DATABASE_INFERRED,
             NO_COLLECTION_SPECIFIED,

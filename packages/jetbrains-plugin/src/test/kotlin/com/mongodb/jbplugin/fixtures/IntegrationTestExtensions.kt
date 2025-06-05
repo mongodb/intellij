@@ -161,6 +161,7 @@ import java.util.Arrays;
 import static org.springframework.data.mongodb.core.aggregation.Fields.*;
 import static org.springframework.data.mongodb.core.query.Query.*;
 import static org.springframework.data.mongodb.core.query.Criteria.*;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
  
 @Document
 record Book() {}

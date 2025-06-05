@@ -112,6 +112,19 @@
             language="JAVA"
             implementationClass="com.mongodb.jbplugin.inspections.correctness.MongoDbTypeMismatchGlobalTool"
         />
+
+        <externalAnnotator language="JAVA" implementationClass="com.mongodb.jbplugin.inspections.correctness.MongoDbInvalidProjection" />
+        <globalInspection
+            groupPath="MongoDB"
+            groupBundle="messages.SidePanelBundle"
+            groupKey="inspection.category.correctness"
+            bundle="messages.InspectionsAndInlaysBundle"
+            key="query-with-invalid-projection"
+            shortName="InvalidProjection"
+            enabledByDefault="true"
+            language="JAVA"
+            implementationClass="com.mongodb.jbplugin.inspections.correctness.MongoDbInvalidProjectionTool"
+        />
         <!-- Environment Mismatch Inspections -->
         <externalAnnotator language="JAVA" implementationClass="com.mongodb.jbplugin.inspections.environmentmismatch.MongoDbDatabaseDoesNotExist" />
         <globalInspection
