@@ -3,6 +3,7 @@ package com.mongodb.jbplugin.linting
 import com.mongodb.jbplugin.linting.Inspection.CollectionDoesNotExist
 import com.mongodb.jbplugin.linting.Inspection.DatabaseDoesNotExist
 import com.mongodb.jbplugin.linting.Inspection.FieldDoesNotExist
+import com.mongodb.jbplugin.linting.Inspection.InvalidProjection
 import com.mongodb.jbplugin.linting.Inspection.NoCollectionSpecified
 import com.mongodb.jbplugin.linting.Inspection.NoDatabaseInferred
 import com.mongodb.jbplugin.linting.Inspection.NotUsingIndex
@@ -10,6 +11,7 @@ import com.mongodb.jbplugin.linting.Inspection.NotUsingIndexEffectively
 import com.mongodb.jbplugin.linting.Inspection.TypeMismatch
 import com.mongodb.jbplugin.linting.InspectionAction.ChooseConnection
 import com.mongodb.jbplugin.linting.InspectionAction.CreateIndexSuggestionScript
+import com.mongodb.jbplugin.linting.InspectionAction.NoAction
 import com.mongodb.jbplugin.linting.InspectionAction.RunQuery
 import com.mongodb.jbplugin.linting.InspectionCategory.CORRECTNESS
 import com.mongodb.jbplugin.linting.InspectionCategory.ENVIRONMENT_MISMATCH
@@ -66,6 +68,12 @@ sealed interface Inspection {
 
     data object TypeMismatch : Inspection {
         override val primaryAction = RunQuery
+        override val secondaryActions = emptyArray<InspectionAction>()
+        override val category = CORRECTNESS
+    }
+
+    data object InvalidProjection : Inspection {
+        override val primaryAction = NoAction
         override val secondaryActions = emptyArray<InspectionAction>()
         override val category = CORRECTNESS
     }
@@ -209,6 +217,20 @@ data class QueryInsight<S, I : Inspection>(
                 description = "insight.no-collection-specified",
                 descriptionArguments = listOf(),
                 inspection = NoCollectionSpecified
+            )
+        }
+
+        fun <S> invalidInclusionInExclusionProjection(
+            query: Node<S>,
+            source: S,
+            fieldName: String,
+        ): QueryInsight<S, InvalidProjection> {
+            return QueryInsight(
+                query = query,
+                source = source,
+                description = "insight.invalid-query-projection",
+                descriptionArguments = listOf(fieldName),
+                inspection = InvalidProjection
             )
         }
     }
