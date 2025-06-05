@@ -4,7 +4,6 @@ import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
-import com.intellij.platform.util.coroutines.childScope
 import com.intellij.ui.AnimatedIcon.ANIMATION_IN_RENDERER_ALLOWED
 import com.intellij.ui.components.JBLabel
 import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvider
@@ -111,7 +110,7 @@ class NamespaceSelector(
             }
         }
 
-        coroutineScope.childScope("load-databases", Dispatchers.IO).launch {
+        coroutineScope.launch(Dispatchers.IO) {
             loadDatabases()
         }
     }
