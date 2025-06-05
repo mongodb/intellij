@@ -11,8 +11,6 @@ import com.mongodb.jbplugin.mql.components.Name
 import com.mongodb.jbplugin.mql.components.Name.PROJECT
 import com.mongodb.jbplugin.mql.components.Named
 import com.mongodb.jbplugin.mql.parser.components.aggregationStages
-import com.mongodb.jbplugin.mql.parser.filter
-import com.mongodb.jbplugin.mql.parser.first
 import com.mongodb.jbplugin.mql.parser.map
 
 class InvalidProjectionInspectionSettings
