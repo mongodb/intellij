@@ -22,6 +22,7 @@ import com.mongodb.jbplugin.editor.CachedQueryService
 import com.mongodb.jbplugin.editor.dataSource
 import com.mongodb.jbplugin.i18n.InspectionsAndInlaysMessages
 import com.mongodb.jbplugin.inspections.correctness.MongoDbFieldDoesNotExist
+import com.mongodb.jbplugin.inspections.correctness.MongoDbInvalidProjection
 import com.mongodb.jbplugin.inspections.correctness.MongoDbTypeMismatch
 import com.mongodb.jbplugin.inspections.environmentmismatch.MongoDbCollectionDoesNotExist
 import com.mongodb.jbplugin.inspections.environmentmismatch.MongoDbDatabaseDoesNotExist
@@ -34,6 +35,7 @@ import com.mongodb.jbplugin.linting.Inspection
 import com.mongodb.jbplugin.linting.Inspection.CollectionDoesNotExist
 import com.mongodb.jbplugin.linting.Inspection.DatabaseDoesNotExist
 import com.mongodb.jbplugin.linting.Inspection.FieldDoesNotExist
+import com.mongodb.jbplugin.linting.Inspection.InvalidProjection
 import com.mongodb.jbplugin.linting.Inspection.NoCollectionSpecified
 import com.mongodb.jbplugin.linting.Inspection.NoDatabaseInferred
 import com.mongodb.jbplugin.linting.Inspection.NotUsingIndex
@@ -75,6 +77,7 @@ abstract class AbstractMongoDbInspectionGlobalTool(
                 CollectionDoesNotExist::class.simpleName -> MongoDbCollectionDoesNotExist(coroutineScope)
                 NoDatabaseInferred::class.simpleName -> MongoDbNoDatabaseInferred(coroutineScope)
                 NoCollectionSpecified::class.simpleName -> MongoDbNoCollectionSpecified(coroutineScope)
+                InvalidProjection::class.simpleName -> MongoDbInvalidProjection(coroutineScope)
                 else -> null
             }
         }
