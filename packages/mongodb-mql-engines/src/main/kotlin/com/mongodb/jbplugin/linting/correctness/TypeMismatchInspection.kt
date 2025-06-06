@@ -12,9 +12,11 @@ import com.mongodb.jbplugin.mql.CollectionSchema
 import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.adt.Either
 import com.mongodb.jbplugin.mql.components.HasFieldReference
+import com.mongodb.jbplugin.mql.components.Name
+import com.mongodb.jbplugin.mql.components.Named
 import com.mongodb.jbplugin.mql.parser.components.ParsedValueReference
 import com.mongodb.jbplugin.mql.parser.components.allNodesWithSchemaFieldReferences
-import com.mongodb.jbplugin.mql.parser.components.extractValueReferencesRelevantForIndexing
+import com.mongodb.jbplugin.mql.parser.components.extractUserProvidedValueReferences
 import com.mongodb.jbplugin.mql.parser.components.knownCollection
 import com.mongodb.jbplugin.mql.parser.components.schemaFieldReference
 import com.mongodb.jbplugin.mql.parser.filter
@@ -61,11 +63,12 @@ class TypeMismatchInspection<D> : QueryInspection<
                 val collectionSchema = querySchema.value
 
                 val allFieldsAndValuesResult = allNodesWithSchemaFieldReferences<Source>()
+                    .map { node -> node.filter { it.component<Named>()?.name != Name.SORT } }
                     .mapMany(
                         schemaFieldReference<Source>()
                             .zip(
                                 first(
-                                    extractValueReferencesRelevantForIndexing<Source>().map { it },
+                                    extractUserProvidedValueReferences<Source>().map { it },
                                     otherwise { null }
                                 )
                             )
