@@ -1,7 +1,6 @@
 package com.mongodb.jbplugin.codeActions.impl.runQuery
 
 import com.intellij.database.dataSource.LocalDataSource
-import com.intellij.openapi.application.EDT
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
@@ -141,11 +140,11 @@ class NamespaceSelector(
 
     private suspend fun handleEvent(event: Event) {
         when (event) {
-            is Event.DatabasesLoading -> withContext(Dispatchers.EDT) {
+            is Event.DatabasesLoading -> {
                 databaseComboBox.isEnabled = false
             }
 
-            is Event.DatabasesLoaded -> withContext(Dispatchers.EDT) {
+            is Event.DatabasesLoaded -> {
                 databaseModel.removeAllElements()
                 collectionModel.removeAllElements()
                 databaseModel.addAll(event.databases)
@@ -175,12 +174,12 @@ class NamespaceSelector(
                     )
                 )
             }
-            is Event.CollectionsLoading -> withContext(Dispatchers.EDT) {
+            is Event.CollectionsLoading -> {
                 collectionModel.removeAllElements()
                 collectionComboBox.isEnabled = false
             }
 
-            is Event.CollectionsLoaded -> withContext(Dispatchers.EDT) {
+            is Event.CollectionsLoaded -> {
                 collectionModel.addAll(event.collections)
                 collectionModel.selectedItem = event.collections.firstOrNull()
                 collectionComboBox.isEnabled = true
