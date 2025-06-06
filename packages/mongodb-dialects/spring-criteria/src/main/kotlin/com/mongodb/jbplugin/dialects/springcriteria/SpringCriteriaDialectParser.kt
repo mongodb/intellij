@@ -30,11 +30,13 @@ import com.mongodb.jbplugin.dialects.springcriteria.QueryTargetCollectionExtract
 import com.mongodb.jbplugin.dialects.springcriteria.QueryTargetCollectionExtractor.or
 import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.AddFieldsStageParser
 import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.GroupStageParser
+import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.LimitStageParser
 import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.MatchStageParser
 import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.ProjectStageParser
 import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.SortStageParser
 import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.StageParser
 import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.UnwindStageParser
+import com.mongodb.jbplugin.dialects.springcriteria.aggregationstageparsers.gatherChainedCalls
 import com.mongodb.jbplugin.mql.BsonAny
 import com.mongodb.jbplugin.mql.BsonArray
 import com.mongodb.jbplugin.mql.Node
@@ -42,6 +44,7 @@ import com.mongodb.jbplugin.mql.components.HasAggregation
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasFieldReference
 import com.mongodb.jbplugin.mql.components.HasFilter
+import com.mongodb.jbplugin.mql.components.HasLimit
 import com.mongodb.jbplugin.mql.components.HasSorts
 import com.mongodb.jbplugin.mql.components.HasSourceDialect
 import com.mongodb.jbplugin.mql.components.HasUpdates
@@ -52,6 +55,7 @@ import com.mongodb.jbplugin.mql.components.Named
 import com.mongodb.jbplugin.mql.toBsonType
 
 internal const val CRITERIA_CLASS_FQN = "org.springframework.data.mongodb.core.query.Criteria"
+internal const val QUERY_CLASS_FQN = "org.springframework.data.mongodb.core.query.Query"
 internal const val DOCUMENT_FQN = "org.springframework.data.mongodb.core.mapping.Document"
 internal const val MONGO_TEMPLATE_FQN = "org.springframework.data.mongodb.core.MongoTemplate"
 internal const val AGGREGATE_FQN = "org.springframework.data.mongodb.core.aggregation.Aggregation"
@@ -68,6 +72,7 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
         SortStageParser(),
         AddFieldsStageParser(),
         GroupStageParser(),
+        LimitStageParser(),
     )
 
     override fun attachment(source: PsiElement): PsiElement? = source.findTopParentBy {
@@ -129,8 +134,8 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                         ),
                         HasSorts(
                             QuerySortParser().parse(filters)
-                        )
-                    )
+                        ),
+                    ) + (parseLimitCall(filters)?.let { listOf(it) } ?: emptyList())
                 )
             }
             "count",
@@ -160,7 +165,7 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                         HasSorts(
                             QuerySortParser().parse(filters)
                         )
-                    )
+                    ) + (parseLimitCall(filters)?.let { listOf(it) } ?: emptyList())
                 )
             }
             "findAndModify",
@@ -197,7 +202,7 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                             )
                                 .reversed()
                         )
-                    )
+                    ) + (parseLimitCall(filters)?.let { listOf(it) } ?: emptyList())
                 )
             }
             "findById" -> Node(
@@ -232,7 +237,7 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                         HasSorts(
                             QuerySortParser().parse(filters)
                         )
-                    )
+                    ) + (parseLimitCall(filters)?.let { listOf(it) } ?: emptyList())
                 )
             }
             "insert" -> Node(
@@ -324,21 +329,24 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                     )
                 )
             }
-            else -> Node(
-                mongoOpCall!!,
-                listOf(
-                    sourceDialect,
-                    command,
-                    inferredFromChain.or(
-                        extractCollectionFromClassTypeParameter(
-                            mongoOpCall.argumentList.expressions.getOrNull(1)
+            else -> {
+                val filters = mongoOpCall?.argumentList?.expressions?.getOrNull(0)
+                Node(
+                    mongoOpCall!!,
+                    listOf(
+                        sourceDialect,
+                        command,
+                        inferredFromChain.or(
+                            extractCollectionFromClassTypeParameter(
+                                mongoOpCall.argumentList.expressions.getOrNull(1)
+                            )
+                        ),
+                        HasFilter(
+                            parseFilterRecursively(filters)
                         )
-                    ),
-                    HasFilter(
-                        parseFilterRecursively(mongoOpCall.argumentList.expressions.getOrNull(0))
-                    )
+                    ) + (parseLimitCall(filters)?.let { listOf(it) } ?: emptyList())
                 )
-            )
+            }
         }
     }
 
@@ -424,6 +432,11 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                 ?: return emptyList()
 
         val valueFilterMethod = valueMethodCall.fuzzyResolveMethod() ?: return emptyList()
+
+        if (valueFilterMethod.name == "limit") {
+            val actualMethod = valueMethodCall.firstChild?.firstChild as? PsiMethodCallExpression
+            return parseFilterRecursively(actualMethod)
+        }
 
         // clean up, we are in the chain where we attach a Sort, Pageable object, so we need to
         // walk upwards in the chain to parse the actual filters
@@ -645,6 +658,25 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
         val name = currentCriteriaMethod.name.replace("Operator", "")
         val named = Named(name.toName())
         return named
+    }
+
+    private fun parseLimitCall(element: PsiElement?): HasLimit? {
+        val methodCallExpr = element?.meaningfulExpression() as? PsiMethodCallExpression
+            ?: return null
+        val limitMethodCall = methodCallExpr.gatherChainedCalls().find {
+            val method = it.fuzzyResolveMethod()
+            method?.name == "limit" && method.containingClass?.qualifiedName == QUERY_CLASS_FQN
+        } ?: return null
+
+        val limitArg = limitMethodCall.argumentList.expressions.getOrNull(0) ?: return null
+        val (wasResolved, limitValue) = limitArg.tryToResolveAsConstant()
+        val limitInt = if (wasResolved) {
+            limitValue as? Int
+        } else {
+            null
+        } ?: return null
+
+        return HasLimit(limitInt)
     }
 
     /**

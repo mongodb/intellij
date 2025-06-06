@@ -14,6 +14,7 @@ import com.mongodb.jbplugin.mql.BsonNull
 import com.mongodb.jbplugin.mql.BsonString
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasFieldReference
+import com.mongodb.jbplugin.mql.components.HasLimit
 import com.mongodb.jbplugin.mql.components.HasSourceDialect
 import com.mongodb.jbplugin.mql.components.HasValueReference
 import com.mongodb.jbplugin.mql.components.IsCommand
@@ -1213,6 +1214,173 @@ class Repository {
                     assertEquals(BsonArray(BsonAnyOf(BsonString, BsonNull)), type)
                 }
             }
+        }
+    }
+
+    @ParsingTest(
+        fileName = "Book.java",
+        """
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.query.Criteria;
+import static org.springframework.data.mongodb.core.query.Criteria.where;
+import static org.springframework.data.mongodb.core.query.Query.query;
+import static org.springframework.data.mongodb.core.query.Update.update;
+
+import java.util.List;
+
+import static org.springframework.data.mongodb.core.query.Criteria.where;
+
+@Document
+record Book() {}
+
+class Repository {
+    private final MongoTemplate template;
+    
+    public Repository(MongoTemplate template) {
+        this.template = template;
+    }
+    
+    public Object randomBook() {
+        return template.find(query(where("field").is("value")).limit(10), Book.class);
+    }
+}
+        """
+    )
+    fun `supports parsing a find query with a limit`(
+        psiFile: PsiFile
+    ) {
+        val query = psiFile.getQueryAtMethod("Repository", "randomBook")
+        SpringCriteriaDialectParser.parse(query).assert(IsCommand.CommandType.FIND_MANY) {
+            collection<HasCollectionReference.OnlyCollection<PsiElement>> {
+                assertEquals("book", collection)
+            }
+
+            filterN(0, Name.EQ) {
+                field<HasFieldReference.FromSchema<PsiElement>> {
+                    assertEquals("field", fieldName)
+                }
+                value<HasValueReference.Constant<PsiElement>> {
+                    assertEquals("value", value)
+                }
+            }
+
+            val limitComponent = component<HasLimit>()
+            assertNotNull(limitComponent)
+            assertEquals(10, limitComponent?.limit)
+        }
+    }
+
+    @ParsingTest(
+        fileName = "Book.java",
+        """
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.query.Criteria;
+import static org.springframework.data.mongodb.core.query.Criteria.where;
+import static org.springframework.data.mongodb.core.query.Query.query;
+import static org.springframework.data.mongodb.core.query.Update.update;
+
+import java.util.List;
+
+import static org.springframework.data.mongodb.core.query.Criteria.where;
+
+@Document
+record Book() {}
+
+class Repository {
+    private final MongoTemplate template;
+    
+    public Repository(MongoTemplate template) {
+        this.template = template;
+    }
+    
+    public Object randomBook() {
+        int limitVal = 10;
+        return template.find(query(where("field").is("value")).limit(limitVal), Book.class);
+    }
+}
+        """
+    )
+    fun `supports parsing a find query with a limit as variable`(
+        psiFile: PsiFile
+    ) {
+        val query = psiFile.getQueryAtMethod("Repository", "randomBook")
+        SpringCriteriaDialectParser.parse(query).assert(IsCommand.CommandType.FIND_MANY) {
+            collection<HasCollectionReference.OnlyCollection<PsiElement>> {
+                assertEquals("book", collection)
+            }
+
+            filterN(0, Name.EQ) {
+                field<HasFieldReference.FromSchema<PsiElement>> {
+                    assertEquals("field", fieldName)
+                }
+                value<HasValueReference.Constant<PsiElement>> {
+                    assertEquals("value", value)
+                }
+            }
+
+            val limitComponent = component<HasLimit>()
+            assertNotNull(limitComponent)
+            assertEquals(10, limitComponent?.limit)
+        }
+    }
+
+    @ParsingTest(
+        fileName = "Book.java",
+        """
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.query.Criteria;
+import static org.springframework.data.mongodb.core.query.Criteria.where;
+import static org.springframework.data.mongodb.core.query.Query.query;
+import static org.springframework.data.mongodb.core.query.Update.update;
+
+import java.util.List;
+
+import static org.springframework.data.mongodb.core.query.Criteria.where;
+
+@Document
+record Book() {}
+
+class Repository {
+    private final MongoTemplate template;
+    
+    public Repository(MongoTemplate template) {
+        this.template = template;
+    }
+    
+    int getLimit() {
+        return 10;
+    }
+    
+    public Object randomBook() {
+        return template.find(query(where("field").is("value")).limit(getLimit()), Book.class);
+    }
+}
+        """
+    )
+    fun `supports parsing a find query with a limit from method call`(
+        psiFile: PsiFile
+    ) {
+        val query = psiFile.getQueryAtMethod("Repository", "randomBook")
+        SpringCriteriaDialectParser.parse(query).assert(IsCommand.CommandType.FIND_MANY) {
+            collection<HasCollectionReference.OnlyCollection<PsiElement>> {
+                assertEquals("book", collection)
+            }
+
+            filterN(0, Name.EQ) {
+                field<HasFieldReference.FromSchema<PsiElement>> {
+                    assertEquals("field", fieldName)
+                }
+                value<HasValueReference.Constant<PsiElement>> {
+                    assertEquals("value", value)
+                }
+            }
+
+            val limitComponent = component<HasLimit>()
+            assertNotNull(limitComponent)
+            assertEquals(10, limitComponent?.limit)
         }
     }
 }
