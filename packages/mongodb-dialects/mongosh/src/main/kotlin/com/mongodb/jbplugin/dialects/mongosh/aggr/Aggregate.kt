@@ -27,6 +27,7 @@ suspend fun <S> MongoshBackend.emitAggregateBody(node: Node<S>, explainPlan: Exp
             Name.UNWIND -> emitUnwindStage(stage)
             Name.SORT -> emitSortStage(stage)
             Name.GROUP -> emitGroupStage(stage)
+            Name.LIMIT -> emitLimitStage(stage)
             else -> {}
         }
         emitObjectValueEnd(long = true)
