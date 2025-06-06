@@ -14,7 +14,9 @@ import com.intellij.psi.util.findParentOfType
 import com.intellij.psi.util.parentOfType
 import com.mongodb.jbplugin.dialects.DialectParser
 import com.mongodb.jbplugin.dialects.javadriver.glossary.findTopParentBy
+import com.mongodb.jbplugin.dialects.javadriver.glossary.findUsageSite
 import com.mongodb.jbplugin.dialects.javadriver.glossary.fuzzyResolveMethod
+import com.mongodb.jbplugin.dialects.javadriver.glossary.getHostReferenceOrNull
 import com.mongodb.jbplugin.dialects.javadriver.glossary.inferFromSingleArrayArgument
 import com.mongodb.jbplugin.dialects.javadriver.glossary.inferFromSingleVarArgElement
 import com.mongodb.jbplugin.dialects.javadriver.glossary.inferValueReferenceFromVarArg
@@ -79,6 +81,15 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
         inferCommandFromMethod(
             (it as? PsiMethodCallExpression)?.fuzzyResolveMethod()
         ).type != IsCommand.CommandType.UNKNOWN
+    } ?: attachmentFromUsagePoint(source)
+
+    private fun attachmentFromUsagePoint(source: PsiElement): PsiElement? {
+        val usageSite = source.getHostReferenceOrNull()?.findUsageSite() ?: source
+        return usageSite.findTopParentBy {
+            inferCommandFromMethod(
+                (it.findUsageSite() as? PsiMethodCallExpression)?.fuzzyResolveMethod()
+            ).type != IsCommand.CommandType.UNKNOWN
+        }
     }
 
     override fun parseCollectionReference(source: PsiElement): HasCollectionReference<PsiElement> {
@@ -119,6 +130,8 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                     ?: return Node(mongoOpCall, listOf(sourceDialect, command, inferredFromChain))
 
                 val filters = actualMethod.argumentList.expressions.getOrNull(0)
+                    ?.meaningfulExpression() as? PsiExpression
+
                 return Node(
                     actualMethod,
                     listOf(
@@ -149,6 +162,8 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
             "scroll",
             "stream" -> {
                 val filters = mongoOpCall.argumentList.expressions.getOrNull(0)
+                    ?.meaningfulExpression() as? PsiExpression
+
                 Node(
                     mongoOpCall,
                     listOf(
@@ -157,6 +172,7 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                         inferredFromChain.or(
                             extractCollectionFromClassTypeParameter(
                                 mongoOpCall.argumentList.expressions.getOrNull(1)
+                                    ?.meaningfulExpression() as? PsiExpression
                             )
                         ),
                         HasFilter(
@@ -175,6 +191,11 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
             "updateMulti",
             "upsert" -> {
                 val filters = mongoOpCall.argumentList.expressions.getOrNull(0)
+                    ?.meaningfulExpression() as? PsiExpression
+
+                val updates = mongoOpCall.argumentList.expressions.getOrNull(1)
+                    ?.meaningfulExpression() as? PsiExpression
+
                 Node(
                     mongoOpCall,
                     listOf(
@@ -182,11 +203,11 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                         command,
                         inferredFromChain.or(
                             extractCollectionFromClassTypeParameter(
-                                mongoOpCall.argumentList.expressions.getOrNull(1)
+                                mongoOpCall.argumentList.expressions.getOrNull(1)?.meaningfulExpression() as? PsiExpression
                             )
                         ).or(
                             extractCollectionFromClassTypeParameter(
-                                mongoOpCall.argumentList.expressions.getOrNull(2)
+                                mongoOpCall.argumentList.expressions.getOrNull(2)?.meaningfulExpression() as? PsiExpression
                             )
                         ),
                         HasFilter(
@@ -198,7 +219,7 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                         ),
                         HasUpdates(
                             parseUpdateRecursively(
-                                mongoOpCall.argumentList.expressions.getOrNull(1)
+                                updates
                             )
                                 .reversed()
                         )
@@ -219,7 +240,7 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                 )
             )
             "findDistinct" -> {
-                val filters = mongoOpCall.argumentList.expressions.getOrNull(0)
+                val filters = mongoOpCall.argumentList.expressions.getOrNull(0)?.meaningfulExpression() as? PsiExpression
                 Node(
                     mongoOpCall,
                     listOf(
@@ -247,7 +268,7 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                     command,
                     inferredFromChain.or(
                         extractCollectionFromClassTypeParameter(
-                            mongoOpCall.argumentList.expressions.getOrNull(1)
+                            mongoOpCall.argumentList.expressions.getOrNull(1)?.meaningfulExpression() as? PsiExpression
                         )
                     ),
                 )
@@ -259,13 +280,13 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                     command,
                     inferredFromChain.or(
                         extractCollectionFromClassTypeParameter(
-                            mongoOpCall.argumentList.expressions.getOrNull(1)
+                            mongoOpCall.argumentList.expressions.getOrNull(1)?.meaningfulExpression() as? PsiExpression
                         )
                     ),
                 )
             )
             "remove" -> {
-                val filters = mongoOpCall.argumentList.expressions.getOrNull(0)
+                val filters = mongoOpCall.argumentList.expressions.getOrNull(0)?.meaningfulExpression() as? PsiExpression
                 Node(
                     mongoOpCall,
                     listOf(
@@ -273,7 +294,7 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                         command,
                         inferredFromChain.or(
                             extractCollectionFromClassTypeParameter(
-                                mongoOpCall.argumentList.expressions.getOrNull(1)
+                                mongoOpCall.argumentList.expressions.getOrNull(1)?.meaningfulExpression() as? PsiExpression
                             )
                         ),
                         HasFilter(
@@ -285,7 +306,7 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                 )
             }
             "replace" -> {
-                val filters = mongoOpCall.argumentList.expressions.getOrNull(0)
+                val filters = mongoOpCall.argumentList.expressions.getOrNull(0)?.meaningfulExpression() as? PsiExpression
                 Node(
                     mongoOpCall,
                     listOf(
@@ -293,7 +314,7 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                         command,
                         inferredFromChain.or(
                             extractCollectionFromClassTypeParameter(
-                                mongoOpCall.argumentList.expressions.getOrNull(1)
+                                mongoOpCall.argumentList.expressions.getOrNull(1)?.meaningfulExpression() as? PsiExpression
                             )
                         ),
                         HasFilter(
@@ -306,7 +327,7 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
             }
             "aggregate", "aggregateStream" -> {
                 val expressions = mongoOpCall.argumentList.expressions
-                val collectionExpression = expressions.getOrNull(1)
+                val collectionExpression = expressions.getOrNull(1)?.meaningfulExpression() as? PsiExpression
                 return Node(
                     mongoOpCall,
                     listOf(
@@ -338,7 +359,7 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
                         command,
                         inferredFromChain.or(
                             extractCollectionFromClassTypeParameter(
-                                mongoOpCall.argumentList.expressions.getOrNull(1)
+                                mongoOpCall.argumentList.expressions.getOrNull(1)?.meaningfulExpression() as? PsiExpression
                             )
                         ),
                         HasFilter(
@@ -639,8 +660,7 @@ object SpringCriteriaDialectParser : DialectParser<PsiElement> {
     }
 
     private fun psiExpressionToFieldReference(fieldPsi: PsiExpression?): HasFieldReference<PsiElement> {
-        val field = fieldPsi?.tryToResolveAsConstantString()
-        val fieldReference = when (field) {
+        val fieldReference = when (val field = fieldPsi?.tryToResolveAsConstantString()) {
             null -> HasFieldReference(
                 HasFieldReference.Unknown as HasFieldReference.FieldReference<PsiElement>
             )

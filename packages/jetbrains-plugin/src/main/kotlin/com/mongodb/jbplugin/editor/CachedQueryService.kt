@@ -67,8 +67,8 @@ class CachedQueryService(
         }
 
         val cacheManager = CachedValuesManager.getManager(attachment.project)
-        attachment.getUserData(queryCacheKey)?.let {
-            return@runCatching decorateWithMetadata(dataSource, attachment.getUserData(queryCacheKey)!!.value)
+        attachment.getUserData(queryCacheKey)?.value?.let {
+            return@runCatching decorateWithMetadata(dataSource, it)
         }
 
         val connectionStateViewModel by project.service<ConnectionStateViewModel>()

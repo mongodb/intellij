@@ -75,6 +75,14 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
     override fun attachment(source: PsiElement): PsiElement? = source.findTopParentBy {
         methodCallToCommand((it as? PsiMethodCallExpression)).type !=
             IsCommand.CommandType.UNKNOWN
+    } ?: attachmentFromUsagePoint(source)
+
+    private fun attachmentFromUsagePoint(source: PsiElement): PsiElement? {
+        val usageSite = source.getHostReferenceOrNull()?.findUsageSite() ?: source
+        return usageSite.findTopParentBy {
+            methodCallToCommand((it as? PsiMethodCallExpression)).type !=
+                IsCommand.CommandType.UNKNOWN
+        }
     }
 
     override fun parseCollectionReference(source: PsiElement): HasCollectionReference<PsiElement> {

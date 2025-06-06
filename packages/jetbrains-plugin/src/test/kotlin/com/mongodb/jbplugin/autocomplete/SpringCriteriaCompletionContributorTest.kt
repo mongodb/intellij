@@ -74,6 +74,37 @@ record Entity() {}
         setup = DefaultSetup.SPRING_DATA,
         value = """
     public List<Book> allReleasedBooks() {
+        var query = where("<caret>"
+        return template.query(Book.class).matching(query);
+    }
+        """,
+    )
+    fun `should autocomplete fields from the current namespace when the query is in a variable`(
+        fixture: CodeInsightTestFixture,
+    ) = runTest {
+        val (dataSource, readModelProvider) = fixture.setupConnection()
+        fixture.specifyDatabase(dataSource, "myDatabase")
+        fixture.specifyDialect(SpringCriteriaDialect)
+
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.book",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
+                ),
+            )
+        )
+
+        eventually {
+            fixture.assertAutocompletes("myField", "myField2")
+        }
+    }
+
+    @ParsingTest(
+        setup = DefaultSetup.SPRING_DATA,
+        value = """
+    public List<Book> allReleasedBooks() {
         return template.query(Book.class).matching(
             Query.query(
                 where("released").is(true)

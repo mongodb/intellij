@@ -142,6 +142,112 @@ class Repository {
     @ParsingTest(
         fileName = "Book.java",
         """
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.query.Criteria;
+
+import java.util.List;
+
+import static org.springframework.data.mongodb.core.query.Criteria.where;
+
+@Document
+record Book() {}
+
+class Repository {
+    private final MongoTemplate template;
+    
+    public Repository(MongoTemplate template) {
+        this.template = template;
+    }
+    
+    public List<Book> allReleasedBooks() {
+        var query = where("released").is(true);
+        return template.query(Book.class).matching(query).all();
+    }
+}
+        """
+    )
+    fun `extracts a simple criteria query in a variable`(
+        psiFile: PsiFile
+    ) {
+        val query = psiFile.getQueryAtMethod("Repository", "allReleasedBooks")
+        SpringCriteriaDialectParser.parse(query).assert(IsCommand.CommandType.FIND_MANY) {
+            component<HasSourceDialect> {
+                assertEquals(HasSourceDialect.DialectName.SPRING_CRITERIA, name)
+            }
+
+            collection<HasCollectionReference.OnlyCollection<PsiElement>> {
+                assertEquals("book", collection)
+            }
+
+            filterN(0, Name.EQ) {
+                field<HasFieldReference.FromSchema<PsiElement>> {
+                    assertEquals("released", fieldName)
+                }
+                value<HasValueReference.Constant<PsiElement>> {
+                    assertEquals(BsonAnyOf(BsonNull, BsonBoolean), type)
+                    assertEquals(true, value)
+                }
+            }
+        }
+    }
+
+    @ParsingTest(
+        fileName = "Book.java",
+        """
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.query.Criteria;
+
+import java.util.List;
+
+import static org.springframework.data.mongodb.core.query.Criteria.where;
+
+@Document
+record Book() {}
+
+class Repository {
+    private final MongoTemplate template;
+    
+    public Repository(MongoTemplate template) {
+        this.template = template;
+    }
+    
+    public List<Book> allReleasedBooks() {
+        var query = where("released").is(true);
+        return template.query(Book.class).matching(query).all();
+    }
+}
+        """
+    )
+    fun `extracts a simple criteria query referenced in a variable`(
+        psiFile: PsiFile
+    ) {
+        val query = psiFile.getQueryAtMethod("Repository", "allReleasedBooks")
+        SpringCriteriaDialectParser.parse(query).assert(IsCommand.CommandType.FIND_MANY) {
+            component<HasSourceDialect> {
+                assertEquals(HasSourceDialect.DialectName.SPRING_CRITERIA, name)
+            }
+
+            collection<HasCollectionReference.OnlyCollection<PsiElement>> {
+                assertEquals("book", collection)
+            }
+
+            filterN(0, Name.EQ) {
+                field<HasFieldReference.FromSchema<PsiElement>> {
+                    assertEquals("released", fieldName)
+                }
+                value<HasValueReference.Constant<PsiElement>> {
+                    assertEquals(BsonAnyOf(BsonNull, BsonBoolean), type)
+                    assertEquals(true, value)
+                }
+            }
+        }
+    }
+
+    @ParsingTest(
+        fileName = "Book.java",
+        """
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.mapping.Document;
