@@ -234,6 +234,9 @@ enum class Name(val canonical: String, val isSupported: Boolean) : HasQueryRole 
     UNWIND("unwind", isSupported = true) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     },
+    LIMIT("limit", isSupported = true) {
+        override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
+    },
     UNKNOWN("<unknown operator>", isSupported = false) {
         override fun queryRole(bsonType: BsonType): QueryRole = QueryRole.IRRELEVANT
     };

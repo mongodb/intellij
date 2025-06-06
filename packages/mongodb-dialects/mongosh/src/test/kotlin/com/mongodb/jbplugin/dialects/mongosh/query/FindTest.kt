@@ -10,6 +10,7 @@ import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasFieldReference
 import com.mongodb.jbplugin.mql.components.HasFilter
+import com.mongodb.jbplugin.mql.components.HasLimit
 import com.mongodb.jbplugin.mql.components.HasSorts
 import com.mongodb.jbplugin.mql.components.HasValueReference
 import com.mongodb.jbplugin.mql.components.IsCommand
@@ -86,6 +87,42 @@ class FindTest {
                             )
                         )
                     )
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `can format a query with limit`() = runTest {
+        val namespace = Namespace("myDb", "myColl")
+
+        assertGeneratedQuery(
+            """
+            db.getSiblingDB("myDb").getCollection("myColl").find({"myField": "myVal", }).limit(11)
+            """.trimIndent()
+        ) {
+            Node(
+                Unit,
+                listOf(
+                    IsCommand(IsCommand.CommandType.FIND_MANY),
+                    HasCollectionReference(HasCollectionReference.Known(Unit, Unit, namespace)),
+                    HasFilter(
+                        listOf(
+                            Node(
+                                Unit,
+                                listOf(
+                                    Named(Name.EQ),
+                                    HasFieldReference(
+                                        HasFieldReference.FromSchema(Unit, "myField")
+                                    ),
+                                    HasValueReference(
+                                        HasValueReference.Constant(Unit, "myVal", BsonString)
+                                    )
+                                )
+                            )
+                        )
+                    ),
+                    HasLimit(11)
                 )
             )
         }

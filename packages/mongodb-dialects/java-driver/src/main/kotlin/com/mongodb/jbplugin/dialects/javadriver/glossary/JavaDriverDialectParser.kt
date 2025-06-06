@@ -671,6 +671,36 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
                 )
             }
 
+            "limit" -> {
+                val limitArgument = stageCall.argumentList.expressions.getOrNull(0)
+                    ?: return Node(
+                        source = stageCall,
+                        components = listOf(
+                            Named(Name.LIMIT)
+                        )
+                    )
+
+                val (wasResolved, limitValue) = limitArgument.tryToResolveAsConstant()
+                val limitInt = if (wasResolved) {
+                    limitValue as? Int
+                } else {
+                    null
+                } ?: return Node(
+                    source = stageCall,
+                    components = listOf(
+                        Named(Name.LIMIT)
+                    )
+                )
+
+                return Node(
+                    source = stageCall,
+                    components = listOf(
+                        Named(Name.LIMIT),
+                        HasLimit(limitInt)
+                    )
+                )
+            }
+
             else -> return Node(
                 source = stageCall,
                 components = listOf(
@@ -994,17 +1024,37 @@ object JavaDriverDialectParser : DialectParser<PsiElement> {
                 val currentMetadata = when (method.name) {
                     "sort" -> {
                         val sortArg =
-                            methodCall.argumentList.expressions.getOrNull(0) ?: return emptyList()
+                            methodCall.argumentList.expressions.getOrNull(0)
+                                ?: return@flatMap emptyList()
                         val sortExpr =
-                            resolveBsonBuilderCall(sortArg, SORTS_FQN) ?: return emptyList()
+                            resolveBsonBuilderCall(sortArg, SORTS_FQN)
+                                ?: return@flatMap emptyList()
                         listOf(
-                            HasSorts(parseBsonBuilderCallsSimilarToProjections(sortExpr, SORTS_FQN))
+                            HasSorts(
+                                parseBsonBuilderCallsSimilarToProjections(
+                                    sortExpr,
+                                    SORTS_FQN
+                                )
+                            )
                         )
+                    }
+
+                    "limit" -> {
+                        val limitArg = methodCall.argumentList.expressions.getOrNull(0)
+                            ?: return@flatMap emptyList()
+                        val (wasResolved, value) = limitArg.tryToResolveAsConstant()
+                        val limitInt = if (wasResolved) {
+                            value as? Int
+                        } else {
+                            null
+                        } ?: return@flatMap emptyList()
+
+                        listOf(HasLimit(limitInt))
                     }
                     else -> emptyList()
                 }
 
-                return currentMetadata
+                return@flatMap currentMetadata
             } else {
                 emptyList()
             }

@@ -23,6 +23,7 @@ import com.mongodb.jbplugin.mql.BsonString
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasFieldReference
 import com.mongodb.jbplugin.mql.components.HasFilter
+import com.mongodb.jbplugin.mql.components.HasLimit
 import com.mongodb.jbplugin.mql.components.HasSorts
 import com.mongodb.jbplugin.mql.components.HasSourceDialect
 import com.mongodb.jbplugin.mql.components.HasUpdates
@@ -2558,5 +2559,100 @@ public final class Repository {
 
         assertEquals("myField", (sortByMyFieldName as HasFieldReference.FromSchema).fieldName)
         assertEquals(1, (sortByMyFieldOrder as HasValueReference.Inferred).value)
+    }
+
+    @ParsingTest(
+        fileName = "Repository.java",
+        value = """
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Sorts;import org.bson.types.ObjectId;
+import java.util.ArrayList;
+import static com.mongodb.client.model.Filters.*;
+
+public final class Repository {
+    private final MongoCollection<Document> collection;
+    
+    public Repository(MongoClient client) {
+        this.collection = client.getDatabase("simple").getCollection("books");
+    }
+    
+    public Document findBookById(ObjectId id) {
+        return this.collection.find(eq("_id", id)).sort(Sorts.ascending("myField")).limit(22).first();
+    }
+}
+        """,
+    )
+    fun `supports parsing limit chained to a find query`(psiFile: PsiFile) {
+        val query = psiFile.getQueryAtMethod("Repository", "findBookById")
+        val parsedQuery = JavaDriverDialect.parser.parse(query)
+        val limit = parsedQuery.component<HasLimit>()
+
+        assertEquals(22, limit?.limit)
+    }
+
+    @ParsingTest(
+        fileName = "Repository.java",
+        value = """
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Sorts;import org.bson.types.ObjectId;
+import java.util.ArrayList;
+import static com.mongodb.client.model.Filters.*;
+
+public final class Repository {
+    private final MongoCollection<Document> collection;
+    
+    public Repository(MongoClient client) {
+        this.collection = client.getDatabase("simple").getCollection("books");
+    }
+    
+    public Document findBookById(ObjectId id) {
+        int limitVal = 22;
+        return this.collection.find(eq("_id", id)).sort(Sorts.ascending("myField")).limit(limitVal).first();
+    }
+}
+        """,
+    )
+    fun `supports parsing limit chained to a find query as a variable`(psiFile: PsiFile) {
+        val query = psiFile.getQueryAtMethod("Repository", "findBookById")
+        val parsedQuery = JavaDriverDialect.parser.parse(query)
+        val limit = parsedQuery.component<HasLimit>()
+
+        assertEquals(22, limit?.limit)
+    }
+
+    @ParsingTest(
+        fileName = "Repository.java",
+        value = """
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Sorts;import org.bson.types.ObjectId;
+import java.util.ArrayList;
+import static com.mongodb.client.model.Filters.*;
+
+public final class Repository {
+    private final MongoCollection<Document> collection;
+    
+    public Repository(MongoClient client) {
+        this.collection = client.getDatabase("simple").getCollection("books");
+    }
+    
+    int getLimit() {
+        return 22;
+    }
+    
+    public Document findBookById(ObjectId id) {
+        return this.collection.find(eq("_id", id)).sort(Sorts.ascending("myField")).limit(getLimit()).first();
+    }
+}
+        """,
+    )
+    fun `supports parsing limit chained to a find query as a method call`(psiFile: PsiFile) {
+        val query = psiFile.getQueryAtMethod("Repository", "findBookById")
+        val parsedQuery = JavaDriverDialect.parser.parse(query)
+        val limit = parsedQuery.component<HasLimit>()
+
+        assertEquals(22, limit?.limit)
     }
 }

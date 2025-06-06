@@ -329,7 +329,6 @@ class Repository {
             Aggregation.bucket(),
             Aggregation.bucketAuto(),
             Aggregation.geoNear(),
-            Aggregation.limit(),
             Aggregation.lookup(),
             Aggregation.facet(),
             Aggregation.graphLookup(),
@@ -367,7 +366,7 @@ class Repository {
             }
 
             component<HasAggregation<PsiElement>> {
-                assertEquals(14, children.size)
+                assertEquals(13, children.size)
 
                 for (child in children) {
                     val childName = child.component<Named>()

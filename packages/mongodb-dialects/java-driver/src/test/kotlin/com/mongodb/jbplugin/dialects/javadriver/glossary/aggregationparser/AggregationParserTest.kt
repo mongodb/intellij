@@ -265,7 +265,6 @@ public final class Aggregation {
             Aggregates.fill(),
             Aggregates.geoNear(),
             Aggregates.graphLookup(),
-            Aggregates.limit(),
             Aggregates.lookup(),
             Aggregates.merge(),
             Aggregates.out(),
