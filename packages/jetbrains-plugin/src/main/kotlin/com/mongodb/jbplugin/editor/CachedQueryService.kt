@@ -67,6 +67,9 @@ class CachedQueryService(
         }
 
         val cacheManager = CachedValuesManager.getManager(attachment.project)
+        // We are doing it this way because getUserData(queryCacheKey) can be null. But, in addition
+        // even if the user data is not null, the value _inside it_ can be null under some race
+        // conditions. By doing this, we ensure that the cached query is never null.
         attachment.getUserData(queryCacheKey)?.value?.let {
             return@runCatching decorateWithMetadata(dataSource, it)
         }
