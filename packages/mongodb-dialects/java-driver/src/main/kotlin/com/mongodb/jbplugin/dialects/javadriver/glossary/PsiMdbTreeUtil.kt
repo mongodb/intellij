@@ -9,6 +9,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.JavaPsiFacade
 import com.intellij.psi.PsiBinaryExpression
 import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiCodeBlock
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiEnumConstant
 import com.intellij.psi.PsiExpression
@@ -18,7 +19,9 @@ import com.intellij.psi.PsiLiteralValue
 import com.intellij.psi.PsiLocalVariable
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiMethodCallExpression
+import com.intellij.psi.PsiParameter
 import com.intellij.psi.PsiParenthesizedExpression
+import com.intellij.psi.PsiReference
 import com.intellij.psi.PsiReferenceExpression
 import com.intellij.psi.PsiReturnStatement
 import com.intellij.psi.PsiType
@@ -443,6 +446,16 @@ fun PsiElement.findAllChildrenOfAnyType(vararg types: Class<out PsiElement>): Li
  */
 fun PsiElement.meaningfulExpression(): PsiElement {
     return when (this) {
+        is PsiReferenceExpression -> {
+            val next = resolve()
+            if (next is PsiParameter) { // parameters are runtime values, not resolvable, so just keep the reference
+                this
+            } else {
+                next?.meaningfulExpression() ?: this
+            }
+        }
+        is PsiLocalVariable -> initializer?.meaningfulExpression() ?: this
+        is PsiField -> initializer?.meaningfulExpression() ?: this
         // the children are: '(', YOUR_EXPR, ')'
         // so we need the expression inside (index 1)
         is PsiParenthesizedExpression -> if (children.size == 3) {
@@ -451,6 +464,27 @@ fun PsiElement.meaningfulExpression(): PsiElement {
             this
         }
         else -> this
+    }
+}
+
+fun PsiElement.getHostReferenceOrNull(): PsiElement? {
+    return findTopParentBy {
+        it is PsiReference || it is PsiField || it is PsiParameter || it is PsiLocalVariable
+    }
+}
+
+fun PsiElement.findUsageSite(): PsiElement? {
+    return when (this) {
+        is PsiLocalVariable -> {
+            val parentBlock = findTopParentBy { it is PsiCodeBlock }
+            val usageOfVariables =
+                parentBlock?.findAllChildrenOfType(PsiReference::class.java)?.lastOrNull {
+                    it.isReferenceTo(this)
+                }
+
+            usageOfVariables?.element?.parent
+        }
+        else -> meaningfulExpression()
     }
 }
 

@@ -22,11 +22,7 @@ object QueryTargetCollectionExtractor {
 
         var currentMethodCall = queryChain
         do {
-            val currentMethod = currentMethodCall?.fuzzyResolveMethod()
-            if (currentMethod == null) {
-                return unknown
-            }
-
+            val currentMethod = currentMethodCall?.fuzzyResolveMethod() ?: return unknown
             if (currentMethod.name == "query") {
                 return extractCollectionFromClassTypeParameter(
                     currentMethodCall.argumentList.expressions.getOrNull(0)

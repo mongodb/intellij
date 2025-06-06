@@ -115,6 +115,68 @@ class JavaDriverCompletionContributorTest {
 
     @ParsingTest(
         value = """
+    public FindIterable<Document> exampleFind() {
+        var query = eq("<caret>");
+        
+        return client.getDatabase("myDatabase").getCollection("myCollection")
+                .find(query);
+    }
+        """,
+    )
+    fun `should autocomplete fields from the current namespace when the query is in a variable`(
+        fixture: CodeInsightTestFixture,
+    ) = runTest {
+        fixture.specifyDialect(JavaDriverDialect)
+
+        val (_, readModelProvider) = fixture.setupConnection()
+
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.myCollection",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                    "myField2" to BsonString,
+                ),
+            )
+        )
+
+        eventually {
+            fixture.assertAutocompletes("myField")
+        }
+    }
+
+    @ParsingTest(
+        value = """
+    public void exampleFind() {
+        var filter = eq("<caret>");
+        
+        client.getDatabase("myDatabase").getCollection("myCollection")
+                .updateMany(filter, set("x", 1));
+    }
+        """,
+    )
+    fun `should autocomplete fields from the current namespace in the filters of an update when stored in a variable`(
+        fixture: CodeInsightTestFixture,
+    ) = runTest {
+        fixture.specifyDialect(JavaDriverDialect)
+        val (_, readModelProvider) = fixture.setupConnection()
+
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.myCollection",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                ),
+            )
+        )
+
+        eventually {
+            fixture.assertAutocompletes("myField")
+        }
+    }
+
+    @ParsingTest(
+        value = """
     public void exampleFind() {
         client.getDatabase("myDatabase").getCollection("myCollection")
                 .updateMany(eq("<caret>"), set("x", 1));
@@ -649,6 +711,40 @@ class JavaDriverCompletionContributorTest {
                     it.lookupString == "myField"
                 },
             )
+        }
+    }
+
+    @ParsingTest(
+        value = """
+    public void exampleFind() {
+        var group = Aggregates.group(
+                        "<caret>"
+                    );
+                    
+        client.getDatabase("myDatabase").getCollection("myCollection")
+                .aggregate(List.of(
+                    group                
+                ));
+    }
+        """,
+    )
+    fun `should autocomplete fields when the query is in a variable`(
+        fixture: CodeInsightTestFixture,
+    ) = runTest {
+        fixture.specifyDialect(JavaDriverDialect)
+        val (_, readModelProvider) = fixture.setupConnection()
+
+        readModelProvider.whenQueryingCollectionSchema(
+            "myDatabase.myCollection",
+            BsonObject(
+                mapOf(
+                    "myField" to BsonString,
+                ),
+            )
+        )
+
+        eventually {
+            fixture.assertAutocompletes("myField")
         }
     }
 
