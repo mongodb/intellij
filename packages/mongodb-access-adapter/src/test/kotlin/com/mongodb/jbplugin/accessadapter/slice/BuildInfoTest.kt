@@ -54,7 +54,7 @@ class BuildInfoTest {
             )
 
             val data = BuildInfo.Slice.queryUsingDriver(driver)
-            assertEquals("8.0", data.version)
+            assertEquals("8.0.0", data.version)
             assertNull(data.gitVersion)
         }
 
