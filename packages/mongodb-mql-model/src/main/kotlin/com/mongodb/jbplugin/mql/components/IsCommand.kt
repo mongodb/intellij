@@ -13,7 +13,7 @@ class IsCommand(val type: CommandType) : Component {
         FIND_MANY("find", usesIndexes = true, isSupported = true),
         FIND_ONE("findOne", usesIndexes = true, isSupported = true),
         FIND_ONE_AND_DELETE("findOneAndDelete", usesIndexes = true, isSupported = true),
-        FIND_ONE_AND_REPLACE("findOneAndDelete", usesIndexes = true, isSupported = true),
+        FIND_ONE_AND_REPLACE("findOneAndReplace", usesIndexes = true, isSupported = true),
         FIND_ONE_AND_UPDATE("findOneAndUpdate", usesIndexes = true, isSupported = true),
         INSERT_MANY("insertMany", usesIndexes = false, isSupported = true),
         INSERT_ONE("insertOne", usesIndexes = false, isSupported = true),
