@@ -52,7 +52,7 @@ class ConnectionFailureProbeTest {
                     event.properties[TelemetryProperty.IS_LOCALHOST] == true &&
                     event.properties[TelemetryProperty.IS_ENTERPRISE] == false &&
                     event.properties[TelemetryProperty.IS_GENUINE] == true &&
-                    event.properties[TelemetryProperty.VERSION] == "8.0" &&
+                    event.properties[TelemetryProperty.VERSION] == "8.0.0" &&
                     event.properties[TelemetryProperty.ERROR_CODE] == "<unk>" &&
                     event.properties[TelemetryProperty.ERROR_NAME] == "Throwable"
             },
