@@ -175,9 +175,16 @@ abstract class AbstractMongoDbInspectionBridge<Settings, I : Inspection>(
                 NotUsingIndex, NotUsingIndexEffectively -> HighlightSeverity.INFORMATION
                 else -> HighlightSeverity.WARNING
             }
-            var annotation = annotationHolder.newAnnotation(problemHighlightType, problemDescription)
-                .range(insight.source)
-                .needsUpdateOnTyping()
+
+            var annotation = try {
+                annotationHolder.newAnnotation(problemHighlightType, problemDescription)
+                    .range(insight.source)
+                    .needsUpdateOnTyping()
+            } catch (ex: Exception) {
+                // this annotation is stale (because of changes in the code editor)
+                // so just skip it and continue to the next one
+                continue
+            }
 
             val problemDescriptor = ProblemDescriptorImpl(
                 insight.source,
