@@ -3,6 +3,7 @@ package com.mongodb.jbplugin.editor
 import com.intellij.database.dataSource.LocalDataSource
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.logger
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.psi.PsiElement
@@ -55,65 +56,73 @@ class CachedQueryService(
         MutableMap<Namespace, Set<Node<PsiElement>>> = mutableMapOf()
     private val rwLock: ReentrantReadWriteLock = ReentrantReadWriteLock(true)
 
-    fun queryAt(expression: PsiElement): Node<PsiElement>? = kotlin.runCatching {
-        val fileInExpression = getParentOfType(expression, PsiFile::class.java) ?: return null
-        val dataSource = fileInExpression.dataSource
+    fun queryAt(expression: PsiElement): Node<PsiElement>? {
+        try {
+            val fileInExpression = getParentOfType(expression, PsiFile::class.java) ?: return null
+            val dataSource = fileInExpression.dataSource
 
-        val dialect = expression.containingFile.dialect ?: return null
-        val attachment = dialect.parser.attachment(expression) ?: return null
-        val psiManager = PsiManager.getInstance(expression.project)
-        if (!psiManager.areElementsEquivalent(expression, attachment)) {
-            return@runCatching null
-        }
-
-        val cacheManager = CachedValuesManager.getManager(attachment.project)
-        // We are doing it this way because getUserData(queryCacheKey) can be null. But, in addition
-        // even if the user data is not null, the value _inside it_ can be null under some race
-        // conditions. By doing this, we ensure that the cached query is never null.
-        attachment.getUserData(queryCacheKey)?.value?.let {
-            return@runCatching decorateWithMetadata(dataSource, it)
-        }
-
-        val connectionStateViewModel by project.service<ConnectionStateViewModel>()
-        val cachedValue = cacheManager.createCachedValue {
-            val parsedAst = runCatching { dialect.parser.parse(expression) }.getOrNull()
-            val namespaceOfQuery = extractNamespaceOfQuery(parsedAst)
-
-            if (parsedAst != null && namespaceOfQuery != null) {
-                // we get an exclusive lock because we are in IntelliJ's parser thread. Essentially,
-                // this is the only thread who should update the cached queries.
-                // We do this in the cached value because we want to update the cached queries
-                // every time a query goes stale.
-                rwLock.write {
-                    // here we have an exclusive lock, let's first do some housekeeping.
-                    // clear all stale references (queries that do not exist anymore)
-                    for (entry in cachedQueriesByNamespace.entries) {
-                        val queries = entry.value.filter {
-                            runCatching { it.source.containingFile }.isSuccess
-                        }.toSet()
-
-                        entry.setValue(queries)
-                    }
-
-                    // now add the current query to the cache
-                    cachedQueriesByNamespace.compute(namespaceOfQuery) { _, queries ->
-                        (queries ?: emptySet()) + parsedAst
-                    }
-                }
+            val dialect = expression.containingFile.dialect ?: return null
+            val attachment = dialect.parser.attachment(expression) ?: return null
+            val psiManager = PsiManager.getInstance(expression.project)
+            if (!psiManager.areElementsEquivalent(expression, attachment)) {
+                return null
             }
 
-            Result.create(parsedAst, attachment, connectionStateViewModel)
-        }
+            val cacheManager = CachedValuesManager.getManager(attachment.project)
+            // We are doing it this way because getUserData(queryCacheKey) can be null. But, in addition
+            // even if the user data is not null, the value _inside it_ can be null under some race
+            // conditions. By doing this, we ensure that the cached query is never null.
+            attachment.getUserData(queryCacheKey)?.value?.let {
+                return decorateWithMetadata(dataSource, it)
+            }
 
-        attachment.putUserData(queryCacheKey, cachedValue)
-        return@runCatching decorateWithMetadata(dataSource, attachment.getUserData(queryCacheKey)!!.value)
-    }.onFailure { ex ->
-        logger.warn(
-            useLogMessage("Could not parse query: ${ex.message}")
-                .build(),
-            ex
-        )
-    }.getOrNull()
+            val connectionStateViewModel by project.service<ConnectionStateViewModel>()
+            val cachedValue = cacheManager.createCachedValue {
+                val parsedAst = runCatching { dialect.parser.parse(expression) }.getOrNull()
+                val namespaceOfQuery = extractNamespaceOfQuery(parsedAst)
+
+                if (parsedAst != null && namespaceOfQuery != null) {
+                    // we get an exclusive lock because we are in IntelliJ's parser thread. Essentially,
+                    // this is the only thread who should update the cached queries.
+                    // We do this in the cached value because we want to update the cached queries
+                    // every time a query goes stale.
+                    rwLock.write {
+                        // here we have an exclusive lock, let's first do some housekeeping.
+                        // clear all stale references (queries that do not exist anymore)
+                        for (entry in cachedQueriesByNamespace.entries) {
+                            val queries = entry.value.filter {
+                                runCatching { it.source.containingFile }.isSuccess
+                            }.toSet()
+
+                            entry.setValue(queries)
+                        }
+
+                        // now add the current query to the cache
+                        cachedQueriesByNamespace.compute(namespaceOfQuery) { _, queries ->
+                            (queries ?: emptySet()) + parsedAst
+                        }
+                    }
+                }
+
+                Result.create(parsedAst, attachment, connectionStateViewModel)
+            }
+
+            attachment.putUserData(queryCacheKey, cachedValue)
+            return decorateWithMetadata(
+                dataSource,
+                attachment.getUserData(queryCacheKey)!!.value
+            )
+        } catch (ex: Exception) {
+            logger.warn(
+                useLogMessage("Could not parse query: ${ex.message}")
+                    .build(),
+                ex
+            )
+            return null
+        } catch (pce: ProcessCanceledException) {
+            throw pce
+        }
+    }
 
     override fun allSiblingsOf(query: Node<PsiElement>): Array<Node<PsiElement>> = kotlin.runCatching {
         val collRef =
