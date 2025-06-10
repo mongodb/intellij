@@ -1,6 +1,7 @@
 package com.mongodb.jbplugin.codeActions.impl.runQuery
 
 import com.intellij.database.dataSource.LocalDataSource
+import com.intellij.jpa.jpb.model.ui.addItemSelectedListener
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
@@ -11,7 +12,6 @@ import com.mongodb.jbplugin.accessadapter.slice.ListCollections
 import com.mongodb.jbplugin.accessadapter.slice.ListDatabases
 import com.mongodb.jbplugin.i18n.Icons
 import com.mongodb.jbplugin.i18n.Icons.scaledToText
-import com.mongodb.jbplugin.meta.latest
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.observability.useLogMessage
 import kotlinx.coroutines.CoroutineScope
@@ -35,9 +35,6 @@ class NamespaceSelector(
         data object DatabasesLoading : Event
         data class DatabasesLoaded(val databases: List<String>) : Event
         data class DatabaseSelected(val database: String) : Event
-        data object CollectionsLoading : Event
-        data class CollectionsLoaded(val collections: List<String>) : Event
-        data class CollectionSelected(val collection: String) : Event
     }
 
     private val events: MutableSharedFlow<Event> = MutableSharedFlow()
@@ -53,29 +50,8 @@ class NamespaceSelector(
     val selectedCollection: String?
         get() = collectionModel.selectedItem?.toString()
 
-    private val loadingDatabases: Boolean by events.latest(
-        onNewEvent = { event, state ->
-            when (event) {
-                is Event.DatabasesLoading -> true
-                is Event.DatabasesLoaded -> false
-                else -> state
-            }
-        },
-        onChange = {},
-        defaultValue = true
-    )
-
-    private val loadingCollections: Boolean by events.latest(
-        onNewEvent = { event, state ->
-            when (event) {
-                is Event.CollectionsLoading -> true
-                is Event.CollectionsLoaded -> false
-                else -> state
-            }
-        },
-        onChange = {},
-        defaultValue = false
-    )
+    private var loadingDatabases = false
+    private var loadingCollections = false
 
     init {
         databaseComboBox.isEnabled = false
@@ -98,15 +74,9 @@ class NamespaceSelector(
             events.collectLatest(::handleEvent)
         }
 
-        databaseComboBox.addItemListener {
+        databaseComboBox.addItemSelectedListener {
             coroutineScope.launch(Dispatchers.IO) {
                 events.emit(Event.DatabaseSelected(it.item.toString()))
-            }
-        }
-
-        collectionComboBox.addItemListener {
-            coroutineScope.launch(Dispatchers.IO) {
-                events.emit(Event.CollectionSelected(it.item.toString()))
             }
         }
 
@@ -141,50 +111,45 @@ class NamespaceSelector(
     private suspend fun handleEvent(event: Event) {
         when (event) {
             is Event.DatabasesLoading -> {
+                loadingDatabases = true
                 databaseComboBox.isEnabled = false
             }
 
             is Event.DatabasesLoaded -> {
+                loadingDatabases = false
                 databaseModel.removeAllElements()
                 collectionModel.removeAllElements()
                 databaseModel.addAll(event.databases)
                 databaseModel.selectedItem = event.databases.firstOrNull()
                 databaseComboBox.isEnabled = true
             }
-            is Event.DatabaseSelected -> withContext(Dispatchers.IO) {
-                events.tryEmit(Event.CollectionsLoading)
+
+            is Event.DatabaseSelected -> {
+                loadingCollections = true
 
                 val readModel by project.service<DataGripBasedReadModelProvider>()
-                val result = try {
-                    readModel.slice(
-                        dataSource,
-                        ListCollections.Slice(event.database)
-                    )
-                } catch (e: Exception) {
-                    logger.warn(
-                        useLogMessage("Failed to get collections").build(),
-                        e
-                    )
-                    null
+                val result = withContext(Dispatchers.IO) {
+                    try {
+                        readModel.slice(
+                            dataSource,
+                            ListCollections.Slice(event.database)
+                        )
+                    } catch (e: Exception) {
+                        logger.warn(
+                            useLogMessage("Failed to get collections").build(),
+                            e
+                        )
+                        null
+                    }
                 }
 
-                events.emit(
-                    Event.CollectionsLoaded(
-                        result?.collections?.map { it.name } ?: emptyList()
-                    )
-                )
-            }
-            is Event.CollectionsLoading -> {
+                val collections = result?.collections?.map { it.name } ?: emptyList()
+                loadingCollections = false
                 collectionModel.removeAllElements()
-                collectionComboBox.isEnabled = false
-            }
-
-            is Event.CollectionsLoaded -> {
-                collectionModel.addAll(event.collections)
-                collectionModel.selectedItem = event.collections.firstOrNull()
+                collectionModel.addAll(collections)
+                collectionModel.selectedItem = collections.firstOrNull()
                 collectionComboBox.isEnabled = true
             }
-            else -> {}
         }
     }
 
