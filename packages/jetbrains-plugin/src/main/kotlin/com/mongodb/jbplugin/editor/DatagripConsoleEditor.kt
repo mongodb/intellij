@@ -50,7 +50,7 @@ interface DatagripConsoleEditor {
         private fun allConsoleEditorsForDataSource(project: Project, dataSource: LocalDataSource): List<Editor> =
             EditorFactory.getInstance().allEditors.filter {
                 val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(it.document)
-                val virtualFile = psiFile?.virtualFile ?: return@filter false
+                val virtualFile = psiFile?.virtualFileOrNull ?: return@filter false
                 val dataSourceOfFile = DbVFSUtils.getDataSource(project, virtualFile)
                 dataSource == dataSourceOfFile
             }

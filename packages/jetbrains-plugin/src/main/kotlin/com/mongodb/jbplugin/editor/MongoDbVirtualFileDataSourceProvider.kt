@@ -37,6 +37,11 @@ val PsiFile.database: String?
             }
     }.getOrNull()
 
+val PsiFile.virtualFileOrNull: VirtualFile?
+    get() = runCatching {
+        virtualFile
+    }.getOrNull()
+
 val VirtualFile.identifiedDialects: List<Dialect<PsiElement, Project>>
     get() = runCatching {
         MongoDbVirtualFileDataSourceProvider().getDialects(this)
@@ -46,7 +51,7 @@ val VirtualFile.dialect: Dialect<PsiElement, Project>?
     get() = identifiedDialects.firstOrNull()
 
 val PsiFile.dialect: Dialect<PsiElement, Project>?
-    get() = virtualFile.dialect
+    get() = virtualFileOrNull?.dialect
 
 /**
  * Returns the data source, if attached to the editor through the MongoDB Plugin.
