@@ -112,6 +112,8 @@ class CachedQueryService(
                 dataSource,
                 attachment.getUserData(queryCacheKey)!!.value
             )
+        } catch (pce: ProcessCanceledException) {
+            throw pce
         } catch (ex: Exception) {
             logger.warn(
                 useLogMessage("Could not parse query: ${ex.message}")
@@ -119,8 +121,6 @@ class CachedQueryService(
                 ex
             )
             return null
-        } catch (pce: ProcessCanceledException) {
-            throw pce
         }
     }
 
