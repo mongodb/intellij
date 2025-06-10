@@ -2,6 +2,7 @@ import com.mongodb.intellij.IntelliJPluginBundle
 import org.gradle.accessors.dm.LibrariesForLibs
 import org.jetbrains.changelog.Changelog
 import org.jetbrains.changelog.date
+import org.jetbrains.changelog.markdownToHTML
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask
 
@@ -38,7 +39,7 @@ intellijPlatform {
     pluginConfiguration {
         version = rootProject.version.toString()
         description =
-            providers.fileContents(rootProject.layout.projectDirectory.file("README.md")).asText
+            markdownToHTML(providers.fileContents(rootProject.layout.projectDirectory.file("README.md")).asText.get())
 
         ideaVersion {
             sinceBuild = libs.versions.intellij.minRelease
