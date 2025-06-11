@@ -39,7 +39,7 @@ please follow the steps below before you start writing any code:
 ## Submitting Bugs
 
 You can report new bugs by creating a new issue either in [JIRA](https://jira.mongodb.org/projects/INTELLIJ/issues/) or
-[GitHub](https://github.com/mongodb-js/intellij/issues). Please include as much information as possible about your
+[GitHub](https://github.com/mongodb/intellij/issues). Please include as much information as possible about your
 environment and include any relevant logs.
 
 ## Starting the plugin locally
