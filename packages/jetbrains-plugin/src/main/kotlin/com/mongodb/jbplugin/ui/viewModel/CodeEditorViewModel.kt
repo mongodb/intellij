@@ -7,6 +7,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorFactory
+import com.intellij.openapi.editor.ScrollType.CENTER
 import com.intellij.openapi.editor.event.CaretEvent
 import com.intellij.openapi.editor.event.CaretListener
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -162,6 +163,7 @@ class CodeEditorViewModel(
                 ?: return@withContext
 
             editorOfFile.caretModel.moveToOffset(query.source.textOffset)
+            editorOfFile.scrollingModel.scrollToCaret(CENTER)
         }
     }
 

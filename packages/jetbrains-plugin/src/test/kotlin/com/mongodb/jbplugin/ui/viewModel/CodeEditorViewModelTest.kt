@@ -2,6 +2,8 @@ package com.mongodb.jbplugin.ui.viewModel
 
 import com.intellij.openapi.editor.CaretModel
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.ScrollType.CENTER
+import com.intellij.openapi.editor.ScrollingModel
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent
@@ -108,6 +110,7 @@ class CodeEditorViewModelTest {
             }
 
             verify(manager.selectedTextEditor!!.caretModel).moveToOffset(25)
+            verify(manager.selectedTextEditor!!.scrollingModel).scrollToCaret(CENTER)
         }
     }
 
@@ -133,6 +136,7 @@ class CodeEditorViewModelTest {
             }
 
             verify(newEditor.caretModel).moveToOffset(25)
+            verify(manager.selectedTextEditor!!.scrollingModel).scrollToCaret(CENTER)
         }
     }
 }
@@ -180,8 +184,11 @@ private fun editorForFile(
     file: VirtualFile
 ): Editor {
     val caretModel = mock<CaretModel>()
+    val scrollModel = mock<ScrollingModel>()
+
     val selectedTextEditor = mock<Editor>()
     whenever(selectedTextEditor.caretModel).thenReturn(caretModel)
+    whenever(selectedTextEditor.scrollingModel).thenReturn(scrollModel)
     whenever(selectedTextEditor.virtualFile).thenReturn(file)
     return selectedTextEditor
 }
