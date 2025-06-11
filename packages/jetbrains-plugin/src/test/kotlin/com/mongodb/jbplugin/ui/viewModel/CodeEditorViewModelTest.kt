@@ -17,6 +17,7 @@ import com.mongodb.jbplugin.fixtures.eventually
 import com.mongodb.jbplugin.mql.Node
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -29,7 +30,7 @@ class CodeEditorViewModelTest {
     @Test
     fun `should emit the open files when a file is opened`(
         project: Project,
-    ) {
+    ) = runTest {
         val file1 = fileAt("MyFile.java")
         val file2 = fileAt("MyOpenFile.java")
         val viewModel = CodeEditorViewModel(project, TestScope())
@@ -51,7 +52,7 @@ class CodeEditorViewModelTest {
     @Test
     fun `should emit the open files when a file is closed`(
         project: Project
-    ) {
+    ) = runTest {
         val file1 = fileAt("MyFile.java")
         val file2 = fileAt("MyOpenFile.java")
         val viewModel = CodeEditorViewModel(project, TestScope())
@@ -72,7 +73,7 @@ class CodeEditorViewModelTest {
     @Test
     fun `should emit the open files when the selected editor changed`(
         project: Project
-    ) {
+    ) = runTest {
         val file1 = fileAt("MyFile.java")
         val file2 = fileAt("MyOpenFile.java")
         val viewModel = CodeEditorViewModel(project, TestScope())
@@ -94,7 +95,7 @@ class CodeEditorViewModelTest {
     @Test
     fun `should open the query in the editor when the editor is already open`(
         project: Project,
-    ) {
+    ) = runTest {
         val file = fileAt("MyFile.java")
         val viewModel = CodeEditorViewModel(project, TestScope())
 
@@ -117,7 +118,7 @@ class CodeEditorViewModelTest {
     @Test
     fun `should open a new editor and move the caret to the correct position`(
         project: Project
-    ) {
+    ) = runTest {
         val file = fileAt("MyFile.java")
         val viewModel = CodeEditorViewModel(project, TestScope())
 
@@ -136,7 +137,7 @@ class CodeEditorViewModelTest {
             }
 
             verify(newEditor.caretModel).moveToOffset(25)
-            verify(manager.selectedTextEditor!!.scrollingModel).scrollToCaret(CENTER)
+            verify(newEditor.scrollingModel).scrollToCaret(CENTER)
         }
     }
 }
