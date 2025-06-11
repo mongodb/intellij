@@ -19,16 +19,16 @@ It supports Java queries written with the [MongoDB Java Driver](https://www.mong
 ## Screenshots & Gifs
 
 ### Connecting to a Cluster
-![Connecting to a Cluster](https://github.com/mongodb/intellij/tree/main/etc/readme/img/connecting.gif)
+![Connecting to a Cluster](https://raw.githubusercontent.com/mongodb/intellij/main/etc/readme/img/connecting.gif)
 
 ### Intelligent Autocompletion in Java
-![Intelligent Autocompletion in Java](https://github.com/mongodb/intellij/tree/main/etc/readme/img/autocomplete.gif)
+![Intelligent Autocompletion in Java](https://raw.githubusercontent.com/mongodb/intellij/main/etc/readme/img/autocomplete.gif)
 
 ### Performance Insights & Create Index
-![Performance Insights](https://github.com/mongodb/intellij/tree/main/etc/readme/img/create-index.gif)
+![Performance Insights](https://raw.githubusercontent.com/mongodb/intellij/main/etc/readme/img/create-index.gif)
 
 ### Run Java Queries
-![Run Java Queries](https://github.com/mongodb/intellij/tree/main/etc/readme/img/run-java-queries.gif)
+![Run Java Queries](https://raw.githubusercontent.com/mongodb/intellij/main/etc/readme/img/run-java-query.gif)
 
 ## Documentation
 To get more information about plugin features and usage, please visit [the documentation](https://www.mongodb.com/docs/mongodb-intellij/install).
