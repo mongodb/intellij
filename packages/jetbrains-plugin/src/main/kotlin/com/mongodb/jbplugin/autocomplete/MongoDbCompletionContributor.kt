@@ -38,6 +38,7 @@ import com.mongodb.jbplugin.editor.MongoDbVirtualFileDataSourceProvider
 import com.mongodb.jbplugin.editor.dataSource
 import com.mongodb.jbplugin.editor.database
 import com.mongodb.jbplugin.editor.dialect
+import com.mongodb.jbplugin.editor.virtualFileOrNull
 import com.mongodb.jbplugin.i18n.Icons
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.mql.Namespace
@@ -200,12 +201,12 @@ private object MongoDbElementPatterns {
 
             private fun isFileConnected(psiFile: PsiFile?): Boolean {
                 psiFile ?: return false
-                psiFile.originalFile.virtualFile ?: return false
+                val virtualFile = psiFile.originalFile.virtualFileOrNull ?: return false
 
                 val dbDataSource =
                     MongoDbVirtualFileDataSourceProvider().getDataSource(
                         psiFile.project,
-                        psiFile.originalFile.virtualFile,
+                        virtualFile,
                     )
 
                 return !(

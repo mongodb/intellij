@@ -4,6 +4,7 @@ import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
+import com.mongodb.jbplugin.editor.virtualFileOrNull
 import com.mongodb.jbplugin.linting.QueryInsight
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.meta.withinReadActionBlocking
@@ -42,9 +43,9 @@ sealed interface AnalysisScope {
             try {
                 val codeEditorViewModel by project.service<CodeEditorViewModel>()
                 val relevantFiles = codeEditorViewModel.editorState.value.focusedFiles
-
                 return allInsights.filter {
-                    relevantFiles.contains(it.query.source.containingFile.virtualFile)
+                    val virtualFile = it.query.source.containingFile.virtualFileOrNull ?: return@filter false
+                    relevantFiles.contains(virtualFile)
                 }
             } catch (e: Exception) {
                 log.warn(useLogMessage("Unable to filter relevant insights").build(), e)
@@ -111,7 +112,8 @@ sealed interface AnalysisScope {
                     findOpenFilesCommonPrefix(codeEditorViewModel) ?: return emptyList()
 
                 return allInsights.filter {
-                    it.query.source.containingFile.virtualFile.path.startsWith(sharedParent)
+                    val virtualFile = it.query.source.containingFile.virtualFileOrNull ?: return@filter false
+                    virtualFile.path.startsWith(sharedParent)
                 }
             } catch (e: Exception) {
                 log.warn(useLogMessage("Unable to filter relevant insights").build(), e)

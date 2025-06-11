@@ -32,6 +32,7 @@ import com.mongodb.jbplugin.editor.CachedQueryService
 import com.mongodb.jbplugin.editor.MongoDbVirtualFileDataSourceProvider.Keys
 import com.mongodb.jbplugin.editor.dialect
 import com.mongodb.jbplugin.editor.services.MdbPluginDisposable
+import com.mongodb.jbplugin.editor.virtualFileOrNull
 import com.mongodb.jbplugin.meta.containingFileOrNull
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.meta.withinReadAction
@@ -153,7 +154,7 @@ class CodeEditorViewModel(
 
     suspend fun focusQueryInEditor(query: Node<PsiElement>, fileEditorManager: FileEditorManager? = null) {
         withContext(Dispatchers.EDT) {
-            val vFile = query.containingFileOrNull?.virtualFile ?: return@withContext
+            val vFile = query.containingFileOrNull?.virtualFileOrNull ?: return@withContext
 
             val manager = fileEditorManager ?: FileEditorManager.getInstance(query.source.project)
             val editorOfFile = manager.selectedTextEditor?.takeIf { it.virtualFile == vFile }
