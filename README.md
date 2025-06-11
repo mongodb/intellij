@@ -38,3 +38,41 @@ To get more information about plugin features and usage, please visit [the docum
 You can report new bugs by creating a new issue either in [JIRA](https://jira.mongodb.org/projects/INTELLIJ/issues/) or
 [GitHub](https://github.com/mongodbintellij/issues). Please include as much information as possible about your
 environment and include any relevant logs.
+
+### FAQ
+
+#### When I open the MongoDB Side Panel it shows empty
+
+We are aware of a bug in [Skiko](https://youtrack.jetbrains.com/issue/JEWEL-848/Skiko-crashes-when-DirectX12-is-not-available-and-does-not-fallback-to-SOFTWARE), the rendering library used
+by Desktop Compose that doesn't fall back to software rendering when a GPU accelerated driver is not available. This should be fixed in version 0.1.0 so please update the
+plugin to the latest available version in the Marketplace.
+
+If you are in the latest version, and it doesn't work for you, do the following:
+
+1. Open IntelliJ IDEA
+2. Go to the main menu and select Help | Edit Custom VM Options
+3. Add the following line to the end of the file: `-Dskiko.renderApi=SOFTWARE`
+4. Save the file and restart IntelliJ IDEA
+
+#### The MongoDB Side Panel feels slow
+
+It might be related to using the software renderer in Skiko. To confirm this situation:
+
+1. Open IntelliJ IDEA
+2. Go to the main menu and select Help | Show log in Files
+3. Open the idea.log
+4. Search the following string: `Could not use GPU accelerated rendering`
+5. If it's there, Skiko is using your CPU to render instead of the GPU.
+
+In case the log line is not there, please share the entire log file in a bug report.
+
+#### My query is not picked up by the plugin
+
+The plugin doesn't support yet all the possible query variants. Notable unsupported features are:
+
+* Atlas Search and Atlas Vector Search queries
+* $lookup queries
+* $text queries
+
+In case you think we should prioritise your query, or it's a bug, please fill a bug report with a sample
+query.
