@@ -1,6 +1,7 @@
 package alt.mongodb.javadriver;
 
 import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Sorts;
 import org.bson.Document;
@@ -28,9 +29,9 @@ public class JavaDriverRepository {
         this.client = client;
     }
 
-    public Document notIndexedQuery(Language lang) {
+    public Document notIndexedQuery(String db, Language lang) {
         return client
-            .getDatabase("sample_mflix")
+            .getDatabase(db)
             .getCollection("movies")
             .find(
                 Filters.and(
@@ -43,9 +44,9 @@ public class JavaDriverRepository {
             .first();
     }
 
-    public Document notIndexedAnotherQuery(Language lang) {
+    public Document notIndexedAnotherQuery(String db, Language lang) {
         return client
-            .getDatabase("sample_mflix")
+            .getDatabase(db)
             .getCollection("movies")
             .find(
                 Filters.eq("rated", Rate.TV_PG)
