@@ -1,7 +1,7 @@
 package alt.mongodb.javadriver;
 
+import com.mongodb.BasicDBList;
 import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Sorts;
 import org.bson.Document;
@@ -30,6 +30,8 @@ public class JavaDriverRepository {
     }
 
     public Document notIndexedQuery(String db, Language lang) {
+        new Document("$not", Filters.and());
+        new BasicDBList();
         return client
             .getDatabase(db)
             .getCollection("movies")

@@ -3,6 +3,7 @@ package alt.mongodb.springcriteria;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 import java.util.List;
 
@@ -19,6 +20,8 @@ public class SpringCriteriaRepository {
     private final MongoTemplate template;
 
     public SpringCriteriaRepository(MongoTemplate template) {
+        Criteria a;
+        Aggregation.sort().
         this.template = template;
     }
 
