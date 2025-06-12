@@ -10,7 +10,6 @@ import com.mongodb.jbplugin.inspections.analysisScope.AnalysisScope
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.meta.singleExecutionJob
 import com.mongodb.jbplugin.meta.withinReadAction
-import com.mongodb.jbplugin.meta.withinReadActionBlocking
 import com.mongodb.jbplugin.observability.useLogMessage
 import com.mongodb.jbplugin.ui.viewModel.AnalysisStatus.NoAnalysis
 import kotlinx.coroutines.CoroutineScope
@@ -140,28 +139,26 @@ class AnalysisScopeViewModel(
 
         ensureActive()
         log.info(useLogMessage("Analysis in progress...").build())
-        withinReadActionBlocking {
-            val tools = getEnabledToolWrappers()
+        val tools = getEnabledToolWrappers()
 
-            for (file in files) {
+        for (file in files) {
+            ensureActive()
+            val psiFile = withinReadAction { file.findPsiFile(project) }
+            if (psiFile != null) {
                 ensureActive()
-                val psiFile = file.findPsiFile(project)
-                if (psiFile != null) {
+                log.info(useLogMessage("Running inspection for file ${psiFile.name}").build())
+
+                for (tool in tools) {
                     ensureActive()
-                    log.info(useLogMessage("Running inspection for file ${psiFile.name}").build())
-
-                    for (tool in tools) {
-                        ensureActive()
-                        val externalAnnotator = AbstractMongoDbInspectionGlobalTool.toInspectionRunner(coroutineScope, tool)
-                        ensureActive()
-                        val info = externalAnnotator?.collectInformation(psiFile)
-                        ensureActive()
-                        externalAnnotator?.doAnnotate(info)
-                    }
-
-                    val currentState = analysisStatus.value as? AnalysisStatus.InProgress ?: continue
-                    mutableAnalysisStatus.tryEmit(currentState.copy(processedFiles = currentState.processedFiles + file.path))
+                    val externalAnnotator = AbstractMongoDbInspectionGlobalTool.toInspectionRunner(coroutineScope, tool)
+                    ensureActive()
+                    val info = externalAnnotator?.collectInformation(psiFile)
+                    ensureActive()
+                    externalAnnotator?.doAnnotate(info)
                 }
+
+                val currentState = analysisStatus.value as? AnalysisStatus.InProgress ?: continue
+                mutableAnalysisStatus.emit(currentState.copy(processedFiles = currentState.processedFiles + file.path))
             }
         }
 
