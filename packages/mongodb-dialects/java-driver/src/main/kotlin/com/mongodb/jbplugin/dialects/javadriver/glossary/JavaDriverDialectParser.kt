@@ -2,12 +2,14 @@ package com.mongodb.jbplugin.dialects.javadriver.glossary
 
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiArrayType
+import com.intellij.psi.PsiAssignmentExpression
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiClassType
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiEnumConstant
 import com.intellij.psi.PsiExpression
 import com.intellij.psi.PsiExpressionList
+import com.intellij.psi.PsiField
 import com.intellij.psi.PsiLiteralExpression
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiMethodCallExpression
@@ -1267,7 +1269,7 @@ fun PsiElement.resolveToMethodCallExpression(
     }
 }
 
-fun <T : PsiElement>PsiElement.resolveElementUntil(
+fun <T : PsiElement> PsiElement.resolveElementUntil(
     isCorrectResolution: (PsiElement) -> Boolean
 ): T? {
     val expression = meaningfulExpression()
@@ -1286,7 +1288,29 @@ fun <T : PsiElement>PsiElement.resolveElementUntil(
         }
 
         is PsiVariable -> {
-            return expression.initializer?.resolveElementUntil(isCorrectResolution)
+            val fromInitializer = expression.initializer?.resolveElementUntil<T>(isCorrectResolution)
+            if (fromInitializer != null) {
+                return fromInitializer
+            }
+
+            // The variable might be a field (class property), which might be assigned within the
+            // method itself. So we look at that initialization as well.
+            if (expression is PsiField) {
+                val currentMethod = this.findContainingMethod() ?: return null
+                return currentMethod.findAllChildrenOfType(
+                    PsiAssignmentExpression::class.java
+                )
+                    // This is to ensure that we consider only the assignments which are bound for
+                    // expression we are resolving.
+                    .filter { it.lExpression.reference?.resolve() == expression }
+                    // This is to ensure that we consider only the assignments that happened before
+                    // the query was used.
+                    .filter { it.textOffset < this.textOffset }
+                    .mapNotNull { it.rExpression }
+                    .lastOrNull()
+                    ?.resolveElementUntil(isCorrectResolution)
+            }
+            return null
         }
 
         is PsiReferenceExpression -> {
