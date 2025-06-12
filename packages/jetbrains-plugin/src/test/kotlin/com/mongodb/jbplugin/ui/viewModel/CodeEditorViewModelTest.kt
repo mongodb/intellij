@@ -2,6 +2,8 @@ package com.mongodb.jbplugin.ui.viewModel
 
 import com.intellij.openapi.editor.CaretModel
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.ScrollType.CENTER
+import com.intellij.openapi.editor.ScrollingModel
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent
@@ -15,6 +17,7 @@ import com.mongodb.jbplugin.fixtures.eventually
 import com.mongodb.jbplugin.mql.Node
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -27,7 +30,7 @@ class CodeEditorViewModelTest {
     @Test
     fun `should emit the open files when a file is opened`(
         project: Project,
-    ) {
+    ) = runTest {
         val file1 = fileAt("MyFile.java")
         val file2 = fileAt("MyOpenFile.java")
         val viewModel = CodeEditorViewModel(project, TestScope())
@@ -49,7 +52,7 @@ class CodeEditorViewModelTest {
     @Test
     fun `should emit the open files when a file is closed`(
         project: Project
-    ) {
+    ) = runTest {
         val file1 = fileAt("MyFile.java")
         val file2 = fileAt("MyOpenFile.java")
         val viewModel = CodeEditorViewModel(project, TestScope())
@@ -70,7 +73,7 @@ class CodeEditorViewModelTest {
     @Test
     fun `should emit the open files when the selected editor changed`(
         project: Project
-    ) {
+    ) = runTest {
         val file1 = fileAt("MyFile.java")
         val file2 = fileAt("MyOpenFile.java")
         val viewModel = CodeEditorViewModel(project, TestScope())
@@ -92,7 +95,7 @@ class CodeEditorViewModelTest {
     @Test
     fun `should open the query in the editor when the editor is already open`(
         project: Project,
-    ) {
+    ) = runTest {
         val file = fileAt("MyFile.java")
         val viewModel = CodeEditorViewModel(project, TestScope())
 
@@ -108,13 +111,14 @@ class CodeEditorViewModelTest {
             }
 
             verify(manager.selectedTextEditor!!.caretModel).moveToOffset(25)
+            verify(manager.selectedTextEditor!!.scrollingModel).scrollToCaret(CENTER)
         }
     }
 
     @Test
     fun `should open a new editor and move the caret to the correct position`(
         project: Project
-    ) {
+    ) = runTest {
         val file = fileAt("MyFile.java")
         val viewModel = CodeEditorViewModel(project, TestScope())
 
@@ -133,6 +137,7 @@ class CodeEditorViewModelTest {
             }
 
             verify(newEditor.caretModel).moveToOffset(25)
+            verify(newEditor.scrollingModel).scrollToCaret(CENTER)
         }
     }
 }
@@ -180,8 +185,11 @@ private fun editorForFile(
     file: VirtualFile
 ): Editor {
     val caretModel = mock<CaretModel>()
+    val scrollModel = mock<ScrollingModel>()
+
     val selectedTextEditor = mock<Editor>()
     whenever(selectedTextEditor.caretModel).thenReturn(caretModel)
+    whenever(selectedTextEditor.scrollingModel).thenReturn(scrollModel)
     whenever(selectedTextEditor.virtualFile).thenReturn(file)
     return selectedTextEditor
 }
