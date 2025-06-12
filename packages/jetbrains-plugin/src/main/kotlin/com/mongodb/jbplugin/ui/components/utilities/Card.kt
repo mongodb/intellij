@@ -49,6 +49,9 @@ fun Card(category: CardCategory, title: String, body: @Composable () -> Unit) {
 }
 
 object Card {
-    val backgroundColor = if (JBColor.isBright()) Color(0xE4, 0xE5, 0xE7) else Color(0x39, 0x3B, 0x40)
-    val secondaryBackgroundColor = if (JBColor.isBright()) Color(0xAF, 0xB2, 0xB6) else Color(0x2B, 0x2D, 0x30)
+    val backgroundColor: Color
+        get() = if (JBColor.isBright()) Color(0xE4, 0xE5, 0xE7) else Color(0x39, 0x3B, 0x40)
+
+    val secondaryBackgroundColor: Color
+        get() = if (JBColor.isBright()) Color(0xAF, 0xB2, 0xB6) else Color(0x2B, 0x2D, 0x30)
 }
