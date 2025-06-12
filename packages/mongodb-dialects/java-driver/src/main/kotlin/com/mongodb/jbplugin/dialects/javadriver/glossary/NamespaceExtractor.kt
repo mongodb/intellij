@@ -485,7 +485,7 @@ private data class Resolvable(
 private val PsiParameter.index: Int
     get() = findContainingMethod()!!.parameterList.getParameterIndex(this)
 
-private fun PsiElement.findContainingMethod(): PsiMethod? =
+internal fun PsiElement.findContainingMethod(): PsiMethod? =
     findParentOfType<PsiMethod>()
 
 private val PsiClass.constructorsWithSuperClasses: List<PsiMethod>

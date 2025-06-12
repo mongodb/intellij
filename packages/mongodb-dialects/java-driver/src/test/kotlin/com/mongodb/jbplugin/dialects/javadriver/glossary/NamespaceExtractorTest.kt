@@ -16,6 +16,96 @@ class NamespaceExtractorTest {
         """
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;import org.bson.types.ObjectId;
+import static com.mongodb.client.model.Filters.*;
+
+public final class Repository {
+    private final MongoClient client;
+    private final MongoDatabase database = client.getDatabase("db");
+    private final MongoCollection<Document> collection = database.getCollection("coll");
+    
+    public Object queryMethod(ObjectId id) {
+        return collection.find();
+    }
+}
+      """
+    )
+    fun `extracts namespace from database and collection property declared and defined in class`(psiFile: PsiFile) {
+        val bookQuery = psiFile.getQueryAtMethod("Repository", "queryMethod")
+        val collReference = NamespaceExtractor.extractNamespace(
+            bookQuery
+        ).reference as HasCollectionReference.Known<*>
+        assertNotNull(collReference)
+        assertEquals("db", collReference.namespace.database)
+        assertEquals("coll", collReference.namespace.collection)
+    }
+
+    @ParsingTest(
+        "Repository.java",
+        """
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;import org.bson.types.ObjectId;
+import static com.mongodb.client.model.Filters.*;
+
+public final class Repository {
+    private final MongoClient client;
+    private final MongoDatabase database = client.getDatabase("db");
+    private final MongoCollection<Document> collection;
+    
+    public Object queryMethod(ObjectId id) {
+        this.collection = this.database.getCollection("coll");
+        return this.collection.find();
+    }
+}
+      """
+    )
+    fun `extracts namespace from database declared and defined in class and collection declared in class and defined in queryMethod`(psiFile: PsiFile) {
+        val bookQuery = psiFile.getQueryAtMethod("Repository", "queryMethod")
+        val collReference = NamespaceExtractor.extractNamespace(
+            bookQuery
+        ).reference as HasCollectionReference.Known<*>
+        assertNotNull(collReference)
+        assertEquals("db", collReference.namespace.database)
+        assertEquals("coll", collReference.namespace.collection)
+    }
+
+    @ParsingTest(
+        "Repository.java",
+        """
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;import org.bson.types.ObjectId;
+import static com.mongodb.client.model.Filters.*;
+
+public final class Repository {
+    private final MongoClient client;
+    private final MongoDatabase database;
+    private final MongoCollection<Document> collection;
+    
+    public Object queryMethod(ObjectId id) {
+        this.database = this.client.getDatabase("db");
+        this.collection = this.database.getCollection("coll");
+        return this.collection.find();
+    }
+}
+      """
+    )
+    fun `extracts namespace from database and collection declared in class and defined in queryMethod`(psiFile: PsiFile) {
+        val bookQuery = psiFile.getQueryAtMethod("Repository", "queryMethod")
+        val collReference = NamespaceExtractor.extractNamespace(
+            bookQuery
+        ).reference as HasCollectionReference.Known<*>
+        assertNotNull(collReference)
+        assertEquals("db", collReference.namespace.database)
+        assertEquals("coll", collReference.namespace.collection)
+    }
+
+    @ParsingTest(
+        "Repository.java",
+        """
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
 import org.bson.types.ObjectId;
 import static com.mongodb.client.model.Filters.*;
 
