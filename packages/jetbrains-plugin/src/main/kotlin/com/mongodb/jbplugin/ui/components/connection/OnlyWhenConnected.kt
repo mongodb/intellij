@@ -22,7 +22,6 @@ import java.awt.BorderLayout
 @Composable
 fun OnlyWhenConnected(body: @Composable () -> Unit) {
     val coroutineScope = rememberCoroutineScope()
-    coroutineScope.coroutineContext
     val connectionState by useViewModelState(
         ConnectionStateViewModel::connectionState,
         ConnectionState.initial()
