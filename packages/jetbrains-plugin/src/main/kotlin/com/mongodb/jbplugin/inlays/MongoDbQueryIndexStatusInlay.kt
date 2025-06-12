@@ -40,7 +40,6 @@ import com.mongodb.jbplugin.mql.components.HasExplain
 import com.mongodb.jbplugin.mql.components.HasExplain.ExplainPlanType.FULL
 import com.mongodb.jbplugin.mql.components.HasExplain.ExplainPlanType.SAFE
 import com.mongodb.jbplugin.settings.pluginSetting
-import com.mongodb.jbplugin.ui.viewModel.AnalysisScopeViewModel
 import com.mongodb.jbplugin.ui.viewModel.InspectionsViewModel
 import com.mongodb.jbplugin.ui.viewModel.SidePanelViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -176,12 +175,10 @@ internal class QueriesInFileCollector(private val coroutineScope: CoroutineScope
                 inlayFactory.withCursorOnHover(it, Cursor(Cursor.HAND_CURSOR))
             }.let {
                 inlayFactory.onClick(it, Left) { _, _ ->
-                    val analysisScopeViewModel by element.project.service<AnalysisScopeViewModel>()
                     val sidePanelViewModel by element.project.service<SidePanelViewModel>()
                     val inspectionsViewModel by element.project.service<InspectionsViewModel>()
 
                     sidePanelViewModel.withOpenSidePanel {
-                        analysisScopeViewModel.changeScopeToCurrentQuery()
                         inspectionsViewModel.openCategory(PERFORMANCE)
                     }
                 }
