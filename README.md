@@ -1,8 +1,8 @@
 # MongoDB Plugin for IntelliJ
 
-![Public Preview](https://img.shields.io/badge/status-public_preview-darkgreen.png?logo=mongodb) 
-[![IntelliJ Market Release](https://img.shields.io/github/v/release/mongodb/intellij.png?sort=semver&display_name=release&logo=jetbrains)](https://plugins.jetbrains.com/plugin/24377-mongodb) 
-[![JIRA](https://img.shields.io/badge/bug_tracker-blue.png?logo=jira)](https://jira.mongodb.org/projects/INTELLIJ/issues/) 
+* ![Public Preview](https://img.shields.io/badge/status-public_preview-darkgreen.png?logo=mongodb) 
+* [![IntelliJ Market Release](https://img.shields.io/github/v/release/mongodb/intellij.png?sort=semver&display_name=release&logo=jetbrains)](https://plugins.jetbrains.com/plugin/24377-mongodb) 
+* [![JIRA](https://img.shields.io/badge/bug_tracker-blue.png?logo=jira)](https://jira.mongodb.org/projects/INTELLIJ/issues/) 
 
 The **MongoDB Plugin for IntelliJ** provides seamless integration with MongoDB deployments, whether they are local, containerized, or hosted on MongoDB Atlas (including those managed via `atlascli`). 
 The plugin aims to enhance your development workflow with intelligent code autocompletion, valuable performance and correctness insights, and a dedicated query runner. 
