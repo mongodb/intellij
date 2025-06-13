@@ -37,12 +37,6 @@ jobs:
           java-version: "17"
           cache: "gradle"
 
-      - uses: robinraju/release-downloader@a96f54c1b5f5e09e47d9504526e96febd949d4c2 # 1.11
-        with:
-          tag: ${{ github.ref_name }}
-          fileName: "jetbrains-plugin.zip"
-          out-file-path: "packages/jetbrains-plugin/build/distributions/"
-
       - name: Publish Plugin In General Availability
         shell: bash
         id: publish
