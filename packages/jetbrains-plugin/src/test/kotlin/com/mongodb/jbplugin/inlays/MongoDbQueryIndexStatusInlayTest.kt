@@ -66,7 +66,7 @@ class MongoDbQueryIndexStatusInlayTest {
     public FindIterable<Document> exampleFind() {
         <hint text="[<image> Missing Index]"/>client.getDatabase("myDatabase")
                 .getCollection("myCollection")
-                .find();
+                .find(eq("name", "test"));
     }
         """,
     )
@@ -86,9 +86,31 @@ class MongoDbQueryIndexStatusInlayTest {
     @ParsingTest(
         value = """
     public FindIterable<Document> exampleFind() {
-        <hint text="[<image> Index Scan]"/>client.getDatabase("myDatabase")
+        <hint text="[<image> No Filters]"/>client.getDatabase("myDatabase")
                 .getCollection("myCollection")
                 .find();
+    }
+        """,
+    )
+    fun `shows a no filters inlay`(
+        fixture: CodeInsightTestFixture,
+    ) = runTest {
+        val (_, readModel) = fixture.setupConnection()
+        fixture.specifyDialect(JavaDriverDialect)
+
+        readModel.whenListDatabases("myDatabase")
+        readModel.whenListCollections("myCollection")
+        readModel.whenExplainQuery(ExplainPlan.IndexScan("my_index"))
+
+        testIndexInlay(fixture)
+    }
+
+    @ParsingTest(
+        value = """
+    public FindIterable<Document> exampleFind() {
+        <hint text="[<image> Index Scan]"/>client.getDatabase("myDatabase")
+                .getCollection("myCollection")
+                .find(eq("name", "test"));
     }
         """,
     )
@@ -110,7 +132,7 @@ class MongoDbQueryIndexStatusInlayTest {
     public FindIterable<Document> exampleFind() {
         <hint text="[<image> Ineffective Index Scan]"/>client.getDatabase("myDatabase")
                 .getCollection("myCollection")
-                .find();
+                .find(eq("name", "test"));
     }
         """,
     )
@@ -132,7 +154,7 @@ class MongoDbQueryIndexStatusInlayTest {
     public FindIterable<Document> exampleFind() {
         <hint text="[<image> Dynamic Query]"/>client.getDatabase("myDatabase")
                 .getCollection("myCollection")
-                .find();
+                .find(eq("name", "test"));
     }
         """,
     )

@@ -6,6 +6,7 @@ import com.mongodb.jbplugin.linting.Inspection.FieldDoesNotExist
 import com.mongodb.jbplugin.linting.Inspection.InvalidProjection
 import com.mongodb.jbplugin.linting.Inspection.NoCollectionSpecified
 import com.mongodb.jbplugin.linting.Inspection.NoDatabaseInferred
+import com.mongodb.jbplugin.linting.Inspection.NotUsingFilters
 import com.mongodb.jbplugin.linting.Inspection.NotUsingIndex
 import com.mongodb.jbplugin.linting.Inspection.NotUsingIndexEffectively
 import com.mongodb.jbplugin.linting.Inspection.TypeMismatch
@@ -56,6 +57,12 @@ sealed interface Inspection {
 
     data object NotUsingIndexEffectively : Inspection {
         override val primaryAction = CreateIndexSuggestionScript
+        override val secondaryActions = emptyArray<InspectionAction>()
+        override val category = PERFORMANCE
+    }
+
+    data object NotUsingFilters : Inspection {
+        override val primaryAction = NoAction
         override val secondaryActions = emptyArray<InspectionAction>()
         override val category = PERFORMANCE
     }
@@ -130,6 +137,16 @@ data class QueryInsight<S, I : Inspection>(
                 description = "insight.not-using-index-effectively",
                 descriptionArguments = emptyList(),
                 inspection = NotUsingIndexEffectively
+            )
+        }
+
+        fun <S> notUsingFilters(query: Node<S>): QueryInsight<S, NotUsingFilters> {
+            return QueryInsight(
+                query = query,
+                source = query.source,
+                description = "insight.not-using-filters",
+                descriptionArguments = emptyList(),
+                inspection = NotUsingFilters
             )
         }
 

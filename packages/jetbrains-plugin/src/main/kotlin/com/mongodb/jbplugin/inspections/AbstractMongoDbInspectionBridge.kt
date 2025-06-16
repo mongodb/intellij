@@ -38,6 +38,7 @@ import com.mongodb.jbplugin.linting.Inspection.FieldDoesNotExist
 import com.mongodb.jbplugin.linting.Inspection.InvalidProjection
 import com.mongodb.jbplugin.linting.Inspection.NoCollectionSpecified
 import com.mongodb.jbplugin.linting.Inspection.NoDatabaseInferred
+import com.mongodb.jbplugin.linting.Inspection.NotUsingFilters
 import com.mongodb.jbplugin.linting.Inspection.NotUsingIndex
 import com.mongodb.jbplugin.linting.Inspection.NotUsingIndexEffectively
 import com.mongodb.jbplugin.linting.Inspection.TypeMismatch
@@ -63,6 +64,8 @@ abstract class AbstractMongoDbInspectionGlobalTool(
     // still do it here anyway to avoid as much human error as possible when modifying metadata
     // in plugin.xml.
     override fun getShortName(): String = inspection.javaClass.simpleName
+
+    override fun getStaticDescription(): String? = inspection.javaClass.simpleName
 
     override fun worksInBatchModeOnly() = false
 
@@ -172,7 +175,9 @@ abstract class AbstractMongoDbInspectionBridge<Settings, I : Inspection>(
                 *insight.descriptionArguments.toTypedArray()
             )
             val problemHighlightType = when (insight.inspection) {
-                NotUsingIndex, NotUsingIndexEffectively -> HighlightSeverity.INFORMATION
+                NotUsingIndex,
+                NotUsingIndexEffectively,
+                NotUsingFilters -> HighlightSeverity.INFORMATION
                 else -> HighlightSeverity.WARNING
             }
 

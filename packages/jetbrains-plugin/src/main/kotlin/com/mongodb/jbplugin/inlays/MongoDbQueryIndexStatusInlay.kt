@@ -35,10 +35,13 @@ import com.mongodb.jbplugin.linting.InspectionCategory.PERFORMANCE
 import com.mongodb.jbplugin.linting.correctness.isNamespaceAvailableInCluster
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.mql.QueryContext
+import com.mongodb.jbplugin.mql.adt.Either
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasExplain
 import com.mongodb.jbplugin.mql.components.HasExplain.ExplainPlanType.FULL
 import com.mongodb.jbplugin.mql.components.HasExplain.ExplainPlanType.SAFE
+import com.mongodb.jbplugin.mql.parser.components.allFiltersRecursively
+import com.mongodb.jbplugin.mql.parser.parse
 import com.mongodb.jbplugin.settings.pluginSetting
 import com.mongodb.jbplugin.ui.viewModel.InspectionsViewModel
 import com.mongodb.jbplugin.ui.viewModel.SidePanelViewModel
@@ -121,48 +124,63 @@ internal class QueriesInFileCollector(private val coroutineScope: CoroutineScope
                 return@launch
             }
 
-            val explainPlan = runCatching {
-                readModelProvider.slice(
-                    dataSource,
-                    ExplainQuery.Slice(
-                        queryWithExplainPlan,
-                        queryContext
-                    )
-                ) {
-                    withContext(Dispatchers.EDT) {
-                        InlayHintsPassFactoryInternal.forceHintsUpdateOnNextPass()
-                        DaemonCodeAnalyzer.getInstance(element.project).restart(
-                            element.containingFile
-                        )
-                    }
-                }.explainPlan
-            }.getOrDefault(NotRun)
+            val queryHasNoFilters = when (
+                val allFilters = allFiltersRecursively<PsiElement>().parse(query)
+            ) {
+                is Either.Left -> true
+                is Either.Right -> allFilters.value.isEmpty()
+            }
 
-            val (icon, text, tooltip) = when (explainPlan) {
-                CollectionScan ->
-                    Triple(
-                        Icons.indexWarningIcon,
-                        InspectionsAndInlaysMessages.message("inlay.indexing.coll-scan.text"),
-                        InspectionsAndInlaysMessages.message("inlay.indexing.coll-scan.tooltip")
-                    )
-                is IndexScan ->
-                    Triple(
-                        Icons.indexOkIcon,
-                        InspectionsAndInlaysMessages.message("inlay.indexing.index-scan.text"),
-                        explainPlan.indexName
-                    )
-                is IneffectiveIndexUsage ->
-                    Triple(
-                        Icons.indexWarningIcon,
-                        InspectionsAndInlaysMessages.message("inlay.indexing.ineffective-index-scan.text"),
-                        explainPlan.indexName
-                    )
-                NotRun ->
-                    Triple(
-                        Icons.queryNotRunIcon,
-                        InspectionsAndInlaysMessages.message("inlay.indexing.not-run.text"),
-                        InspectionsAndInlaysMessages.message("inlay.indexing.not-run.tooltip")
-                    )
+            val (icon, text, tooltip) = if (queryHasNoFilters) {
+                Triple(
+                    Icons.queryNotRunIcon,
+                    InspectionsAndInlaysMessages.message("inlay.query.not-using-filters.text"),
+                    InspectionsAndInlaysMessages.message("inlay.query.not-using-filters.tooltip")
+                )
+            } else {
+                val explainPlan = runCatching {
+                    readModelProvider.slice(
+                        dataSource,
+                        ExplainQuery.Slice(
+                            queryWithExplainPlan,
+                            queryContext
+                        )
+                    ) {
+                        withContext(Dispatchers.EDT) {
+                            InlayHintsPassFactoryInternal.forceHintsUpdateOnNextPass()
+                            DaemonCodeAnalyzer.getInstance(element.project).restart(
+                                element.containingFile
+                            )
+                        }
+                    }.explainPlan
+                }.getOrDefault(NotRun)
+
+                when (explainPlan) {
+                    CollectionScan ->
+                        Triple(
+                            Icons.indexWarningIcon,
+                            InspectionsAndInlaysMessages.message("inlay.indexing.coll-scan.text"),
+                            InspectionsAndInlaysMessages.message("inlay.indexing.coll-scan.tooltip")
+                        )
+                    is IndexScan ->
+                        Triple(
+                            Icons.indexOkIcon,
+                            InspectionsAndInlaysMessages.message("inlay.indexing.index-scan.text"),
+                            explainPlan.indexName
+                        )
+                    is IneffectiveIndexUsage ->
+                        Triple(
+                            Icons.indexWarningIcon,
+                            InspectionsAndInlaysMessages.message("inlay.indexing.ineffective-index-scan.text"),
+                            explainPlan.indexName
+                        )
+                    NotRun ->
+                        Triple(
+                            Icons.queryNotRunIcon,
+                            InspectionsAndInlaysMessages.message("inlay.indexing.not-run.text"),
+                            InspectionsAndInlaysMessages.message("inlay.indexing.not-run.tooltip")
+                        )
+                }
             }
 
             val inlayFactory = PresentationFactory(editor)

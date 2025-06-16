@@ -108,10 +108,9 @@ class CachedQueryService(
             }
 
             attachment.putUserData(queryCacheKey, cachedValue)
-            return decorateWithMetadata(
-                dataSource,
-                attachment.getUserData(queryCacheKey)!!.value
-            )
+            return attachment.getUserData(queryCacheKey)?.value?.let {
+                decorateWithMetadata(dataSource, it)
+            }
         } catch (pce: ProcessCanceledException) {
             throw pce
         } catch (ex: Exception) {
