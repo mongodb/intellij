@@ -35,10 +35,13 @@ import com.mongodb.jbplugin.linting.InspectionCategory.PERFORMANCE
 import com.mongodb.jbplugin.linting.correctness.isNamespaceAvailableInCluster
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.mql.QueryContext
+import com.mongodb.jbplugin.mql.adt.Either
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasExplain
 import com.mongodb.jbplugin.mql.components.HasExplain.ExplainPlanType.FULL
 import com.mongodb.jbplugin.mql.components.HasExplain.ExplainPlanType.SAFE
+import com.mongodb.jbplugin.mql.parser.components.allFiltersRecursively
+import com.mongodb.jbplugin.mql.parser.parse
 import com.mongodb.jbplugin.settings.pluginSetting
 import com.mongodb.jbplugin.ui.viewModel.InspectionsViewModel
 import com.mongodb.jbplugin.ui.viewModel.SidePanelViewModel
@@ -109,8 +112,15 @@ internal class QueriesInFileCollector(private val coroutineScope: CoroutineScope
         val collectionReference = query.component<HasCollectionReference<PsiElement>>()?.reference
 
         coroutineScope.launch(Dispatchers.IO) {
+            val queryHasNoFilters = when (
+                val allFilters = allFiltersRecursively<PsiElement>().parse(query)
+            ) {
+                is Either.Left -> true
+                is Either.Right -> allFilters.value.isEmpty()
+            }
             val skipInlayDecoration =
-                collectionReference !is HasCollectionReference.Known ||
+                queryHasNoFilters ||
+                    collectionReference !is HasCollectionReference.Known ||
                     !collectionReference.namespace.isValid ||
                     !collectionReference.namespace.isNamespaceAvailableInCluster(
                         dataSource = dataSource,
