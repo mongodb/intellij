@@ -14,7 +14,6 @@ import com.mongodb.jbplugin.mql.adt.Either
 import com.mongodb.jbplugin.mql.components.HasExplain
 import com.mongodb.jbplugin.mql.components.HasExplain.ExplainPlanType
 import com.mongodb.jbplugin.mql.components.IsCommand
-import com.mongodb.jbplugin.mql.parser.components.allFiltersRecursively
 import com.mongodb.jbplugin.mql.parser.components.knownCollection
 import com.mongodb.jbplugin.mql.parser.filter
 import com.mongodb.jbplugin.mql.parser.parse
@@ -34,15 +33,7 @@ class QueryNotUsingIndexEffectivelyInspection<D> : QueryInspection<
         holder: QueryInsightsHolder<Source, NotUsingIndexEffectively>,
         settings: QueryNotUsingIndexEffectivelyInspectionSettings<D>
     ) {
-        val commandDoesNotUseIndexes = query.component<IsCommand>()?.type?.usesIndexes == false
-        val queryHasNoFilters = when (
-            val allFilters = allFiltersRecursively<Source>().parse(query)
-        ) {
-            is Either.Left -> true
-            is Either.Right -> allFilters.value.isEmpty()
-        }
-
-        if (commandDoesNotUseIndexes || queryHasNoFilters) {
+        if (query.component<IsCommand>()?.type?.usesIndexes == false) {
             return
         }
 
