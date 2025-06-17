@@ -86,19 +86,6 @@
             implementationClass="com.mongodb.jbplugin.inspections.performance.MongoDbQueryNotUsingIndexEffectivelyGlobalTool"
         />
 
-        <externalAnnotator language="JAVA" implementationClass="com.mongodb.jbplugin.inspections.performance.MongoDbQueryNotUsingFilters" />
-        <globalInspection
-            groupPath="MongoDB"
-            groupBundle="messages.SidePanelBundle"
-            groupKey="inspection.category.performance"
-            bundle="messages.InspectionsAndInlaysBundle"
-            key="query-not-using-filters"
-            shortName="NotUsingFilters"
-            enabledByDefault="true"
-            language="JAVA"
-            implementationClass="com.mongodb.jbplugin.inspections.performance.MongoDbQueryNotUsingFiltersGlobalTool"
-        />
-
         <!-- Correctness Inspections -->
         <externalAnnotator language="JAVA" implementationClass="com.mongodb.jbplugin.inspections.correctness.MongoDbFieldDoesNotExist" />
         <globalInspection
