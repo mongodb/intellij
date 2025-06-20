@@ -66,7 +66,7 @@ class MongoDbQueryIndexStatusInlayTest {
     public FindIterable<Document> exampleFind() {
         <hint text="[<image> Missing Index]"/>client.getDatabase("myDatabase")
                 .getCollection("myCollection")
-                .find();
+                .find(eq("name", "test"));
     }
         """,
     )
@@ -88,7 +88,7 @@ class MongoDbQueryIndexStatusInlayTest {
     public FindIterable<Document> exampleFind() {
         <hint text="[<image> Index Scan]"/>client.getDatabase("myDatabase")
                 .getCollection("myCollection")
-                .find();
+                .find(eq("name", "test"));
     }
         """,
     )
@@ -110,7 +110,7 @@ class MongoDbQueryIndexStatusInlayTest {
     public FindIterable<Document> exampleFind() {
         <hint text="[<image> Ineffective Index Scan]"/>client.getDatabase("myDatabase")
                 .getCollection("myCollection")
-                .find();
+                .find(eq("name", "test"));
     }
         """,
     )
@@ -132,7 +132,7 @@ class MongoDbQueryIndexStatusInlayTest {
     public FindIterable<Document> exampleFind() {
         <hint text="[<image> Dynamic Query]"/>client.getDatabase("myDatabase")
                 .getCollection("myCollection")
-                .find();
+                .find(eq("name", "test"));
     }
         """,
     )

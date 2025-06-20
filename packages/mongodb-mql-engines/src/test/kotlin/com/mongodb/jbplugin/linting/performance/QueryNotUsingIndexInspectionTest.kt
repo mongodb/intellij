@@ -3,10 +3,39 @@ package com.mongodb.jbplugin.linting.performance
 import com.mongodb.jbplugin.accessadapter.slice.ExplainPlan
 import com.mongodb.jbplugin.linting.Inspection.NotUsingIndex
 import com.mongodb.jbplugin.linting.QueryInspectionTest
+import com.mongodb.jbplugin.mql.BsonString
 import com.mongodb.jbplugin.mql.Namespace
+import com.mongodb.jbplugin.mql.Node
 import com.mongodb.jbplugin.mql.components.HasCollectionReference
 import com.mongodb.jbplugin.mql.components.HasExplain.ExplainPlanType.SAFE
+import com.mongodb.jbplugin.mql.components.HasFieldReference
+import com.mongodb.jbplugin.mql.components.HasFilter
+import com.mongodb.jbplugin.mql.components.HasValueReference
 import org.junit.jupiter.api.Test
+
+val commonFilter = HasFilter(
+    children = listOf(
+        Node(
+            source = null,
+            components = listOf(
+                HasFieldReference(
+                    HasFieldReference.FromSchema(
+                        source = null,
+                        fieldName = "field",
+                        displayName = "field",
+                    )
+                ),
+                HasValueReference(
+                    HasValueReference.Constant(
+                        source = null,
+                        value = "value",
+                        type = BsonString,
+                    )
+                )
+            )
+        )
+    )
+)
 
 class QueryNotUsingIndexInspectionTest : QueryInspectionTest<NotUsingIndex> {
     @Test
@@ -19,8 +48,8 @@ class QueryNotUsingIndexInspectionTest : QueryInspectionTest<NotUsingIndex> {
         val query = query.with(
             HasCollectionReference(
                 HasCollectionReference.Known(null, null, namespace)
-            )
-        )
+            ),
+        ).with(commonFilter)
 
         val inspection = QueryNotUsingIndexInspection<Unit>()
         inspection.run(query, holder, QueryNotUsingIndexInspectionSettings(Unit, readModelProvider, SAFE))
@@ -39,7 +68,7 @@ class QueryNotUsingIndexInspectionTest : QueryInspectionTest<NotUsingIndex> {
             HasCollectionReference(
                 HasCollectionReference.Known(null, null, namespace)
             )
-        )
+        ).with(commonFilter)
 
         val inspection = QueryNotUsingIndexInspection<Unit>()
         inspection.run(query, holder, QueryNotUsingIndexInspectionSettings(Unit, readModelProvider, SAFE))
@@ -58,7 +87,7 @@ class QueryNotUsingIndexInspectionTest : QueryInspectionTest<NotUsingIndex> {
             HasCollectionReference(
                 HasCollectionReference.Known(null, null, namespace)
             )
-        )
+        ).with(commonFilter)
 
         val inspection = QueryNotUsingIndexInspection<Unit>()
         inspection.run(query, holder, QueryNotUsingIndexInspectionSettings(Unit, readModelProvider, SAFE))
@@ -77,7 +106,7 @@ class QueryNotUsingIndexInspectionTest : QueryInspectionTest<NotUsingIndex> {
             HasCollectionReference(
                 HasCollectionReference.Known(null, null, namespace)
             )
-        )
+        ).with(commonFilter)
 
         val inspection = QueryNotUsingIndexInspection<Unit>()
         inspection.run(query, holder, QueryNotUsingIndexInspectionSettings(Unit, readModelProvider, SAFE))
@@ -96,7 +125,7 @@ class QueryNotUsingIndexInspectionTest : QueryInspectionTest<NotUsingIndex> {
             HasCollectionReference(
                 HasCollectionReference.Known(null, null, namespace)
             )
-        )
+        ).with(commonFilter)
 
         val inspection = QueryNotUsingIndexInspection<Unit>()
         inspection.run(query, holder, QueryNotUsingIndexInspectionSettings(Unit, readModelProvider, SAFE))
@@ -115,7 +144,26 @@ class QueryNotUsingIndexInspectionTest : QueryInspectionTest<NotUsingIndex> {
             HasCollectionReference(
                 HasCollectionReference.Known(null, null, namespace)
             )
-        )
+        ).with(commonFilter)
+
+        val inspection = QueryNotUsingIndexInspection<Unit>()
+        inspection.run(query, holder, QueryNotUsingIndexInspectionSettings(Unit, readModelProvider, SAFE))
+
+        assertNoInsights()
+    }
+
+    @Test
+    fun `does not warn when query has no filters`() = runInspectionTest {
+        val namespace = Namespace("database", "collection")
+        whenDatabasesAre(listOf("database"))
+        whenCollectionsAre(listOf("collection"))
+        whenExplainPlanIs(ExplainPlan.CollectionScan)
+
+        val query = query.with(
+            HasCollectionReference(
+                HasCollectionReference.Known(null, null, namespace)
+            )
+        ).with(HasFilter<Unit>(emptyList()))
 
         val inspection = QueryNotUsingIndexInspection<Unit>()
         inspection.run(query, holder, QueryNotUsingIndexInspectionSettings(Unit, readModelProvider, SAFE))

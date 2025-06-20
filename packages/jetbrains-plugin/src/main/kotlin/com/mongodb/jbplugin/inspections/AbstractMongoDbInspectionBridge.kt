@@ -64,6 +64,8 @@ abstract class AbstractMongoDbInspectionGlobalTool(
     // in plugin.xml.
     override fun getShortName(): String = inspection.javaClass.simpleName
 
+    override fun getStaticDescription(): String? = inspection.javaClass.simpleName
+
     override fun worksInBatchModeOnly() = false
 
     companion object {
