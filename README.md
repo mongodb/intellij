@@ -36,7 +36,7 @@ To get more information about plugin features and usage, please visit [the docum
 ## Troubleshooting
 
 You can report new bugs by creating a new issue either in [JIRA](https://jira.mongodb.org/projects/INTELLIJ/issues/) or
-[GitHub](https://github.com/mongodbintellij/issues). Please include as much information as possible about your
+[GitHub](https://github.com/mongodb/intellij/issues). Please include as much information as possible about your
 environment and include any relevant logs.
 
 ### FAQ
