@@ -106,6 +106,142 @@ public final class Repository {
         """
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;import org.bson.types.ObjectId;
+import static com.mongodb.client.model.Filters.*;
+
+public final class Repository {
+    private final MongoClient client;
+    
+    public MongoCollection<Document> getCollection() {
+        return this.client.getDatabase("db").getCollection("coll");
+    }
+    
+    public Object queryMethod(ObjectId id) {
+        return getCollection().find();
+    }
+}
+      """
+    )
+    fun `extracts namespace from a method call when method has entire namespace definition`(
+        psiFile: PsiFile
+    ) {
+        val query = psiFile.getQueryAtMethod("Repository", "queryMethod")
+        val collReference = NamespaceExtractor.extractNamespace(
+            query
+        ).reference as HasCollectionReference.Known<*>
+        assertNotNull(collReference)
+        assertEquals("db", collReference.namespace.database)
+        assertEquals("coll", collReference.namespace.collection)
+    }
+
+    @ParsingTest(
+        "Repository.java",
+        """
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;import org.bson.types.ObjectId;
+import static com.mongodb.client.model.Filters.*;
+
+public final class Repository {
+    private final MongoClient client;
+    private final MongoDatabase database = client.getDatabase("db");
+    
+    public MongoCollection<Document> getCollection() {
+        return database.getCollection("coll");
+    }
+    
+    public Object queryMethod(ObjectId id) {
+        return getCollection().find();
+    }
+}
+      """
+    )
+    fun `extracts collection independently of database defined as class property from a method call`(
+        psiFile: PsiFile
+    ) {
+        val query = psiFile.getQueryAtMethod("Repository", "queryMethod")
+        val collReference = NamespaceExtractor.extractNamespace(
+            query
+        ).reference as HasCollectionReference.Known<*>
+        assertNotNull(collReference)
+        assertEquals("db", collReference.namespace.database)
+        assertEquals("coll", collReference.namespace.collection)
+    }
+
+    @ParsingTest(
+        "Repository.java",
+        """
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;import org.bson.types.ObjectId;
+import static com.mongodb.client.model.Filters.*;
+
+public final class Repository {
+    private final MongoClient client;
+    
+    private MongoDatabase getDatabase() {
+        return this.client.getDatabase("db");
+    }
+    
+    public MongoCollection<Document> getCollection() {
+        return getDatabase().getCollection("coll");
+    }
+    
+    public Object queryMethod(ObjectId id) {
+        return getCollection().find();
+    }
+}
+      """
+    )
+    fun `extracts collection (from a method call) independently of database retrieved from a method call`(
+        psiFile: PsiFile
+    ) {
+        val query = psiFile.getQueryAtMethod("Repository", "queryMethod")
+        val collReference = NamespaceExtractor.extractNamespace(
+            query
+        ).reference as HasCollectionReference.Known<*>
+        assertNotNull(collReference)
+        assertEquals("db", collReference.namespace.database)
+        assertEquals("coll", collReference.namespace.collection)
+    }
+
+    @ParsingTest(
+        "Repository.java",
+        """
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;import org.bson.types.ObjectId;
+import static com.mongodb.client.model.Filters.*;
+
+public final class Repository {
+    private final MongoClient client;
+    
+    public MongoCollection<Document> getCollection(MongoDatabase db) {
+        return db.getCollection("coll");
+    }
+    
+    public Object queryMethod(ObjectId id) {
+        MongoDatabase db = this.client.getDatabase("db2");
+        return getCollection(db).find();
+    }
+}
+      """
+    )
+    fun `extracts collection (from a method call) independently of database provided as method arguments but fails for database`(
+        psiFile: PsiFile
+    ) {
+        val query = psiFile.getQueryAtMethod("Repository", "queryMethod")
+        val collReference = NamespaceExtractor.extractNamespace(
+            query
+        ).reference as HasCollectionReference.OnlyCollection<*>
+        assertEquals("coll", collReference.collection)
+    }
+
+    @ParsingTest(
+        "Repository.java",
+        """
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
 import org.bson.types.ObjectId;
 import static com.mongodb.client.model.Filters.*;
 
