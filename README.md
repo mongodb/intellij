@@ -1,10 +1,8 @@
 # MongoDB Plugin for IntelliJ
 
-[![GitHub Release](https://img.shields.io/github/v/release/mongodb/intellij.png?sort=semver&display_name=release&logo=github)](https://github.com/mongodb-js/intellij/releases)
-[![IntelliJ Market Release](https://img.shields.io/github/v/release/mongodb/intellij.png?sort=semver&display_name=release&logo=jetbrains)](https://plugins.jetbrains.com/plugin/24377-mongodb)
-![Public Preview](https://img.shields.io/badge/status-public_preview-darkgreen.png?logo=mongodb)
-[![JIRA](https://img.shields.io/badge/bug_tracker-blue.png?logo=jira)](https://jira.mongodb.org/projects/INTELLIJ/issues/)
-[![Quality Gate](https://github.com/mongodb/intellij/actions/workflows/pr-quality-gate.yaml/badge.svg)](https://github.com/mongodb/intellij/actions/workflows/pr-quality-gate.yaml)
+* ![Public Preview](https://img.shields.io/badge/status-public_preview-darkgreen.png?logo=mongodb) 
+* [![IntelliJ Market Release](https://img.shields.io/github/v/release/mongodb/intellij.png?sort=semver&display_name=release&logo=jetbrains)](https://plugins.jetbrains.com/plugin/24377-mongodb) 
+* [![JIRA](https://img.shields.io/badge/bug_tracker-blue.png?logo=jira)](https://jira.mongodb.org/projects/INTELLIJ/issues/) 
 
 The **MongoDB Plugin for IntelliJ** provides seamless integration with MongoDB deployments, whether they are local, containerized, or hosted on MongoDB Atlas (including those managed via `atlascli`). 
 The plugin aims to enhance your development workflow with intelligent code autocompletion, valuable performance and correctness insights, and a dedicated query runner. 
