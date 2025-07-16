@@ -119,6 +119,16 @@ dependencies {
         bundledPlugin("com.intellij.database")
         bundledPlugin("com.intellij.spring.data")
 
+        bundledModules(
+          "intellij.platform.compose",
+          "intellij.libraries.skiko",
+          "intellij.libraries.compose.foundation.desktop",
+          "intellij.platform.jewel.foundation",
+          "intellij.platform.jewel.ui",
+          "intellij.platform.jewel.ideLafBridge",
+        )
+
+        testFramework(TestFrameworkType.Platform)
         testFramework(TestFrameworkType.Plugin.Java)
     }
 

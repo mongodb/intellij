@@ -63,21 +63,6 @@ dependencies {
     implementation(project(":packages:mongodb-dialects:mongosh"))
     implementation(project(":packages:mongodb-mql-model"))
 
-    compileOnly(compose.ui)
-    compileOnly(compose.runtime)
-    compileOnly(compose.foundation)
-    compileOnly(compose.desktop.common)
-    compileOnly(compose.desktop.currentOs)
-
-    implementation(libs.compose.jewel.laf.bridge)
-    implementation(libs.compose.jewel.laf.standalone) {
-        exclude(group = "org.jetbrains.kotlinx")
-    }
-
-    implementation(libs.mongodb.driver)
-    implementation(libs.segment)
-    implementation(libs.semver.parser)
-
     testImplementation(compose.runtime)
     testImplementation(compose.foundation)
     testImplementation(compose.desktop.common)
@@ -88,6 +73,11 @@ dependencies {
     testImplementation(compose.uiTest) {
         exclude(group = "org.jetbrains.kotlinx")
     }
+
+    implementation(libs.mongodb.driver)
+    implementation(libs.segment)
+    implementation(libs.semver.parser)
+
     testImplementation(libs.kotlin.coroutines.core)
     testImplementation(libs.testing.kotlin.coroutines.test)
 }

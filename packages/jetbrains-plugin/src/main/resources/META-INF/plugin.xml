@@ -28,10 +28,20 @@
         <li>Generate a model class from a collection</li>
     </ul>
     ]]></description>
+
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.java</depends>
     <depends>com.intellij.database</depends>
     <depends optional="true" config-file="./additional-when-spring-is-available.xml">com.intellij.spring.data</depends>
+
+    <dependencies>
+        <module name="intellij.platform.compose"></module>
+        <module name="intellij.libraries.skiko"></module>
+        <module name="intellij.libraries.compose.foundation.desktop"></module>
+        <module name="intellij.platform.jewel.foundation"></module>
+        <module name="intellij.platform.jewel.ui"></module>
+        <module name="intellij.platform.jewel.ideLafBridge"></module>
+    </dependencies>
 
     <extensions defaultExtensionNs="com.intellij">
         <postStartupActivity implementation="com.mongodb.jbplugin.ActivatePluginPostStartupActivity"/>

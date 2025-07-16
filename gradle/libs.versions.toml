@@ -1,8 +1,8 @@
 [versions]
 # IntelliJ platform dependencies
-intellij-min = "2024.3.1.1"
-intellij-minBuild = "243.22562.218"
-intellij-minRelease = "243"
+intellij-min = "2025.1.1"
+intellij-minBuild = "251.25410.109"
+intellij-minRelease = "251"
 intellij-type = "IU"
 java-target="21"
 # Other plugin dependencies
