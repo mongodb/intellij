@@ -69,7 +69,7 @@ data class ExplainQuery(
             val explainPlanQueryResult = runCatching {
                 // Ensuring that the query at-least has a limit if it doesn't already because
                 // the explain is run automatically
-                from.runQuery(query.with(HasLimit(1)), Map::class, queryContext)
+                from.runQuery(query.withReplaced(HasLimit(1)), Map::class, queryContext)
             }.getOrNull() ?: return ExplainQuery(ExplainPlan.NotRun)
 
             val explainPlanDoc =
