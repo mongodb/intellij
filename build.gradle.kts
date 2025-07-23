@@ -87,20 +87,22 @@ tasks {
     register("mainStatus") {
         group = "environment"
 
-        val checks = getLastCheckOnMain().filter { it.isRelevantForProjectHealth }
-        var success = true
+        doLast {
+            val checks = getLastCheckOnMain().filter { it.isRelevantForProjectHealth }
+            var success = true
 
-        for (check in checks) {
-            if (!check.conclusion) {
-                System.err.println("[❌] Check ${check.name} is in status ${check.status}: ${check.url}")
-                success = false
-            } else {
-                println("[✅] Check ${check.name} has finished successfully: ${check.url}")
+            for (check in checks) {
+                if (!check.conclusion) {
+                    System.err.println("[❌] Check ${check.name} is in status ${check.status}: ${check.url}")
+                    success = false
+                } else {
+                    println("[✅] Check ${check.name} has finished successfully: ${check.url}")
+                }
             }
-        }
 
-        if (!success) {
-            throw GradleException("Checks in main must be successful.")
+            if (!success) {
+                throw GradleException("Checks in main must be successful.")
+            }
         }
     }
 
