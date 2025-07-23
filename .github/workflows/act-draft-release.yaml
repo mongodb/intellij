@@ -29,6 +29,12 @@ on:
         required: false
         default: false
 
+      force:
+        description: 'Ignore check status: (Used when forcing a release but GHA is flaky)'
+        type: boolean
+        required: false
+        default: false
+
 permissions:
   contents: write
 
@@ -94,6 +100,7 @@ jobs:
             exit 1
           fi
       - name: Verify Checks in main
+        if: ${{ github.event.inputs.force != 'true' }}
         run: |
           ./gradlew --quiet --console=plain "mainStatus"
 
