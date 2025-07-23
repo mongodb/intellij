@@ -72,6 +72,20 @@ data class Node<S>(
         return copy(components = components + component)
     }
 
+    fun withReplaced(component: Component): Node<S> {
+        val componentClass = component::class
+        val newComponents = components.map {
+            if (it::class == componentClass) component else it
+        }
+
+        val replaced = newComponents.any { it === component }
+        return if (replaced) {
+            copy(components = newComponents)
+        } else {
+            copy(components = components + component)
+        }
+    }
+
     fun componentsWithChildren(): List<HasChildren<S>> = components.filterIsInstance<HasChildren<S>>()
 
     inline fun <reified C : Component> hasComponent(): Boolean = component<C>() != null
