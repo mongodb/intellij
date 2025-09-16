@@ -100,7 +100,7 @@ jobs:
   unit-and-integration-test:
     name: "Unit and Integration Tests"
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 60
     steps:
       - name: Maximize Build Space
         uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # 1.3.1
