@@ -3,29 +3,23 @@
     <name>MongoDB</name>
     <vendor email="compass@mongodb.com" url="https://www.mongodb.com/">MongoDB, Inc.</vendor>
     <description><![CDATA[
-    <p><b>IMPORTANT: THIS PLUGIN IS IN STILL IN DEVELOPMENT</b></p>
-
+    <p><b>IMPORTANT: THIS PLUGIN IS IN PUBLIC PREVIEW</b></p>
     <p>MongoDB's official plugin includes early-stage features that are still being developed and tested. We strongly advise exercising caution when using the plugin in the current state.</p>
 
-    <p>Please report <a href="https://github.com/mongodb-js/intellij/issues">any issues or feature requests</a>.</p>
+    <p>Please report <a href="https://github.com/mongodb/intellij/issues">any issues or feature requests</a>.</p>
 
     <b>Requirements</b>
     <ul>
-        <li>IntelliJ version 2024.1 or above</li>
+        <li>IntelliJ version 2025.1 or above</li>
         <li>DataGrip</li>
     </ul>
 
     <b>Features Available<b>
     <ul>
         <li>Write queries faster with autocomplete & type validation for collection and field names in MongoDB Java drivers</li>
-    </ul>
-
-    <b>In Development</b>
-    <ul>
         <li>Autocomplete & type validation for Spring Data MongoDB</li>
-        <li>Identify queries not covered by an index</li>
-        <li>Test queries directly in Java without converting to MongoDB Query API</li>
-        <li>Generate a model class from a collection</li>
+        <li>Test queries directly in Java without converting to mongosh Query API</li>
+        <li>Checks index usage of your queries and suggests better indexing strategies</li>
     </ul>
     ]]></description>
 
@@ -34,6 +28,8 @@
     <depends>com.intellij.database</depends>
     <depends optional="true" config-file="./additional-when-spring-is-available.xml">com.intellij.spring.data</depends>
 
+    <idea-version since-build="251" />
+    
     <dependencies>
         <module name="intellij.platform.compose"></module>
         <module name="intellij.libraries.skiko"></module>
