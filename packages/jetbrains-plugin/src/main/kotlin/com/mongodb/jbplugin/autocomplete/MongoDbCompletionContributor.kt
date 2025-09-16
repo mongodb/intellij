@@ -239,9 +239,9 @@ private object MongoDbElementPatterns {
                 }
                 .withIcon(
                     when (type) {
-                        AutocompletionEntry.AutocompletionEntryType.DATABASE -> Icons.databaseAutocompleteEntry
-                        AutocompletionEntry.AutocompletionEntryType.COLLECTION -> Icons.collectionAutocompleteEntry
-                        AutocompletionEntry.AutocompletionEntryType.FIELD -> Icons.fieldAutocompleteEntry
+                        AutocompletionEntry.AutocompletionEntryType.DATABASE -> Icons.instance.databaseAutocompleteEntry
+                        AutocompletionEntry.AutocompletionEntryType.COLLECTION -> Icons.instance.collectionAutocompleteEntry
+                        AutocompletionEntry.AutocompletionEntryType.FIELD -> Icons.instance.fieldAutocompleteEntry
                     },
                 )
                 .withTypeText(
