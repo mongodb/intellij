@@ -11,7 +11,7 @@ import com.mongodb.jbplugin.accessadapter.datagrip.DataGripBasedReadModelProvide
 import com.mongodb.jbplugin.accessadapter.slice.ListCollections
 import com.mongodb.jbplugin.accessadapter.slice.ListDatabases
 import com.mongodb.jbplugin.i18n.Icons
-import com.mongodb.jbplugin.i18n.Icons.scaledToText
+import com.mongodb.jbplugin.i18n.Icons.Companion.scaledToText
 import com.mongodb.jbplugin.meta.service
 import com.mongodb.jbplugin.observability.useLogMessage
 import kotlinx.coroutines.CoroutineScope
@@ -157,17 +157,17 @@ class NamespaceSelector(
         index == -1 &&
         loadingDatabases
     ) {
-        JBLabel("Loading databases...", Icons.loading.scaledToText(), SwingConstants.LEFT)
+        JBLabel("Loading databases...", Icons.instance.loading.scaledToText(), SwingConstants.LEFT)
     } else {
-        JBLabel(item ?: "", Icons.databaseAutocompleteEntry, SwingConstants.LEFT)
+        JBLabel(item ?: "", Icons.instance.databaseAutocompleteEntry, SwingConstants.LEFT)
     }
 
     private fun renderCollectionItem(item: String?, index: Int): Component = if (item == null &&
         index == -1 &&
         loadingCollections
     ) {
-        JBLabel("Loading collections...", Icons.loading.scaledToText(), SwingConstants.LEFT)
+        JBLabel("Loading collections...", Icons.instance.loading.scaledToText(), SwingConstants.LEFT)
     } else {
-        JBLabel(item ?: "", Icons.collectionAutocompleteEntry, SwingConstants.LEFT)
+        JBLabel(item ?: "", Icons.instance.collectionAutocompleteEntry, SwingConstants.LEFT)
     }
 }

@@ -23,9 +23,12 @@ interface SidePanelEvents {
     data object OpenConnectionComboBox : SidePanelEvents
 }
 
-enum class SidePanelStatus(val icon: Icon) {
-    Ok(Icons.SidePanel.logo),
-    Warning(Icons.SidePanel.logoAttention)
+enum class SidePanelStatus(val iconSupplier: Icons.() -> Icon) {
+    Ok({ sidePanelLogo }),
+    Warning({ sidePanelLogoAttention });
+
+    val icon: Icon
+        get() = Icons.instance.iconSupplier()
 }
 
 @Service(Service.Level.PROJECT)

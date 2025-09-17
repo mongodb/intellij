@@ -151,25 +151,25 @@ internal class QueriesInFileCollector(private val coroutineScope: CoroutineScope
             val (icon, text, tooltip) = when (explainPlan) {
                 CollectionScan ->
                     Triple(
-                        Icons.indexWarningIcon,
+                        Icons.instance.indexWarningIcon,
                         InspectionsAndInlaysMessages.message("inlay.indexing.coll-scan.text"),
                         InspectionsAndInlaysMessages.message("inlay.indexing.coll-scan.tooltip")
                     )
                 is IndexScan ->
                     Triple(
-                        Icons.indexOkIcon,
+                        Icons.instance.indexOkIcon,
                         InspectionsAndInlaysMessages.message("inlay.indexing.index-scan.text"),
                         explainPlan.indexName
                     )
                 is IneffectiveIndexUsage ->
                     Triple(
-                        Icons.indexWarningIcon,
+                        Icons.instance.indexWarningIcon,
                         InspectionsAndInlaysMessages.message("inlay.indexing.ineffective-index-scan.text"),
                         explainPlan.indexName
                     )
                 NotRun ->
                     Triple(
-                        Icons.queryNotRunIcon,
+                        Icons.instance.queryNotRunIcon,
                         InspectionsAndInlaysMessages.message("inlay.indexing.not-run.text"),
                         InspectionsAndInlaysMessages.message("inlay.indexing.not-run.tooltip")
                     )

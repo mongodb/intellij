@@ -32,7 +32,7 @@ class SpringCriteriaRunQueryCodeActionTest {
     ) {
         fixture.specifyDialect(SpringCriteriaDialect)
         val gutters = fixture.findAllGutters()
-        assertNull(gutters.find { it.icon == Icons.runQueryGutter })
+        assertNull(gutters.find { it.icon == Icons.instance.runQueryGutter })
     }
 
     @ParsingTest(
@@ -53,7 +53,7 @@ class SpringCriteriaRunQueryCodeActionTest {
         val gutters = fixture.findAllGutters()
         assertNotEquals(0, gutters.size)
 
-        val gutter = gutters.find { it.icon == Icons.runQueryGutter }
+        val gutter = gutters.find { it.icon == Icons.instance.runQueryGutter }
         assertNotNull(gutter)
 
         application.runReadAction {

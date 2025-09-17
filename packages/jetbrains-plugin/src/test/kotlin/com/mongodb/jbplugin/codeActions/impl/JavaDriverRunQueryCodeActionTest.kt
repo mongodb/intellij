@@ -42,7 +42,7 @@ class JavaDriverRunQueryCodeActionTest {
 
         val gutters = fixture.findAllGutters()
         application.runReadAction {
-            assertNull(gutters.find { it.icon == Icons.runQueryGutter })
+            assertNull(gutters.find { it.icon == Icons.instance.runQueryGutter })
         }
     }
 
@@ -60,7 +60,7 @@ class JavaDriverRunQueryCodeActionTest {
     ) {
         fixture.specifyDialect(JavaDriverDialect)
         val gutters = fixture.findAllGutters()
-        assertNull(gutters.find { it.icon == Icons.runQueryGutter })
+        assertNull(gutters.find { it.icon == Icons.instance.runQueryGutter })
     }
 
     @ParsingTest(
@@ -83,7 +83,7 @@ class JavaDriverRunQueryCodeActionTest {
         assertEquals(1, gutters.size)
 
         val gutter = gutters.first()
-        assertEquals(Icons.runQueryGutter, gutter.icon)
+        assertEquals(Icons.instance.runQueryGutter, gutter.icon)
 
         application.runReadAction {
             assertEquals(CodeActionsMessages.message("code.action.run.query"), gutter.tooltipText)

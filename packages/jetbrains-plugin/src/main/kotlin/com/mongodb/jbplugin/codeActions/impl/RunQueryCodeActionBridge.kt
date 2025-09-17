@@ -55,7 +55,7 @@ internal object RunQueryCodeAction : MongoDbCodeAction {
         return LineMarkerInfo(
             query.sourceForMarker,
             query.sourceForMarker.textRange,
-            Icons.runQueryGutter,
+            Icons.instance.runQueryGutter,
             { CodeActionsMessages.message("code.action.run.query") },
             { _, _ ->
                 emitRunQueryEvent(query, dataSource)

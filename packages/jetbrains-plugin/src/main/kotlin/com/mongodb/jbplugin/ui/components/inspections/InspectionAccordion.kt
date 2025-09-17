@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.intellij.psi.PsiElement
 import com.mongodb.jbplugin.i18n.Icons
+import com.mongodb.jbplugin.i18n.Icons.Companion.toImageBitmap
 import com.mongodb.jbplugin.inspections.analysisScope.AnalysisScope
 import com.mongodb.jbplugin.linting.Inspection
 import com.mongodb.jbplugin.linting.InspectionCategory
@@ -56,13 +57,13 @@ import com.mongodb.jbplugin.ui.viewModel.AnalysisStatus
 import com.mongodb.jbplugin.ui.viewModel.InspectionsViewModel
 import com.mongodb.jbplugin.ui.viewModel.getToolShortName
 import com.mongodb.jbplugin.ui.viewModel.getToolWrapper
+import org.jetbrains.jewel.foundation.modifier.thenIf
 import org.jetbrains.jewel.ui.component.DefaultButton
 import org.jetbrains.jewel.ui.component.Icon
 import org.jetbrains.jewel.ui.component.Text
 import org.jetbrains.jewel.ui.component.Tooltip
 import org.jetbrains.jewel.ui.icon.IconKey
 import org.jetbrains.jewel.ui.icons.AllIconsKeys
-import org.jetbrains.jewel.ui.util.thenIf
 
 @Composable
 fun InspectionAccordion() {
@@ -306,7 +307,7 @@ fun DisabledInspectionCard(
     inspection: Inspection
 ) {
     val callbacks = useInspectionAccordionCallbacks()
-    val iconImage = Icons.disabledInspectionIcon
+    val iconImage = Icons.instance.disabledInspectionIcon.toImageBitmap()
     InsightCardStructure(
         title = callbacks.getInspectionDisplayName(inspection),
         iconKey = null,
