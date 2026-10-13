@@ -9,7 +9,7 @@ import com.mongodb.intellij.keyOfCurrentCompatibilityErrorTask
 group = "com.mongodb"
 // This should be bumped when releasing a new version using the versionBump task:
 // ./gradlew versionBump -Pmode={major,minor,patch}
-version = "0.1.13"
+version = "0.1.14"
 
 plugins {
     base
