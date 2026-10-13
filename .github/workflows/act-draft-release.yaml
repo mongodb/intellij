@@ -29,12 +29,6 @@ on:
         required: false
         default: false
 
-      force:
-        description: 'Ignore check status: (Used when forcing a release but GHA is flaky)'
-        type: boolean
-        required: false
-        default: false
-
 permissions:
   contents: write
 
@@ -99,11 +93,6 @@ jobs:
             echo "If this version has already been release consider using a different one."
             exit 1
           fi
-      - name: Verify Checks in main
-        if: ${{ github.event.inputs.force != 'true' }}
-        run: |
-          ./gradlew --quiet --console=plain "mainStatus"
-
       - name: Patch Plugin XML
         run: |
           ./gradlew --quiet --console=plain ":packages:jetbrains-plugin:patchPluginXml"

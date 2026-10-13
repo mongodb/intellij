@@ -3,8 +3,8 @@
     <name>MongoDB</name>
     <vendor email="compass@mongodb.com" url="https://www.mongodb.com/">MongoDB, Inc.</vendor>
     <description><![CDATA[
-    <p><b>IMPORTANT: THIS PLUGIN IS IN PUBLIC PREVIEW</b></p>
-    <p>MongoDB's official plugin includes early-stage features that are still being developed and tested. We strongly advise exercising caution when using the plugin in the current state.</p>
+    <p><b>DEPRECATED: THIS PLUGIN IS NO LONGER MAINTAINED</b></p>
+    <p>The MongoDB plugin for IntelliJ IDEA and DataGrip has been deprecated. It will receive no further updates, bug fixes, or compatibility updates for new IDE versions. Existing installations will continue to work.</p>
 
     <p>Please report <a href="https://github.com/mongodb/intellij/issues">any issues or feature requests</a>.</p>
 

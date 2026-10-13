@@ -10,6 +10,8 @@ MongoDB plugin for IntelliJ IDEA.
 
 ### Deprecated
 
+- [INTELLIJ-368](https://jira.mongodb.org/browse/INTELLIJ-368) Deprecate the MongoDB plugin. This is the final release; the plugin will receive no further updates, bug fixes, or compatibility updates for new IDE versions.
+
 ### Removed
 
 ### Fixed
